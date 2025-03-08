@@ -1,0 +1,481 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		4B1DADDF295E6C440037E9FB /* BitDreamApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */; };
+		4B1DADE1295E6C440037E9FB /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADE0295E6C440037E9FB /* Persistence.swift */; };
+		4B1DADE4295E6C440037E9FB /* BitDream.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADE2295E6C440037E9FB /* BitDream.xcdatamodeld */; };
+		4B1DADE6295E6C440037E9FB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADE5295E6C440037E9FB /* ContentView.swift */; };
+		4B1DADE8295E6C450037E9FB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4B1DADE7295E6C450037E9FB /* Assets.xcassets */; };
+		4B1DADEC295E6C450037E9FB /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4B1DADEB295E6C450037E9FB /* Preview Assets.xcassets */; };
+		4B1DADF7295E6D790037E9FB /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 4B1DADF6295E6D790037E9FB /* KeychainAccess */; };
+		4B1DADF9295E6EBA0037E9FB /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADF8295E6EBA0037E9FB /* Utilities.swift */; };
+		4B1DADFE295E6F390037E9FB /* TransmissionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADFD295E6F390037E9FB /* TransmissionModels.swift */; };
+		4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */; };
+		4B1DAE02295E6FA30037E9FB /* AddTorrent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE01295E6FA30037E9FB /* AddTorrent.swift */; };
+		4B1DAE04295E6FBC0037E9FB /* FileSelectDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE03295E6FBC0037E9FB /* FileSelectDialog.swift */; };
+		4B1DAE06295E6FC80037E9FB /* TorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE05295E6FC80037E9FB /* TorrentDetail.swift */; };
+		4B1DAE08295E6FD50037E9FB /* TorrentListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE07295E6FD50037E9FB /* TorrentListRow.swift */; };
+		4B1DAE0A295E6FE10037E9FB /* ServerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */; };
+		4B1DAE0C295E6FEF0037E9FB /* ServerList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0B295E6FEF0037E9FB /* ServerList.swift */; };
+		4B1DAE0E295E6FFB0037E9FB /* ErrorDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */; };
+		4B1DAE10295E702B0037E9FB /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0F295E702B0037E9FB /* Store.swift */; };
+		4B1DAE12295E72040037E9FB /* FileAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE11295E72040037E9FB /* FileAccess.swift */; };
+		4B4377D6295FA9B600133D4A /* ContentViewTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4377D5295FA9B600133D4A /* ContentViewTest.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		4B1DADDB295E6C440037E9FB /* BitDream.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BitDream.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitDreamApp.swift; sourceTree = "<group>"; };
+		4B1DADE0295E6C440037E9FB /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
+		4B1DADE3295E6C440037E9FB /* BitDream.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = BitDream.xcdatamodel; sourceTree = "<group>"; };
+		4B1DADE5295E6C440037E9FB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		4B1DADE7295E6C450037E9FB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		4B1DADE9295E6C450037E9FB /* BitDream.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BitDream.entitlements; sourceTree = "<group>"; };
+		4B1DADEB295E6C450037E9FB /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		4B1DADF8295E6EBA0037E9FB /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
+		4B1DADFD295E6F390037E9FB /* TransmissionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionModels.swift; sourceTree = "<group>"; };
+		4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionFunctions.swift; sourceTree = "<group>"; };
+		4B1DAE01295E6FA30037E9FB /* AddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTorrent.swift; sourceTree = "<group>"; };
+		4B1DAE03295E6FBC0037E9FB /* FileSelectDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSelectDialog.swift; sourceTree = "<group>"; };
+		4B1DAE05295E6FC80037E9FB /* TorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentDetail.swift; sourceTree = "<group>"; };
+		4B1DAE07295E6FD50037E9FB /* TorrentListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentListRow.swift; sourceTree = "<group>"; };
+		4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerDetail.swift; sourceTree = "<group>"; };
+		4B1DAE0B295E6FEF0037E9FB /* ServerList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerList.swift; sourceTree = "<group>"; };
+		4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorDialog.swift; sourceTree = "<group>"; };
+		4B1DAE0F295E702B0037E9FB /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		4B1DAE11295E72040037E9FB /* FileAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileAccess.swift; sourceTree = "<group>"; };
+		4B4377D5295FA9B600133D4A /* ContentViewTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewTest.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4B1DADD8295E6C440037E9FB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4B1DADF7295E6D790037E9FB /* KeychainAccess in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		4B1DADD2295E6C440037E9FB = {
+			isa = PBXGroup;
+			children = (
+				4B1DADDD295E6C440037E9FB /* BitDream */,
+				4B1DADDC295E6C440037E9FB /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4B1DADDC295E6C440037E9FB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4B1DADDB295E6C440037E9FB /* BitDream.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4B1DADDD295E6C440037E9FB /* BitDream */ = {
+			isa = PBXGroup;
+			children = (
+				4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */,
+				4B1DADE0295E6C440037E9FB /* Persistence.swift */,
+				4B1DAE0F295E702B0037E9FB /* Store.swift */,
+				4B1DAE11295E72040037E9FB /* FileAccess.swift */,
+				4B1DADF8295E6EBA0037E9FB /* Utilities.swift */,
+				4B1DADFA295E6EE10037E9FB /* Views */,
+				4B1DADFC295E6F0F0037E9FB /* Transmission */,
+				4B1DADE7295E6C450037E9FB /* Assets.xcassets */,
+				4B1DADE9295E6C450037E9FB /* BitDream.entitlements */,
+				4B1DADE2295E6C440037E9FB /* BitDream.xcdatamodeld */,
+				4B1DADEA295E6C450037E9FB /* Preview Content */,
+			);
+			path = BitDream;
+			sourceTree = "<group>";
+		};
+		4B1DADEA295E6C450037E9FB /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				4B1DADEB295E6C450037E9FB /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		4B1DADFA295E6EE10037E9FB /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				4B1DADE5295E6C440037E9FB /* ContentView.swift */,
+				4B4377D5295FA9B600133D4A /* ContentViewTest.swift */,
+				4B1DAE01295E6FA30037E9FB /* AddTorrent.swift */,
+				4B1DAE03295E6FBC0037E9FB /* FileSelectDialog.swift */,
+				4B1DAE05295E6FC80037E9FB /* TorrentDetail.swift */,
+				4B1DAE07295E6FD50037E9FB /* TorrentListRow.swift */,
+				4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */,
+				4B1DAE0B295E6FEF0037E9FB /* ServerList.swift */,
+				4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		4B1DADFC295E6F0F0037E9FB /* Transmission */ = {
+			isa = PBXGroup;
+			children = (
+				4B1DADFD295E6F390037E9FB /* TransmissionModels.swift */,
+				4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */,
+			);
+			path = Transmission;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4B1DADDA295E6C440037E9FB /* BitDream */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4B1DADEF295E6C450037E9FB /* Build configuration list for PBXNativeTarget "BitDream" */;
+			buildPhases = (
+				4B1DADD7295E6C440037E9FB /* Sources */,
+				4B1DADD8295E6C440037E9FB /* Frameworks */,
+				4B1DADD9295E6C440037E9FB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BitDream;
+			packageProductDependencies = (
+				4B1DADF6295E6D790037E9FB /* KeychainAccess */,
+			);
+			productName = BitDream;
+			productReference = 4B1DADDB295E6C440037E9FB /* BitDream.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4B1DADD3295E6C440037E9FB /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1420;
+				LastUpgradeCheck = 1420;
+				TargetAttributes = {
+					4B1DADDA295E6C440037E9FB = {
+						CreatedOnToolsVersion = 14.2;
+					};
+				};
+			};
+			buildConfigurationList = 4B1DADD6295E6C440037E9FB /* Build configuration list for PBXProject "BitDream" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 4B1DADD2295E6C440037E9FB;
+			packageReferences = (
+				4B1DADF5295E6D790037E9FB /* XCRemoteSwiftPackageReference "KeychainAccess" */,
+			);
+			productRefGroup = 4B1DADDC295E6C440037E9FB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				4B1DADDA295E6C440037E9FB /* BitDream */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		4B1DADD9295E6C440037E9FB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4B1DADEC295E6C450037E9FB /* Preview Assets.xcassets in Resources */,
+				4B1DADE8295E6C450037E9FB /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4B1DADD7295E6C440037E9FB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4B1DAE10295E702B0037E9FB /* Store.swift in Sources */,
+				4B1DADE4295E6C440037E9FB /* BitDream.xcdatamodeld in Sources */,
+				4B4377D6295FA9B600133D4A /* ContentViewTest.swift in Sources */,
+				4B1DAE06295E6FC80037E9FB /* TorrentDetail.swift in Sources */,
+				4B1DADDF295E6C440037E9FB /* BitDreamApp.swift in Sources */,
+				4B1DAE0A295E6FE10037E9FB /* ServerDetail.swift in Sources */,
+				4B1DAE02295E6FA30037E9FB /* AddTorrent.swift in Sources */,
+				4B1DADFE295E6F390037E9FB /* TransmissionModels.swift in Sources */,
+				4B1DAE0E295E6FFB0037E9FB /* ErrorDialog.swift in Sources */,
+				4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */,
+				4B1DADE6295E6C440037E9FB /* ContentView.swift in Sources */,
+				4B1DADF9295E6EBA0037E9FB /* Utilities.swift in Sources */,
+				4B1DAE0C295E6FEF0037E9FB /* ServerList.swift in Sources */,
+				4B1DADE1295E6C440037E9FB /* Persistence.swift in Sources */,
+				4B1DAE12295E72040037E9FB /* FileAccess.swift in Sources */,
+				4B1DAE08295E6FD50037E9FB /* TorrentListRow.swift in Sources */,
+				4B1DAE04295E6FBC0037E9FB /* FileSelectDialog.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		4B1DADED295E6C450037E9FB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		4B1DADEE295E6C450037E9FB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		4B1DADF0295E6C450037E9FB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = BitDream/BitDream.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"BitDream/Preview Content\"";
+				DEVELOPMENT_TEAM = T778QMSML9;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = BitDream;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		4B1DADF1295E6C450037E9FB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CODE_SIGN_ENTITLEMENTS = BitDream/BitDream.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"BitDream/Preview Content\"";
+				DEVELOPMENT_TEAM = T778QMSML9;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = BitDream;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4B1DADD6295E6C440037E9FB /* Build configuration list for PBXProject "BitDream" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4B1DADED295E6C450037E9FB /* Debug */,
+				4B1DADEE295E6C450037E9FB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4B1DADEF295E6C450037E9FB /* Build configuration list for PBXNativeTarget "BitDream" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4B1DADF0295E6C450037E9FB /* Debug */,
+				4B1DADF1295E6C450037E9FB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4B1DADF5295E6D790037E9FB /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4B1DADF6295E6D790037E9FB /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4B1DADF5295E6D790037E9FB /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
+		};
+/* End XCSwiftPackageProductDependency section */
+
+/* Begin XCVersionGroup section */
+		4B1DADE2295E6C440037E9FB /* BitDream.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				4B1DADE3295E6C440037E9FB /* BitDream.xcdatamodel */,
+			);
+			currentVersion = 4B1DADE3295E6C440037E9FB /* BitDream.xcdatamodel */;
+			path = BitDream.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
+	};
+	rootObject = 4B1DADD3295E6C440037E9FB /* Project object */;
+}

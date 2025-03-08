@@ -1,0 +1,7 @@
+## User settings
+xcuserdata/
+
+# Accidental Finder files
+.DS_Store
+.AppleDouble
+.LSOverride
