@@ -11,280 +11,112 @@ import KeychainAccess
 import CoreData
 
 struct TorrentDetail: View {
-    @Environment(\.dismiss) private var dismiss
-    
     @ObservedObject var store: Store
     var viewContext: NSManagedObjectContext
     @Binding var torrent: Torrent
     
-    @State public var files: [TorrentFile] = []
-    @State var isNameFullText = false
+    var body: some View {
+        #if os(iOS)
+        iOSTorrentDetail(store: store, viewContext: viewContext, torrent: $torrent)
+        #elseif os(macOS)
+        macOSTorrentDetail(store: store, viewContext: viewContext, torrent: $torrent)
+        #endif
+    }
+}
+
+// MARK: - Shared Helpers
+
+// Shared function to determine torrent status color
+func statusColor(for torrent: Torrent) -> Color {
+    if torrent.statusCalc == TorrentStatusCalc.complete {
+        return .green.opacity(0.75)
+    }
+    else if torrent.statusCalc == TorrentStatusCalc.paused {
+        return .gray
+    }
+    else if torrent.statusCalc == TorrentStatusCalc.retrievingMetadata {
+        return .red.opacity(0.75)
+    }
+    else if torrent.statusCalc == TorrentStatusCalc.stalled {
+        return .yellow.opacity(0.7)
+    }
+    else {
+        return .blue.opacity(0.75)
+    }
+}
+
+// Shared function to fetch torrent files
+func fetchTorrentFiles(transferId: Int, store: Store, completion: @escaping ([TorrentFile]) -> Void) {
+    let info = makeConfig(store: store)
+    
+    getTorrentFiles(transferId: transferId, info: info, onReceived: { files in
+        completion(files)
+    })
+}
+
+// Shared function to play/pause a torrent
+func toggleTorrentPlayPause(torrent: Torrent, store: Store, completion: @escaping () -> Void = {}) {
+    let info = makeConfig(store: store)
+    playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
+        // TODO: Handle response
+        completion()
+    })
+}
+
+// Shared function to format torrent details
+func formatTorrentDetails(torrent: Torrent) -> (percentComplete: String, percentAvailable: String, downloadedFormatted: String, sizeWhenDoneFormatted: String, activityDate: String, addedDate: String) {
+    
+    let percentComplete = String(format: "%.1f%%", torrent.percentDone * 100)
+    let percentAvailable = String(format: "%.1f%%", ((Double(torrent.haveUnchecked + torrent.haveValid + torrent.desiredAvailable) / Double(torrent.sizeWhenDone))) * 100)
+    let downloadedFormatted = byteCountFormatter.string(fromByteCount: (torrent.downloadedCalc))
+    let sizeWhenDoneFormatted = byteCountFormatter.string(fromByteCount: torrent.sizeWhenDone)
+    
+    let activityDate = dateFormatter.string(from: Date(timeIntervalSince1970: Double(torrent.activityDate)))
+    let addedDate = dateFormatter.string(from: Date(timeIntervalSince1970: Double(torrent.addedDate)))
+    
+    return (percentComplete, percentAvailable, downloadedFormatted, sizeWhenDoneFormatted, activityDate, addedDate)
+}
+
+// Shared header view for both platforms
+struct TorrentDetailHeaderView: View {
+    var torrent: Torrent
     
     var body: some View {
-        
-        let percentComplete = String(format: "%.1f%%", torrent.percentDone * 100)
-        let percentAvailable = String(format: "%.1f%%", ((Double(torrent.haveUnchecked + torrent.haveValid + torrent.desiredAvailable) / Double(torrent.sizeWhenDone))) * 100)
-        let downloadedSizeFormatted = byteCountFormatter.string(fromByteCount: (torrent.downloadedCalc))
-        let sizeWhenDoneFormatted = byteCountFormatter.string(fromByteCount: torrent.sizeWhenDone)
-        
-        let activityDate = dateFormatter.string(from: Date(timeIntervalSince1970: Double(torrent.activityDate)))
-        let addedDate = dateFormatter.string(from: Date(timeIntervalSince1970: Double(torrent.addedDate)))
-        
-        NavigationStack {
-            VStack {
-                Divider()
-                HStack {
-                    Text(String("▼ \(byteCountFormatter.string(fromByteCount: torrent.rateDownload))/s"))
-                    Text(String("▲ \(byteCountFormatter.string(fromByteCount: torrent.rateUpload))/s"))
-                    
-                }
-                .foregroundColor(.secondary)
-                .font(.subheadline)
-                #if os(macOS)
-                Form {
-                    VStack {
-                        HStack {
-                            Text("General")
-                                .font(.title2)
-                                .bold()
-                        }.padding(.bottom)
-                        HStack(alignment: .top) {
-                            Text("Name")
-                            Spacer(minLength: 50)
-                            Text(torrent.name)
-                                .foregroundColor(.gray)
-                                .multilineTextAlignment(.trailing)
-                                .lineLimit(5)
-                        }
-                        Divider()
-                        HStack {
-                            Text("Status")
-                            Spacer()
-                            Image(systemName: "circle.fill")
-                                .foregroundColor(statusColor)
-                                .font(.system(size: 12))
-                            Text(torrent.statusCalc.rawValue)
-                                .foregroundColor(.gray)
-                        }
-                        Divider()
-                        HStack {
-                            Text("Date Added")
-                            Spacer()
-                            Text(addedDate)
-                                .foregroundColor(.gray)
-                        }
-                        Divider()
-                        NavigationLink(destination: TorrentFileDetail(files: files)) {
-                            HStack {
-                                Text("Files")
-                                Spacer()
-                                Text("\(files.count)")
-                                    .foregroundColor(.gray)
-                            }
-                        }
-                    }
-                    .padding(.horizontal).padding(.vertical)
-                    
-                    VStack {
-                        HStack {
-                            Text("Stats")
-                                .font(.title2)
-                                .bold()
-                        }.padding(.bottom)
-                        HStack {
-                            Text("Downloaded")
-                            Spacer()
-                            Text(downloadedSizeFormatted)
-                                .foregroundColor(.gray)
-                        }
-                        Divider()
-                        HStack {
-                            Text("Size When Done")
-                            Spacer()
-                            Text(sizeWhenDoneFormatted)
-                                .foregroundColor(.gray)
-                        }
-                        Divider()
-                        HStack {
-                            Text("Progress")
-                            Spacer()
-                            Text(String(percentComplete))
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .padding(.horizontal).padding(.vertical)
-                        
-                    VStack {
-                        HStack {
-                            Text("Availability")
-                            Spacer()
-                            Text(String(percentAvailable))
-                                .foregroundColor(.gray)
-                        }
-                        Divider()
-                        HStack {
-                            Text("Last Activity")
-                            Spacer()
-                            Text(String(activityDate))
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .padding(.horizontal).padding(.vertical)
-                    
-                    Button(role: .destructive, action: {
-                        //                    viewContext.delete(torrent.self)
-                        //                    try? viewContext.save()
-                        //                    dismiss()
-                    }, label: {
-                        HStack{
-                            Image(systemName: "trash")
-                            Text("Delete Dream")
-                            Spacer()
-                        }
-                    })
-                    .padding(.horizontal).padding(.vertical)
-                }
-                .padding()
-                Spacer()
-                #else
-                Form {
-                    Section(header: Text("General")) {
-                        HStack(alignment: .top) {
-                            Text("Name")
-                            Spacer(minLength: 50)
-                            Text(torrent.name)
-                                .foregroundColor(.gray)
-                                .multilineTextAlignment(.trailing)
-                                .lineLimit(5)
-                        }
-                        HStack {
-                            Text("Status")
-                            Spacer()
-                            Image(systemName: "circle.fill")
-                                .foregroundColor(statusColor)
-                                .font(.system(size: 12))
-                            Text(torrent.statusCalc.rawValue)
-                                .foregroundColor(.gray)
-                        }
-                        HStack {
-                            Text("Date Added")
-                            Spacer()
-                            Text(addedDate)
-                                .foregroundColor(.gray)
-                        }
-                        NavigationLink(destination: TorrentFileDetail(files: files)) {
-                            HStack {
-                                Text("Files")
-                                Spacer()
-                                Text("\(files.count)")
-                                    .foregroundColor(.gray)
-                            }
-                        }
-                    }
-                    
-                    Section(header: Text("Stats")) {
-                        HStack {
-                            Text("Downloaded")
-                            Spacer()
-                            Text(downloadedSizeFormatted)
-                                .foregroundColor(.gray)
-                        }
-                        HStack {
-                            Text("Size When Done")
-                            Spacer()
-                            Text(sizeWhenDoneFormatted)
-                                .foregroundColor(.gray)
-                        }
-                        HStack {
-                            Text("Progress")
-                            Spacer()
-                            Text(String(percentComplete))
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    
-                    Section {
-                        HStack {
-                            Text("Availability")
-                            Spacer()
-                            Text(String(percentAvailable))
-                                .foregroundColor(.gray)
-                        }
-                        HStack {
-                            Text("Last Activity")
-                            Spacer()
-                            Text(String(activityDate))
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    
-                    Button(role: .destructive, action: {
-                        //                    viewContext.delete(torrent.self)
-                        //                    try? viewContext.save()
-                        //                    dismiss()
-                    }, label: {
-                        HStack {
-                            HStack{
-                                Image(systemName: "trash")
-                                Text("Delete Dream")
-                                Spacer()
-                            }
-                        }
-                    })
-                }
-                #endif
+        VStack {
+            Divider()
+            HStack {
+                Text(String("▼ \(byteCountFormatter.string(fromByteCount: torrent.rateDownload))/s"))
+                Text(String("▲ \(byteCountFormatter.string(fromByteCount: torrent.rateUpload))/s"))
             }
-            .onAppear{
-                self.getFiles(transferId: torrent.id, store: store)
-            }
-            .toolbar {
-                ToolbarItem {
-                    Menu {
-                        Button(action: {
-                            let info = makeConfig(store: store)
-                            playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
-                                // TODO: Handle response
-                            })
-                        }, label: {
-                            HStack {
-                                Text(torrent.status == TorrentStatus.stopped.rawValue ? "Resume Dream" : "Pause Dream")
-                            }
-                        })
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
-                }
-            }
-        }
-    }
-    
-    private func getFiles (transferId: Int, store: Store) {
-        let info = makeConfig(store: store)
-        
-        getTorrentFiles(transferId: transferId, info: info, onReceived: { file in
-           files = file
-        })
-    }
-    
-    private var statusColor: Color {
-        if torrent.statusCalc == TorrentStatusCalc.complete {
-            return .green.opacity(0.75)
-        }
-        else if torrent.statusCalc == TorrentStatusCalc.paused {
-            return .gray
-        }
-        else if torrent.statusCalc == TorrentStatusCalc.retrievingMetadata {
-            return .red.opacity(0.75)
-        }
-        else if torrent.statusCalc == TorrentStatusCalc.stalled {
-            return .yellow.opacity(0.7)
-        }
-        else {
-            return .blue.opacity(0.75)
+            .foregroundColor(.secondary)
+            .font(.subheadline)
         }
     }
 }
 
+// Shared toolbar menu for both platforms
+struct TorrentDetailToolbar: ToolbarContent {
+    var torrent: Torrent
+    var store: Store
+    
+    var body: some ToolbarContent {
+        ToolbarItem {
+            Menu {
+                Button(action: {
+                    toggleTorrentPlayPause(torrent: torrent, store: store)
+                }, label: {
+                    HStack {
+                        Text(torrent.status == TorrentStatus.stopped.rawValue ? "Resume Dream" : "Pause Dream")
+                    }
+                })
+            } label: {
+                Image(systemName: "ellipsis.circle")
+            }
+        }
+    }
+}
+
+// Keep the TorrentFileDetail here since it's shared between platforms
 struct TorrentFileDetail: View {
     var files: [TorrentFile]
     
