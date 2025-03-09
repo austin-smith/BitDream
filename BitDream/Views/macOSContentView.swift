@@ -13,11 +13,56 @@ struct macOSContentView: View {
     @State var sortBySelection: sortBy = .name
     @State var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
     @State private var sidebarSelection: SidebarSelection = .allDreams
+    @State private var columnVisibility = NavigationSplitViewVisibility.all
     
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             // Sidebar
-            macOSSidebar
+            List(selection: $sidebarSelection) {
+                Section("Library") {
+                    ForEach(SidebarSelection.allCases) { item in
+                        Label(item.rawValue, systemImage: item.icon)
+                            .tag(item)
+                    }
+                }
+                
+                Section("Servers") {
+                    ForEach(hosts, id: \.self) { host in
+                        Button {
+                            store.setHost(host: host)
+                            // Force refresh data when changing host
+                            updateList(store: store, update: { _ in })
+                        } label: {
+                            HStack {
+                                Label(host.name!, systemImage: "server.rack")
+                                Spacer()
+                                if host == store.host {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    
+                    Button {
+                        store.setup.toggle()
+                    } label: {
+                        Label("Add Server", systemImage: "plus")
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                Section("Settings") {
+                    Button {
+                        store.editServers.toggle()
+                    } label: {
+                        Label("Manage Servers", systemImage: "gearshape")
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .listStyle(SidebarListStyle())
         } content: {
             // Content (middle pane)
             VStack(spacing: 0) {
@@ -42,15 +87,16 @@ struct macOSContentView: View {
                             ForEach(store.torrents
                                     .filtered(by: filterBySelection)
                                     .sorted(by: sortBySelection), id: \.id) { torrent in
-                                NavigationLink {
-                                    TorrentDetail(store: store, viewContext: viewContext, torrent: binding(for: torrent, in: store))
-                                } label: {
+                                NavigationLink(value: torrent) {
                                     TorrentListRow(torrent: binding(for: torrent, in: store), store: store)
                                 }
                                 .tag(torrent)
                                 .listRowSeparator(.visible)
                             }
                         }
+                    }
+                    .navigationDestination(for: Torrent.self) { torrent in
+                        TorrentDetail(store: store, viewContext: viewContext, torrent: binding(for: torrent, in: store))
                     }
                     .listStyle(PlainListStyle())
                     .scrollContentBackground(.hidden)
@@ -59,25 +105,6 @@ struct macOSContentView: View {
             .navigationTitle("Dreams")
             .toolbar {
                 // Content toolbar items
-                ToolbarItem(placement: .automatic) {
-                    Menu {
-                        Button("All") {
-                            filterBySelection = TorrentStatusCalc.allCases
-                        }
-                        Button("Downloading") {
-                            filterBySelection = [.downloading]
-                        }
-                        Button("Complete") {
-                            filterBySelection = [.complete]
-                        }
-                        Button("Paused") {
-                            filterBySelection = [.paused]
-                        }
-                    } label: {
-                        Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
-                    }
-                }
-                
                 ToolbarItem(placement: .automatic) {
                     Menu {
                         ForEach(sortBy.allCases, id: \.self) { item in
@@ -90,6 +117,7 @@ struct macOSContentView: View {
                     } label: {
                         Label("Sort", systemImage: "arrow.up.arrow.down")
                     }
+                    .help("Sort torrents")
                 }
                 
                 // Add torrent button
@@ -99,6 +127,7 @@ struct macOSContentView: View {
                     }) {
                         Label("Add Torrent", systemImage: "plus")
                     }
+                    .help("Add a new torrent")
                 }
                 
                 // Pause all button
@@ -110,6 +139,7 @@ struct macOSContentView: View {
                     }) {
                         Label("Pause All", systemImage: "pause")
                     }
+                    .help("Pause all active torrents")
                 }
                 
                 // Resume all button
@@ -121,12 +151,12 @@ struct macOSContentView: View {
                     }) {
                         Label("Resume All", systemImage: "play")
                     }
+                    .help("Resume all paused torrents")
                 }
             }
             .refreshable {
                 updateList(store: store, update: {_ in})
             }
-            .frame(minWidth: 300)
         } detail: {
             // Detail (right pane)
             macOSDetail
@@ -148,79 +178,41 @@ struct macOSContentView: View {
             ErrorDialog(store: store)
                 .frame(width: 400, height: 400)
         }
-        .frame(minWidth: 900, minHeight: 600)
+        .onChange(of: sidebarSelection) { newValue in
+            // Update the filter
+            filterBySelection = newValue.filter
+            
+            // Only clear selection if the selected torrent isn't in the new filtered list
+            if let selectedTorrent = torrentSelection {
+                let filteredTorrents = store.torrents.filtered(by: newValue.filter)
+                let isSelectedTorrentInFilteredList = filteredTorrents.contains { $0.id == selectedTorrent.id }
+                
+                if !isSelectedTorrentInFilteredList {
+                    // Selected torrent is not in the new filtered list, clear selection
+                    torrentSelection = nil
+                }
+            }
+            
+            print("\(newValue.rawValue) selected")
+        }
         .onAppear {
             setupHost(hosts: hosts, store: store)
-            // Force refresh data when view appears
-            updateList(store: store, update: { _ in })
         }
     }
     
     // MARK: - macOS Views
     
-    private var macOSSidebar: some View {
-        List(selection: $sidebarSelection) {
-            Section("Library") {
-                ForEach(SidebarSelection.allCases) { item in
-                    Label(item.rawValue, systemImage: item.icon)
-                        .tag(item)
-                }
-            }
-            
-            Section("Servers") {
-                ForEach(hosts, id: \.self) { host in
-                    Button {
-                        store.setHost(host: host)
-                        // Force refresh data when changing host
-                        updateList(store: store, update: { _ in })
-                    } label: {
-                        HStack {
-                            Label(host.name!, systemImage: "server.rack")
-                            Spacer()
-                            if host == store.host {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.blue)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-                
-                Button {
-                    store.setup.toggle()
-                } label: {
-                    Label("Add Server", systemImage: "plus")
-                }
-                .buttonStyle(.plain)
-            }
-            
-            Section("Settings") {
-                Button {
-                    store.editServers.toggle()
-                } label: {
-                    Label("Manage Servers", systemImage: "gearshape")
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .onChange(of: sidebarSelection) { newValue in
-            filterBySelection = newValue.filter
-            print("\(newValue.rawValue) selected")
-        }
-        .listStyle(SidebarListStyle())
-        .frame(minWidth: 200)
-    }
-    
     private var macOSDetail: some View {
         Group {
             if let selectedTorrent = torrentSelection {
                 TorrentDetail(store: store, viewContext: viewContext, torrent: binding(for: selectedTorrent, in: store))
+                    .id(selectedTorrent.id)
             } else {
                 VStack {
                     Spacer()
-                    Image(systemName: "arrow.left")
-                        .font(.largeTitle)
-                        .foregroundColor(.gray)
+                    Text("💭")
+                        .font(.system(size: 40))
+                        .padding(.bottom, 8)
                     Text("Select a Dream")
                         .font(.title2)
                         .foregroundColor(.gray)
