@@ -80,7 +80,7 @@ struct macOSContentView: View {
                     // Torrent list
                     List(selection: $torrentSelection) {
                         if store.torrents.isEmpty {
-                            Text("No torrents available")
+                            Text("No dreams available")
                                 .foregroundColor(.gray)
                                 .padding()
                         } else {
@@ -165,7 +165,7 @@ struct macOSContentView: View {
             ServerDetail(store: store, viewContext: viewContext, hosts: hosts, isAddNew: true)
         }
         .sheet(isPresented: $store.editServers) {
-            ServerList(viewContext: viewContext, store: store)
+            ServerList(store: store, viewContext: viewContext)
         }
         .sheet(isPresented: $store.isShowingAddAlert) {
             AddTorrent(store: store)
@@ -213,7 +213,7 @@ struct macOSContentView: View {
                     Text("💭")
                         .font(.system(size: 40))
                         .padding(.bottom, 8)
-                    Text("Select a Dream")
+                    Text("select a dream")
                         .font(.title2)
                         .foregroundColor(.gray)
                     Spacer()

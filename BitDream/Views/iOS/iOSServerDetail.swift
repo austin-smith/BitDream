@@ -1,5 +1,5 @@
 //
-//  ServerDetail.swift
+//  iOSServerDetail.swift
 //  BitDream
 //
 //  Created by Austin Smith on 12/29/22.
@@ -10,7 +10,8 @@ import SwiftUI
 import KeychainAccess
 import CoreData
 
-struct ServerDetail: View {
+#if os(iOS)
+struct iOSServerDetail: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var store: Store
     var viewContext: NSManagedObjectContext
@@ -50,18 +51,14 @@ struct ServerDetail: View {
                         TextField("hostname", text: $hostInput)
                             .multilineTextAlignment(.trailing)
                             .autocorrectionDisabled()
-                            #if os(iOS)
-                            .autocapitalization(.none)
-                            #endif
+                            .textInputAutocapitalization(.never)
                     }
                     
                     HStack {
                         Text("Port")
                         TextField("port", text: $portInput)
                             .multilineTextAlignment(.trailing)
-                            #if os(iOS)
                             .keyboardType(.numberPad)
-                            #endif
                     }
                     
                     Toggle("Use SSL", isOn: $isSSL)
@@ -77,9 +74,8 @@ struct ServerDetail: View {
                         Text("Username")
                         TextField("username",text: $userInput)
                             .multilineTextAlignment(.trailing)
-                            #if os(iOS)
                             .autocapitalization(.none)
-                            #endif
+                            // .textInputAutocapitalization(.never)
                     }
                     
                     HStack {
@@ -91,9 +87,11 @@ struct ServerDetail: View {
                 
                 if (!isAddNew) {
                     Button(role: .destructive, action: {
-                            viewContext.delete(host!.self)
-                            try? viewContext.save()
-                            dismiss()
+                        if let host = host {
+                            deleteServer(host: host, viewContext: viewContext) {
+                                dismiss()
+                            }
+                        }
                     }, label: {
                         HStack{
                             Image(systemName: "trash")
@@ -106,75 +104,60 @@ struct ServerDetail: View {
             .onAppear {
                 if(!isAddNew) {
                     if let host = host {
-                        nameInput = host.name ?? ""
-                        isDefault = host.isDefault
-                        hostInput = host.server ?? ""
-                        portInput = String(host.port)
-                        isSSL = host.isSSL
-                        userInput = host.username ?? ""
-                        passInput = keychain[host.name!] ?? ""
+                        loadServerData(host: host, keychain: keychain) { name, def, hostIn, port, ssl, user, pass in
+                            nameInput = name
+                            isDefault = def
+                            hostInput = hostIn
+                            portInput = port
+                            isSSL = ssl
+                            userInput = user
+                            passInput = pass
+                        }
                     }
                 }
             }
-            #if os(iOS)
             .navigationBarTitle(Text(isAddNew ? "Add Server" : "Edit Server"), displayMode: .inline)
-            #else
-            .padding()
-            .navigationTitle(Text(isAddNew ? "Add Server" : "Edit Server"))
-            #endif
             .toolbar {
                 if (isAddNew) {
                     ToolbarItem (placement: .automatic) {
                         Button("Save") {
-                            // Save host
-                            let newHost = Host(context: viewContext)
-                            newHost.name = nameInput
-                            newHost.server = hostInput
-                            newHost.port = Int16(portInput)!
-                            newHost.username = userInput
-                            newHost.isDefault = isDefault
-                            newHost.isSSL = isSSL
-                            
-                            try? viewContext.save()
-                            
-                            // Save password to keychain
-                            keychain[nameInput] = passInput
-                            
-                            // if there is no host currently set, then set it to the one being created
-                            if (store.host == nil) {
-                                store.setHost(host: newHost)
+                            saveNewServer(
+                                nameInput: nameInput,
+                                hostInput: hostInput,
+                                portInput: portInput,
+                                userInput: userInput,
+                                passInput: passInput,
+                                isDefault: isDefault,
+                                isSSL: isSSL,
+                                viewContext: viewContext,
+                                store: store,
+                                keychain: keychain
+                            ) {
+                                dismiss()
                             }
-                            
-                            dismiss()
                         }
                     }
                 }
                 else {
                     ToolbarItem (placement: .automatic) {
                         Button("Save") {
-                            // Save host
-                            host!.name = nameInput
-                            host!.isDefault = isDefault
-                            host!.server = hostInput
-                            host!.port = Int16(portInput)!
-                            host!.username = userInput
-                            host!.isSSL = isSSL
-                            
-                            // If default is being enabled then ensure to disable it on any current default server
-                            if (isDefault) {
-                                hosts.forEach { h in
-                                    if (h.isDefault && h.id != host!.id) {
-                                        h.isDefault.toggle()
-                                    }
+                            if let host = host {
+                                updateExistingServer(
+                                    host: host,
+                                    nameInput: nameInput,
+                                    hostInput: hostInput,
+                                    portInput: portInput,
+                                    userInput: userInput,
+                                    passInput: passInput,
+                                    isDefault: isDefault,
+                                    isSSL: isSSL,
+                                    viewContext: viewContext,
+                                    hosts: hosts,
+                                    keychain: keychain
+                                ) {
+                                    dismiss()
                                 }
                             }
-                            
-                            try? viewContext.save()
-                            
-                            // Save password to keychain
-                            keychain[nameInput] = passInput
-                            
-                            dismiss()
                         }
                     }
                 }
@@ -182,3 +165,25 @@ struct ServerDetail: View {
         }
     }
 }
+#else
+// Empty struct for macOS to reference - this won't be compiled on iOS but provides the type
+struct iOSServerDetail: View {
+    @ObservedObject var store: Store
+    var viewContext: NSManagedObjectContext
+    var hosts: FetchedResults<Host>
+    @State var host: Host?
+    var isAddNew: Bool
+    
+    init(store: Store, viewContext: NSManagedObjectContext, hosts: FetchedResults<Host>, host: Host? = nil, isAddNew: Bool) {
+        self.store = store
+        self.viewContext = viewContext
+        self.hosts = hosts
+        self.host = host
+        self.isAddNew = isAddNew
+    }
+    
+    var body: some View {
+        EmptyView()
+    }
+}
+#endif 

@@ -48,14 +48,15 @@ struct iOSContentView: View {
             if let selectedTorrent = torrentSelection {
                 TorrentDetail(store: store, viewContext: viewContext, torrent: binding(for: selectedTorrent, in: store))
             } else {
-                Text("No Dream selected...")
+                Text("select a dream")
             }
         }
         .sheet(isPresented: $store.setup) {
             ServerDetail(store: store, viewContext: viewContext, hosts: hosts, isAddNew: true)
         }
         .sheet(isPresented: $store.editServers) {
-            ServerList(viewContext: viewContext, store: store)
+            ServerList(store: store, viewContext: viewContext)
+                .toolbar {}
         }
         .sheet(isPresented: $store.isShowingAddAlert) {
             AddTorrent(store: store)
@@ -75,7 +76,7 @@ struct iOSContentView: View {
     private var torrentRows: some View {
         Group {
             if store.torrents.isEmpty {
-                Text("No torrents available")
+                Text("No dreams available")
                     .foregroundColor(.gray)
                     .padding()
             } else {
