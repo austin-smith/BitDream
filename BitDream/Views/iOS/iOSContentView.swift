@@ -18,8 +18,15 @@ struct iOSContentView: View {
 
     private var keychain = Keychain(service: "crapshack.BitDream")
     
-    @State var torrentSelection: Torrent?
-    @State var sortBySelection: sortBy = .name
+    // Store the selected torrent ID instead of the torrent object
+    @State private var selectedTorrentId: Int? = nil
+    
+    // Computed property to get the selected torrent from the ID
+    private var torrentSelection: Binding<Torrent?> {
+        createTorrentSelectionBinding(selectedId: $selectedTorrentId, in: store)
+    }
+    
+    @State var sortBySelection: sortBy = UserDefaults.standard.sortBySelection
     @State var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
     
     var body: some View {
@@ -27,7 +34,7 @@ struct iOSContentView: View {
             VStack(spacing: 0) {
                 StatsHeaderView(store: store)
                 
-                List(selection: $torrentSelection) {
+                List(selection: torrentSelection) {
                     torrentRows
                 }
                 .listStyle(PlainListStyle())
@@ -44,11 +51,14 @@ struct iOSContentView: View {
             .onAppear {
                 setupHost(hosts: hosts, store: store)
             }
+            .onChange(of: sortBySelection) { oldValue, newValue in
+                UserDefaults.standard.sortBySelection = newValue
+            }
         } detail: {
-            if let selectedTorrent = torrentSelection {
+            if let selectedTorrent = torrentSelection.wrappedValue {
                 TorrentDetail(store: store, viewContext: viewContext, torrent: binding(for: selectedTorrent, in: store))
             } else {
-                Text("select a dream")
+                Text("Select a Dream")
             }
         }
         .sheet(isPresented: $store.setup) {
@@ -60,10 +70,6 @@ struct iOSContentView: View {
         }
         .sheet(isPresented: $store.isShowingAddAlert) {
             AddTorrent(store: store)
-        }
-        .sheet(isPresented: $store.isShowingTransferFiles) {
-            FileSelectDialog(store: store)
-                .frame(width: 400, height: 500)
         }
         .sheet(isPresented: $store.isError) {
             ErrorDialog(store: store)
@@ -89,6 +95,7 @@ struct iOSContentView: View {
                         TorrentListRow(torrent: binding(for: torrent, in: store), store: store)
                     }
                     .tag(torrent)
+                    .id(torrent.id) // Add stable ID for each row
                     .listRowSeparator(.visible)
                 }
             }

@@ -18,7 +18,6 @@
 		4B1DADFE295E6F390037E9FB /* TransmissionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADFD295E6F390037E9FB /* TransmissionModels.swift */; };
 		4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */; };
 		4B1DAE02295E6FA30037E9FB /* AddTorrent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE01295E6FA30037E9FB /* AddTorrent.swift */; };
-		4B1DAE04295E6FBC0037E9FB /* FileSelectDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE03295E6FBC0037E9FB /* FileSelectDialog.swift */; };
 		4B1DAE06295E6FC80037E9FB /* TorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE05295E6FC80037E9FB /* TorrentDetail.swift */; };
 		4B1DAE08295E6FD50037E9FB /* TorrentListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE07295E6FD50037E9FB /* TorrentListRow.swift */; };
 		4B1DAE0A295E6FE10037E9FB /* ServerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */; };
@@ -30,6 +29,9 @@
 		4B642D6D2D7E151A003CEADC /* iOSServerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B642D6A2D7E151A003CEADC /* iOSServerDetail.swift */; };
 		4B642D792D7E1EED003CEADC /* macOSServerList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B642D782D7E1EED003CEADC /* macOSServerList.swift */; };
 		4B642D7B2D7E1EF6003CEADC /* iOSServerList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B642D7A2D7E1EF6003CEADC /* iOSServerList.swift */; };
+		4B9CAC542D7E833A0094CD03 /* macOSAddTorrent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */; };
+		4B9CAC562D7E83460094CD03 /* iOSAddTorrent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9CAC552D7E83460094CD03 /* iOSAddTorrent.swift */; };
+		4B9CAC5D2D7F02FA0094CD03 /* AppBadgeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */; };
 		4BC5C2AA2D7D20B500D80AB4 /* iOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */; };
 		4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */; };
 		4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */; };
@@ -49,7 +51,6 @@
 		4B1DADFD295E6F390037E9FB /* TransmissionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionModels.swift; sourceTree = "<group>"; };
 		4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionFunctions.swift; sourceTree = "<group>"; };
 		4B1DAE01295E6FA30037E9FB /* AddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTorrent.swift; sourceTree = "<group>"; };
-		4B1DAE03295E6FBC0037E9FB /* FileSelectDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSelectDialog.swift; sourceTree = "<group>"; };
 		4B1DAE05295E6FC80037E9FB /* TorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentDetail.swift; sourceTree = "<group>"; };
 		4B1DAE07295E6FD50037E9FB /* TorrentListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentListRow.swift; sourceTree = "<group>"; };
 		4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerDetail.swift; sourceTree = "<group>"; };
@@ -61,6 +62,9 @@
 		4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSServerDetail.swift; sourceTree = "<group>"; };
 		4B642D782D7E1EED003CEADC /* macOSServerList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSServerList.swift; sourceTree = "<group>"; };
 		4B642D7A2D7E1EF6003CEADC /* iOSServerList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSServerList.swift; sourceTree = "<group>"; };
+		4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSAddTorrent.swift; sourceTree = "<group>"; };
+		4B9CAC552D7E83460094CD03 /* iOSAddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSAddTorrent.swift; sourceTree = "<group>"; };
+		4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBadgeManager.swift; sourceTree = "<group>"; };
 		4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSContentView.swift; sourceTree = "<group>"; };
 		4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentView.swift; sourceTree = "<group>"; };
 		4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentDetail.swift; sourceTree = "<group>"; };
@@ -98,10 +102,11 @@
 		4B1DADDD295E6C440037E9FB /* BitDream */ = {
 			isa = PBXGroup;
 			children = (
+				4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */,
 				4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */,
+				4B1DAE11295E72040037E9FB /* FileAccess.swift */,
 				4B1DADE0295E6C440037E9FB /* Persistence.swift */,
 				4B1DAE0F295E702B0037E9FB /* Store.swift */,
-				4B1DAE11295E72040037E9FB /* FileAccess.swift */,
 				4B1DADF8295E6EBA0037E9FB /* Utilities.swift */,
 				4B1DADFA295E6EE10037E9FB /* Views */,
 				4B1DADFC295E6F0F0037E9FB /* Transmission */,
@@ -124,11 +129,9 @@
 		4B1DADFA295E6EE10037E9FB /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				4B642D772D7E1D6B003CEADC /* Shared */,
 				4B642D752D7E1D4C003CEADC /* iOS */,
 				4B642D762D7E1D60003CEADC /* macOS */,
-				4B642D772D7E1D6B003CEADC /* Shared */,
-				4B1DAE01295E6FA30037E9FB /* AddTorrent.swift */,
-				4B1DAE03295E6FBC0037E9FB /* FileSelectDialog.swift */,
 				4B1DAE07295E6FD50037E9FB /* TorrentListRow.swift */,
 			);
 			path = Views;
@@ -146,6 +149,7 @@
 		4B642D752D7E1D4C003CEADC /* iOS */ = {
 			isa = PBXGroup;
 			children = (
+				4B9CAC552D7E83460094CD03 /* iOSAddTorrent.swift */,
 				4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */,
 				4B642D6A2D7E151A003CEADC /* iOSServerDetail.swift */,
 				4B642D7A2D7E1EF6003CEADC /* iOSServerList.swift */,
@@ -157,6 +161,7 @@
 		4B642D762D7E1D60003CEADC /* macOS */ = {
 			isa = PBXGroup;
 			children = (
+				4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */,
 				4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */,
 				4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */,
 				4B642D782D7E1EED003CEADC /* macOSServerList.swift */,
@@ -168,6 +173,7 @@
 		4B642D772D7E1D6B003CEADC /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				4B1DAE01295E6FA30037E9FB /* AddTorrent.swift */,
 				4B1DADE5295E6C440037E9FB /* ContentView.swift */,
 				4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */,
 				4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */,
@@ -253,30 +259,32 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4B1DAE10295E702B0037E9FB /* Store.swift in Sources */,
 				4B1DADE4295E6C440037E9FB /* BitDream.xcdatamodeld in Sources */,
-				4B1DAE06295E6FC80037E9FB /* TorrentDetail.swift in Sources */,
 				4B1DADDF295E6C440037E9FB /* BitDreamApp.swift in Sources */,
-				4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */,
-				4BC5C2B42D7D415100D80AB4 /* iOSTorrentDetail.swift in Sources */,
-				4B1DAE0A295E6FE10037E9FB /* ServerDetail.swift in Sources */,
-				4B1DAE02295E6FA30037E9FB /* AddTorrent.swift in Sources */,
-				4B1DADFE295E6F390037E9FB /* TransmissionModels.swift in Sources */,
-				4B1DAE0E295E6FFB0037E9FB /* ErrorDialog.swift in Sources */,
-				4B642D6C2D7E151A003CEADC /* macOSServerDetail.swift in Sources */,
-				4B642D6D2D7E151A003CEADC /* iOSServerDetail.swift in Sources */,
-				4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */,
-				4B1DADE6295E6C440037E9FB /* ContentView.swift in Sources */,
-				4B642D792D7E1EED003CEADC /* macOSServerList.swift in Sources */,
-				4B1DADF9295E6EBA0037E9FB /* Utilities.swift in Sources */,
-				4B1DAE0C295E6FEF0037E9FB /* ServerList.swift in Sources */,
-				4B1DADE1295E6C440037E9FB /* Persistence.swift in Sources */,
-				4BC5C2AA2D7D20B500D80AB4 /* iOSContentView.swift in Sources */,
-				4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */,
-				4B642D7B2D7E1EF6003CEADC /* iOSServerList.swift in Sources */,
 				4B1DAE12295E72040037E9FB /* FileAccess.swift in Sources */,
+				4B1DADE1295E6C440037E9FB /* Persistence.swift in Sources */,
+				4B1DAE10295E702B0037E9FB /* Store.swift in Sources */,
+				4B1DADF9295E6EBA0037E9FB /* Utilities.swift in Sources */,
+				4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */,
+				4B1DADFE295E6F390037E9FB /* TransmissionModels.swift in Sources */,
 				4B1DAE08295E6FD50037E9FB /* TorrentListRow.swift in Sources */,
-				4B1DAE04295E6FBC0037E9FB /* FileSelectDialog.swift in Sources */,
+				4B1DAE02295E6FA30037E9FB /* AddTorrent.swift in Sources */,
+				4B1DADE6295E6C440037E9FB /* ContentView.swift in Sources */,
+				4B1DAE0E295E6FFB0037E9FB /* ErrorDialog.swift in Sources */,
+				4B1DAE0A295E6FE10037E9FB /* ServerDetail.swift in Sources */,
+				4B1DAE0C295E6FEF0037E9FB /* ServerList.swift in Sources */,
+				4B1DAE06295E6FC80037E9FB /* TorrentDetail.swift in Sources */,
+				4B9CAC562D7E83460094CD03 /* iOSAddTorrent.swift in Sources */,
+				4BC5C2AA2D7D20B500D80AB4 /* iOSContentView.swift in Sources */,
+				4B642D6D2D7E151A003CEADC /* iOSServerDetail.swift in Sources */,
+				4B9CAC5D2D7F02FA0094CD03 /* AppBadgeManager.swift in Sources */,
+				4B642D7B2D7E1EF6003CEADC /* iOSServerList.swift in Sources */,
+				4BC5C2B42D7D415100D80AB4 /* iOSTorrentDetail.swift in Sources */,
+				4B9CAC542D7E833A0094CD03 /* macOSAddTorrent.swift in Sources */,
+				4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */,
+				4B642D6C2D7E151A003CEADC /* macOSServerDetail.swift in Sources */,
+				4B642D792D7E1EED003CEADC /* macOSServerList.swift in Sources */,
+				4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -423,10 +431,10 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 13.1;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -465,10 +473,10 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 13.1;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream;
 				PRODUCT_NAME = "$(TARGET_NAME)";

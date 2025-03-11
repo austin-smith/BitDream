@@ -85,8 +85,14 @@ struct TorrentDetailHeaderView: View {
         VStack {
             Divider()
             HStack {
-                Text(String("▼ \(byteCountFormatter.string(fromByteCount: torrent.rateDownload))/s"))
-                Text(String("▲ \(byteCountFormatter.string(fromByteCount: torrent.rateUpload))/s"))
+                HStack(spacing: 2) {
+                    Image(systemName: "arrow.down")
+                    Text("\(byteCountFormatter.string(fromByteCount: torrent.rateDownload))/s")
+                }
+                HStack(spacing: 2) {
+                    Image(systemName: "arrow.up")
+                    Text("\(byteCountFormatter.string(fromByteCount: torrent.rateUpload))/s")
+                }
             }
             .foregroundColor(.secondary)
             .font(.subheadline)
@@ -137,7 +143,7 @@ struct TorrentFileDetail: View {
                 HStack {
                     Text(progressText)
                         .font(.footnote)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                     Spacer()
                 }
             }

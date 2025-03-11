@@ -183,9 +183,18 @@ public func addTorrent(fileUrl: String, saveLocation: String, auth: Transmission
             return onAdd((TransmissionResponse.unauthorized, 0))
         case 200?:
             let response = try? JSONDecoder().decode(TorrentAddResponse.self, from: data!)
-            let transferId: Int = response!.arguments["torrent-added"]!.id
             
-            return onAdd((TransmissionResponse.success, transferId))
+            // Safely unwrap the response and extract the transfer ID
+            if let response = response, 
+               let torrentAdded = response.arguments["torrent-added"] {
+                return onAdd((TransmissionResponse.success, torrentAdded.id))
+            } else {
+                // If we can't get the transfer ID, print the response for debugging
+                if let responseData = data {
+                    print("Unexpected response format: \(String(data: responseData, encoding: .utf8) ?? "Unable to decode response")")
+                }
+                return onAdd((TransmissionResponse.failed, 0))
+            }
         default:
             return onAdd((TransmissionResponse.failed, 0))
         }
@@ -215,11 +224,15 @@ struct TorrentFilesResponse: Codable {
     let arguments: TorrentFilesResponseTorrents
 }
 
+/// Gets the list of files in a torrent
+/// - Parameter transferId: The ID of the torrent to get files for
+/// - Parameter info: A tuple containing the server config and auth info
+/// - Parameter onReceived: A callback that receives the list of files
 public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, auth: TransmissionAuth), onReceived: @escaping ([TorrentFile])->(Void)) {
     url = info.config
     url?.path = "/transmission/rpc"
     
-    let request = TorrentFilesRequest(
+    let requestBody = TorrentFilesRequest(
         method: "torrent-get",
         arguments: TorrentFilesRequestArgs(
             fields: ["files"],
@@ -227,13 +240,13 @@ public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, 
         )
     )
     
-    let req = buildRequest(requestBody: request, auth: info.auth)
+    let req = buildRequest(requestBody: requestBody, auth: info.auth)
     
-    // Send the request
     let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
         if error != nil {
             return onReceived([])
         }
+        
         let httpResp = resp as? HTTPURLResponse
         switch httpResp?.statusCode {
         case 409?: // If we get a 409, save the session token and try again
@@ -241,13 +254,14 @@ public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, 
             getTorrentFiles(transferId: transferId, info: info, onReceived: onReceived)
             return
         case 200?:
-            print(String(decoding: data!, as: UTF8.self))
             let response = try? JSONDecoder().decode(TorrentFilesResponse.self, from: data!)
-            let torrents = response?.arguments.torrents[0].files
-            
-            return onReceived(torrents!)
+            if let files = response?.arguments.torrents.first?.files {
+                return onReceived(files)
+            } else {
+                return onReceived([])
+            }
         default:
-            return
+            return onReceived([])
         }
     }
     task.resume()
@@ -485,44 +499,6 @@ public func updateTorrentPriority(torrent: Torrent, priority: TorrentPriority, i
         case 409?: // If we get a 409, save the token and try again
             authorize(httpResp: httpResp, ssl: (info.config.scheme == "https"))
             updateTorrentPriority(torrent: torrent, priority: priority, info: info, onComplete: onComplete)
-            return
-        case 401?:
-            return onComplete(TransmissionResponse.unauthorized)
-        case 200?:
-            return onComplete(TransmissionResponse.success)
-        default:
-            return onComplete(TransmissionResponse.failed)
-        }
-    }
-    task.resume()
-}
-
-/// Tells transmission to only download the selected files
-public func setTransferFiles(transferId: Int, files: [Int], info: (config: TransmissionConfig, auth: TransmissionAuth), onComplete: @escaping (TransmissionResponse) -> Void) {
-    url = info.config
-    url?.path = "/transmission/rpc"
-    
-    let requestBody = TorrentActionRequest(
-        method: "torrent-set",
-        arguments: [
-            "ids": [transferId],
-            "files-unwanted": files
-        ]
-    )
-    
-    let req = buildRequest(requestBody: requestBody, auth: info.auth)
-    
-    let task = URLSession.shared.dataTask(with: req) { (data, resp, err) in
-        if err != nil {
-            onComplete(TransmissionResponse.configError)
-        }
-        
-        let httpResp = resp as? HTTPURLResponse
-        // Call `onAdd` with the status code
-        switch httpResp?.statusCode {
-        case 409?: // If we get a 409, save the token and try again
-            authorize(httpResp: httpResp, ssl: (info.config.scheme == "https"))
-            setTransferFiles(transferId: transferId, files: files, info: info, onComplete: onComplete)
             return
         case 401?:
             return onComplete(TransmissionResponse.unauthorized)

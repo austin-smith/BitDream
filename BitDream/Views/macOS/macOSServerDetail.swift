@@ -6,9 +6,9 @@
 //
 
 import Foundation
-import SwiftUI
-import KeychainAccess
 import CoreData
+import KeychainAccess
+import SwiftUI
 
 #if os(macOS)
 struct macOSServerDetail: View {

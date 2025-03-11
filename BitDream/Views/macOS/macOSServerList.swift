@@ -6,9 +6,9 @@
 //
 
 import Foundation
-import SwiftUI
-import KeychainAccess
 import CoreData
+import KeychainAccess
+import SwiftUI
 
 #if os(macOS)
 struct macOSServerList: View {
@@ -60,7 +60,7 @@ struct macOSServerList: View {
                                         Text(host.name ?? "Unnamed Server")
                                             .font(.headline)
                                         
-                                        Text("Transmission Server")
+                                        Text("\(host.server ?? "Unknown server"):\(String(host.port))")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                     }

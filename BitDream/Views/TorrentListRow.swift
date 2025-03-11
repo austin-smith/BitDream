@@ -25,11 +25,10 @@ struct TorrentListRow: View {
                 .lineLimit(1)
 //                    .foregroundColor(fontColor)
             
-            Text(pretext)
+            statusView
                 .font(.custom("sub", size: 10))
-                .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
             
             // Logic here is kind of funky, but we are going to fill up the entire progress bar if the
             // torrent is still retrieving metadata (as the bar will be colored red)
@@ -40,7 +39,7 @@ struct TorrentListRow: View {
                 .font(.custom("sub", size: 10))
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
         }
         .contentShape(Rectangle())
         .padding([.top, .bottom, .leading, .trailing], 10)
@@ -117,17 +116,39 @@ struct TorrentListRow: View {
         )
     }
     
-    private var pretext: String {
+    // New computed property for the status view with SF Symbols
+    private var statusView: some View {
         let rateDownloadFormatted = byteCountFormatter.string(fromByteCount: torrent.rateDownload)
         let rateUploadFormatted = byteCountFormatter.string(fromByteCount: torrent.rateUpload)
         
-        switch torrent.statusCalc {
-        case TorrentStatusCalc.downloading, TorrentStatusCalc.retrievingMetadata:
-            return "\(torrent.statusCalc.rawValue) from \(torrent.peersSendingToUs) of \(torrent.peersConnected) peers (▼\(rateDownloadFormatted)/s  ▲\(rateUploadFormatted)/s)"
-        case TorrentStatusCalc.seeding:
-            return "\(torrent.statusCalc.rawValue) to \(torrent.peersGettingFromUs) of \(torrent.peersConnected) peers (▲\(rateUploadFormatted)/s)"
-        default:
-            return torrent.statusCalc.rawValue
+        return Group {
+            switch torrent.statusCalc {
+            case TorrentStatusCalc.downloading, TorrentStatusCalc.retrievingMetadata:
+                HStack(spacing: 4) {
+                    Text("\(torrent.statusCalc.rawValue) from \(torrent.peersSendingToUs) of \(torrent.peersConnected) peers")
+                    HStack(spacing: 2) {
+                        Image(systemName: "arrow.down")
+                            .font(.system(size: 8))
+                        Text("\(rateDownloadFormatted)/s")
+                    }
+                    HStack(spacing: 2) {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 8))
+                        Text("\(rateUploadFormatted)/s")
+                    }
+                }
+            case TorrentStatusCalc.seeding:
+                HStack(spacing: 4) {
+                    Text("\(torrent.statusCalc.rawValue) to \(torrent.peersGettingFromUs) of \(torrent.peersConnected) peers")
+                    HStack(spacing: 2) {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 8))
+                        Text("\(rateUploadFormatted)/s")
+                    }
+                }
+            default:
+                Text(torrent.statusCalc.rawValue)
+            }
         }
     }
     

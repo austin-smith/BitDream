@@ -5,10 +5,53 @@
 //  Created by Austin Smith on 12/29/22.
 //
 
-import SwiftUI
 import Foundation
-import KeychainAccess
 import CoreData
+import KeychainAccess
+import SwiftUI
+
+// MARK: - UserDefaults Extension for View State
+extension UserDefaults {
+    private enum Keys {
+        static let sidebarVisibility = "sidebarVisibility"
+        static let inspectorVisibility = "inspectorVisibility"
+        static let sortBySelection = "sortBySelection"
+    }
+    
+    static let viewStateDefaults: [String: Any] = [
+        Keys.sidebarVisibility: true, // true = show sidebar (.all), false = hide sidebar (.detailOnly)
+        Keys.inspectorVisibility: true,
+        Keys.sortBySelection: "name" // Default sort by name
+    ]
+    
+    static func registerViewStateDefaults() {
+        UserDefaults.standard.register(defaults: viewStateDefaults)
+    }
+    
+    var sidebarVisibility: NavigationSplitViewVisibility {
+        get {
+            return bool(forKey: Keys.sidebarVisibility) ? .all : .detailOnly
+        }
+        set {
+            set(newValue == .all, forKey: Keys.sidebarVisibility)
+        }
+    }
+    
+    var inspectorVisibility: Bool {
+        get { bool(forKey: Keys.inspectorVisibility) }
+        set { set(newValue, forKey: Keys.inspectorVisibility) }
+    }
+    
+    var sortBySelection: sortBy {
+        get {
+            let rawValue = string(forKey: Keys.sortBySelection) ?? "name"
+            return sortBy(rawValue: rawValue) ?? .name
+        }
+        set {
+            set(newValue.rawValue, forKey: Keys.sortBySelection)
+        }
+    }
+}
 
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -45,6 +88,21 @@ func binding(for torrent: Torrent, in store: Store) -> Binding<Torrent> {
     )
 }
 
+// Helper function to create an ID-based selection binding
+func createTorrentSelectionBinding(selectedId: Binding<Int?>, in store: Store) -> Binding<Torrent?> {
+    return Binding<Torrent?>(
+        get: {
+            if let id = selectedId.wrappedValue {
+                return store.torrents.first { $0.id == id }
+            }
+            return nil
+        },
+        set: { newValue in
+            selectedId.wrappedValue = newValue?.id
+        }
+    )
+}
+
 // Helper function to set up the host
 func setupHost(hosts: FetchedResults<Host>, store: Store) {
     hosts.forEach { h in
@@ -72,8 +130,14 @@ struct StatsHeaderView: View {
             HStack {
                 Text(String("\(store.sessionStats?.activeTorrentCount ?? 0) active dreams"))
                 Spacer()
-                Text(String("▼ \(byteCountFormatter.string(fromByteCount: store.sessionStats?.downloadSpeed ?? 0))/s"))
-                Text(String("▲ \(byteCountFormatter.string(fromByteCount: store.sessionStats?.uploadSpeed ?? 0))/s"))
+                HStack(spacing: 2) {
+                    Image(systemName: "arrow.down")
+                    Text("\(byteCountFormatter.string(fromByteCount: store.sessionStats?.downloadSpeed ?? 0))/s")
+                }
+                HStack(spacing: 2) {
+                    Image(systemName: "arrow.up")
+                    Text("\(byteCountFormatter.string(fromByteCount: store.sessionStats?.uploadSpeed ?? 0))/s")
+                }
             }
             .font(.subheadline)
             .padding([.leading, .trailing])
@@ -91,6 +155,7 @@ enum SidebarSelection: String, CaseIterable, Identifiable {
     case seeding = "Seeding"
     case completed = "Completed"
     case paused = "Paused"
+    case stalled = "Stalled"
     
     var id: String { self.rawValue }
     
@@ -101,6 +166,7 @@ enum SidebarSelection: String, CaseIterable, Identifiable {
         case .seeding: return "arrow.up.circle"
         case .completed: return "checkmark.circle"
         case .paused: return "pause.circle"
+        case .stalled: return "exclamationmark.circle"
         }
     }
     
@@ -111,6 +177,7 @@ enum SidebarSelection: String, CaseIterable, Identifiable {
         case .seeding: return [.seeding]
         case .completed: return [.complete]
         case .paused: return [.paused]
+        case .stalled: return [.stalled]
         }
     }
 }
@@ -131,4 +198,16 @@ extension Array where Element == Torrent {
     func sorted(by sortSelection: sortBy) -> [Torrent] {
         return sortTorrents(self, sortBy: sortSelection)
     }
-} 
+}
+
+#if os(macOS)
+// Helper function to update the app badge on macOS
+func updateMacOSAppBadge(count: Int) {
+    NSApplication.shared.dockTile.badgeLabel = count > 0 ? "\(count)" : ""
+}
+
+// Helper function to get completed torrents count
+func getCompletedTorrentsCount(in store: Store) -> Int {
+    return store.torrents.filter { $0.statusCalc == .complete }.count
+}
+#endif 

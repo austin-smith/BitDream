@@ -1,7 +1,7 @@
 import Foundation
-import SwiftUI
-import KeychainAccess
 import CoreData
+import KeychainAccess
+import SwiftUI
 
 #if os(macOS)
 struct macOSTorrentDetail: View {
@@ -23,8 +23,14 @@ struct macOSTorrentDetail: View {
             VStack(alignment: .leading, spacing: 16) {
                 // Header with transfer rates
                 HStack(spacing: 12) {
-                    Text(String("▼ \(byteCountFormatter.string(fromByteCount: torrent.rateDownload))/s"))
-                    Text(String("▲ \(byteCountFormatter.string(fromByteCount: torrent.rateUpload))/s"))
+                    HStack(spacing: 2) {
+                        Image(systemName: "arrow.down")
+                        Text("\(byteCountFormatter.string(fromByteCount: torrent.rateDownload))/s")
+                    }
+                    HStack(spacing: 2) {
+                        Image(systemName: "arrow.up")
+                        Text("\(byteCountFormatter.string(fromByteCount: torrent.rateUpload))/s")
+                    }
                     Spacer()
                 }
                 .font(.system(size: 13))

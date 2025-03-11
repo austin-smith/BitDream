@@ -25,15 +25,11 @@ class Store: NSObject, ObservableObject {
     
     @Published var isShowingAddAlert: Bool = false
     @Published var isShowingServerAlert: Bool = false
-    @Published var isShowingTransferFiles: Bool = false
-    @Published var transferToSetFiles: Int = 0
     @Published var editServers: Bool = false
     
     @Published var isError: Bool = false
     @Published var debugBrief: String = ""
     @Published var debugMessage: String = ""
-    
-    @Published var addTransferFilesList: [TorrentFile] = []
     
     var timer: Timer = Timer()
     
