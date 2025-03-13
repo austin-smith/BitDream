@@ -26,6 +26,7 @@ class Store: NSObject, ObservableObject {
     @Published var isShowingAddAlert: Bool = false
     @Published var isShowingServerAlert: Bool = false
     @Published var editServers: Bool = false
+    @Published var showSettings: Bool = false
     
     @Published var isError: Bool = false
     @Published var debugBrief: String = ""

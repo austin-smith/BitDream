@@ -93,6 +93,16 @@ struct iOSTorrentDetail: View {
                         }
                     }
                     
+                    // Add Wave Progress View
+                    Section(header: Text("Download Progress")) {
+                        WaveProgressView(progress: torrent.percentDone, 
+                                        color: statusColor(for: torrent), 
+                                        secondaryColor: statusColor(for: torrent).opacity(0.7))
+                            .frame(height: 120)
+                            .padding(.vertical, 8)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    }
+                    
                     Button(role: .destructive, action: {
                         //viewContext.delete(torrent.self)
                         //try? viewContext.save()

@@ -37,7 +37,7 @@ struct macOSContentView: View {
         updateMacOSAppBadge(count: completedTorrentsCount)
     }
     
-    var body: some View {
+    var body: some View {       
         NavigationSplitView(columnVisibility: $columnVisibility) {
             // Sidebar
             List(selection: $sidebarSelection) {
@@ -83,6 +83,13 @@ struct macOSContentView: View {
                         Label("Manage Servers", systemImage: "gearshape")
                     }
                     .buttonStyle(.plain)
+                    
+                    Button {
+                        store.showSettings.toggle()
+                    } label: {
+                        Label("Settings", systemImage: "gear")
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             .listStyle(SidebarListStyle())
@@ -99,9 +106,11 @@ struct macOSContentView: View {
                                 .foregroundColor(.gray)
                                 .padding()
                         } else {
-                            ForEach(store.torrents
-                                    .filtered(by: filterBySelection)
-                                    .sorted(by: sortBySelection), id: \.id) { torrent in
+                            // Break up the complex expression into steps
+                            let filteredTorrents = store.torrents.filtered(by: filterBySelection)
+                            let sortedTorrents = filteredTorrents.sorted(by: sortBySelection)
+                            
+                            ForEach(sortedTorrents, id: \.id) { torrent in
                                 NavigationLink(value: torrent) {
                                     TorrentListRow(torrent: binding(for: torrent, in: store), store: store)
                                 }
@@ -185,7 +194,7 @@ struct macOSContentView: View {
             }
             .inspector(isPresented: $isInspectorVisible) {
                 macOSDetail
-                .inspectorColumnWidth(min: 350, ideal: 400, max: 500)
+                    .inspectorColumnWidth(min: 350, ideal: 400, max: 500)
             }
         }
         .sheet(isPresented: $store.setup) {
@@ -201,12 +210,18 @@ struct macOSContentView: View {
             ErrorDialog(store: store)
                 .frame(width: 400, height: 400)
         }
+        .sheet(isPresented: $store.showSettings) {
+            SettingsView()
+                .frame(width: 400)
+                .fixedSize()
+        }
         .onChange(of: sidebarSelection) { oldValue, newValue in
             // Update the filter
             filterBySelection = newValue.filter
             
             // Only clear selection if the selected torrent isn't in the new filtered list
             if let selectedTorrent = torrentSelection.wrappedValue {
+                // Break up the complex expression
                 let filteredTorrents = store.torrents.filtered(by: newValue.filter)
                 let isSelectedTorrentInFilteredList = filteredTorrents.contains { $0.id == selectedTorrent.id }
                 

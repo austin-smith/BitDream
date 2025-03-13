@@ -61,7 +61,6 @@ func addTorrentAction(
             DispatchQueue.main.async {
                 if response.response == TransmissionResponse.success {
                     store.isShowingAddAlert.toggle()
-                    // Just close the add torrent dialog
                 } else {
                     handleAddTorrentError("Failed to add torrent: \(response.response)", errorMessage: errorMessage, showingError: showingError)
                 }

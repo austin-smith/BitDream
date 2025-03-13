@@ -101,6 +101,25 @@ struct macOSTorrentDetail: View {
                 }
                 .padding(.bottom, 4)
                 
+                // Progress Wave section
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 10) {
+                        // Section header with proper spacing
+                        Label("Download Progress", systemImage: "waveform.path")
+                            .font(.headline)
+                            .padding(.bottom, 10)
+                        
+                        WaveProgressView(progress: torrent.percentDone, 
+                                        color: statusColor(for: torrent), 
+                                        secondaryColor: statusColor(for: torrent).opacity(0.7))
+                            .frame(height: 120)
+                            .padding(.vertical, 8)
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                }
+                .padding(.bottom, 4)
+                
                 // Additional Info section
                 GroupBox {
                     VStack(alignment: .leading, spacing: 10) {

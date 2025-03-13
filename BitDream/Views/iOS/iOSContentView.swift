@@ -75,6 +75,9 @@ struct iOSContentView: View {
             ErrorDialog(store: store)
                 .frame(width: 400, height: 400)
         }
+        .sheet(isPresented: $store.showSettings) {
+            SettingsView()
+        }
     }
     
     // MARK: - iOS Views
@@ -195,6 +198,14 @@ struct iOSContentView: View {
                     store.isShowingAddAlert.toggle()
                 }) {
                     Label("Add Torrent", systemImage: "plus")
+                }
+                
+                Divider()
+                
+                Button(action: {
+                    store.showSettings.toggle()
+                }) {
+                    Label("Settings", systemImage: "gear")
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
