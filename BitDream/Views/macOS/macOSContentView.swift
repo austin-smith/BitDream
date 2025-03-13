@@ -91,7 +91,7 @@ struct macOSContentView: View {
             VStack(spacing: 0) {
                 StatsHeaderView(store: store)
                 
-                VStack(spacing: 0) {
+                VStack {
                     // Torrent list
                     List(selection: torrentSelection) {
                         if store.torrents.isEmpty {
@@ -121,7 +121,7 @@ struct macOSContentView: View {
             .toolbar {
                 // Content toolbar items
                 ToolbarItem(placement: .automatic) {
-                    HStack(spacing: 4) {
+                    HStack {
                         Text("Sort by:")
                         Picker("", selection: $sortBySelection) {
                             ForEach(sortBy.allCases, id: \.self) { item in
@@ -129,7 +129,6 @@ struct macOSContentView: View {
                             }
                         }
                         .labelsHidden()
-                        .frame(width: 150)
                     }
                     .help("Sort torrents")
                 }

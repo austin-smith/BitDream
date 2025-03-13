@@ -55,12 +55,12 @@ struct macOSAddTorrent: View {
             
             // Footer with buttons
             HStack {
+                Spacer()
+                
                 Button("Cancel") {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
-                
-                Spacer()
                 
                 Button("Add") {
                     if inputMethod == .magnetLink {
@@ -91,9 +91,9 @@ struct macOSAddTorrent: View {
     
     // MARK: - Form View
     var addTorrentForm: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 12) {
             // Torrent Source Section
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Torrent Source")
                     .font(.headline)
                     .foregroundColor(.primary)
@@ -106,12 +106,25 @@ struct macOSAddTorrent: View {
                         selectedTorrentFile = nil
                         torrentFileData = nil
                     }) {
-                        HStack {
-                            Image(systemName: "link")
-                                .font(.system(size: 16))
-                            Text("Magnet Link")
-                                .fontWeight(.medium)
-                            Spacer()
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: "link")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(inputMethod == .magnetLink ? .white : .accentColor)
+                                    .frame(width: 28, height: 28)
+                                    .background(
+                                        Circle()
+                                            .fill(inputMethod == .magnetLink ? Color.accentColor : Color.accentColor.opacity(0.1))
+                                    )
+                                Text("Magnet Link")
+                                    .fontWeight(.medium)
+                                Spacer()
+                            }
+                            
+                            Text("Add torrent using a magnet link")
+                                .font(.caption)
+                                .foregroundColor(inputMethod == .magnetLink ? .secondary : .secondary.opacity(0.7))
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(.vertical, 12)
                         .padding(.horizontal, 16)
@@ -129,18 +142,32 @@ struct macOSAddTorrent: View {
                         .foregroundColor(inputMethod == .magnetLink ? .accentColor : .primary)
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .frame(maxWidth: .infinity)
                     
                     // Torrent File Card
                     Button(action: {
                         inputMethod = .torrentFile
                         alertInput = ""
                     }) {
-                        HStack {
-                            Image(systemName: "doc")
-                                .font(.system(size: 16))
-                            Text("Torrent File")
-                                .fontWeight(.medium)
-                            Spacer()
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: "doc")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(inputMethod == .torrentFile ? .white : .accentColor)
+                                    .frame(width: 28, height: 28)
+                                    .background(
+                                        Circle()
+                                            .fill(inputMethod == .torrentFile ? Color.accentColor : Color.accentColor.opacity(0.1))
+                                    )
+                                Text("Torrent File")
+                                    .fontWeight(.medium)
+                                Spacer()
+                            }
+                            
+                            Text("Add torrent using a .torrent file")
+                                .font(.caption)
+                                .foregroundColor(inputMethod == .torrentFile ? .secondary : .secondary.opacity(0.7))
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(.vertical, 12)
                         .padding(.horizontal, 16)
@@ -158,14 +185,9 @@ struct macOSAddTorrent: View {
                         .foregroundColor(inputMethod == .torrentFile ? .accentColor : .primary)
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .frame(maxWidth: .infinity)
                 }
-                
-                // Description text under buttons
-                Text(inputMethod == .magnetLink ? 
-                     "Add torrent using a magnet link or URL" : 
-                     "Add torrent using a .torrent file from your computer")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity)
             }
             
             // Conditional input section - only show one at a time
@@ -181,6 +203,7 @@ struct macOSAddTorrent: View {
                             .textFieldStyle(.roundedBorder)
                             .frame(height: 24)
                     }
+                    .frame(height: 80) // Fixed height for both sections
                 } else {
                     // Torrent file selection
                     VStack(alignment: .leading, spacing: 8) {
@@ -209,11 +232,12 @@ struct macOSAddTorrent: View {
                         .background(Color(NSColor.textBackgroundColor))
                         .cornerRadius(6)
                     }
+                    .frame(height: 80) // Fixed height for both sections
                 }
             }
             
             // Download Location Section
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading) {
                 Text("Download Location")
                     .font(.headline)
                     .foregroundColor(.primary)
