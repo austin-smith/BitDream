@@ -214,6 +214,7 @@ struct TorrentFilesRequest: Codable {
 
 struct TorrentFilesResponseFiles: Codable {
     let files: [TorrentFile]
+    let fileStats: [TorrentFileStats]
 }
 
 struct TorrentFilesResponseTorrents: Codable {
@@ -227,15 +228,15 @@ struct TorrentFilesResponse: Codable {
 /// Gets the list of files in a torrent
 /// - Parameter transferId: The ID of the torrent to get files for
 /// - Parameter info: A tuple containing the server config and auth info
-/// - Parameter onReceived: A callback that receives the list of files
-public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, auth: TransmissionAuth), onReceived: @escaping ([TorrentFile])->(Void)) {
+/// - Parameter onReceived: A callback that receives the list of files and their stats
+public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, auth: TransmissionAuth), onReceived: @escaping ([TorrentFile], [TorrentFileStats])->(Void)) {
     url = info.config
     url?.path = "/transmission/rpc"
     
     let requestBody = TorrentFilesRequest(
         method: "torrent-get",
         arguments: TorrentFilesRequestArgs(
-            fields: ["files"],
+            fields: ["files", "fileStats"],
             ids: [transferId]
         )
     )
@@ -244,7 +245,7 @@ public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, 
     
     let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
         if error != nil {
-            return onReceived([])
+            return onReceived([], [])
         }
         
         let httpResp = resp as? HTTPURLResponse
@@ -255,13 +256,14 @@ public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, 
             return
         case 200?:
             let response = try? JSONDecoder().decode(TorrentFilesResponse.self, from: data!)
-            if let files = response?.arguments.torrents.first?.files {
-                return onReceived(files)
+            if let responseFiles = response?.arguments.torrents.first?.files,
+               let responseStats = response?.arguments.torrents.first?.fileStats {
+                return onReceived(responseFiles, responseStats)
             } else {
-                return onReceived([])
+                return onReceived([], [])
             }
         default:
-            return onReceived([])
+            return onReceived([], [])
         }
     }
     task.resume()
@@ -329,37 +331,37 @@ public func deleteTorrent(torrent: Torrent, erase: Bool, config: TransmissionCon
     task.resume()
 }
 
-// We are only parsing "download-dir" from session-get response
-struct TransmissionSessionResponseArguments: Codable {
+/// Model representing session information from the server
+public struct SessionInfo {
     let downloadDir: String
+    let version: String
     
-    enum CodingKeys: String, CodingKey {
-        case downloadDir = "download-dir"
+    init(downloadDir: String = "unknown", version: String = "unknown") {
+        self.downloadDir = downloadDir
+        self.version = version
     }
 }
 
-struct TransmissionSessionResponse: Codable {
-    let arguments: TransmissionSessionResponseArguments
-}
-
-/// Get the server's default download directory
+/// Get the server's session information including download directory and version
 /// - Parameter config: The server's config
 /// - Parameter auth: The username and password for the server
-/// - Parameter onResponse: An escaping function that receives the response from the server
-public func getDefaultDownloadDir(config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (String) -> Void) {
+/// - Parameter onResponse: An escaping function that receives session information from the server
+public func getSession(config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (TransmissionSessionResponseArguments) -> Void) {
     url = config
     url?.path = "/transmission/rpc"
     
-    let requestBody = TransmissionRequest(
+    let requestBody = TransmissionListRequest(
         method: "session-get",
-        arguments: [:]
+        arguments: [
+            "fields": ["download-dir", "version"]
+        ]
     )
     
     let req = buildRequest(requestBody: requestBody, auth: auth)
     
     let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
         if error != nil {
-            return onResponse("CONFIG_ERR")
+            return onResponse(TransmissionSessionResponseArguments())
         }
         
         let httpResp = resp as? HTTPURLResponse
@@ -367,16 +369,17 @@ public func getDefaultDownloadDir(config: TransmissionConfig, auth: Transmission
         switch httpResp?.statusCode {
         case 409?: // If we get a 409, save the token and try again
             authorize(httpResp: httpResp, ssl: (config.scheme == "https"))
-            getDefaultDownloadDir(config: config, auth: auth, onResponse: onResponse)
+            getSession(config: config, auth: auth, onResponse: onResponse)
             return
         case 401?:
-            return onResponse("FORBIDDEN")
+            return onResponse(TransmissionSessionResponseArguments())
         case 200?:
             let response = try? JSONDecoder().decode(TransmissionSessionResponse.self, from: data!)
-            let downloadDir = response?.arguments.downloadDir
-            return onResponse(downloadDir!)
+            return onResponse(
+                response?.arguments ?? TransmissionSessionResponseArguments()
+            )
         default:
-            return onResponse("DEFAULT")
+            return onResponse(TransmissionSessionResponseArguments())
         }
     }
     task.resume()

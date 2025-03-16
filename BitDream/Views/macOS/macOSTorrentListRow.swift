@@ -13,6 +13,7 @@ import KeychainAccess
 struct macOSTorrentListRow: View {
     @Binding var torrent: Torrent
     var store: Store
+    @Binding var selectedTorrents: Set<Torrent>
     
     @State var deleteDialog: Bool = false
     @Environment(\.colorScheme) var colorScheme
@@ -47,12 +48,16 @@ struct macOSTorrentListRow: View {
         .contentShape(Rectangle())
         .padding([.top, .bottom, .leading, .trailing], 10)
         .contextMenu {
+            let torrentsToAct = selectedTorrents.contains(torrent) ? selectedTorrents : Set([torrent])
+            
             // Play/Pause Button
             Button(action: {
                 let info = makeConfig(store: store)
-                playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
-                    // TODO: Handle response
-                })
+                for t in torrentsToAct {
+                    playPauseTorrent(torrent: t, config: info.config, auth: info.auth, onResponse: { response in
+                        // TODO: Handle response
+                    })
+                }
             }) {
                 HStack {
                     Image(systemName: torrent.status == TorrentStatus.stopped.rawValue ? "play" : "pause")
@@ -63,7 +68,10 @@ struct macOSTorrentListRow: View {
             // Priority Menu
             Menu {
                 Button(action: {
-                    updateTorrentPriority(torrent: torrent, priority: TorrentPriority.high, info: makeConfig(store: store), onComplete: { r in })
+                    let info = makeConfig(store: store)
+                    for t in torrentsToAct {
+                        updateTorrentPriority(torrent: t, priority: TorrentPriority.high, info: info, onComplete: { r in })
+                    }
                 }) {
                     HStack {
                         Image(systemName: "arrow.up")
@@ -71,7 +79,10 @@ struct macOSTorrentListRow: View {
                     }
                 }
                 Button(action: {
-                    updateTorrentPriority(torrent: torrent, priority: TorrentPriority.normal, info: makeConfig(store: store), onComplete: { r in })
+                    let info = makeConfig(store: store)
+                    for t in torrentsToAct {
+                        updateTorrentPriority(torrent: t, priority: TorrentPriority.normal, info: info, onComplete: { r in })
+                    }
                 }) {
                     HStack {
                         Image(systemName: "minus")
@@ -79,7 +90,10 @@ struct macOSTorrentListRow: View {
                     }
                 }
                 Button(action: {
-                    updateTorrentPriority(torrent: torrent, priority: TorrentPriority.low, info: makeConfig(store: store), onComplete: { r in })
+                    let info = makeConfig(store: store)
+                    for t in torrentsToAct {
+                        updateTorrentPriority(torrent: t, priority: TorrentPriority.low, info: info, onComplete: { r in })
+                    }
                 }) {
                     HStack {
                         Image(systemName: "arrow.down")
@@ -95,17 +109,19 @@ struct macOSTorrentListRow: View {
             
             Divider()
             
-            // Copy Magnet Link Button
-            Button(action: {
-                copyMagnetLinkToClipboard(torrent.magnetLink)
-            }) {
-                HStack {
-                    Image(systemName: "document.on.document.fill")
-                    Text("Copy Magnet Link")
+            // Copy Magnet Link Button - only show if single selection
+            if !selectedTorrents.contains(torrent) {
+                Button(action: {
+                    copyMagnetLinkToClipboard(torrent.magnetLink)
+                }) {
+                    HStack {
+                        Image(systemName: "document.on.document.fill")
+                        Text("Copy Magnet Link")
+                    }
                 }
+                
+                Divider()
             }
-            
-            Divider()
             
             // Delete Button
             Button(role: .destructive, action: {
@@ -120,22 +136,26 @@ struct macOSTorrentListRow: View {
         .id(torrent.id)
         // Ask to delete files on disk when removing transfer
         .alert(
-            "Delete Torrent",
+            "Delete \(torrentsToDelete.count > 1 ? "\(torrentsToDelete.count) Torrents" : "Torrent")",
             isPresented: $deleteDialog) {
                 Button(role: .destructive) {
                     let info = makeConfig(store: store)
-                    deleteTorrent(torrent: torrent, erase: true, config: info.config, auth: info.auth, onDel: { response in
-                        // TODO: Handle response
-                    })
+                    for t in torrentsToDelete {
+                        deleteTorrent(torrent: t, erase: true, config: info.config, auth: info.auth, onDel: { response in
+                            // TODO: Handle response
+                        })
+                    }
                     deleteDialog.toggle()
                 } label: {
                     Text("Delete file(s)")
                 }
                 Button("Remove from list only") {
                     let info = makeConfig(store: store)
-                    deleteTorrent(torrent: torrent, erase: false, config: info.config, auth: info.auth, onDel: { response in
-                        // TODO: Handle response
-                    })
+                    for t in torrentsToDelete {
+                        deleteTorrent(torrent: t, erase: false, config: info.config, auth: info.auth, onDel: { response in
+                            // TODO: Handle response
+                        })
+                    }
                     deleteDialog.toggle()
                 }
             } message: {
@@ -146,6 +166,10 @@ struct macOSTorrentListRow: View {
             RoundedRectangle(cornerRadius: 4)
                 .fill(Color.white)
         )
+    }
+    
+    private var torrentsToDelete: Set<Torrent> {
+        selectedTorrents.contains(torrent) ? selectedTorrents : Set([torrent])
     }
 }
 
@@ -176,6 +200,7 @@ func createLabelTagsView(for torrent: Torrent) -> some View {
 struct macOSTorrentListRow: View {
     @Binding var torrent: Torrent
     var store: Store
+    @Binding var selectedTorrents: Set<Torrent>
     
     var body: some View {
         EmptyView()

@@ -214,12 +214,18 @@ func refreshTransmissionData(store: Store) {
     
     let info = makeConfig(store: store)
     // also reset default download directory when new host is set
-    getDefaultDownloadDir(config: info.config, auth: info.auth, onResponse: { downloadDir in
+    getSession(config: info.config, auth: info.auth) { sessionInfo in
         DispatchQueue.main.async {
             store.objectWillChange.send()
-            store.defaultDownloadDir = downloadDir
+            store.defaultDownloadDir = sessionInfo.downloadDir
+            
+            // Update version in CoreData
+            if let host = store.host {
+                host.version = sessionInfo.version
+                try? PersistenceController.shared.container.viewContext.save()
+            }
         }
-    })
+    }
 }
 
 /*--------------------------------------------------------------------------------------------

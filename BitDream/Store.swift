@@ -50,6 +50,17 @@ class Store: NSObject, ObservableObject {
         self.server = Server(config: config, auth: auth)
         self.host = host
         
+        // Get server version and download directory
+        getSession(config: config, auth: auth) { sessionInfo in
+            DispatchQueue.main.async {
+                self.defaultDownloadDir = sessionInfo.downloadDir
+                
+                // Store the version in CoreData
+                host.version = sessionInfo.version
+                try? PersistenceController.shared.container.viewContext.save()
+            }
+        }
+        
         // refresh data immediately after setting new host
         refreshTransmissionData(store: self)
         

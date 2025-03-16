@@ -14,6 +14,7 @@ struct macOSTorrentDetail: View {
     
     @State public var files: [TorrentFile] = []
     @State private var isShowingFilesSheet = false
+    @State private var fileStats: [TorrentFileStats] = []
     
     var body: some View {
         // Use shared formatting function
@@ -165,14 +166,15 @@ struct macOSTorrentDetail: View {
                 }
                 .padding()
                 
-                TorrentFileDetail(files: files)
+                macOSTorrentFileDetail(files: files, fileStats: fileStats)
             }
             .frame(width: 600, height: 400)
         }
         .onAppear{
             // Use shared function to fetch files
-            fetchTorrentFiles(transferId: torrent.id, store: store) { fetchedFiles in
-                self.files = fetchedFiles
+            fetchTorrentFiles(transferId: torrent.id, store: store) { fetchedFiles, fetchedStats in
+                files = fetchedFiles
+                fileStats = fetchedStats
             }
         }
         .toolbar {

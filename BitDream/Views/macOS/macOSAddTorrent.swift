@@ -22,8 +22,7 @@ struct macOSAddTorrent: View {
     @State private var downloadDir: String = ""
     @State private var errorMessage: String? = nil
     @State private var showingError = false
-    @State private var selectedTorrentFile: String? = nil
-    @State private var torrentFileData: Data? = nil
+    @State private var selectedTorrentFiles: [(name: String, data: Data)] = []
     
     enum TorrentInputMethod: String, CaseIterable, Identifiable {
         case magnetLink = "Magnet Link"
@@ -71,12 +70,16 @@ struct macOSAddTorrent: View {
                             errorMessage: $errorMessage,
                             showingError: $showingError
                         )
-                    } else if inputMethod == .torrentFile, let fileData = torrentFileData {
-                        addTorrentFile(fileData: fileData)
+                    } else if inputMethod == .torrentFile && !selectedTorrentFiles.isEmpty {
+                        // Add each selected torrent file
+                        for torrentFile in selectedTorrentFiles {
+                            addTorrentFile(fileData: torrentFile.data)
+                        }
+                        dismiss()
                     }
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(inputMethod == .magnetLink ? alertInput.isEmpty : torrentFileData == nil)
+                .disabled(inputMethod == .magnetLink ? alertInput.isEmpty : selectedTorrentFiles.isEmpty)
             }
             .padding()
             .background(Color(NSColor.windowBackgroundColor))
@@ -103,8 +106,7 @@ struct macOSAddTorrent: View {
                     // Magnet Link Card
                     Button(action: {
                         inputMethod = .magnetLink
-                        selectedTorrentFile = nil
-                        torrentFileData = nil
+                        selectedTorrentFiles = []
                     }) {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
@@ -201,7 +203,7 @@ struct macOSAddTorrent: View {
                         
                         TextField("magnet:?xt=urn:btih:...", text: $alertInput)
                             .textFieldStyle(.roundedBorder)
-                            .frame(height: 24)
+                            .frame(height: 30)
                     }
                     .frame(height: 80) // Fixed height for both sections
                 } else {
@@ -212,18 +214,18 @@ struct macOSAddTorrent: View {
                             .foregroundColor(.secondary)
                         
                         HStack {
-                            if let selectedFile = selectedTorrentFile {
-                                Text(selectedFile)
+                            if selectedTorrentFiles.isEmpty {
+                                Text("No files selected")
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Text("\(selectedTorrentFiles.count) files selected")
                                     .lineLimit(1)
                                     .truncationMode(.middle)
-                            } else {
-                                Text("No file selected")
-                                    .foregroundColor(.secondary)
                             }
                             
                             Spacer()
                             
-                            Button("Choose File...") {
+                            Button("Choose Files...") {
                                 openTorrentFilePicker()
                             }
                             .controlSize(.regular)
@@ -266,17 +268,18 @@ struct macOSAddTorrent: View {
     // MARK: - File Pickers
     private func openTorrentFilePicker() {
         let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
+        panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         panel.allowedContentTypes = [UTType(tag: "torrent", tagClass: .filenameExtension, conformingTo: nil)!]
         
-        if panel.runModal() == .OK, let url = panel.url {
-            do {
-                let fileData = try Data(contentsOf: url)
-                torrentFileData = fileData
-                selectedTorrentFile = url.lastPathComponent
-            } catch {
-                handleAddTorrentError("Error loading torrent file: \(error.localizedDescription)", errorMessage: $errorMessage, showingError: $showingError)
+        if panel.runModal() == .OK {
+            for url in panel.urls {
+                do {
+                    let fileData = try Data(contentsOf: url)
+                    selectedTorrentFiles.append((name: url.lastPathComponent, data: fileData))
+                } catch {
+                    handleAddTorrentError("Error loading torrent file: \(error.localizedDescription)", errorMessage: $errorMessage, showingError: $showingError)
+                }
             }
         }
     }
@@ -314,10 +317,13 @@ struct macOSAddTorrent: View {
             downloadDir = url.path
         }
     }
-    
-    // MARK: - Actions
-    // Using shared implementations from AddTorrent.swift
 }
+
+// MARK: - Preview
+#Preview("Add Torrent") {
+    macOSAddTorrent(store: Store())
+}
+
 #else
 // Empty struct for iOS to reference - this won't be compiled on iOS but provides the type
 struct macOSAddTorrent: View {

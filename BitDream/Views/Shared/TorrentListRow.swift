@@ -12,12 +12,13 @@ import KeychainAccess
 struct TorrentListRow: View {
     @Binding var torrent: Torrent
     var store: Store
+    @Binding var selectedTorrents: Set<Torrent>
     
     var body: some View {
         #if os(iOS)
-        iOSTorrentListRow(torrent: $torrent, store: store)
+        iOSTorrentListRow(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents)
         #elseif os(macOS)
-        macOSTorrentListRow(torrent: $torrent, store: store)
+        macOSTorrentListRow(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents)
         #endif
     }
 }

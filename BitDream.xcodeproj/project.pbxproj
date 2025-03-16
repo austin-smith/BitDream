@@ -34,6 +34,9 @@
 		4B6F1EB22D82DB21003D8F6E /* TorrentListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EB12D82DB21003D8F6E /* TorrentListRow.swift */; };
 		4B6F1EB42D82DB2D003D8F6E /* iOSTorrentListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EB32D82DB2D003D8F6E /* iOSTorrentListRow.swift */; };
 		4B6F1EB62D82DB33003D8F6E /* macOSTorrentListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EB52D82DB33003D8F6E /* macOSTorrentListRow.swift */; };
+		4B6F1EBC2D86C908003D8F6E /* macOSTorrentFileDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EBB2D86C908003D8F6E /* macOSTorrentFileDetail.swift */; };
+		4B6F1EBE2D86C926003D8F6E /* iOSTorrentFileDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EBD2D86C926003D8F6E /* iOSTorrentFileDetail.swift */; };
+		4B6F1EC02D86D52A003D8F6E /* TorrentFileDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EBF2D86D52A003D8F6E /* TorrentFileDetail.swift */; };
 		4B9CAC542D7E833A0094CD03 /* macOSAddTorrent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */; };
 		4B9CAC562D7E83460094CD03 /* iOSAddTorrent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9CAC552D7E83460094CD03 /* iOSAddTorrent.swift */; };
 		4B9CAC5D2D7F02FA0094CD03 /* AppBadgeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */; };
@@ -74,6 +77,9 @@
 		4B6F1EB12D82DB21003D8F6E /* TorrentListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentListRow.swift; sourceTree = "<group>"; };
 		4B6F1EB32D82DB2D003D8F6E /* iOSTorrentListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentListRow.swift; sourceTree = "<group>"; };
 		4B6F1EB52D82DB33003D8F6E /* macOSTorrentListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentListRow.swift; sourceTree = "<group>"; };
+		4B6F1EBB2D86C908003D8F6E /* macOSTorrentFileDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentFileDetail.swift; sourceTree = "<group>"; };
+		4B6F1EBD2D86C926003D8F6E /* iOSTorrentFileDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentFileDetail.swift; sourceTree = "<group>"; };
+		4B6F1EBF2D86D52A003D8F6E /* TorrentFileDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentFileDetail.swift; sourceTree = "<group>"; };
 		4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSAddTorrent.swift; sourceTree = "<group>"; };
 		4B9CAC552D7E83460094CD03 /* iOSAddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSAddTorrent.swift; sourceTree = "<group>"; };
 		4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBadgeManager.swift; sourceTree = "<group>"; };
@@ -154,8 +160,8 @@
 		4B1DADFC295E6F0F0037E9FB /* Transmission */ = {
 			isa = PBXGroup;
 			children = (
-				4B1DADFD295E6F390037E9FB /* TransmissionModels.swift */,
 				4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */,
+				4B1DADFD295E6F390037E9FB /* TransmissionModels.swift */,
 			);
 			path = Transmission;
 			sourceTree = "<group>";
@@ -169,6 +175,7 @@
 				4B642D7A2D7E1EF6003CEADC /* iOSServerList.swift */,
 				4B6F1EAF2D82D340003D8F6E /* iOSSettingsView.swift */,
 				4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */,
+				4B6F1EBD2D86C926003D8F6E /* iOSTorrentFileDetail.swift */,
 				4B6F1EB32D82DB2D003D8F6E /* iOSTorrentListRow.swift */,
 			);
 			path = iOS;
@@ -183,6 +190,7 @@
 				4B642D782D7E1EED003CEADC /* macOSServerList.swift */,
 				4B6F1EAD2D82D337003D8F6E /* macOSSettingsView.swift */,
 				4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */,
+				4B6F1EBB2D86C908003D8F6E /* macOSTorrentFileDetail.swift */,
 				4B6F1EB52D82DB33003D8F6E /* macOSTorrentListRow.swift */,
 			);
 			path = macOS;
@@ -198,6 +206,7 @@
 				4B1DAE0B295E6FEF0037E9FB /* ServerList.swift */,
 				4B6F1EA52D82BD4A003D8F6E /* SettingsView.swift */,
 				4B1DAE05295E6FC80037E9FB /* TorrentDetail.swift */,
+				4B6F1EBF2D86D52A003D8F6E /* TorrentFileDetail.swift */,
 				4B6F1EB12D82DB21003D8F6E /* TorrentListRow.swift */,
 				4BD938F12D82AF81006CE97C /* WaveProgressView.swift */,
 			);
@@ -287,6 +296,7 @@
 				4B1DAE10295E702B0037E9FB /* Store.swift in Sources */,
 				4B1DADF9295E6EBA0037E9FB /* Utilities.swift in Sources */,
 				4B6F1EB02D82D340003D8F6E /* iOSSettingsView.swift in Sources */,
+				4B6F1EBC2D86C908003D8F6E /* macOSTorrentFileDetail.swift in Sources */,
 				4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */,
 				4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */,
 				4B1DADFE295E6F390037E9FB /* TransmissionModels.swift in Sources */,
@@ -298,6 +308,7 @@
 				4B1DAE0C295E6FEF0037E9FB /* ServerList.swift in Sources */,
 				4B6F1EB22D82DB21003D8F6E /* TorrentListRow.swift in Sources */,
 				4B1DAE06295E6FC80037E9FB /* TorrentDetail.swift in Sources */,
+				4B6F1EBE2D86C926003D8F6E /* iOSTorrentFileDetail.swift in Sources */,
 				4B9CAC562D7E83460094CD03 /* iOSAddTorrent.swift in Sources */,
 				4B6F1EB62D82DB33003D8F6E /* macOSTorrentListRow.swift in Sources */,
 				4BC5C2AA2D7D20B500D80AB4 /* iOSContentView.swift in Sources */,
@@ -305,6 +316,7 @@
 				4B642D6D2D7E151A003CEADC /* iOSServerDetail.swift in Sources */,
 				4B9CAC5D2D7F02FA0094CD03 /* AppBadgeManager.swift in Sources */,
 				4B642D7B2D7E1EF6003CEADC /* iOSServerList.swift in Sources */,
+				4B6F1EC02D86D52A003D8F6E /* TorrentFileDetail.swift in Sources */,
 				4BC5C2B42D7D415100D80AB4 /* iOSTorrentDetail.swift in Sources */,
 				4B9CAC542D7E833A0094CD03 /* macOSAddTorrent.swift in Sources */,
 				4B6F1EAE2D82D337003D8F6E /* macOSSettingsView.swift in Sources */,

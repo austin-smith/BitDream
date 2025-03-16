@@ -18,16 +18,25 @@ struct iOSContentView: View {
 
     private var keychain = Keychain(service: "crapshack.BitDream")
     
-    // Store the selected torrent ID instead of the torrent object
-    @State private var selectedTorrentId: Int? = nil
+    // Store the selected torrent IDs instead of a single ID
+    @State private var selectedTorrentIds: Set<Int> = []
     
-    // Computed property to get the selected torrent from the ID
-    private var torrentSelection: Binding<Torrent?> {
-        createTorrentSelectionBinding(selectedId: $selectedTorrentId, in: store)
+    // Computed property to get the selected torrents from the IDs
+    private var torrentSelection: Binding<Set<Torrent>> {
+        Binding<Set<Torrent>>(
+            get: {
+                Set(selectedTorrentIds.compactMap { id in
+                    store.torrents.first { $0.id == id }
+                })
+            },
+            set: { newSelection in
+                selectedTorrentIds = Set(newSelection.map { $0.id })
+            }
+        )
     }
     
-    @State var sortProperty: SortProperty = .name
-    @State var sortOrder: SortOrder = .ascending
+    @State var sortProperty: SortProperty = UserDefaults.standard.sortProperty
+    @State var sortOrder: SortOrder = UserDefaults.standard.sortOrder
     @State var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
     
     var body: some View {
@@ -52,8 +61,14 @@ struct iOSContentView: View {
             .onAppear {
                 setupHost(hosts: hosts, store: store)
             }
+            .onChange(of: sortProperty) { oldValue, newValue in
+                UserDefaults.standard.sortProperty = newValue
+            }
+            .onChange(of: sortOrder) { oldValue, newValue in
+                UserDefaults.standard.sortOrder = newValue
+            }
         } detail: {
-            if let selectedTorrent = torrentSelection.wrappedValue {
+            if let selectedTorrent = torrentSelection.wrappedValue.first {
                 TorrentDetail(store: store, viewContext: viewContext, torrent: binding(for: selectedTorrent, in: store))
             } else {
                 Text("Select a Dream")
@@ -93,10 +108,14 @@ struct iOSContentView: View {
                     NavigationLink {
                         TorrentDetail(store: store, viewContext: viewContext, torrent: binding(for: torrent, in: store))
                     } label: {
-                        TorrentListRow(torrent: binding(for: torrent, in: store), store: store)
+                        TorrentListRow(
+                            torrent: binding(for: torrent, in: store),
+                            store: store,
+                            selectedTorrents: torrentSelection
+                        )
                     }
                     .tag(torrent)
-                    .id(torrent.id) // Add stable ID for each row
+                    .id(torrent.id)
                     .listRowSeparator(.visible)
                 }
             }
@@ -229,7 +248,7 @@ struct iOSContentView: View {
                 Button(action: {
                     store.isShowingAddAlert.toggle()
                 }) {
-                    Label("Add Torrent", systemImage: "document.badge.plus")
+                    Label("Add Torrent", systemImage: "plus")
                 }
                 
                 Divider()

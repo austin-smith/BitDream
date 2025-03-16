@@ -13,6 +13,7 @@ import KeychainAccess
 struct iOSTorrentListRow: View {
     @Binding var torrent: Torrent
     var store: Store
+    @Binding var selectedTorrents: Set<Torrent>  // Added for API compatibility
     
     @State var deleteDialog: Bool = false
     @Environment(\.colorScheme) var colorScheme
@@ -130,6 +131,7 @@ struct iOSTorrentListRow: View {
 struct iOSTorrentListRow: View {
     @Binding var torrent: Torrent
     var store: Store
+    @Binding var selectedTorrents: Set<Torrent>
     
     var body: some View {
         EmptyView()
