@@ -28,7 +28,7 @@ struct TorrentDetail: View {
 
 // Shared function to determine torrent status color
 func statusColor(for torrent: Torrent) -> Color {
-    if torrent.statusCalc == TorrentStatusCalc.complete {
+    if torrent.statusCalc == TorrentStatusCalc.complete || torrent.statusCalc == TorrentStatusCalc.seeding {
         return .green.opacity(0.75)
     }
     else if torrent.statusCalc == TorrentStatusCalc.paused {
@@ -46,11 +46,11 @@ func statusColor(for torrent: Torrent) -> Color {
 }
 
 // Shared function to fetch torrent files
-func fetchTorrentFiles(transferId: Int, store: Store, completion: @escaping ([TorrentFile]) -> Void) {
+func fetchTorrentFiles(transferId: Int, store: Store, completion: @escaping ([TorrentFile], [TorrentFileStats]) -> Void) {
     let info = makeConfig(store: store)
     
-    getTorrentFiles(transferId: transferId, info: info, onReceived: { files in
-        completion(files)
+    getTorrentFiles(transferId: transferId, info: info, onReceived: { files, fileStats in
+        completion(files, fileStats)
     })
 }
 
@@ -118,37 +118,6 @@ struct TorrentDetailToolbar: ToolbarContent {
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
-        }
-    }
-}
-
-// Keep the TorrentFileDetail here since it's shared between platforms
-struct TorrentFileDetail: View {
-    var files: [TorrentFile]
-    
-    var body: some View {
-        List(files) { file in
-            VStack {
-                let percentComplete = String(format: "%.1f%%", file.percentDone * 100)
-                let completedFormatted = byteCountFormatter.string(fromByteCount: (file.bytesCompleted))
-                let lengthFormatted = byteCountFormatter.string(fromByteCount: file.length)
-                
-                let progressText = "\(completedFormatted) of \(lengthFormatted) (\(percentComplete))"
-                
-                HStack {
-                    Text(file.name)
-                    Spacer()
-                }
-                .padding(.bottom, 1)
-                HStack {
-                    Text(progressText)
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                }
-            }
-            .listRowInsets(EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10))
-            .listRowSeparator(.visible)
         }
     }
 }

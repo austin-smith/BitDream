@@ -15,20 +15,29 @@ struct macOSContentView: View {
     // Add ThemeManager to access accent color
     @ObservedObject private var themeManager = ThemeManager.shared
     
-    @State private var selectedTorrentId: Int? = nil
+    @State private var selectedTorrentIds: Set<Int> = []
     
-    // Computed property to get the selected torrent from the ID
-    private var torrentSelection: Binding<Torrent?> {
-        createTorrentSelectionBinding(selectedId: $selectedTorrentId, in: store)
+    // Computed property to get the selected torrents from the IDs
+    private var torrentSelection: Binding<Set<Torrent>> {
+        Binding<Set<Torrent>>(
+            get: {
+                Set(selectedTorrentIds.compactMap { id in
+                    store.torrents.first { $0.id == id }
+                })
+            },
+            set: { newSelection in
+                selectedTorrentIds = Set(newSelection.map { $0.id })
+            }
+        )
     }
     
-    @State var sortBySelection: sortBy = UserDefaults.standard.sortBySelection
-    @State var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
+    @State var sortProperty: SortProperty = UserDefaults.standard.sortProperty
+    @State var sortOrder: SortOrder = UserDefaults.standard.sortOrder
+    @State private var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
     @State private var sidebarSelection: SidebarSelection = .allDreams
     @State private var isInspectorVisible: Bool = UserDefaults.standard.inspectorVisibility
     @State private var columnVisibility: NavigationSplitViewVisibility = UserDefaults.standard.sidebarVisibility
     @State private var searchText: String = ""
-    @State private var titleRefreshTrigger: Bool = false
     
     // Helper function to check if a torrent matches the search query
     private func torrentMatchesSearch(_ torrent: Torrent, query: String) -> Bool {
@@ -145,59 +154,62 @@ struct macOSContentView: View {
                                 .filter { torrent in
                                     torrentMatchesSearch(torrent, query: searchText)
                                 }
-                            let sortedTorrents = filteredTorrents.sorted(by: sortBySelection)
+                            let sortedTorrents = sortTorrents(filteredTorrents, by: sortProperty, order: sortOrder)
                             
                             ForEach(sortedTorrents, id: \.id) { torrent in
-                                NavigationLink(value: torrent) {
-                                    TorrentListRow(torrent: binding(for: torrent, in: store), store: store)
-                                }
+                                TorrentListRow(
+                                    torrent: binding(for: torrent, in: store),
+                                    store: store,
+                                    selectedTorrents: torrentSelection
+                                )
                                 .tag(torrent)
-                                .id(torrent.id)
                                 .listRowSeparator(.visible)
                             }
                         }
                     }
-                    .navigationDestination(for: Torrent.self) { torrent in
-                        TorrentDetail(store: store, viewContext: viewContext, torrent: binding(for: torrent, in: store))
-                    }
-                    .listStyle(PlainListStyle())
+                    .listStyle(.inset)
                     .tint(themeManager.accentColor) // Apply accent color to list selection
                 }
             }
-            .navigationTitle(titleRefreshTrigger ? sidebarSelection.rawValue : sidebarSelection.rawValue)
-            .navigationSubtitle(titleRefreshTrigger ? navigationSubtitle : navigationSubtitle)
+            .navigationTitle(sidebarSelection.rawValue)
+            .navigationSubtitle(navigationSubtitle)
             .searchable(text: $searchText, placement: .toolbar)
             .toolbar {              
                 // Content toolbar items
                 ToolbarItem(placement: .automatic) {
-                    Picker("", selection: $sortBySelection) {
-                        Group {
-                            Text("Name ↑").tag(sortBy.nameAsc)
-                            Text("Name ↓").tag(sortBy.nameDesc)
+                    Menu {
+                        // Sort properties
+                        ForEach(SortProperty.allCases, id: \.self) { property in
+                            let isSelected = Binding<Bool>(
+                                get: { sortProperty == property },
+                                set: { if $0 { sortProperty = property } }
+                            )
+                            Toggle(isOn: isSelected) {
+                                Text(property.rawValue)
+                            }
                         }
                         
                         Divider()
                         
-                        Group {
-                            Text("Date Added ↑").tag(sortBy.dateAddedAsc)
-                            Text("Date Added ↓").tag(sortBy.dateAddedDesc)
+                        // Sort order
+                        let isAscending = Binding<Bool>(
+                            get: { sortOrder == .ascending },
+                            set: { if $0 { sortOrder = .ascending } }
+                        )
+                        Toggle(isOn: isAscending) {
+                            Text("Ascending")
                         }
                         
-                        Divider()
-                        
-                        Group {
-                            Text("Status ↑").tag(sortBy.statusAsc)
-                            Text("Status ↓").tag(sortBy.statusDesc)
+                        let isDescending = Binding<Bool>(
+                            get: { sortOrder == .descending },
+                            set: { if $0 { sortOrder = .descending } }
+                        )
+                        Toggle(isOn: isDescending) {
+                            Text("Descending")
                         }
-                        
-                        Divider()
-                        
-                        Group {
-                            Text("Remaining Time ↑").tag(sortBy.etaAsc)
-                            Text("Remaining Time ↓").tag(sortBy.etaDesc)
-                        }
+                    } label: {
+                        Label("Sort", systemImage: "arrow.up.arrow.down.circle")
                     }
-                    .help("Sort by")
                 }
 
                 // Add torrent button
@@ -205,7 +217,7 @@ struct macOSContentView: View {
                     Button(action: {
                         store.isShowingAddAlert.toggle()
                     }) {
-                        Label("Add Torrent", systemImage: "document.badge.plus")
+                        Label("Add Torrent", systemImage: "plus")
                     }
                     .help("Add a new torrent")
                 }
@@ -280,26 +292,21 @@ struct macOSContentView: View {
             filterBySelection = newValue.filter
             
             // Only clear selection if the selected torrent isn't in the new filtered list
-            if let selectedTorrent = torrentSelection.wrappedValue {
+            if let selectedTorrent = torrentSelection.wrappedValue.first {
                 // Break up the complex expression
                 let filteredTorrents = store.torrents.filtered(by: newValue.filter)
                 let isSelectedTorrentInFilteredList = filteredTorrents.contains { $0.id == selectedTorrent.id }
                 
                 if !isSelectedTorrentInFilteredList {
                     // Selected torrent is not in the new filtered list, clear selection
-                    torrentSelection.wrappedValue = nil
+                    torrentSelection.wrappedValue.removeAll()
                 }
             }
-            
-            // Refresh the navigation title and subtitle
-            titleRefreshTrigger.toggle()
             
             print("\(newValue.rawValue) selected")
         }
         .onReceive(store.$torrents) { _ in
             updateAppBadge()
-            // Refresh the navigation title and subtitle
-            titleRefreshTrigger.toggle()
         }
         .onAppear {
             setupHost(hosts: hosts, store: store)
@@ -311,12 +318,15 @@ struct macOSContentView: View {
         .onChange(of: isInspectorVisible) { oldValue, newValue in
             UserDefaults.standard.inspectorVisibility = newValue
         }
-        .onChange(of: sortBySelection) { oldValue, newValue in
-            UserDefaults.standard.sortBySelection = newValue
+        .onChange(of: sortProperty) { oldValue, newValue in
+            UserDefaults.standard.sortProperty = newValue
+        }
+        .onChange(of: sortOrder) { oldValue, newValue in
+            UserDefaults.standard.sortOrder = newValue
         }
         .onChange(of: searchText) { oldValue, newValue in
             // Only clear selection if the selected torrent isn't in the new filtered list
-            if let selectedTorrent = torrentSelection.wrappedValue {
+            if let selectedTorrent = torrentSelection.wrappedValue.first {
                 // Check if the selected torrent matches the search filter
                 let matchesSearch = torrentMatchesSearch(selectedTorrent, query: searchText)
                 
@@ -326,12 +336,9 @@ struct macOSContentView: View {
                 
                 if !matchesSearch || !isSelectedTorrentInFilteredList {
                     // Selected torrent is not in the new filtered list, clear selection
-                    torrentSelection.wrappedValue = nil
+                    torrentSelection.wrappedValue.removeAll()
                 }
             }
-            
-            // Refresh the navigation title and subtitle
-            titleRefreshTrigger.toggle()
         }
     }
     
@@ -339,7 +346,7 @@ struct macOSContentView: View {
     
     private var macOSDetail: some View {
         Group {
-            if let selectedTorrent = torrentSelection.wrappedValue {
+            if let selectedTorrent = torrentSelection.wrappedValue.first {
                 TorrentDetail(store: store, viewContext: viewContext, torrent: binding(for: selectedTorrent, in: store))
                     .id(selectedTorrent.id)
             } else {

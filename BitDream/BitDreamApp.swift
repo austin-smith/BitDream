@@ -17,13 +17,15 @@ struct BitDreamApp: App {
     
     // Create a shared store instance that will be used by both the main app and settings
     @StateObject private var store = Store()
+    @StateObject private var themeManager = ThemeManager.shared
     
     init() {
         // Register default values for view state
         UserDefaults.standard.register(defaults: [
             "sidebarVisibility": true, // true = show sidebar (.all), false = hide sidebar (.detailOnly)
             "inspectorVisibility": true,
-            "sortBySelection": "nameAsc" // Default sort by name ascending
+            "sortBySelection": "nameAsc", // Default sort by name ascending
+            "themeModeKey": ThemeMode.system.rawValue // Default theme mode
         ])
         
         // Request permission to use badges on macOS
@@ -41,15 +43,17 @@ struct BitDreamApp: App {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(store) // Pass the shared store to the ContentView
-                .accentColor(ThemeManager.shared.accentColor) // Apply the accent color to the entire app
-                .environmentObject(ThemeManager.shared) // Pass the ThemeManager to all views
+                .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
+                .environmentObject(themeManager) // Pass the ThemeManager to all views
+                .immediateTheme(manager: themeManager)
         }
         
         #if os(macOS)
         Settings {
             SettingsView(store: store) // Use the same store instance
                 .frame(minWidth: 500, idealWidth: 550, maxWidth: 650, minHeight: 300, idealHeight: 350, maxHeight: 450)
-                .environmentObject(ThemeManager.shared) // Pass the ThemeManager to the Settings view
+                .environmentObject(themeManager) // Pass the ThemeManager to the Settings view
+                .immediateTheme(manager: themeManager)
         }
         #endif
     }

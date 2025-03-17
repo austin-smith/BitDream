@@ -12,12 +12,13 @@ import KeychainAccess
 struct TorrentListRow: View {
     @Binding var torrent: Torrent
     var store: Store
+    @Binding var selectedTorrents: Set<Torrent>
     
     var body: some View {
         #if os(iOS)
-        iOSTorrentListRow(torrent: $torrent, store: store)
+        iOSTorrentListRow(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents)
         #elseif os(macOS)
-        macOSTorrentListRow(torrent: $torrent, store: store)
+        macOSTorrentListRow(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents)
         #endif
     }
 }
@@ -110,4 +111,137 @@ func copyMagnetLinkToClipboard(_ magnetLink: String) {
     #elseif os(iOS)
     UIPasteboard.general.string = magnetLink
     #endif
+}
+
+// MARK: - Shared Label Components
+
+// Shared function to save labels and refresh torrent data
+func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: Store, onComplete: @escaping () -> Void = {}) {
+    let info = makeConfig(store: store)
+    let sortedLabels = Array(labels).sorted()
+    
+    // First update the labels
+    updateTorrent(
+        args: TorrentSetRequestArgs(
+            ids: [torrentId],
+            labels: sortedLabels  // Always set labels field, even if empty
+        ),
+        info: info,
+        onComplete: { _ in
+            // Trigger an immediate refresh
+            refreshTransmissionData(store: store)
+            onComplete()
+        }
+    )
+}
+
+// Shared function to handle adding new tags
+func addNewTag(trimmedInput: String, to workingLabels: inout Set<String>) -> Bool {
+    if !trimmedInput.isEmpty {
+        if !LabelTag.containsLabel(workingLabels, trimmedInput) {
+            workingLabels.insert(trimmedInput)
+            return true
+        }
+    }
+    return false
+}
+
+struct LabelTag: View {
+    let label: String
+    var onRemove: (() -> Void)?
+    
+    // Static helper for case-insensitive label comparison
+    static func containsLabel(_ labels: Set<String>, _ newLabel: String) -> Bool {
+        labels.contains { $0.localizedCaseInsensitiveCompare(newLabel) == .orderedSame }
+    }
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(label)
+                .font(.caption)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            
+            if let onRemove = onRemove {
+                Button(action: onRemove) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.accentColor.opacity(0.15))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(Color.accentColor.opacity(0.4), lineWidth: 1)
+        )
+    }
+}
+
+// Shared function to create label tags view
+func createLabelTagsView(for torrent: Torrent) -> some View {
+    ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 4) {
+            ForEach(torrent.labels.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }, id: \.self) { label in
+                LabelTag(label: label)
+            }
+        }
+    }
+}
+
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+    
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        var height: CGFloat = 0
+        var width: CGFloat = 0
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var maxHeight: CGFloat = 0
+        
+        for size in sizes {
+            if x + size.width > (proposal.width ?? .infinity) {
+                y += maxHeight + spacing
+                x = 0
+                maxHeight = 0
+            }
+            
+            x += size.width + spacing
+            width = max(width, x)
+            maxHeight = max(maxHeight, size.height)
+            height = y + maxHeight
+        }
+        
+        return CGSize(width: width, height: height)
+    }
+    
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        var x = bounds.minX
+        var y = bounds.minY
+        var maxHeight: CGFloat = 0
+        
+        for (index, size) in sizes.enumerated() {
+            if x + size.width > bounds.maxX {
+                y += maxHeight + spacing
+                x = bounds.minX
+                maxHeight = 0
+            }
+            
+            subviews[index].place(
+                at: CGPoint(x: x, y: y),
+                proposal: ProposedViewSize(size)
+            )
+            
+            x += size.width + spacing
+            maxHeight = max(maxHeight, size.height)
+        }
+    }
 } 

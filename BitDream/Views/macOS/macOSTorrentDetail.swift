@@ -14,6 +14,7 @@ struct macOSTorrentDetail: View {
     
     @State public var files: [TorrentFile] = []
     @State private var isShowingFilesSheet = false
+    @State private var fileStats: [TorrentFileStats] = []
     
     var body: some View {
         // Use shared formatting function
@@ -62,10 +63,10 @@ struct macOSTorrentDetail: View {
                                 isShowingFilesSheet = true
                             } label: {
                                 HStack(spacing: 4) {
-                                    Text("\(files.count) Files")
+                                    Text("\(files.count)")
                                         .foregroundColor(.accentColor)
                                     
-                                    Image(systemName: "text.page.badge.magnifyingglass")
+                                    Image(systemName: "text.magnifyingglass")
                                         .font(.system(size: 11))
                                         .foregroundColor(.accentColor)
                                 }
@@ -165,14 +166,15 @@ struct macOSTorrentDetail: View {
                 }
                 .padding()
                 
-                TorrentFileDetail(files: files)
+                macOSTorrentFileDetail(files: files, fileStats: fileStats)
             }
             .frame(width: 600, height: 400)
         }
         .onAppear{
             // Use shared function to fetch files
-            fetchTorrentFiles(transferId: torrent.id, store: store) { fetchedFiles in
-                self.files = fetchedFiles
+            fetchTorrentFiles(transferId: torrent.id, store: store) { fetchedFiles, fetchedStats in
+                files = fetchedFiles
+                fileStats = fetchedStats
             }
         }
         .toolbar {

@@ -13,17 +13,25 @@ import KeychainAccess
 struct iOSTorrentListRow: View {
     @Binding var torrent: Torrent
     var store: Store
+    @Binding var selectedTorrents: Set<Torrent>  // Added for API compatibility
     
     @State var deleteDialog: Bool = false
+    @State var labelDialog: Bool = false
+    @State var labelInput: String = ""
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack {
-            Text(torrent.name)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-                .padding(.bottom, 1)
-                .lineLimit(1)
+            HStack(spacing: 8) {
+                Text(torrent.name)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(alignment: .leading)
+                
+                // Use shared label tags view
+                createLabelTagsView(for: torrent)
+                    .layoutPriority(-1)  // Give lower priority than the name
+            }
             
             createStatusView(for: torrent)
                 .font(.custom("sub", size: 10))
@@ -54,26 +62,58 @@ struct iOSTorrentListRow: View {
                 Label(torrent.status == TorrentStatus.stopped.rawValue ? "Resume Dream" : "Pause Dream", 
                       systemImage: torrent.status == TorrentStatus.stopped.rawValue ? "play" : "pause")
             }
+
+            Divider()
             
             // Priority Menu
             Menu {
                 Button(action: {
-                    updateTorrentPriority(torrent: torrent, priority: TorrentPriority.high, info: makeConfig(store: store), onComplete: { r in })
+                    let info = makeConfig(store: store)
+                    updateTorrent(
+                        args: TorrentSetRequestArgs(
+                            ids: [torrent.id],
+                            priorityHigh: []
+                        ),
+                        info: info,
+                        onComplete: { r in }
+                    )
                 }) {
                     Label("High", systemImage: "arrow.up")
                 }
                 Button(action: {
-                    updateTorrentPriority(torrent: torrent, priority: TorrentPriority.normal, info: makeConfig(store: store), onComplete: { r in })
+                    let info = makeConfig(store: store)
+                    updateTorrent(
+                        args: TorrentSetRequestArgs(
+                            ids: [torrent.id],
+                            priorityNormal: []
+                        ),
+                        info: info,
+                        onComplete: { r in }
+                    )
                 }) {
                     Label("Normal", systemImage: "minus")
                 }
                 Button(action: {
-                    updateTorrentPriority(torrent: torrent, priority: TorrentPriority.low, info: makeConfig(store: store), onComplete: { r in })
+                    let info = makeConfig(store: store)
+                    updateTorrent(
+                        args: TorrentSetRequestArgs(
+                            ids: [torrent.id],
+                            priorityLow: []
+                        ),
+                        info: info,
+                        onComplete: { r in }
+                    )
                 }) {
                     Label("Low", systemImage: "arrow.down")
                 }
             } label: {
                 Label("Update Priority", systemImage: "flag.badge.ellipsis")
+            }
+
+            Button(action: {
+                labelDialog.toggle()
+            }) {
+                Label("Edit Labels", systemImage: "tag")
             }
             
             Divider()
@@ -95,7 +135,6 @@ struct iOSTorrentListRow: View {
             }
         }
         .id(torrent.id)
-        // Ask to delete files on disk when removing transfer
         .alert(
             "Delete Torrent",
             isPresented: $deleteDialog) {
@@ -123,13 +162,131 @@ struct iOSTorrentListRow: View {
             RoundedRectangle(cornerRadius: 4)
                 .fill(Color.white)
         )
+        .sheet(isPresented: $labelDialog) {
+            NavigationView {
+                iOSLabelEditView(labelInput: $labelInput, existingLabels: torrent.labels, store: store, torrentId: torrent.id)
+            }
+        }
     }
 }
+
+struct iOSLabelEditView: View {
+    @Binding var labelInput: String
+    let existingLabels: [String]
+    @State private var workingLabels: Set<String>
+    @State private var newTagInput: String = ""
+    @FocusState private var isInputFocused: Bool
+    @Environment(\.dismiss) private var dismiss
+    var store: Store
+    var torrentId: Int
+    
+    init(labelInput: Binding<String>, existingLabels: [String], store: Store, torrentId: Int) {
+        self._labelInput = labelInput
+        self.existingLabels = existingLabels
+        self._workingLabels = State(initialValue: Set(existingLabels))
+        self.store = store
+        self.torrentId = torrentId
+    }
+    
+    private func saveAndDismiss() {
+        // First add any pending tag
+        addNewTag()
+        
+        // Update the binding
+        updateLabelInput()
+        
+        // Save to server and refresh
+        saveTorrentLabels(torrentId: torrentId, labels: workingLabels, store: store) {
+            dismiss()
+        }
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Labels")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
+                    
+                    FlowLayout(spacing: 4) {
+                        ForEach(Array(workingLabels).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }, id: \.self) { label in
+                            LabelTag(label: label) {
+                                workingLabels.remove(label)
+                                updateLabelInput()
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    HStack {
+                        TextField("Add label", text: $newTagInput)
+                            .textFieldStyle(.roundedBorder)
+                            .focused($isInputFocused)
+                            .submitLabel(.done)
+                            .onSubmit(addNewTag)
+                        
+                        if !newTagInput.isEmpty {
+                            Button(action: addNewTag) {
+                                Image(systemName: "plus.circle.fill")
+                                    .foregroundColor(.accentColor)
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    Text("Add labels to organize your torrents.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
+                }
+                .padding(.vertical)
+            }
+        }
+        .navigationTitle("Edit Labels")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") {
+                    dismiss()
+                }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    saveAndDismiss()
+                }
+            }
+        }
+        .onChange(of: newTagInput) { newValue in
+            if newValue.contains(",") {
+                // Remove the comma and add the tag
+                newTagInput = newValue.replacingOccurrences(of: ",", with: "")
+                addNewTag()
+            }
+        }
+    }
+    
+    private func addNewTag() {
+        let trimmed = newTagInput.trimmingCharacters(in: .whitespaces)
+        if BitDream.addNewTag(trimmedInput: trimmed, to: &workingLabels) {
+            updateLabelInput()
+        }
+        newTagInput = ""
+    }
+    
+    private func updateLabelInput() {
+        // Update the binding with the current working set
+        labelInput = workingLabels.joined(separator: ", ")
+    }
+}
+
 #else
 // Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
 struct iOSTorrentListRow: View {
     @Binding var torrent: Torrent
     var store: Store
+    @Binding var selectedTorrents: Set<Torrent>
     
     var body: some View {
         EmptyView()

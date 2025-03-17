@@ -79,66 +79,39 @@ extension Sequence {
     }
 }
 
-public enum sortBy: String, CaseIterable {
-    case nameAsc = "Name ↑"
-    case nameDesc = "Name ↓"
-    case dateAddedAsc = "Date Added ↑"
-    case dateAddedDesc = "Date Added ↓"
-    case etaAsc = "Remaining Time ↑"
-    case etaDesc = "Remaining Time ↓"
-    case statusAsc = "Status ↑"
-    case statusDesc = "Status ↓"
+public enum SortProperty: String, CaseIterable {
+    case name = "Name"
+    case dateAdded = "Date Added"
+    case status = "Status"
+    case eta = "Remaining Time"
 }
 
-func sortTorrents(_ torrents: [Torrent], sortBy: sortBy) -> [Torrent] {
-    // Create a base sorted list by name (ascending) for consistent secondary sorting
+func sortTorrents(_ torrents: [Torrent], by property: SortProperty, order: SortOrder) -> [Torrent] {
     let sortedList = torrents.sortedAscending(using: .keyPath(\.name))
-
-    switch sortBy {
-    case .nameAsc:
-        return torrents.sortedAscending(using: .keyPath(\.name))
-    case .nameDesc:
-        return torrents.sortedDescending(using: .keyPath(\.name))
-    case .dateAddedAsc:
-        return sortedList.sortedAscending(using: .keyPath(\.addedDate))
-    case .dateAddedDesc:
-        return sortedList.sortedDescending(using: .keyPath(\.addedDate))
-    case .statusAsc:
-        return sortedList.sortedAscending(using: .keyPath(\.statusCalc.rawValue))
-    case .statusDesc:
-        return sortedList.sortedDescending(using: .keyPath(\.statusCalc.rawValue))
-    case .etaAsc, .etaDesc:
-        // Determine if we're sorting ascending or descending
-        let ascending = sortBy == .etaAsc
-        
-        // Simple custom sorting that prioritizes active torrents with valid ETAs
-        // and puts completed, paused, and stalled at the bottom
+    switch property {
+    case .name:
+        return order == .ascending ? torrents.sortedAscending(using: .keyPath(\.name)) : torrents.sortedDescending(using: .keyPath(\.name))
+    case .dateAdded:
+        return order == .ascending ? sortedList.sortedAscending(using: .keyPath(\.addedDate)) : sortedList.sortedDescending(using: .keyPath(\.addedDate))
+    case .status:
+        return order == .ascending ? sortedList.sortedAscending(using: .keyPath(\.statusCalc.rawValue)) : sortedList.sortedDescending(using: .keyPath(\.statusCalc.rawValue))
+    case .eta:
+        let ascending = (order == .ascending)
         return sortedList.sorted { a, b in
-            // Helper function to get sort priority (lower number = higher priority)
             func getPriority(_ torrent: Torrent) -> Int {
-                if torrent.statusCalc == .complete { return 5 }      // Lowest priority
-                if torrent.statusCalc == .seeding { return 4 }       // Second priority
-                if torrent.statusCalc == .paused { return 3 }        // Third lowest
-                if torrent.statusCalc == .stalled { return 2 }       // Fourth lowest
-                if torrent.eta <= 0 { return 1 }                     // Unknown ETA but active
-                return 0                                             // Active with valid ETA
+                if torrent.statusCalc == .complete { return 5 }
+                if torrent.statusCalc == .seeding { return 4 }
+                if torrent.statusCalc == .paused { return 3 }
+                if torrent.statusCalc == .stalled { return 2 }
+                if torrent.eta <= 0 { return 1 }
+                return 0
             }
-            
             let priorityA = getPriority(a)
             let priorityB = getPriority(b)
-            
-            // If priorities differ, sort by priority
             if priorityA != priorityB {
-                return priorityA < priorityB
+                return ascending ? (priorityA < priorityB) : (priorityA > priorityB)
             }
-            
-            // If both are active with valid ETAs, sort by ETA
-            if priorityA == 0 && priorityB == 0 {
-                return ascending ? (a.eta < b.eta) : (a.eta > b.eta)
-            }
-            
-            // Otherwise maintain name-based sort
-            return true
+            return ascending ? (a.eta < b.eta) : (a.eta > b.eta)
         }
     }
 }
@@ -241,12 +214,18 @@ func refreshTransmissionData(store: Store) {
     
     let info = makeConfig(store: store)
     // also reset default download directory when new host is set
-    getDefaultDownloadDir(config: info.config, auth: info.auth, onResponse: { downloadDir in
+    getSession(config: info.config, auth: info.auth) { sessionInfo in
         DispatchQueue.main.async {
             store.objectWillChange.send()
-            store.defaultDownloadDir = downloadDir
+            store.defaultDownloadDir = sessionInfo.downloadDir
+            
+            // Update version in CoreData
+            if let host = store.host {
+                host.version = sessionInfo.version
+                try? PersistenceController.shared.container.viewContext.save()
+            }
         }
-    })
+    }
 }
 
 /*--------------------------------------------------------------------------------------------

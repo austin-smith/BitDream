@@ -6,27 +6,17 @@ struct iOSSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingThemeSettings = false
     @ObservedObject var store: Store
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         // iOS version with standard styling
         NavigationView {
             Form {
                 Section(header: Text("Appearance")) {
-                    HStack {
-                        Button("Theme Settings") {
-                            // Disabled for now
+                    Picker("Theme", selection: $themeManager.themeMode) {
+                        ForEach(ThemeMode.allCases, id: \.self) { mode in
+                            Text(mode.rawValue).tag(mode)
                         }
-                        .disabled(true)
-                        
-                        Spacer()
-                        
-                        Text("Coming Soon")
-                            .font(.caption2)
-                            .foregroundColor(.orange)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.orange.opacity(0.2))
-                            .cornerRadius(4)
                     }
                 }
                 

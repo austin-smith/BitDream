@@ -30,15 +30,24 @@ enum AccentColorOption: String, CaseIterable, Identifiable {
     }
 }
 
+// Define available theme modes
+enum ThemeMode: String, CaseIterable {
+    case system = "System"
+    case light = "Light"
+    case dark = "Dark"
+}
+
 // Theme manager class
 class ThemeManager: ObservableObject {
     static let shared = ThemeManager()
     
     @Published var accentColor: Color
     @Published var currentAccentColorOption: AccentColorOption
+    @Published var themeMode: ThemeMode
     
-    // Key for storing accent color preference
+    // Keys for storing preferences
     private let accentColorKey = "accentColorKey"
+    private let themeModeKey = "themeModeKey"
     
     init() {
         // Load saved accent color from UserDefaults or use default
@@ -48,7 +57,15 @@ class ThemeManager: ObservableObject {
         self.currentAccentColorOption = .blue
         self.accentColor = Color(hex: AccentColorOption.defaultColor.rawValue)
         
-        // Then update if we have a saved value
+        // Load saved theme mode or use system default
+        if let savedThemeMode = UserDefaults.standard.string(forKey: themeModeKey),
+           let mode = ThemeMode(rawValue: savedThemeMode) {
+            self.themeMode = mode
+        } else {
+            self.themeMode = .system
+        }
+        
+        // Then update accent color if we have a saved value
         if let option = AccentColorOption.allCases.first(where: { $0.rawValue == savedHex }) {
             self.currentAccentColorOption = option
             self.accentColor = option.color
@@ -61,6 +78,25 @@ class ThemeManager: ObservableObject {
         
         // Save to UserDefaults
         UserDefaults.standard.set(option.rawValue, forKey: accentColorKey)
+    }
+    
+    func setThemeMode(_ mode: ThemeMode) {
+        self.themeMode = mode
+        
+        // Save to UserDefaults
+        UserDefaults.standard.set(mode.rawValue, forKey: themeModeKey)
+    }
+    
+    // Helper to convert ThemeMode to ColorScheme
+    func colorScheme() -> ColorScheme? {
+        switch themeMode {
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        case .system:
+            return nil
+        }
     }
     
     func setAccentColorFromHex(_ hex: String) {
@@ -98,5 +134,22 @@ extension Color {
             blue: Double(b) / 255,
             opacity: Double(a) / 255
         )
+    }
+}
+
+// View modifier for immediate theme application
+struct ImmediateThemeModifier: ViewModifier {
+    @ObservedObject var themeManager: ThemeManager
+    
+    func body(content: Content) -> some View {
+        content
+            .preferredColorScheme(themeManager.colorScheme())
+            .animation(.none, value: themeManager.themeMode)
+    }
+}
+
+extension View {
+    func immediateTheme(manager: ThemeManager) -> some View {
+        modifier(ImmediateThemeModifier(themeManager: manager))
     }
 } 

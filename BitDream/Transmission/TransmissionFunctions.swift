@@ -214,6 +214,7 @@ struct TorrentFilesRequest: Codable {
 
 struct TorrentFilesResponseFiles: Codable {
     let files: [TorrentFile]
+    let fileStats: [TorrentFileStats]
 }
 
 struct TorrentFilesResponseTorrents: Codable {
@@ -227,15 +228,15 @@ struct TorrentFilesResponse: Codable {
 /// Gets the list of files in a torrent
 /// - Parameter transferId: The ID of the torrent to get files for
 /// - Parameter info: A tuple containing the server config and auth info
-/// - Parameter onReceived: A callback that receives the list of files
-public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, auth: TransmissionAuth), onReceived: @escaping ([TorrentFile])->(Void)) {
+/// - Parameter onReceived: A callback that receives the list of files and their stats
+public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, auth: TransmissionAuth), onReceived: @escaping ([TorrentFile], [TorrentFileStats])->(Void)) {
     url = info.config
     url?.path = "/transmission/rpc"
     
     let requestBody = TorrentFilesRequest(
         method: "torrent-get",
         arguments: TorrentFilesRequestArgs(
-            fields: ["files"],
+            fields: ["files", "fileStats"],
             ids: [transferId]
         )
     )
@@ -244,7 +245,7 @@ public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, 
     
     let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
         if error != nil {
-            return onReceived([])
+            return onReceived([], [])
         }
         
         let httpResp = resp as? HTTPURLResponse
@@ -255,13 +256,14 @@ public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, 
             return
         case 200?:
             let response = try? JSONDecoder().decode(TorrentFilesResponse.self, from: data!)
-            if let files = response?.arguments.torrents.first?.files {
-                return onReceived(files)
+            if let responseFiles = response?.arguments.torrents.first?.files,
+               let responseStats = response?.arguments.torrents.first?.fileStats {
+                return onReceived(responseFiles, responseStats)
             } else {
-                return onReceived([])
+                return onReceived([], [])
             }
         default:
-            return onReceived([])
+            return onReceived([], [])
         }
     }
     task.resume()
@@ -329,37 +331,37 @@ public func deleteTorrent(torrent: Torrent, erase: Bool, config: TransmissionCon
     task.resume()
 }
 
-// We are only parsing "download-dir" from session-get response
-struct TransmissionSessionResponseArguments: Codable {
+/// Model representing session information from the server
+public struct SessionInfo {
     let downloadDir: String
+    let version: String
     
-    enum CodingKeys: String, CodingKey {
-        case downloadDir = "download-dir"
+    init(downloadDir: String = "unknown", version: String = "unknown") {
+        self.downloadDir = downloadDir
+        self.version = version
     }
 }
 
-struct TransmissionSessionResponse: Codable {
-    let arguments: TransmissionSessionResponseArguments
-}
-
-/// Get the server's default download directory
+/// Get the server's session information including download directory and version
 /// - Parameter config: The server's config
 /// - Parameter auth: The username and password for the server
-/// - Parameter onResponse: An escaping function that receives the response from the server
-public func getDefaultDownloadDir(config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (String) -> Void) {
+/// - Parameter onResponse: An escaping function that receives session information from the server
+public func getSession(config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (TransmissionSessionResponseArguments) -> Void) {
     url = config
     url?.path = "/transmission/rpc"
     
-    let requestBody = TransmissionRequest(
+    let requestBody = TransmissionListRequest(
         method: "session-get",
-        arguments: [:]
+        arguments: [
+            "fields": ["download-dir", "version"]
+        ]
     )
     
     let req = buildRequest(requestBody: requestBody, auth: auth)
     
     let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
         if error != nil {
-            return onResponse("CONFIG_ERR")
+            return onResponse(TransmissionSessionResponseArguments())
         }
         
         let httpResp = resp as? HTTPURLResponse
@@ -367,16 +369,17 @@ public func getDefaultDownloadDir(config: TransmissionConfig, auth: Transmission
         switch httpResp?.statusCode {
         case 409?: // If we get a 409, save the token and try again
             authorize(httpResp: httpResp, ssl: (config.scheme == "https"))
-            getDefaultDownloadDir(config: config, auth: auth, onResponse: onResponse)
+            getSession(config: config, auth: auth, onResponse: onResponse)
             return
         case 401?:
-            return onResponse("FORBIDDEN")
+            return onResponse(TransmissionSessionResponseArguments())
         case 200?:
             let response = try? JSONDecoder().decode(TransmissionSessionResponse.self, from: data!)
-            let downloadDir = response?.arguments.downloadDir
-            return onResponse(downloadDir!)
+            return onResponse(
+                response?.arguments ?? TransmissionSessionResponseArguments()
+            )
         default:
-            return onResponse("DEFAULT")
+            return onResponse(TransmissionSessionResponseArguments())
         }
     }
     task.resume()
@@ -470,20 +473,67 @@ public func playPauseAllTorrents(start: Bool, info: (config: TransmissionConfig,
     task.resume()
 }
 
-/// Update a transfers priority
-/// - Parameter torrent: The torrent whose priority we are setting
-/// - Parameter priority: One of: `TorrentPriority.high/normal/low`
-/// - Parameter onComplete: Called when the servers' response is received with a `TransmissionResponse`
-public func updateTorrentPriority(torrent: Torrent, priority: TorrentPriority, info: (config: TransmissionConfig, auth: TransmissionAuth), onComplete: @escaping (TransmissionResponse) -> Void) {
+/// Generic request arguments for torrent-set method
+public struct TorrentSetRequestArgs: Codable {
+    public var ids: [Int]
+    public var labels: [String]?
+    public var bandwidthPriority: Int?
+    public var downloadLimit: Int?
+    public var downloadLimited: Bool?
+    public var uploadLimit: Int?
+    public var uploadLimited: Bool?
+    public var honorsSessionLimits: Bool?
+    public var group: String?
+    public var location: String?
+    public var peerLimit: Int?
+    public var seedIdleLimit: Int?
+    public var seedIdleMode: Int?
+    public var seedRatioLimit: Double?
+    public var seedRatioMode: Int?
+    public var sequentialDownload: Bool?
+    public var priorityHigh: [Int]?
+    public var priorityLow: [Int]?
+    public var priorityNormal: [Int]?
+    
+    enum CodingKeys: String, CodingKey {
+        case ids
+        case labels
+        case bandwidthPriority
+        case downloadLimit = "download-limit"
+        case downloadLimited = "download-limited"
+        case uploadLimit = "upload-limit"
+        case uploadLimited = "upload-limited"
+        case honorsSessionLimits = "honors-session-limits"
+        case group
+        case location
+        case peerLimit = "peer-limit"
+        case seedIdleLimit = "seed-idle-limit"
+        case seedIdleMode = "seed-idle-mode"
+        case seedRatioLimit = "seed-ratio-limit"
+        case seedRatioMode = "seed-ratio-mode"
+        case sequentialDownload = "sequential-download"
+        case priorityHigh = "priority-high"
+        case priorityLow = "priority-low"
+        case priorityNormal = "priority-normal"
+    }
+}
+
+public struct TorrentSetRequest: Codable {
+    public let method: String
+    public let arguments: TorrentSetRequestArgs
+}
+
+/// Update torrent properties using the torrent-set method
+/// - Parameter args: TorrentSetRequestArgs containing the properties and IDs to update
+/// - Parameter info: Tuple containing server config and auth info
+/// - Parameter onComplete: Called when the server's response is received
+public func updateTorrent(args: TorrentSetRequestArgs, info: (config: TransmissionConfig, auth: TransmissionAuth), onComplete: @escaping (TransmissionResponse) -> Void) {
     url = info.config
     url?.path = "/transmission/rpc"
     
-    let requestBody = TorrentActionRequest(
+    let requestBody = TorrentSetRequest(
         method: "torrent-set",
-        arguments: [
-            "ids": [torrent.id],
-            priority.rawValue: []
-        ]
+        arguments: args
     )
     
     let req = buildRequest(requestBody: requestBody, auth: info.auth)
@@ -491,14 +541,14 @@ public func updateTorrentPriority(torrent: Torrent, priority: TorrentPriority, i
     let task = URLSession.shared.dataTask(with: req) { (data, resp, err) in
         if err != nil {
             onComplete(TransmissionResponse.configError)
+            return
         }
         
         let httpResp = resp as? HTTPURLResponse
-        // Call `onAdd` with the status code
         switch httpResp?.statusCode {
         case 409?: // If we get a 409, save the token and try again
             authorize(httpResp: httpResp, ssl: (info.config.scheme == "https"))
-            updateTorrentPriority(torrent: torrent, priority: priority, info: info, onComplete: onComplete)
+            updateTorrent(args: args, info: info, onComplete: onComplete)
             return
         case 401?:
             return onComplete(TransmissionResponse.unauthorized)
@@ -536,84 +586,3 @@ private func buildRequest<T: Codable>(requestBody: T, auth: TransmissionAuth) ->
     
     return req
 }
-
-//
-//private func makeRequest<T: Codable>(requestBody: T, auth: TransmissionAuth, onResponse: @escaping (HTTPURLResponse) -> Void) {
-//    // First create the request
-//    var req = URLRequest(url: url!.url!)
-//    req.httpMethod = "POST"
-//    req.httpBody = try? JSONEncoder().encode(requestBody)
-//    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-//    req.setValue(lastSessionToken, forHTTPHeaderField: TOKEN_HEAD)
-//    let loginString = String(format: "%@:%@", auth.username, auth.password)
-//    let loginData = loginString.data(using: String.Encoding.utf8)!
-//    let base64LoginString = loginData.base64EncodedString()
-//    req.setValue("Basic \(base64LoginString)", forHTTPHeaderField: "Authorization")
-//}
-//
-//private func sendrequest (request: URLRequest, onResponse: @escaping (HTTPURLResponse) -> Void) {
-//    var responseObject: HTTPURLResponse
-//
-//    // Send the request to the server
-//    let task = URLSession.shared.dataTask(with: request) { (data, resp, err) in
-//        if err != nil {
-//            response
-//            onResponse(TransmissionResponse.configError)
-//        }
-//
-//        let httpResp = resp as? HTTPURLResponse
-//        // Call `onAdd` with the status code
-//        switch httpResp?.statusCode {
-//        // If we get a 409, save the new token and make the request again
-//        case 409?:
-//            authorize(httpResp: httpResp, ssl: (info.config.scheme == "https"))
-//            sendrequest(request: request, onResponse: onResponse)
-//            return
-//        default:
-//            return onResponse(httpResp!)
-//        }
-//    }
-//    task.resume()
-//}
-//
-//
-//
-///// Makes a request to the server for a list of the currently running torrents
-///// - Parameter config: A `TransmissionConfig` with the servers address and port
-///// - Parameter auth: A `TransmissionAuth` with authorization parameters ie. username and password
-///// - Parameter onReceived: An escaping function that receives a list of `Torrent`s
-//public func getTorrents2(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @escaping ([Torrent]?, String?) -> Void) -> Void {
-//    url = config
-//    url?.path = "/transmission/rpc"
-//
-//    let requestBody = TransmissionListRequest(
-//        method: "torrent-get",
-//        arguments: [
-//            "fields": ["activityDate", "addedDate", "desiredAvailable", "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled", "leftUntilDone", "metadataPercentComplete", "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs", "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status" ]
-//        ]
-//    )
-//
-//    // Create the request with auth values
-//    let req = buildRequest(requestBody: requestBody, auth: auth)
-//    // Send the request
-//    let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
-//        if error != nil {
-//            return onReceived(nil, error.debugDescription)
-//        }
-//        let httpResp = resp as? HTTPURLResponse
-//        switch httpResp?.statusCode {
-//        case 409?: // If we get a 409, save the session token and try again
-//            authorize(httpResp: httpResp, ssl: (config.scheme == "https"))
-//            getTorrents(config: config, auth: auth, onReceived: onReceived)
-//            return
-//        case 200?:
-//            let response = try? JSONDecoder().decode(TransmissionListResponse.self, from: data!)
-//            let torrents = response?.arguments["torrents"]
-//
-//            return onReceived(torrents, nil)
-//        default:
-//            return onReceived(nil, String(decoding: data!, as: UTF8.self))
-//        }
-//    }
-//    task.resume()
-//}

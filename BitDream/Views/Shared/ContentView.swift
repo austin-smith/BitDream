@@ -15,13 +15,15 @@ extension UserDefaults {
     private enum Keys {
         static let sidebarVisibility = "sidebarVisibility"
         static let inspectorVisibility = "inspectorVisibility"
-        static let sortBySelection = "sortBySelection"
+        static let sortProperty = "sortProperty"
+        static let sortOrder = "sortOrder"
     }
     
     static let viewStateDefaults: [String: Any] = [
         Keys.sidebarVisibility: true, // true = show sidebar (.all), false = hide sidebar (.detailOnly)
         Keys.inspectorVisibility: true,
-        Keys.sortBySelection: "nameAsc" // Default sort by name ascending
+        Keys.sortProperty: "Name", // Default sort property as "Name"
+        Keys.sortOrder: true // true = ascending, false = descending
     ]
     
     static func registerViewStateDefaults() {
@@ -42,14 +44,19 @@ extension UserDefaults {
         set { set(newValue, forKey: Keys.inspectorVisibility) }
     }
     
-    var sortBySelection: sortBy {
+    var sortProperty: SortProperty {
         get {
-            let rawValue = string(forKey: Keys.sortBySelection) ?? "nameAsc"
-            return sortBy(rawValue: rawValue) ?? .nameAsc
+            let rawValue = string(forKey: Keys.sortProperty) ?? "Name"
+            return SortProperty(rawValue: rawValue) ?? .name
         }
         set {
-            set(newValue.rawValue, forKey: Keys.sortBySelection)
+            set(newValue.rawValue, forKey: Keys.sortProperty)
         }
+    }
+    
+    var sortOrder: SortOrder {
+        get { bool(forKey: Keys.sortOrder) ? .ascending : .descending }
+        set { set(newValue == .ascending, forKey: Keys.sortOrder) }
     }
 }
 
@@ -196,8 +203,8 @@ extension Array where Element == Torrent {
         }
     }
     
-    func sorted(by sortSelection: sortBy) -> [Torrent] {
-        return sortTorrents(self, sortBy: sortSelection)
+    func sorted(by property: SortProperty, order: SortOrder) -> [Torrent] {
+        return sortTorrents(self, by: property, order: order)
     }
 }
 

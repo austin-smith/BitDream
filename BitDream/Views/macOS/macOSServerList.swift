@@ -63,6 +63,18 @@ struct macOSServerList: View {
                                         Text("\(host.server ?? "Unknown server"):\(String(host.port))")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
+                                            
+                                        if let version = host.version {
+                                            Text("\(version)")
+                                                .font(.caption)
+                                                .foregroundColor(.purple)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 2)
+                                                .background(
+                                                    Capsule()
+                                                        .fill(Color.purple.opacity(0.1))
+                                                )
+                                        }
                                     }
                                     
                                     Spacer()

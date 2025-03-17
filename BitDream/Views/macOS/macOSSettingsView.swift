@@ -22,14 +22,13 @@ struct macOSSettingsView: View {
                         HStack {
                             Text("Theme")
                             Spacer()
-                            Picker("", selection: .constant("System")) {
-                                Text("System").tag("System")
-                                Text("Light").tag("Light")
-                                Text("Dark").tag("Dark")
+                            Picker("", selection: $themeManager.themeMode) {
+                                ForEach(ThemeMode.allCases, id: \.self) { mode in
+                                    Text(mode.rawValue).tag(mode)
+                                }
                             }
                             .pickerStyle(.menu)
                             .frame(width: 120)
-                            .disabled(true)
                         }
                         .padding(.top, 4)
                         

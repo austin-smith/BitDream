@@ -96,10 +96,35 @@ public struct TorrentFile: Codable, Identifiable {
     var percentDone: Double { Double(bytesCompleted) / Double(length) }
 }
 
+public struct TorrentFileStats: Codable {
+    var bytesCompleted: Int64
+    var wanted: Bool
+    var priority: Int
+}
+
 public struct SessionStats: Codable, Hashable {
     let activeTorrentCount: Int
     let downloadSpeed: Int64
     let pausedTorrentCount: Int
     let torrentCount: Int
     let uploadSpeed: Int64
+}
+
+public struct TransmissionSessionResponseArguments: Codable, Hashable {
+    public let downloadDir: String
+    public let version: String
+    
+    enum CodingKeys: String, CodingKey {
+        case downloadDir = "download-dir"
+        case version
+    }
+    
+    public init(downloadDir: String = "unknown", version: String = "unknown") {
+        self.downloadDir = downloadDir
+        self.version = version
+    }
+}
+
+struct TransmissionSessionResponse: Codable {
+    let arguments: TransmissionSessionResponseArguments
 }

@@ -12,6 +12,7 @@ struct iOSTorrentDetail: View {
     @Binding var torrent: Torrent
     
     @State public var files: [TorrentFile] = []
+    @State public var fileStats: [TorrentFileStats] = []
     
     var body: some View {
         // Use shared formatting function
@@ -48,7 +49,7 @@ struct iOSTorrentDetail: View {
                                 .foregroundColor(.gray)
                         }
                         
-                        NavigationLink(destination: TorrentFileDetail(files: files)) {
+                        NavigationLink(destination: iOSTorrentFileDetail(files: files, fileStats: fileStats)) {
                             HStack {
                                 Text("Files")
                                 Spacer()
@@ -121,8 +122,9 @@ struct iOSTorrentDetail: View {
             }
             .onAppear{
                 // Use shared function to fetch files
-                fetchTorrentFiles(transferId: torrent.id, store: store) { fetchedFiles in
-                    self.files = fetchedFiles
+                fetchTorrentFiles(transferId: torrent.id, store: store) { fetchedFiles, fetchedStats in
+                    files = fetchedFiles
+                    fileStats = fetchedStats
                 }
             }
             .toolbar {

@@ -18,15 +18,25 @@ struct iOSContentView: View {
 
     private var keychain = Keychain(service: "crapshack.BitDream")
     
-    // Store the selected torrent ID instead of the torrent object
-    @State private var selectedTorrentId: Int? = nil
+    // Store the selected torrent IDs instead of a single ID
+    @State private var selectedTorrentIds: Set<Int> = []
     
-    // Computed property to get the selected torrent from the ID
-    private var torrentSelection: Binding<Torrent?> {
-        createTorrentSelectionBinding(selectedId: $selectedTorrentId, in: store)
+    // Computed property to get the selected torrents from the IDs
+    private var torrentSelection: Binding<Set<Torrent>> {
+        Binding<Set<Torrent>>(
+            get: {
+                Set(selectedTorrentIds.compactMap { id in
+                    store.torrents.first { $0.id == id }
+                })
+            },
+            set: { newSelection in
+                selectedTorrentIds = Set(newSelection.map { $0.id })
+            }
+        )
     }
     
-    @State var sortBySelection: sortBy = UserDefaults.standard.sortBySelection
+    @State var sortProperty: SortProperty = UserDefaults.standard.sortProperty
+    @State var sortOrder: SortOrder = UserDefaults.standard.sortOrder
     @State var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
     
     var body: some View {
@@ -49,13 +59,18 @@ struct iOSContentView: View {
                 actionToolbarItems
             }
             .onAppear {
-                setupHost(hosts: hosts, store: store)
+                if store.host == nil {
+                    setupHost(hosts: hosts, store: store)
+                }
             }
-            .onChange(of: sortBySelection) { oldValue, newValue in
-                UserDefaults.standard.sortBySelection = newValue
+            .onChange(of: sortProperty) { oldValue, newValue in
+                UserDefaults.standard.sortProperty = newValue
+            }
+            .onChange(of: sortOrder) { oldValue, newValue in
+                UserDefaults.standard.sortOrder = newValue
             }
         } detail: {
-            if let selectedTorrent = torrentSelection.wrappedValue {
+            if let selectedTorrent = torrentSelection.wrappedValue.first {
                 TorrentDetail(store: store, viewContext: viewContext, torrent: binding(for: selectedTorrent, in: store))
             } else {
                 Text("Select a Dream")
@@ -89,16 +104,16 @@ struct iOSContentView: View {
                     .foregroundColor(.gray)
                     .padding()
             } else {
-                ForEach(store.torrents
-                        .filtered(by: filterBySelection)
-                        .sorted(by: sortBySelection), id: \.id) { torrent in
-                    NavigationLink {
-                        TorrentDetail(store: store, viewContext: viewContext, torrent: binding(for: torrent, in: store))
-                    } label: {
-                        TorrentListRow(torrent: binding(for: torrent, in: store), store: store)
-                    }
+                let filteredTorrents = store.torrents.filtered(by: filterBySelection)
+                let sortedTorrents = sortTorrents(filteredTorrents, by: sortProperty, order: sortOrder)
+                ForEach(sortedTorrents, id: \.id) { torrent in
+                    TorrentListRow(
+                        torrent: binding(for: torrent, in: store),
+                        store: store,
+                        selectedTorrents: torrentSelection
+                    )
                     .tag(torrent)
-                    .id(torrent.id) // Add stable ID for each row
+                    .id(torrent.id)
                     .listRowSeparator(.visible)
                 }
             }
@@ -111,11 +126,17 @@ struct iOSContentView: View {
         ToolbarItem(placement: .automatic) {
             Menu {
                 Menu {
-                    ForEach(hosts, id: \.self) { host in
-                        Button(action: {
-                            store.setHost(host: host)
-                        }) {
-                            Label(host.name!, systemImage: host == store.host ? "checkmark" : "")
+                    Picker("Server", selection: .init(
+                        get: { store.host },
+                        set: { host in
+                            if let host = host {
+                                store.setHost(host: host)
+                            }
+                        }
+                    )) {
+                        ForEach(hosts, id: \.self) { host in
+                            Text(host.name!)
+                                .tag(host as Host?)
                         }
                     }
                 } label: {
@@ -163,15 +184,49 @@ struct iOSContentView: View {
                 }.environment(\.menuOrder, .fixed)
                 
                 Menu {
-                    Picker("Sort By", selection: $sortBySelection) {
-                        ForEach(sortBy.allCases, id: \.self) { item in
-                            Text(item.rawValue)
+                    // Sort properties
+                    ForEach(SortProperty.allCases, id: \.self) { property in
+                        Button {
+                            sortProperty = property
+                        } label: {
+                            HStack {
+                                Text(property.rawValue)
+                                Spacer()
+                                if sortProperty == property {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
                         }
                     }
-                    .pickerStyle(.automatic)
+                    
+                    Divider()
+                    
+                    // Sort order
+                    Button {
+                        sortOrder = .ascending
+                    } label: {
+                        HStack {
+                            Text("Ascending")
+                            Spacer()
+                            if sortOrder == .ascending {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                    
+                    Button {
+                        sortOrder = .descending
+                    } label: {
+                        HStack {
+                            Text("Descending")
+                            Spacer()
+                            if sortOrder == .descending {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
                 } label: {
-                    Text("Sort By")
-                    Image(systemName: "arrow.up.arrow.down")
+                    Label("Sort", systemImage: "arrow.up.arrow.down")
                 }.environment(\.menuOrder, .fixed)
                 
                 Divider()
@@ -197,7 +252,7 @@ struct iOSContentView: View {
                 Button(action: {
                     store.isShowingAddAlert.toggle()
                 }) {
-                    Label("Add Torrent", systemImage: "document.badge.plus")
+                    Label("Add Torrent", systemImage: "plus")
                 }
                 
                 Divider()
