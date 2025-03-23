@@ -130,10 +130,10 @@ func setupHost(hosts: FetchedResults<Host>, store: Store) {
 
 // Stats header view used on both platforms
 struct StatsHeaderView: View {
-    var store: Store
+    @ObservedObject var store: Store
     
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             Divider()
             HStack {
                 Text(String("\(store.sessionStats?.activeTorrentCount ?? 0) active dreams"))

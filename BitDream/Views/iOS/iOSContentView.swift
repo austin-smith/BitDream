@@ -44,6 +44,7 @@ struct iOSContentView: View {
             VStack(spacing: 0) {
                 StatsHeaderView(store: store)
                 
+                // Show list regardless of connection status
                 List(selection: torrentSelection) {
                     torrentRows
                 }
@@ -68,6 +69,17 @@ struct iOSContentView: View {
             }
             .onChange(of: sortOrder) { oldValue, newValue in
                 UserDefaults.standard.sortOrder = newValue
+            }
+            .alert("Connection Error", isPresented: $store.showConnectionErrorAlert) {
+                Button("Edit Server", role: .none) {
+                    store.editServers.toggle()
+                }
+                Button("Retry", role: .none) {
+                    store.reconnect()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(store.connectionErrorMessage)
             }
         } detail: {
             if let selectedTorrent = torrentSelection.wrappedValue.first {
