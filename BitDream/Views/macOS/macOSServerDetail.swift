@@ -11,6 +11,20 @@ import KeychainAccess
 import SwiftUI
 
 #if os(macOS)
+struct ValidationTextFieldStyle: TextFieldStyle {
+    var isInvalid: Bool
+    
+    func _body(configuration: TextField<Self._Label>) -> some View {
+        configuration
+            .textFieldStyle(RoundedBorderTextFieldStyle())
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.red, lineWidth: 1)
+                    .opacity(isInvalid ? 1 : 0)
+            )
+    }
+}
+
 struct macOSServerDetail: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var store: Store
@@ -23,11 +37,26 @@ struct macOSServerDetail: View {
     
     @State var nameInput: String = ""
     @State var hostInput: String = ""
-    @State var portInput: String = ""
+    @State var portInput: Int = ServerDetail.defaultPort
     @State var userInput: String = ""
     @State var passInput: String = ""
     @State var isDefault: Bool = false
     @State var isSSL: Bool = false
+    @State private var hasAttemptedSave = false
+    @State private var showingDeleteConfirmation = false
+    
+    private var isHostValid: Bool {
+        !hostInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    private var isPortValid: Bool {
+        portInput >= 1 && portInput <= 65535
+    }
+    
+    private func validateFields() -> Bool {
+        hasAttemptedSave = true
+        return isHostValid && isPortValid
+    }
     
     var body: some View {
         // macOS version with native form styling
@@ -77,8 +106,8 @@ struct macOSServerDetail: View {
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
-                            TextField("", text: $hostInput)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                            TextField("127.0.0.1", text: $hostInput)
+                                .textFieldStyle(ValidationTextFieldStyle(isInvalid: hasAttemptedSave && !isHostValid))
                                 .autocorrectionDisabled()
                                 .frame(maxWidth: .infinity)
                         }
@@ -88,9 +117,13 @@ struct macOSServerDetail: View {
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
-                            TextField("", text: $portInput)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .frame(maxWidth: .infinity)
+                            HStack {
+                                TextField("", value: $portInput, formatter: ServerDetail.portFormatter)
+                                    .textFieldStyle(ValidationTextFieldStyle(isInvalid: hasAttemptedSave && !isPortValid))
+                                    .frame(maxWidth: .infinity)
+                                
+                                Stepper("", value: $portInput, in: 1...65535)
+                            }
                         }
                         
                         Toggle("Use SSL", isOn: $isSSL)
@@ -126,11 +159,7 @@ struct macOSServerDetail: View {
                     // Delete button (if editing)
                     if (!isAddNew) {
                         Button(action: {
-                            if let host = host {
-                                deleteServer(host: host, viewContext: viewContext) {
-                                    dismiss()
-                                }
-                            }
+                            showingDeleteConfirmation = true
                         }) {
                             HStack {
                                 Image(systemName: "trash")
@@ -160,24 +189,8 @@ struct macOSServerDetail: View {
                 
                 Button("Save") {
                     if (isAddNew) {
-                        saveNewServer(
-                            nameInput: nameInput,
-                            hostInput: hostInput,
-                            portInput: portInput,
-                            userInput: userInput,
-                            passInput: passInput,
-                            isDefault: isDefault,
-                            isSSL: isSSL,
-                            viewContext: viewContext,
-                            store: store,
-                            keychain: keychain
-                        ) {
-                            dismiss()
-                        }
-                    } else {
-                        if let host = host {
-                            updateExistingServer(
-                                host: host,
+                        if validateFields() {
+                            saveNewServer(
                                 nameInput: nameInput,
                                 hostInput: hostInput,
                                 portInput: portInput,
@@ -186,10 +199,30 @@ struct macOSServerDetail: View {
                                 isDefault: isDefault,
                                 isSSL: isSSL,
                                 viewContext: viewContext,
-                                hosts: hosts,
+                                store: store,
                                 keychain: keychain
                             ) {
                                 dismiss()
+                            }
+                        }
+                    } else {
+                        if validateFields() {
+                            if let host = host {
+                                updateExistingServer(
+                                    host: host,
+                                    nameInput: nameInput,
+                                    hostInput: hostInput,
+                                    portInput: portInput,
+                                    userInput: userInput,
+                                    passInput: passInput,
+                                    isDefault: isDefault,
+                                    isSSL: isSSL,
+                                    viewContext: viewContext,
+                                    hosts: hosts,
+                                    keychain: keychain
+                                ) {
+                                    dismiss()
+                                }
                             }
                         }
                     }
@@ -203,6 +236,18 @@ struct macOSServerDetail: View {
         .frame(width: 400, alignment: .top)
         .frame(idealHeight: 600)
         .fixedSize(horizontal: true, vertical: false)
+        .alert("Delete Server", isPresented: $showingDeleteConfirmation) {
+            Button("Delete", role: .destructive) {
+                if let host = host {
+                    deleteServer(host: host, viewContext: viewContext) {
+                        dismiss()
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete this server? This action cannot be undone.")
+        }
         .onAppear {
             if(!isAddNew) {
                 if let host = host {

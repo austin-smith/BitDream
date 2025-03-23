@@ -1,10 +1,3 @@
-//
-//  iOSTorrentListRow.swift
-//  BitDream
-//
-//  Created by Austin Smith on 12/29/22.
-//
-
 import Foundation
 import SwiftUI
 import KeychainAccess
@@ -59,8 +52,17 @@ struct iOSTorrentListRow: View {
                     // TODO: Handle response
                 })
             }) {
-                Label(torrent.status == TorrentStatus.stopped.rawValue ? "Resume Dream" : "Pause Dream", 
+                Label(torrent.status == TorrentStatus.stopped.rawValue ? "Resume" : "Pause", 
                       systemImage: torrent.status == TorrentStatus.stopped.rawValue ? "play" : "pause")
+            }
+            
+            // Resume Now Button (only show for stopped torrents)
+            if torrent.status == TorrentStatus.stopped.rawValue {
+                Button(action: {
+                    resumeTorrentNow(torrent: torrent, store: store)
+                }) {
+                    Label("Resume Now", systemImage: "play.fill")
+                }
             }
 
             Divider()
@@ -126,6 +128,25 @@ struct iOSTorrentListRow: View {
             }
             
             Divider()
+
+            // Re-announce Button
+            Button(action: {
+                reAnnounceToTrackers(torrent: torrent, store: store)
+            }) {
+                Label("Ask For More Peers", systemImage: "arrow.left.arrow.right")
+            }
+
+            // Verify Button
+            Button(action: {
+                let info = makeConfig(store: store)
+                verifyTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
+                    // TODO: Handle response
+                })
+            }) {
+                Label("Verify Local Data", systemImage: "checkmark.arrow.trianglehead.counterclockwise")
+            }
+        
+            Divider()
             
             // Delete Button
             Button(role: .destructive, action: {
@@ -158,10 +179,6 @@ struct iOSTorrentListRow: View {
                 Text("Do you want to delete the file(s) from the disk?")
             }
             .interactiveDismissDisabled(false)
-        .listRowBackground(
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color.white)
-        )
         .sheet(isPresented: $labelDialog) {
             NavigationView {
                 iOSLabelEditView(labelInput: $labelInput, existingLabels: torrent.labels, store: store, torrentId: torrent.id)

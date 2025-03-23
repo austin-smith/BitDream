@@ -1,10 +1,3 @@
-//
-//  TorrentListRow.swift
-//  BitDream
-//
-//  Created by Austin Smith on 12/29/22.
-//
-
 import Foundation
 import SwiftUI
 import KeychainAccess
@@ -25,17 +18,27 @@ struct TorrentListRow: View {
 
 // MARK: - Shared Helpers
 
+// Shared function to handle re-announce action
+func reAnnounceToTrackers(torrent: Torrent, store: Store, onResponse: @escaping (TransmissionResponse) -> Void = { _ in }) {
+    let info = makeConfig(store: store)
+    reAnnounceTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: onResponse)
+}
+
+// Shared function to handle "Resume Now" action
+func resumeTorrentNow(torrent: Torrent, store: Store, onResponse: @escaping (TransmissionResponse) -> Void = { _ in }) {
+    let info = makeConfig(store: store)
+    startTorrentNow(torrent: torrent, config: info.config, auth: info.auth, onResponse: onResponse)
+}
+
 // Shared function to determine progress color
 func progressColorForTorrent(_ torrent: Torrent) -> Color {
     switch torrent.statusCalc {
     case .complete, .seeding:
         return .green.opacity(0.75)
-    case .paused:
+    case .paused, .stalled:
         return .gray
     case .retrievingMetadata:
         return .red.opacity(0.75)
-    case .stalled:
-        return .yellow.opacity(0.7)
     default:
         return .blue.opacity(0.75)
     }
@@ -72,32 +75,38 @@ func createStatusView(for torrent: Torrent) -> some View {
     let rateUploadFormatted = byteCountFormatter.string(fromByteCount: torrent.rateUpload)
     
     return Group {
-        switch torrent.statusCalc {
-        case .downloading, .retrievingMetadata:
-            HStack(spacing: 4) {
-                Text("\(torrent.statusCalc.rawValue) from \(torrent.peersSendingToUs) of \(torrent.peersConnected) peers")
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.down")
-                        .font(.system(size: 8))
-                    Text("\(rateDownloadFormatted)/s")
+        if (torrent.error != TorrentError.ok.rawValue) {
+            Text("Tracker returned error: \(torrent.errorString)")
+                .foregroundColor(.red)
+        }
+        else {
+            switch torrent.statusCalc {
+            case .downloading, .retrievingMetadata:
+                HStack(spacing: 4) {
+                    Text("\(torrent.statusCalc.rawValue) from \(torrent.peersSendingToUs) of \(torrent.peersConnected) peers")
+                    HStack(spacing: 2) {
+                        Image(systemName: "arrow.down")
+                            .font(.system(size: 8))
+                        Text("\(rateDownloadFormatted)/s")
+                    }
+                    HStack(spacing: 2) {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 8))
+                        Text("\(rateUploadFormatted)/s")
+                    }
                 }
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 8))
-                    Text("\(rateUploadFormatted)/s")
+            case .seeding:
+                HStack(spacing: 4) {
+                    Text("\(torrent.statusCalc.rawValue) to \(torrent.peersGettingFromUs) of \(torrent.peersConnected) peers")
+                    HStack(spacing: 2) {
+                        Image(systemName: "arrow.up")
+                            .font(.system(size: 8))
+                        Text("\(rateUploadFormatted)/s")
+                    }
                 }
+            default:
+                Text(torrent.statusCalc.rawValue)
             }
-        case .seeding:
-            HStack(spacing: 4) {
-                Text("\(torrent.statusCalc.rawValue) to \(torrent.peersGettingFromUs) of \(torrent.peersConnected) peers")
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 8))
-                    Text("\(rateUploadFormatted)/s")
-                }
-            }
-        default:
-            Text(torrent.statusCalc.rawValue)
         }
     }
 }

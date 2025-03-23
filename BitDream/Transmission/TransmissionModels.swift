@@ -17,6 +17,17 @@ public enum TorrentStatus: Int {
     case seeding = 6
 }
 
+public enum TorrentError: Int {
+    /// everything's fine
+    case ok = 0
+    /// when we announced to the tracker, we got a warning in the response
+    case trackerWarning = 1
+    /// when we announced to the tracker, we got an error in the response
+    case trackerError = 2
+    /// local trouble, such as disk full or permissions error
+    case localError = 3
+}
+
 public enum TorrentStatusCalc: String, CaseIterable {
     case complete = "Complete"
     case paused = "Paused"
@@ -33,6 +44,8 @@ public struct Torrent: Codable, Hashable, Identifiable {
     let activityDate: Int
     let addedDate: Int
     let desiredAvailable: Int64
+    let error: Int
+    let errorString: String
     let eta: Int
     let haveUnchecked: Int64
     let haveValid: Int64

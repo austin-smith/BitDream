@@ -1,10 +1,3 @@
-//
-//  macOSTorrentListRow.swift
-//  BitDream
-//
-//  Created by Austin Smith on 12/29/22.
-//
-
 import Foundation
 import SwiftUI
 import KeychainAccess
@@ -66,7 +59,22 @@ struct macOSTorrentListRow: View {
             }) {
                 HStack {
                     Image(systemName: torrent.status == TorrentStatus.stopped.rawValue ? "play" : "pause")
-                    Text(torrent.status == TorrentStatus.stopped.rawValue ? "Resume Dream" : "Pause Dream")
+                    Text(torrent.status == TorrentStatus.stopped.rawValue ? "Resume" : "Pause")
+                }
+            }
+            
+            // Resume Now Button (only show for stopped torrents)
+            if torrent.status == TorrentStatus.stopped.rawValue {
+                Button(action: {
+                    let torrentsToAct = selectedTorrents.contains(torrent) ? selectedTorrents : Set([torrent])
+                    for t in torrentsToAct {
+                        resumeTorrentNow(torrent: t, store: store)
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "play.fill")
+                        Text("Resume Now")
+                    }
                 }
             }
 
@@ -153,7 +161,37 @@ struct macOSTorrentListRow: View {
                 }
                 
                 Divider()
+
+                // Re-announce Button
+                Button(action: {
+                    let torrentsToAct = selectedTorrents.contains(torrent) ? selectedTorrents : Set([torrent])
+                    for t in torrentsToAct {
+                        reAnnounceToTrackers(torrent: t, store: store)
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.left.arrow.right")
+                        Text("Ask For More Peers")
+                    }
+                }
+
+                // Verify Button
+                Button(action: {
+                    let info = makeConfig(store: store)
+                    for t in torrentsToAct {
+                        verifyTorrent(torrent: t, config: info.config, auth: info.auth, onResponse: { response in
+                            // TODO: Handle response
+                        })
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "checkmark.arrow.trianglehead.counterclockwise")
+                        Text("Verify Local Data")
+                    }
+                }
             }
+
+            Divider()
             
             // Delete Button
             Button(role: .destructive, action: {

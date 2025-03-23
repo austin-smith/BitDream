@@ -19,6 +19,20 @@ struct ServerDetail: View {
     @State var host: Host?
     var isAddNew: Bool
     
+    static let defaultPort = 9091
+    
+    // Validation messages
+    static let hostRequiredMessage = "Hostname is required"
+    static let invalidPortMessage = "Port number is required"
+    
+    static let portFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .none
+        formatter.minimum = 1
+        formatter.maximum = 65535  // Maximum valid port number
+        return formatter
+    }()
+    
     var body: some View {
         #if os(iOS)
         iOSServerDetail(
@@ -46,7 +60,7 @@ struct ServerDetail: View {
 func saveNewServer(
     nameInput: String,
     hostInput: String,
-    portInput: String,
+    portInput: Int,
     userInput: String,
     passInput: String,
     isDefault: Bool,
@@ -56,19 +70,27 @@ func saveNewServer(
     keychain: Keychain,
     completion: @escaping () -> Void
 ) {
+    // Validate required fields
+    guard !hostInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+    guard portInput >= 1 && portInput <= 65535 else { return }
+    
+    // If friendly name is empty, use hostname
+    let finalNameInput = nameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 
+        hostInput : nameInput
+    
     // Save host
     let newHost = Host(context: viewContext)
-    newHost.name = nameInput
+    newHost.name = finalNameInput
     newHost.server = hostInput
-    newHost.port = Int16(portInput)!
+    newHost.port = Int16(portInput)
     newHost.username = userInput
     newHost.isDefault = isDefault
     newHost.isSSL = isSSL
     
     try? viewContext.save()
     
-    // Save password to keychain
-    keychain[nameInput] = passInput
+    // Save password to keychain using the final name
+    keychain[newHost.name!] = passInput
     
     // if there is no host currently set, then set it to the one being created
     if (store.host == nil) {
@@ -83,7 +105,7 @@ func updateExistingServer(
     host: Host,
     nameInput: String,
     hostInput: String,
-    portInput: String,
+    portInput: Int,
     userInput: String,
     passInput: String,
     isDefault: Bool,
@@ -97,7 +119,7 @@ func updateExistingServer(
     host.name = nameInput
     host.isDefault = isDefault
     host.server = hostInput
-    host.port = Int16(portInput)!
+    host.port = Int16(portInput)
     host.username = userInput
     host.isSSL = isSSL
     
@@ -122,12 +144,12 @@ func updateExistingServer(
 func loadServerData(
     host: Host,
     keychain: Keychain,
-    onLoad: @escaping (String, Bool, String, String, Bool, String, String) -> Void
+    onLoad: @escaping (String, Bool, String, Int, Bool, String, String) -> Void
 ) {
     let nameInput = host.name ?? ""
     let isDefault = host.isDefault
     let hostInput = host.server ?? ""
-    let portInput = String(host.port)
+    let portInput = Int(host.port)
     let isSSL = host.isSSL
     let userInput = host.username ?? ""
     let passInput = keychain[host.name!] ?? ""

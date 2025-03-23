@@ -23,11 +23,36 @@ struct iOSServerDetail: View {
     
     @State var nameInput: String = ""
     @State var hostInput: String = ""
-    @State var portInput: String = ""
+    @State var portInput: Int = ServerDetail.defaultPort
     @State var userInput: String = ""
     @State var passInput: String = ""
     @State var isDefault: Bool = false
     @State var isSSL: Bool = false
+    @State private var showingValidationAlert = false
+    @State private var validationMessage = ""
+    @State private var showingDeleteConfirmation = false
+    
+    private var isHostValid: Bool {
+        !hostInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    private var isPortValid: Bool {
+        portInput >= 1 && portInput <= 65535
+    }
+    
+    private func validateFields() -> Bool {
+        if !isHostValid {
+            validationMessage = ServerDetail.hostRequiredMessage
+            showingValidationAlert = true
+            return false
+        }
+        if !isPortValid {
+            validationMessage = ServerDetail.invalidPortMessage
+            showingValidationAlert = true
+            return false
+        }
+        return true
+    }
     
     var body: some View {
         NavigationStack {
@@ -56,9 +81,8 @@ struct iOSServerDetail: View {
                     
                     HStack {
                         Text("Port")
-                        TextField("port", text: $portInput)
+                        TextField("port", value: $portInput, formatter: ServerDetail.portFormatter)
                             .multilineTextAlignment(.trailing)
-                            .keyboardType(.numberPad)
                     }
                     
                     Toggle("Use SSL", isOn: $isSSL)
@@ -87,11 +111,7 @@ struct iOSServerDetail: View {
                 
                 if (!isAddNew) {
                     Button(role: .destructive, action: {
-                        if let host = host {
-                            deleteServer(host: host, viewContext: viewContext) {
-                                dismiss()
-                            }
-                        }
+                        showingDeleteConfirmation = true
                     }, label: {
                         HStack{
                             Image(systemName: "trash")
@@ -116,34 +136,30 @@ struct iOSServerDetail: View {
                     }
                 }
             }
+            .alert("Required Fields", isPresented: $showingValidationAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(validationMessage)
+            }
+            .alert("Delete Server", isPresented: $showingDeleteConfirmation) {
+                Button("Delete", role: .destructive) {
+                    if let host = host {
+                        deleteServer(host: host, viewContext: viewContext) {
+                            dismiss()
+                        }
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Are you sure you want to delete this server? This action cannot be undone.")
+            }
             .navigationBarTitle(Text(isAddNew ? "Add Server" : "Edit Server"), displayMode: .inline)
             .toolbar {
                 if (isAddNew) {
                     ToolbarItem (placement: .automatic) {
                         Button("Save") {
-                            saveNewServer(
-                                nameInput: nameInput,
-                                hostInput: hostInput,
-                                portInput: portInput,
-                                userInput: userInput,
-                                passInput: passInput,
-                                isDefault: isDefault,
-                                isSSL: isSSL,
-                                viewContext: viewContext,
-                                store: store,
-                                keychain: keychain
-                            ) {
-                                dismiss()
-                            }
-                        }
-                    }
-                }
-                else {
-                    ToolbarItem (placement: .automatic) {
-                        Button("Save") {
-                            if let host = host {
-                                updateExistingServer(
-                                    host: host,
+                            if validateFields() {
+                                saveNewServer(
                                     nameInput: nameInput,
                                     hostInput: hostInput,
                                     portInput: portInput,
@@ -152,10 +168,35 @@ struct iOSServerDetail: View {
                                     isDefault: isDefault,
                                     isSSL: isSSL,
                                     viewContext: viewContext,
-                                    hosts: hosts,
+                                    store: store,
                                     keychain: keychain
                                 ) {
                                     dismiss()
+                                }
+                            }
+                        }
+                    }
+                }
+                else {
+                    ToolbarItem (placement: .automatic) {
+                        Button("Save") {
+                            if validateFields() {
+                                if let host = host {
+                                    updateExistingServer(
+                                        host: host,
+                                        nameInput: nameInput,
+                                        hostInput: hostInput,
+                                        portInput: portInput,
+                                        userInput: userInput,
+                                        passInput: passInput,
+                                        isDefault: isDefault,
+                                        isSSL: isSSL,
+                                        viewContext: viewContext,
+                                        hosts: hosts,
+                                        keychain: keychain
+                                    ) {
+                                        dismiss()
+                                    }
                                 }
                             }
                         }

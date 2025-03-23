@@ -61,6 +61,9 @@ class Store: NSObject, ObservableObject {
             }
         }
         
+        // Clear torrents before refreshing to ensure list resets to top
+        self.torrents = []
+        
         // refresh data immediately after setting new host
         refreshTransmissionData(store: self)
         

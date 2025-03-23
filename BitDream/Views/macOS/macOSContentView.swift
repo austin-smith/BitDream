@@ -95,6 +95,8 @@ struct macOSContentView: View {
                     ForEach(hosts, id: \.self) { host in
                         Button {
                             store.setHost(host: host)
+                            // Clear selection when changing host
+                            selectedTorrentIds.removeAll()
                             // Force refresh data when changing host
                             updateList(store: store, update: { _ in })
                         } label: {

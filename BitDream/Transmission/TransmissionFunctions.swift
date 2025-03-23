@@ -37,23 +37,17 @@ struct TransmissionRequest: Codable {
 }
 
 /// A request sent to the server asking for a list of torrents and certain properties
-/// - Parameter method: Should always be "torrent-get"
-/// - Parameter arguments: Takes a list of properties we are interested in called "fields". See RPC-Spec
 struct TransmissionListRequest: Codable {
     let method: String
     let arguments: [String: [String]]
 }
 
 /// A response from the server sent after a torrent-get request
-/// - Parameter arguments: A list containing the torrents we asked for and their properties
 struct TransmissionListResponse: Codable {
     let arguments: [String: [Torrent]]
 }
 
 /// Makes a request to the server for a list of the currently running torrents
-/// - Parameter config: A `TransmissionConfig` with the servers address and port
-/// - Parameter auth: A `TransmissionAuth` with authorization parameters ie. username and password
-/// - Parameter onReceived: An escaping function that receives a list of `Torrent`s
 public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @escaping ([Torrent]?, String?) -> Void) -> Void {
     url = config
     url?.path = "/transmission/rpc"
@@ -61,12 +55,15 @@ public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onRe
     let requestBody = TransmissionListRequest(
         method: "torrent-get",
         arguments: [
-            "fields": ["activityDate", "addedDate", "desiredAvailable", "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled", "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete", "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs", "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status" ]
+            "fields": ["activityDate", "addedDate", "desiredAvailable", "error", "errorString", "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled", "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete", "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs", "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status" ]
         ]
     )
     
-    // Create the request with auth values
-    let req = buildRequest(requestBody: requestBody, auth: auth)
+    guard let req = buildRequest(requestBody: requestBody, auth: auth) else {
+        onReceived(nil, "Failed to build request - URL not configured")
+        return
+    }
+    
     // Send the request
     let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
         if error != nil {
@@ -103,8 +100,11 @@ public func getSessionStats(config: TransmissionConfig, auth: TransmissionAuth, 
         arguments: [:]
     )
     
-    // Create the request with auth values
-    let req = buildRequest(requestBody: requestBody, auth: auth)
+    guard let req = buildRequest(requestBody: requestBody, auth: auth) else {
+        onReceived(nil, "Failed to build request - URL not configured")
+        return
+    }
+    
     // Send the request
     let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
         if error != nil {
@@ -149,22 +149,18 @@ public func addTorrent(fileUrl: String, saveLocation: String, auth: Transmission
     url?.path = "/transmission/rpc"
     
     // Create the torrent body based on the value of `fileUrl` and `file`
-    var requestBody: TransmissionRequest? = nil
+    let requestBody = file ? TransmissionRequest(
+        method: "torrent-add",
+        arguments: ["metainfo": fileUrl, "download-dir": saveLocation]
+    ) : TransmissionRequest(
+        method: "torrent-add",
+        arguments: ["filename": fileUrl, "download-dir": saveLocation]
+    )
     
-    if (file) {
-        requestBody = TransmissionRequest (
-            method: "torrent-add",
-            arguments: ["metainfo": fileUrl, "download-dir": saveLocation]
-        )
-    } else {
-        requestBody = TransmissionRequest(
-            method: "torrent-add",
-            arguments: ["filename": fileUrl, "download-dir": saveLocation]
-        )
+    guard let req = buildRequest(requestBody: requestBody, auth: auth) else {
+        onAdd((TransmissionResponse.configError, 0))
+        return
     }
-    
-    // Create the request with auth values
-    let req: URLRequest = buildRequest(requestBody: requestBody!, auth: auth)
     
     // Send request to server
     let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
@@ -241,7 +237,10 @@ public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, 
         )
     )
     
-    let req = buildRequest(requestBody: requestBody, auth: info.auth)
+    guard let req = buildRequest(requestBody: requestBody, auth: info.auth) else {
+        onReceived([], [])
+        return
+    }
     
     let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
         if error != nil {
@@ -304,8 +303,10 @@ public func deleteTorrent(torrent: Torrent, erase: Bool, config: TransmissionCon
         )
     )
     
-    // Create the request with auth values
-    let req = buildRequest(requestBody: requestBody, auth: auth)
+    guard let req = buildRequest(requestBody: requestBody, auth: auth) else {
+        onDel(TransmissionResponse.configError)
+        return
+    }
     
     // Send request to server
     let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
@@ -357,7 +358,10 @@ public func getSession(config: TransmissionConfig, auth: TransmissionAuth, onRes
         ]
     )
     
-    let req = buildRequest(requestBody: requestBody, auth: auth)
+    guard let req = buildRequest(requestBody: requestBody, auth: auth) else {
+        onResponse(TransmissionSessionResponseArguments())
+        return
+    }
     
     let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
         if error != nil {
@@ -406,7 +410,10 @@ public func playPauseTorrent(torrent: Torrent, config: TransmissionConfig, auth:
         arguments: ["ids": [torrent.id]]
     )
     
-    let req = buildRequest(requestBody: requestBody, auth: auth)
+    guard let req = buildRequest(requestBody: requestBody, auth: auth) else {
+        onResponse(TransmissionResponse.configError)
+        return
+    }
     
     let task = URLSession.shared.dataTask(with: req) { (data, resp, err) in
         if err != nil {
@@ -448,7 +455,10 @@ public func playPauseAllTorrents(start: Bool, info: (config: TransmissionConfig,
         arguments: [:]
     )
     
-    let req = buildRequest(requestBody: requestBody, auth: info.auth)
+    guard let req = buildRequest(requestBody: requestBody, auth: info.auth) else {
+        onResponse(TransmissionResponse.configError)
+        return
+    }
     
     let task = URLSession.shared.dataTask(with: req) { (data, resp, err) in
         if err != nil {
@@ -461,6 +471,46 @@ public func playPauseAllTorrents(start: Bool, info: (config: TransmissionConfig,
         case 409?: // If we get a 409, save the token and try again
             authorize(httpResp: httpResp, ssl: (info.config.scheme == "https"))
             playPauseAllTorrents(start: start, info: info, onResponse: onResponse)
+            return
+        case 401?:
+            return onResponse(TransmissionResponse.unauthorized)
+        case 200?:
+            return onResponse(TransmissionResponse.success)
+        default:
+            return onResponse(TransmissionResponse.failed)
+        }
+    }
+    task.resume()
+}
+
+/// A torrent action request
+/// - Parameter method: One of [torrent-start, torrent-stop]. See RPC-Spec
+/// - Parameter arguments: A list of torrent ids to perform the action on
+public func verifyTorrent(torrent: Torrent, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (TransmissionResponse) -> Void) {
+    url = config
+    url?.path = "/transmission/rpc"
+    
+    let requestBody = TorrentActionRequest(
+        method: "torrent-verify",
+        arguments: ["ids": [torrent.id]]
+    )
+    
+    guard let req = buildRequest(requestBody: requestBody, auth: auth) else {
+        onResponse(TransmissionResponse.configError)
+        return
+    }
+    
+    let task = URLSession.shared.dataTask(with: req) { (data, resp, err) in
+        if err != nil {
+            onResponse(TransmissionResponse.configError)
+            return
+        }
+        
+        let httpResp = resp as? HTTPURLResponse
+        switch httpResp?.statusCode {
+        case 409?: // If we get a 409, save the token and try again
+            authorize(httpResp: httpResp, ssl: (config.scheme == "https"))
+            verifyTorrent(torrent: torrent, config: config, auth: auth, onResponse: onResponse)
             return
         case 401?:
             return onResponse(TransmissionResponse.unauthorized)
@@ -536,7 +586,10 @@ public func updateTorrent(args: TorrentSetRequestArgs, info: (config: Transmissi
         arguments: args
     )
     
-    let req = buildRequest(requestBody: requestBody, auth: info.auth)
+    guard let req = buildRequest(requestBody: requestBody, auth: info.auth) else {
+        onComplete(TransmissionResponse.configError)
+        return
+    }
     
     let task = URLSession.shared.dataTask(with: req) { (data, resp, err) in
         if err != nil {
@@ -564,17 +617,22 @@ public func updateTorrent(args: TorrentSetRequestArgs, info: (config: Transmissi
 /// Gets the session-token from the response and sets it as the `lastSessionToken`
 public func authorize(httpResp: HTTPURLResponse?, ssl: Bool) {
     TOKEN_HEAD = ssl ? TOKEN_HEAD : "X-Transmission-Session-Id" // Aparently it's different with SSL 🤦‍♂️
-    let mixedHeaders = httpResp?.allHeaderFields as! [String: Any]
-    lastSessionToken = mixedHeaders[TOKEN_HEAD] as? String
+    if let headers = httpResp?.allHeaderFields {
+        lastSessionToken = headers[TOKEN_HEAD] as? String
+    }
 }
 
 /// Creates a `URLRequest` with provided body and TransmissionAuth
 /// - Parameter requestBody: Any struct that conforms to `Codable` to be sent as the request body
 /// - Parameter auth: The authorization values username and password to authorize the request with credentials
 /// - Returns: A `URLRequest` with the provided body and auth values
-private func buildRequest<T: Codable>(requestBody: T, auth: TransmissionAuth) -> URLRequest {    
+private func buildRequest<T: Codable>(requestBody: T, auth: TransmissionAuth) -> URLRequest? {    
     // Create the request with auth values
-    var req = URLRequest(url: url!.url!)
+    guard let url = url, let urlValue = url.url else {
+        return nil
+    }
+    
+    var req = URLRequest(url: urlValue)
     req.httpMethod = "POST"
     req.httpBody = try? JSONEncoder().encode(requestBody)
     req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -585,4 +643,88 @@ private func buildRequest<T: Codable>(requestBody: T, auth: TransmissionAuth) ->
     req.setValue("Basic \(base64LoginString)", forHTTPHeaderField: "Authorization")
     
     return req
+}
+
+/// A function to start a torrent immediately, disregarding its queue position
+/// - Parameter torrent: The torrent to start immediately
+/// - Parameter config: The server's configuration
+/// - Parameter auth: Authentication credentials
+/// - Parameter onResponse: Callback with the server's response
+public func startTorrentNow(torrent: Torrent, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (TransmissionResponse) -> Void) {
+    url = config
+    url?.path = "/transmission/rpc"
+    
+    let requestBody = TorrentActionRequest(
+        method: "torrent-start-now",
+        arguments: ["ids": [torrent.id]]
+    )
+    
+    guard let req = buildRequest(requestBody: requestBody, auth: auth) else {
+        onResponse(TransmissionResponse.configError)
+        return
+    }
+    
+    let task = URLSession.shared.dataTask(with: req) { (data, resp, err) in
+        if err != nil {
+            onResponse(TransmissionResponse.configError)
+            return
+        }
+        
+        let httpResp = resp as? HTTPURLResponse
+        switch httpResp?.statusCode {
+        case 409?: // If we get a 409, save the token and try again
+            authorize(httpResp: httpResp, ssl: (config.scheme == "https"))
+            startTorrentNow(torrent: torrent, config: config, auth: auth, onResponse: onResponse)
+            return
+        case 401?:
+            return onResponse(TransmissionResponse.unauthorized)
+        case 200?:
+            return onResponse(TransmissionResponse.success)
+        default:
+            return onResponse(TransmissionResponse.failed)
+        }
+    }
+    task.resume()
+}
+
+/// Re-announces the torrent to trackers immediately
+/// - Parameter torrent: The torrent to re-announce
+/// - Parameter config: The server's configuration
+/// - Parameter auth: Authentication credentials
+/// - Parameter onResponse: Callback with the server's response
+public func reAnnounceTorrent(torrent: Torrent, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (TransmissionResponse) -> Void) {
+    url = config
+    url?.path = "/transmission/rpc"
+    
+    let requestBody = TorrentActionRequest(
+        method: "torrent-reannounce",
+        arguments: ["ids": [torrent.id]]
+    )
+    
+    guard let req = buildRequest(requestBody: requestBody, auth: auth) else {
+        onResponse(TransmissionResponse.configError)
+        return
+    }
+    
+    let task = URLSession.shared.dataTask(with: req) { (data, resp, err) in
+        if err != nil {
+            onResponse(TransmissionResponse.configError)
+            return
+        }
+        
+        let httpResp = resp as? HTTPURLResponse
+        switch httpResp?.statusCode {
+        case 409?: // If we get a 409, save the token and try again
+            authorize(httpResp: httpResp, ssl: (config.scheme == "https"))
+            reAnnounceTorrent(torrent: torrent, config: config, auth: auth, onResponse: onResponse)
+            return
+        case 401?:
+            return onResponse(TransmissionResponse.unauthorized)
+        case 200?:
+            return onResponse(TransmissionResponse.success)
+        default:
+            return onResponse(TransmissionResponse.failed)
+        }
+    }
+    task.resume()
 }
