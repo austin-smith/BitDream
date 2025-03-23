@@ -74,7 +74,7 @@ struct iOSTorrentListRow: View {
                     updateTorrent(
                         args: TorrentSetRequestArgs(
                             ids: [torrent.id],
-                            priorityHigh: []
+                            priority: .high
                         ),
                         info: info,
                         onComplete: { r in }
@@ -87,7 +87,7 @@ struct iOSTorrentListRow: View {
                     updateTorrent(
                         args: TorrentSetRequestArgs(
                             ids: [torrent.id],
-                            priorityNormal: []
+                            priority: .normal
                         ),
                         info: info,
                         onComplete: { r in }
@@ -100,7 +100,7 @@ struct iOSTorrentListRow: View {
                     updateTorrent(
                         args: TorrentSetRequestArgs(
                             ids: [torrent.id],
-                            priorityLow: []
+                            priority: .low
                         ),
                         info: info,
                         onComplete: { r in }
@@ -275,7 +275,7 @@ struct iOSLabelEditView: View {
                 }
             }
         }
-        .onChange(of: newTagInput) { newValue in
+        .onChange(of: newTagInput) { oldValue, newValue in
             if newValue.contains(",") {
                 // Remove the comma and add the tag
                 newTagInput = newValue.replacingOccurrences(of: ",", with: "")
