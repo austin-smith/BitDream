@@ -13,8 +13,8 @@ struct macOSTorrentDetail: View {
     @Binding var torrent: Torrent
     
     @State public var files: [TorrentFile] = []
-    @State private var isShowingFilesSheet = false
     @State private var fileStats: [TorrentFileStats] = []
+    @State private var isShowingFilesSheet = false
     
     var body: some View {
         // Use shared formatting function
@@ -78,6 +78,7 @@ struct macOSTorrentDetail: View {
                                 )
                             }
                             .buttonStyle(PlainButtonStyle())
+                            .help("View files")
                         }
                     }
                     .padding(.vertical, 8)
@@ -155,20 +156,39 @@ struct macOSTorrentDetail: View {
             .padding(20)
         }
         .sheet(isPresented: $isShowingFilesSheet) {
-            VStack {
-                HStack {
-                    Text("Files for \(torrent.name)")
-                        .font(.headline)
-                    Spacer()
-                    Button("Done") {
-                        isShowingFilesSheet = false
+            let totalSizeFormatted = byteCountFormatter.string(fromByteCount: files.reduce(0) { $0 + $1.length })
+            
+            VStack(spacing: 0) {
+                // Header with proper hierarchy
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Files")
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                            
+                            Text("\(torrent.name) • \(files.count) files • \(totalSizeFormatted)")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        }
+                        
+                        Spacer()
+                        
+                        Button("Done") {
+                            isShowingFilesSheet = false
+                        }
                     }
                 }
-                .padding()
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
                 
-                macOSTorrentFileDetail(files: files, fileStats: fileStats)
+                Divider()
+                
+                macOSTorrentFileDetail(files: files, fileStats: fileStats, torrentId: torrent.id, store: store)
             }
-            .frame(width: 600, height: 400)
+            .frame(width: 1000, height: 700)
         }
         .onAppear{
             // Use shared function to fetch files

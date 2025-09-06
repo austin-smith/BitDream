@@ -13,6 +13,7 @@ struct iOSTorrentDetail: View {
     
     @State public var files: [TorrentFile] = []
     @State public var fileStats: [TorrentFileStats] = []
+    @State private var isShowingFilesSheet = false
     
     var body: some View {
         // Use shared formatting function
@@ -49,14 +50,20 @@ struct iOSTorrentDetail: View {
                                 .foregroundColor(.gray)
                         }
                         
-                        NavigationLink(destination: iOSTorrentFileDetail(files: files, fileStats: fileStats)) {
+                        Button(action: {
+                            isShowingFilesSheet = true
+                        }) {
                             HStack {
                                 Text("Files")
                                 Spacer()
                                 Text("\(files.count)")
                                     .foregroundColor(.gray)
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                             }
                         }
+                        .buttonStyle(.plain)
                     }
                     
                     Section(header: Text("Stats")) {
@@ -130,6 +137,19 @@ struct iOSTorrentDetail: View {
             .toolbar {
                 // Use shared toolbar
                 TorrentDetailToolbar(torrent: torrent, store: store)
+            }
+        }
+        .sheet(isPresented: $isShowingFilesSheet) {
+            NavigationView {
+                iOSTorrentFileDetail(files: files, fileStats: fileStats, torrentId: torrent.id, store: store)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") {
+                                isShowingFilesSheet = false
+                            }
+                        }
+                    }
             }
         }
     }

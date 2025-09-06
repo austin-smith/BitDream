@@ -418,3 +418,42 @@ public func startTorrentNow(torrent: Torrent, config: TransmissionConfig, auth: 
 public func reAnnounceTorrent(torrent: Torrent, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (TransmissionResponse) -> Void) {
     executeTorrentAction(actionMethod: "torrent-reannounce", torrentId: torrent.id, config: config, auth: auth, onResponse: onResponse)
 }
+
+// MARK: - File Operation Functions
+
+/// Set wanted status for specific files in a torrent
+public func setFileWantedStatus(
+    torrentId: Int, 
+    fileIndices: [Int], 
+    wanted: Bool, 
+    info: (config: TransmissionConfig, auth: TransmissionAuth), 
+    completion: @escaping (TransmissionResponse) -> Void
+) {
+    var args = TorrentSetRequestArgs(ids: [torrentId])
+    if wanted {
+        args.filesWanted = fileIndices
+    } else {
+        args.filesUnwanted = fileIndices
+    }
+    
+    updateTorrent(args: args, info: info, onComplete: completion)
+}
+
+/// Set priority for specific files in a torrent
+public func setFilePriority(
+    torrentId: Int, 
+    fileIndices: [Int], 
+    priority: FilePriority, 
+    info: (config: TransmissionConfig, auth: TransmissionAuth), 
+    completion: @escaping (TransmissionResponse) -> Void
+) {
+    var args = TorrentSetRequestArgs(ids: [torrentId])
+    
+    switch priority {
+    case .low: args.priorityLow = fileIndices
+    case .normal: args.priorityNormal = fileIndices
+    case .high: args.priorityHigh = fileIndices
+    }
+    
+    updateTorrent(args: args, info: info, onComplete: completion)
+}

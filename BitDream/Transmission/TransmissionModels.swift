@@ -227,6 +227,8 @@ public struct TorrentSetRequestArgs: Codable {
     public var priorityHigh: [Int]?
     public var priorityLow: [Int]?
     public var priorityNormal: [Int]?
+    public var filesWanted: [Int]?
+    public var filesUnwanted: [Int]?
     
     public init(ids: [Int]) {
         self.ids = ids
@@ -266,6 +268,8 @@ public struct TorrentSetRequestArgs: Codable {
         case priorityHigh = "priority-high"
         case priorityLow = "priority-low"
         case priorityNormal = "priority-normal"
+        case filesWanted = "files-wanted"
+        case filesUnwanted = "files-unwanted"
     }
 }
 
