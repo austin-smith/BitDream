@@ -131,10 +131,7 @@ func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: Store, onComp
     
     // First update the labels
     updateTorrent(
-        args: TorrentSetRequestArgs(
-            ids: [torrentId],
-            labels: sortedLabels  // Always set labels field, even if empty
-        ),
+        args: TorrentSetRequestArgs(ids: [torrentId], labels: sortedLabels),
         info: info,
         onComplete: { _ in
             // Trigger an immediate refresh

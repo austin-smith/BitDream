@@ -7,6 +7,21 @@
 
 import Foundation
 
+// MARK: - Enums
+
+public enum TransmissionResponse {
+    case success
+    case unauthorized
+    case configError
+    case failed
+}
+
+public enum TorrentPriority: String {
+    case high = "priority-high"
+    case normal = "priority-normal"
+    case low = "priority-low"
+}
+
 public enum TorrentStatus: Int {
     case stopped = 0
     case queuedToVerify = 1
@@ -39,6 +54,26 @@ public enum TorrentStatusCalc: String, CaseIterable {
     case stalled = "Stalled"
     case unknown = "Unknown"
 }
+
+// MARK: - Generic Request/Response Models
+
+/// Generic request struct for all Transmission RPC methods
+public struct TransmissionGenericRequest<T: Codable>: Codable {
+    public let method: String
+    public let arguments: T
+    
+    public init(method: String, arguments: T) {
+        self.method = method
+        self.arguments = arguments
+    }
+}
+
+/// Generic response struct for all Transmission RPC methods
+public struct TransmissionGenericResponse<T: Codable>: Codable {
+    public let arguments: T
+}
+
+// MARK: - Domain Models
 
 public struct Torrent: Codable, Hashable, Identifiable {
     let activityDate: Int
@@ -123,21 +158,163 @@ public struct SessionStats: Codable, Hashable {
     let uploadSpeed: Int64
 }
 
+// MARK: - Request Argument Models
+
+/// String-only arguments for simple requests
+public typealias StringArguments = [String: String]
+
+/// List of strings arguments (like fields)
+public typealias StringListArguments = [String: [String]]
+
+/// Empty arguments for requests that don't need any
+public struct EmptyArguments: Codable {
+    public init() {}
+}
+
+/// Torrent ID list arguments
+public struct TorrentIDsArgument: Codable {
+    public var ids: [Int]
+    
+    public init(ids: [Int]) {
+        self.ids = ids
+    }
+}
+
+public struct TorrentFilesRequestArgs: Codable {
+    public var fields: [String]
+    public var ids: [Int]
+    
+    public init(fields: [String], ids: [Int]) {
+        self.fields = fields
+        self.ids = ids
+    }
+}
+
+/// The remove body has delete-local-data argument with hyphens
+public struct TransmissionRemoveRequestArgs: Codable {
+    public var ids: [Int]
+    public var deleteLocalData: Bool
+    
+    public init(ids: [Int], deleteLocalData: Bool) {
+        self.ids = ids
+        self.deleteLocalData = deleteLocalData
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case ids
+        case deleteLocalData = "delete-local-data"
+    }
+}
+
+/// Generic request arguments for torrent-set method
+public struct TorrentSetRequestArgs: Codable {
+    public var ids: [Int]
+    public var labels: [String]?
+    public var bandwidthPriority: Int?
+    public var downloadLimit: Int?
+    public var downloadLimited: Bool?
+    public var uploadLimit: Int?
+    public var uploadLimited: Bool?
+    public var honorsSessionLimits: Bool?
+    public var group: String?
+    public var location: String?
+    public var peerLimit: Int?
+    public var seedIdleLimit: Int?
+    public var seedIdleMode: Int?
+    public var seedRatioLimit: Double?
+    public var seedRatioMode: Int?
+    public var sequentialDownload: Bool?
+    public var priorityHigh: [Int]?
+    public var priorityLow: [Int]?
+    public var priorityNormal: [Int]?
+    
+    public init(ids: [Int]) {
+        self.ids = ids
+    }
+    
+    public init(ids: [Int], labels: [String]) {
+        self.ids = ids
+        self.labels = labels
+    }
+    
+    public init(ids: [Int], priority: TorrentPriority) {
+        self.ids = ids
+        switch priority {
+        case .high: priorityHigh = []
+        case .normal: priorityNormal = []
+        case .low: priorityLow = []
+        }
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case ids
+        case labels
+        case bandwidthPriority
+        case downloadLimit = "download-limit"
+        case downloadLimited = "download-limited"
+        case uploadLimit = "upload-limit"
+        case uploadLimited = "upload-limited"
+        case honorsSessionLimits = "honors-session-limits"
+        case group
+        case location
+        case peerLimit = "peer-limit"
+        case seedIdleLimit = "seed-idle-limit"
+        case seedIdleMode = "seed-idle-mode"
+        case seedRatioLimit = "seed-ratio-limit"
+        case seedRatioMode = "seed-ratio-mode"
+        case sequentialDownload = "sequential-download"
+        case priorityHigh = "priority-high"
+        case priorityLow = "priority-low"
+        case priorityNormal = "priority-normal"
+    }
+}
+
+// MARK: - Response Argument Models
+
+/// Response for torrent list
+public struct TorrentListResponse: Codable {
+    public let torrents: [Torrent]
+}
+
+/// Response for torrent-add method
+public struct TorrentAddResponseArgs: Codable {
+    public var hashString: String
+    public var id: Int
+    public var name: String
+}
+
+/// Torrent add response wraps the added torrent info
+public struct TorrentAddResponseData: Codable {
+    public var torrentAdded: TorrentAddResponseArgs
+    
+    enum CodingKeys: String, CodingKey {
+        case torrentAdded = "torrent-added"
+    }
+}
+
+/// Response for torrent files
+public struct TorrentFilesResponseData: Codable {
+    public let files: [TorrentFile]
+    public let fileStats: [TorrentFileStats]
+}
+
+/// Response for torrent files list contains a torrents array
+public struct TorrentFilesResponseTorrents: Codable {
+    public let torrents: [TorrentFilesResponseData]
+}
+
+/// Session info response arguments
 public struct TransmissionSessionResponseArguments: Codable, Hashable {
     public let downloadDir: String
     public let version: String
-    
-    enum CodingKeys: String, CodingKey {
-        case downloadDir = "download-dir"
-        case version
-    }
     
     public init(downloadDir: String = "unknown", version: String = "unknown") {
         self.downloadDir = downloadDir
         self.version = version
     }
-}
-
-struct TransmissionSessionResponse: Codable {
-    let arguments: TransmissionSessionResponseArguments
+    
+    enum CodingKeys: String, CodingKey {
+        case downloadDir = "download-dir"
+        case version
+    }
 }

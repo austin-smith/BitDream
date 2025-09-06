@@ -269,6 +269,17 @@ struct macOSContentView: View {
             .refreshable {
                 updateList(store: store, update: {_ in})
             }
+            .alert("Connection Error", isPresented: $store.showConnectionErrorAlert) {
+                Button("Edit Server", role: .none) {
+                    store.editServers.toggle()
+                }
+                Button("Retry", role: .none) {
+                    store.reconnect()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(store.connectionErrorMessage)
+            }
             .inspector(isPresented: $isInspectorVisible) {
                 macOSDetail
                     .inspectorColumnWidth(min: 350, ideal: 400, max: 500)

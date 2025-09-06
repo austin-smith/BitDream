@@ -87,7 +87,7 @@ struct macOSTorrentListRow: View {
                     updateTorrent(
                         args: TorrentSetRequestArgs(
                             ids: Array(torrentsToAct.map { $0.id }),
-                            priorityHigh: []
+                            priority: .high
                         ),
                         info: info,
                         onComplete: { r in }
@@ -103,7 +103,7 @@ struct macOSTorrentListRow: View {
                     updateTorrent(
                         args: TorrentSetRequestArgs(
                             ids: Array(torrentsToAct.map { $0.id }),
-                            priorityNormal: []
+                            priority: .normal
                         ),
                         info: info,
                         onComplete: { r in }
@@ -119,7 +119,7 @@ struct macOSTorrentListRow: View {
                     updateTorrent(
                         args: TorrentSetRequestArgs(
                             ids: Array(torrentsToAct.map { $0.id }),
-                            priorityLow: []
+                            priority: .low
                         ),
                         info: info,
                         onComplete: { r in }
@@ -319,13 +319,13 @@ struct LabelEditView: View {
                 .frame(width: 360, alignment: .leading)
             }
         }
-        .onChange(of: shouldSave) { newValue in
+        .onChange(of: shouldSave) { oldValue, newValue in
             if newValue {
                 saveAndDismiss()
                 shouldSave = false
             }
         }
-        .onChange(of: newTagInput) { newValue in
+        .onChange(of: newTagInput) { oldValue, newValue in
             if newValue.contains(",") {
                 // Remove the comma and add the tag
                 newTagInput = newValue.replacingOccurrences(of: ",", with: "")

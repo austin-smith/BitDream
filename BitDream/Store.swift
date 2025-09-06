@@ -25,12 +25,23 @@ class Store: NSObject, ObservableObject {
     
     @Published var isShowingAddAlert: Bool = false
     @Published var isShowingServerAlert: Bool = false
-    @Published var editServers: Bool = false
+    @Published var editServers: Bool = false {
+        didSet {
+            // Set the editing flag when server settings are being edited
+            isEditingServerSettings = editServers
+        }
+    }
     @Published var showSettings: Bool = false
     
     @Published var isError: Bool = false
     @Published var debugBrief: String = ""
     @Published var debugMessage: String = ""
+    
+    @Published var connectionError: Bool = false
+    @Published var connectionErrorMessage: String = ""
+    
+    @Published var showConnectionErrorAlert: Bool = false
+    @Published var isEditingServerSettings: Bool = false  // Flag to pause reconnection attempts
     
     @Published var pollInterval: Double = 5.0 // Default poll interval in seconds
     
@@ -83,6 +94,11 @@ class Store: NSObject, ObservableObject {
     
     func startTimer() {
         self.timer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true, block: { _ in
+            // Skip updates if user is actively editing server settings
+            if self.isEditingServerSettings {
+                return
+            }
+            
             DispatchQueue.main.async {
                 updateList(store: self, update: { vals in
                     DispatchQueue.main.async {
@@ -98,6 +114,27 @@ class Store: NSObject, ObservableObject {
                 })
             }
         })
+    }
+    
+    // Method to reconnect to the server
+    func reconnect() {
+        // Before attempting reconnection, make sure the alert is dismissed
+        self.showConnectionErrorAlert = false
+        
+        if let host = self.host {
+            // Try to reconnect to the current host
+            self.setHost(host: host)
+        }
+    }
+    
+    // Method to handle connection errors
+    func handleConnectionError(message: String) {
+        DispatchQueue.main.async {
+            self.connectionError = true
+            self.connectionErrorMessage = message
+            self.showConnectionErrorAlert = true
+            self.timer.invalidate()
+        }
     }
     
     // Add a method to update the poll interval and restart the timer

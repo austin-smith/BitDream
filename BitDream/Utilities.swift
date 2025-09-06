@@ -145,25 +145,38 @@ public let byteCountFormatter: ByteCountFormatter = {
 
 /// Updates the list of torrents when called
 func updateList(store: Store, update: @escaping ([Torrent]) -> Void, retry: Int = 0) {
+    // Skip connection attempts if user is actively editing server settings
+    if store.isEditingServerSettings {
+        return
+    }
+    
     let info = makeConfig(store: store)
     getTorrents(config: info.config, auth: info.auth, onReceived: { torrents, err in
         if (err != nil) {
-            print("Showing error...")
-            DispatchQueue.main.async {
-                store.isError.toggle()
-                store.debugBrief = "The server gave us this response:"
-                store.debugMessage = err!
-                store.timer.invalidate()
-            }
+            print("Connection error...")
+            store.handleConnectionError(message: err!)
         } else if (torrents == nil) {
             if (retry > 3) {
-                print("Showing error...")
-                store.isError.toggle()
-                store.debugBrief = "Couldn't reach server."
-                store.debugMessage = "We asked the server a few times for a response, \nbut it never got back to us 😔"
+                print("Connection error after retries...")
+                store.handleConnectionError(message: "Could not reach server after multiple attempts. Please check your connection.")
+            } else {
+                updateList(store: store, update: update, retry: retry + 1)
             }
-            updateList(store: store, update: update, retry: retry + 1)
         } else {
+            // Clear connection error state on successful response
+            DispatchQueue.main.async {
+                // If we were in an error state before, this means we've successfully reconnected
+                let wasInErrorState = store.connectionError
+                
+                // Clear error state
+                store.connectionError = false
+                store.connectionErrorMessage = ""
+                
+                // Auto-dismiss the alert when connection is restored
+                if wasInErrorState {
+                    store.showConnectionErrorAlert = false
+                }
+            }
             update(torrents!)
         }
     })
@@ -171,25 +184,38 @@ func updateList(store: Store, update: @escaping ([Torrent]) -> Void, retry: Int 
 
 /// Updates the list of torrents when called
 func updateSessionStats(store: Store, update: @escaping (SessionStats) -> Void, retry: Int = 0) {
+    // Skip connection attempts if user is actively editing server settings
+    if store.isEditingServerSettings {
+        return
+    }
+    
     let info = makeConfig(store: store)
     getSessionStats(config: info.config, auth: info.auth, onReceived: { sessions, err in
         if (err != nil) {
-            print("Showing error...")
-            DispatchQueue.main.async {
-                store.isError.toggle()
-                store.debugBrief = "The server gave us this response:"
-                store.debugMessage = err!
-                store.timer.invalidate()
-            }
+            print("Connection error...")
+            store.handleConnectionError(message: err!)
         } else if (sessions == nil) {
             if (retry > 3) {
-                print("Showing error...")
-                store.isError.toggle()
-                store.debugBrief = "Couldn't reach server."
-                store.debugMessage = "We asked the server a few times for a response, \nbut it never got back to us 😔"
+                print("Connection error after retries...")
+                store.handleConnectionError(message: "Could not reach server after multiple attempts. Please check your connection.")
+            } else {
+                updateSessionStats(store: store, update: update, retry: retry + 1)
             }
-            updateSessionStats(store: store, update: update, retry: retry + 1)
         } else {
+            // Clear connection error state on successful response
+            DispatchQueue.main.async {
+                // If we were in an error state before, this means we've successfully reconnected
+                let wasInErrorState = store.connectionError
+                
+                // Clear error state
+                store.connectionError = false
+                store.connectionErrorMessage = ""
+                
+                // Auto-dismiss the alert when connection is restored
+                if wasInErrorState {
+                    store.showConnectionErrorAlert = false
+                }
+            }
             update(sessions!)
         }
     })
