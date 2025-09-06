@@ -148,4 +148,21 @@ class Store: NSObject, ObservableObject {
         // Start a new timer with the updated interval
         startTimer()
     }
+    
+    // MARK: - Label Management
+    
+    /// Get all unique labels from current torrents, sorted alphabetically
+    var availableLabels: [String] {
+        let allLabels = torrents.flatMap { $0.labels }
+        return Array(Set(allLabels)).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+    }
+    
+    /// Get count of torrents that have the specified label
+    func torrentCount(for label: String) -> Int {
+        return torrents.filter { torrent in
+            torrent.labels.contains { torrentLabel in
+                torrentLabel.lowercased() == label.lowercased()
+            }
+        }.count
+    }
 }

@@ -21,9 +21,10 @@ struct BitDreamApp: App {
     
     init() {
         // Register default values for view state
+        UserDefaults.registerViewStateDefaults()
+        
+        // Register additional defaults
         UserDefaults.standard.register(defaults: [
-            "sidebarVisibility": true, // true = show sidebar (.all), false = hide sidebar (.detailOnly)
-            "inspectorVisibility": true,
             "sortBySelection": "nameAsc", // Default sort by name ascending
             "themeModeKey": ThemeMode.system.rawValue // Default theme mode
         ])

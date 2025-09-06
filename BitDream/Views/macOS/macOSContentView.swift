@@ -38,16 +38,57 @@ struct macOSContentView: View {
     @State private var isInspectorVisible: Bool = UserDefaults.standard.inspectorVisibility
     @State private var columnVisibility: NavigationSplitViewVisibility = UserDefaults.standard.sidebarVisibility
     @State private var searchText: String = ""
+    @State private var includedLabels: Set<String> = []
+    @State private var excludedLabels: Set<String> = []
     
-    // Helper function to check if a torrent matches the search query
+    // Helper function to check if a torrent matches the search query and label filters
     private func torrentMatchesSearch(_ torrent: Torrent, query: String) -> Bool {
+        // Check label filters first
+        if !includedLabels.isEmpty {
+            let hasIncludedLabel = torrent.labels.contains { torrentLabel in
+                includedLabels.contains { includedLabel in
+                    torrentLabel.lowercased() == includedLabel.lowercased()
+                }
+            }
+            if !hasIncludedLabel {
+                return false
+            }
+        }
+        
+        if !excludedLabels.isEmpty {
+            let hasExcludedLabel = torrent.labels.contains { torrentLabel in
+                excludedLabels.contains { excludedLabel in
+                    torrentLabel.lowercased() == excludedLabel.lowercased()
+                }
+            }
+            if hasExcludedLabel {
+                return false
+            }
+        }
+        
+        // If no search query, just return true (label filtering already applied above)
         if query.isEmpty {
             return true
         }
+        
+        // Check for label-specific search syntax: "label:tv"
+        if query.lowercased().hasPrefix("label:") {
+            let colonIndex = query.firstIndex(of: ":")
+            let labelQuery = colonIndex != nil ? String(query[query.index(after: colonIndex!)...]) : ""
+            if labelQuery.isEmpty {
+                // Show all torrents with any labels
+                return !torrent.labels.isEmpty
+            }
+            return torrent.labels.contains { label in
+                label.localizedCaseInsensitiveContains(labelQuery)
+            }
+        }
+        
         // Search in name
         if torrent.name.localizedCaseInsensitiveContains(query) {
             return true
         }
+        
         // Search in labels
         return torrent.labels.contains { label in
             label.localizedCaseInsensitiveContains(query)
@@ -76,7 +117,15 @@ struct macOSContentView: View {
     // Computed property for navigation subtitle
     private var navigationSubtitle: String {
         let count = torrentCount(for: sidebarSelection)
-        return "\(count) dream\(count == 1 ? "" : "s")"
+        var subtitle = "\(count) dream\(count == 1 ? "" : "s")"
+        
+        // Add label filter indicators
+        let totalFilters = includedLabels.count + excludedLabels.count
+        if totalFilters > 0 {
+            subtitle += " • \(totalFilters) label filter\(totalFilters == 1 ? "" : "s")"
+        }
+        
+        return subtitle
     }
     
     var body: some View {       
@@ -175,7 +224,48 @@ struct macOSContentView: View {
             }
             .navigationTitle(sidebarSelection.rawValue)
             .navigationSubtitle(navigationSubtitle)
-            .searchable(text: $searchText, placement: .toolbar)
+            .searchable(text: $searchText, placement: .toolbar, prompt: "Search torrents") {
+                if !store.availableLabels.isEmpty {
+                    Section("Filter by Labels") {
+                        ForEach(store.availableLabels, id: \.self) { label in
+                            Button(action: {
+                                if includedLabels.contains(label) {
+                                    includedLabels.remove(label)
+                                    excludedLabels.insert(label)
+                                } else if excludedLabels.contains(label) {
+                                    excludedLabels.remove(label)
+                                } else {
+                                    includedLabels.insert(label)
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: includedLabels.contains(label) ? "checkmark.circle.fill" : excludedLabels.contains(label) ? "minus.circle.fill" : "circle")
+                                        .foregroundColor(includedLabels.contains(label) ? themeManager.accentColor : excludedLabels.contains(label) ? .red : .secondary)
+                                    
+                                    Text(label)
+                                        .foregroundColor(.primary)
+                                    
+                                    Spacer()
+                                    
+                                    Text("\(store.torrentCount(for: label))")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        
+                        if !includedLabels.isEmpty || !excludedLabels.isEmpty {
+                            Divider()
+                            Button("Clear filters") {
+                                includedLabels.removeAll()
+                                excludedLabels.removeAll()
+                            }
+                        }
+                    }
+                }
+            }
             .toolbar {              
                 // Content toolbar items
                 ToolbarItem(placement: .automatic) {
@@ -307,6 +397,7 @@ struct macOSContentView: View {
             if let selectedTorrent = torrentSelection.wrappedValue.first {
                 // Break up the complex expression
                 let filteredTorrents = store.torrents.filtered(by: newValue.filter)
+                    .filter { torrentMatchesSearch($0, query: searchText) }
                 let isSelectedTorrentInFilteredList = filteredTorrents.contains { $0.id == selectedTorrent.id }
                 
                 if !isSelectedTorrentInFilteredList {
@@ -337,6 +428,42 @@ struct macOSContentView: View {
             UserDefaults.standard.sortOrder = newValue
         }
         .onChange(of: searchText) { oldValue, newValue in
+            // Check if user typed label: syntax and auto-select matching labels
+            if newValue.lowercased().hasPrefix("label:") {
+                let colonIndex = newValue.firstIndex(of: ":")
+                let labelQuery = colonIndex != nil ? String(newValue[newValue.index(after: colonIndex!)...]) : ""
+                
+                // Clear any previous auto-selections that don't match exactly anymore
+                let currentExactMatches = Set(store.availableLabels.filter { label in
+                    !labelQuery.isEmpty && label.lowercased() == labelQuery.lowercased()
+                })
+                
+                // Remove any included labels that are no longer exact matches
+                includedLabels = includedLabels.intersection(currentExactMatches)
+                
+                if !labelQuery.isEmpty {
+                    // Only auto-select if there's an exact match
+                    let exactMatch = store.availableLabels.first { label in
+                        label.lowercased() == labelQuery.lowercased()
+                    }
+                    
+                    // Auto-include only exact matches
+                    if let exactLabel = exactMatch {
+                        if !includedLabels.contains(exactLabel) {
+                            includedLabels.insert(exactLabel)
+                            excludedLabels.remove(exactLabel)
+                        }
+                    }
+                }
+            } else {
+                // If not using label: syntax, clear any auto-selections
+                // (Keep only manually selected ones - but we don't track that, so clear all for now)
+                if oldValue.lowercased().hasPrefix("label:") && !newValue.lowercased().hasPrefix("label:") {
+                    includedLabels.removeAll()
+                    excludedLabels.removeAll()
+                }
+            }
+            
             // Only clear selection if the selected torrent isn't in the new filtered list
             if let selectedTorrent = torrentSelection.wrappedValue.first {
                 // Check if the selected torrent matches the search filter
@@ -377,6 +504,94 @@ struct macOSContentView: View {
         }
     }
 }
+
+// MARK: - Label Filter Chip Component
+
+enum LabelFilterAction {
+    case include, exclude, clear
+}
+
+struct LabelFilterChip: View {
+    let label: String
+    let count: Int
+    let isIncluded: Bool
+    let isExcluded: Bool
+    let onAction: (LabelFilterAction) -> Void
+    @ObservedObject private var themeManager = ThemeManager.shared
+    
+    private var backgroundColor: Color {
+        if isIncluded {
+            return themeManager.accentColor.opacity(0.2)
+        } else if isExcluded {
+            return Color.red.opacity(0.2)
+        } else {
+            return Color(NSColor.controlColor)
+        }
+    }
+    
+    private var borderColor: Color {
+        if isIncluded {
+            return themeManager.accentColor
+        } else if isExcluded {
+            return Color.red
+        } else {
+            return Color.secondary.opacity(0.3)
+        }
+    }
+    
+    private var textColor: Color {
+        if isIncluded {
+            return themeManager.accentColor
+        } else if isExcluded {
+            return Color.red
+        } else {
+            return Color.primary
+        }
+    }
+    
+    var body: some View {
+        Button(action: {
+            if isIncluded {
+                onAction(.exclude)
+            } else if isExcluded {
+                onAction(.clear)
+            } else {
+                onAction(.include)
+            }
+        }) {
+            HStack(spacing: 4) {
+                Image(systemName: "tag.fill")
+                    .font(.caption2)
+                    .foregroundColor(textColor)
+                
+                Text(label)
+                    .font(.caption)
+                    .foregroundColor(textColor)
+                
+                Text("(\(count))")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                
+                if isExcluded {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.caption2)
+                        .foregroundColor(.red)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(backgroundColor)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(borderColor, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .help(isIncluded ? "Click to exclude '\(label)'" : isExcluded ? "Click to clear filter" : "Click to include '\(label)'")
+    }
+}
+
 #else
 // Empty struct for iOS to reference - this won't be compiled on iOS but provides the type
 struct macOSContentView: View {

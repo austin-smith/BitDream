@@ -204,6 +204,24 @@ extension Array where Element == Torrent {
         }
     }
     
+    func filtered(by selectedLabels: Set<String>, enabled: Bool) -> [Torrent] {
+        guard enabled else { return self }
+        guard !selectedLabels.isEmpty else { return self }
+        
+        return self.filter { torrent in
+            // Show torrents that have at least one of the selected labels
+            torrent.labels.contains { torrentLabel in
+                selectedLabels.contains { selectedLabel in
+                    torrentLabel.lowercased() == selectedLabel.lowercased()
+                }
+            }
+        }
+    }
+    
+    func filtered(by statusFilter: [TorrentStatusCalc], labelFilter: Set<String>, labelFilterEnabled: Bool) -> [Torrent] {
+        return self.filtered(by: statusFilter).filtered(by: labelFilter, enabled: labelFilterEnabled)
+    }
+    
     func sorted(by property: SortProperty, order: SortOrder) -> [Torrent] {
         return sortTorrents(self, by: property, order: order)
     }
