@@ -305,7 +305,7 @@ struct macOSTorrentFileDetail: View {
     }
     
     private func updateLocalFilePriority(_ selectedRows: [TorrentFileRow], priority: FilePriority) {
-        // Update local data optimistically  
+        // Update local data optimistically
         for row in selectedRows {
             if let index = viewModel.allRows.firstIndex(where: { $0.id == row.id }) {
                 let updatedRow = TorrentFileRow(

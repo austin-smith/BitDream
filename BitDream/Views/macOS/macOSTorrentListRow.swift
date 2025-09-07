@@ -48,12 +48,11 @@ struct macOSTorrentListRow: View {
         .contentShape(Rectangle())
         .padding([.top, .bottom, .leading, .trailing], 10)
         .contextMenu {
-            let torrentsToAct = selectedTorrents.contains(torrent) ? selectedTorrents : Set([torrent])
-            
+ 
             // Play/Pause Button
             Button(action: {
                 let info = makeConfig(store: store)
-                for t in torrentsToAct {
+                for t in affectedTorrents {
                     playPauseTorrent(torrent: t, config: info.config, auth: info.auth, onResponse: { response in
                         handleTransmissionResponse(response,
                             onSuccess: {
@@ -77,8 +76,7 @@ struct macOSTorrentListRow: View {
             // Resume Now Button (only show for stopped torrents)
             if torrent.status == TorrentStatus.stopped.rawValue {
                 Button(action: {
-                    let torrentsToAct = selectedTorrents.contains(torrent) ? selectedTorrents : Set([torrent])
-                    for t in torrentsToAct {
+                    for t in affectedTorrents {
                         resumeTorrentNow(torrent: t, store: store)
                     }
                 }) {
@@ -98,7 +96,7 @@ struct macOSTorrentListRow: View {
                     let info = makeConfig(store: store)
                     updateTorrent(
                         args: TorrentSetRequestArgs(
-                            ids: Array(torrentsToAct.map { $0.id }),
+                            ids: Array(affectedTorrents.map { $0.id }),
                             priority: .high
                         ),
                         info: info,
@@ -115,7 +113,7 @@ struct macOSTorrentListRow: View {
                     let info = makeConfig(store: store)
                     updateTorrent(
                         args: TorrentSetRequestArgs(
-                            ids: Array(torrentsToAct.map { $0.id }),
+                            ids: Array(affectedTorrents.map { $0.id }),
                             priority: .normal
                         ),
                         info: info,
@@ -132,7 +130,7 @@ struct macOSTorrentListRow: View {
                     let info = makeConfig(store: store)
                     updateTorrent(
                         args: TorrentSetRequestArgs(
-                            ids: Array(torrentsToAct.map { $0.id }),
+                            ids: Array(affectedTorrents.map { $0.id }),
                             priority: .low
                         ),
                         info: info,
@@ -184,8 +182,7 @@ struct macOSTorrentListRow: View {
 
                 // Re-announce Button
                 Button(action: {
-                    let torrentsToAct = selectedTorrents.contains(torrent) ? selectedTorrents : Set([torrent])
-                    for t in torrentsToAct {
+                    for t in affectedTorrents {
                         reAnnounceToTrackers(torrent: t, store: store)
                     }
                 }) {
@@ -199,7 +196,7 @@ struct macOSTorrentListRow: View {
                 // Verify Button
                 Button(action: {
                     let info = makeConfig(store: store)
-                    for t in torrentsToAct {
+                    for t in affectedTorrents {
                         verifyTorrent(torrent: t, config: info.config, auth: info.auth, onResponse: { response in
                             handleTransmissionResponse(response,
                                 onSuccess: {
@@ -238,15 +235,15 @@ struct macOSTorrentListRow: View {
         .id(torrent.id)
         .sheet(isPresented: $labelDialog) {
             VStack(spacing: 16) {
-                Text("Edit Labels\(torrentsToAct.count > 1 ? " (\(torrentsToAct.count) torrents)" : "")")
+                Text("Edit Labels\(affectedTorrents.count > 1 ? " (\(affectedTorrents.count) torrents)" : "")")
                     .font(.headline)
                 
                 LabelEditView(
                     labelInput: $labelInput,
                     existingLabels: [],
                     store: store,
-                    torrentIds: Array(torrentsToAct.map { $0.id }),
-                    selectedTorrents: torrentsToAct,
+                    torrentIds: Array(affectedTorrents.map { $0.id }),
+                    selectedTorrents: affectedTorrents,
                     shouldSave: $shouldSave
                 )
                 
@@ -267,11 +264,11 @@ struct macOSTorrentListRow: View {
             .frame(width: 400)
         }
         .alert(
-            "Delete \(torrentsToDelete.count > 1 ? "\(torrentsToDelete.count) Torrents" : "Torrent")",
+            "Delete \(affectedTorrents.count > 1 ? "\(affectedTorrents.count) Torrents" : "Torrent")",
             isPresented: $deleteDialog) {
                 Button(role: .destructive) {
                     let info = makeConfig(store: store)
-                    for t in torrentsToDelete {
+                    for t in affectedTorrents {
                         deleteTorrent(torrent: t, erase: true, config: info.config, auth: info.auth, onDel: { response in
                             handleTransmissionResponse(response,
                                 onSuccess: {
@@ -290,7 +287,7 @@ struct macOSTorrentListRow: View {
                 }
                 Button("Remove from list only") {
                     let info = makeConfig(store: store)
-                    for t in torrentsToDelete {
+                    for t in affectedTorrents {
                         deleteTorrent(torrent: t, erase: false, config: info.config, auth: info.auth, onDel: { response in
                             handleTransmissionResponse(response,
                                 onSuccess: {
@@ -312,11 +309,7 @@ struct macOSTorrentListRow: View {
         .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
     }
     
-    private var torrentsToDelete: Set<Torrent> {
-        selectedTorrents.contains(torrent) ? selectedTorrents : Set([torrent])
-    }
-    
-    private var torrentsToAct: Set<Torrent> {
+    private var affectedTorrents: Set<Torrent> {
         selectedTorrents.contains(torrent) ? selectedTorrents : Set([torrent])
     }
 }
