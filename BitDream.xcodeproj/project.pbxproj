@@ -45,7 +45,6 @@
 		4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */; };
 		4BC5C2B42D7D415100D80AB4 /* iOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */; };
 		4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD938E92D82AF6F006CE97C /* ThemeManager.swift */; };
-		4BD938F22D82AF81006CE97C /* WaveProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD938F12D82AF81006CE97C /* WaveProgressView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -88,7 +87,6 @@
 		4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentDetail.swift; sourceTree = "<group>"; };
 		4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentDetail.swift; sourceTree = "<group>"; };
 		4BD938E92D82AF6F006CE97C /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
-		4BD938F12D82AF81006CE97C /* WaveProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveProgressView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -208,7 +206,6 @@
 				4B1DAE05295E6FC80037E9FB /* TorrentDetail.swift */,
 				4B6F1EBF2D86D52A003D8F6E /* TorrentFileDetail.swift */,
 				4B6F1EB12D82DB21003D8F6E /* TorrentListRow.swift */,
-				4BD938F12D82AF81006CE97C /* WaveProgressView.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -312,7 +309,6 @@
 				4B9CAC562D7E83460094CD03 /* iOSAddTorrent.swift in Sources */,
 				4B6F1EB62D82DB33003D8F6E /* macOSTorrentListRow.swift in Sources */,
 				4BC5C2AA2D7D20B500D80AB4 /* iOSContentView.swift in Sources */,
-				4BD938F22D82AF81006CE97C /* WaveProgressView.swift in Sources */,
 				4B642D6D2D7E151A003CEADC /* iOSServerDetail.swift in Sources */,
 				4B9CAC5D2D7F02FA0094CD03 /* AppBadgeManager.swift in Sources */,
 				4B642D7B2D7E1EF6003CEADC /* iOSServerList.swift in Sources */,

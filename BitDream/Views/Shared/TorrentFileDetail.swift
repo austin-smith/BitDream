@@ -262,9 +262,9 @@ struct FileProgressView: View {
                 .frame(minWidth: showDetailedText ? 100 : 50)
             
             if showDetailedText {
-                // iOS style with detailed byte information
-                Text("\(byteCountFormatter.string(fromByteCount: bytesCompleted)) of \(byteCountFormatter.string(fromByteCount: totalSize)) (\(String(format: "%.1f%%", percentDone * 100)))")
-                    .font(.footnote)
+                // iOS style with detailed percentage
+                Text("\(String(format: "%.1f%%", percentDone * 100))")
+                    .font(.system(.caption, design: .monospaced))
                     .foregroundColor(.secondary)
             } else {
                 // macOS style with just percentage
