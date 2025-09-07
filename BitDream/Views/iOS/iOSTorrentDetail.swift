@@ -87,7 +87,7 @@ struct iOSTorrentDetail: View {
                         }
                     }
                     
-                    Section {
+                    Section(header: Text("Additional Info")) {
                         HStack {
                             Text("Availability")
                             Spacer()
@@ -99,6 +99,19 @@ struct iOSTorrentDetail: View {
                             Spacer()
                             Text(details.activityDate)
                                 .foregroundColor(.gray)
+                        }
+                    }
+                    
+                    // Beautiful Dedicated Labels Section (Display Only)
+                    if !torrent.labels.isEmpty {
+                        Section(header: Text("Labels")) {
+                            FlowLayout(spacing: 6) {
+                                ForEach(torrent.labels.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }, id: \.self) { label in
+                                    DetailViewLabelTag(label: label, isLarge: false)
+                                }
+                            }
+                            .padding(.vertical, 8)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                         }
                     }
                     
@@ -142,6 +155,29 @@ struct iOSTorrentDetail: View {
                     }
             }
         }
+    }
+}
+
+// Enhanced LabelTag component for detail views
+struct DetailViewLabelTag: View {
+    let label: String
+    var isLarge: Bool = false
+    
+    var body: some View {
+        Text(label)
+            .font(isLarge ? .subheadline : .caption)
+            .fontWeight(.medium)
+            .padding(.horizontal, isLarge ? 8 : 6)
+            .padding(.vertical, isLarge ? 4 : 3)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.accentColor.opacity(0.12))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+            )
+            .foregroundColor(.primary)
     }
 }
 #else

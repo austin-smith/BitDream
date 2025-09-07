@@ -39,11 +39,15 @@ struct macOSTorrentDetail: View {
                 
                 // General section
                 GroupBox {
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 12) {
                         // Section header with proper spacing
-                        Label("General", systemImage: "info.circle")
-                            .font(.headline)
-                            .padding(.bottom, 10)
+                        HStack {
+                            Label("General", systemImage: "info.circle.fill")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            Spacer()
+                        }
+                        .padding(.bottom, 4)
                         
                         DetailRow(label: "Name", value: torrent.name)
                         
@@ -63,26 +67,19 @@ struct macOSTorrentDetail: View {
                                 isShowingFilesSheet = true
                             } label: {
                                 HStack(spacing: 4) {
+                                    Image(systemName: "document")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.accentColor)
                                     Text("\(files.count)")
                                         .foregroundColor(.accentColor)
-                                    
-                                    Image(systemName: "text.magnifyingglass")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.accentColor)
                                 }
-                                .padding(.vertical, 2)
-                                .padding(.horizontal, 6)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .strokeBorder(Color.accentColor.opacity(0.5), lineWidth: 1)
-                                )
                             }
-                            .buttonStyle(PlainButtonStyle())
-                            .help("View files")
+                            .buttonStyle(.bordered)
+                            .help("View files in this torrent")
                         }
                     }
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 12)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 16)
                 }
                 .padding(.bottom, 4)
                 
@@ -118,6 +115,30 @@ struct macOSTorrentDetail: View {
                     .padding(.horizontal, 12)
                 }
                 .padding(.bottom, 4)
+                
+                // Beautiful Dedicated Labels Section (Display Only)
+                if !torrent.labels.isEmpty {
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 16) {
+                            // Simple section header
+                            Label("Labels", systemImage: "tag.fill")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                                .padding(.bottom, 4)
+                            
+                            // Labels display
+                            FlowLayout(spacing: 6) {
+                                ForEach(torrent.labels.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }, id: \.self) { label in
+                                    DetailViewLabelTag(label: label, isLarge: false)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16)
+                    }
+                    .padding(.bottom, 4)
+                }
                 
                 // Actions
                 HStack {
@@ -182,6 +203,29 @@ struct macOSTorrentDetail: View {
             // Use shared toolbar
             TorrentDetailToolbar(torrent: torrent, store: store)
         }
+    }
+}
+
+// Enhanced LabelTag component for detail views
+struct DetailViewLabelTag: View {
+    let label: String
+    var isLarge: Bool = false
+    
+    var body: some View {
+        Text(label)
+            .font(isLarge ? .subheadline : .caption)
+            .fontWeight(.medium)
+            .padding(.horizontal, isLarge ? 8 : 6)
+            .padding(.vertical, isLarge ? 4 : 3)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.accentColor.opacity(0.12))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+            )
+            .foregroundColor(.primary)
     }
 }
 
