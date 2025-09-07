@@ -17,13 +17,15 @@ extension UserDefaults {
         static let inspectorVisibility = "inspectorVisibility"
         static let sortProperty = "sortProperty"
         static let sortOrder = "sortOrder"
+        static let torrentListCompactMode = "torrentListCompactMode"
     }
     
     static let viewStateDefaults: [String: Any] = [
         Keys.sidebarVisibility: true, // true = show sidebar (.all), false = hide sidebar (.detailOnly)
         Keys.inspectorVisibility: true,
         Keys.sortProperty: "Name", // Default sort property as "Name"
-        Keys.sortOrder: true // true = ascending, false = descending
+        Keys.sortOrder: true, // true = ascending, false = descending
+        Keys.torrentListCompactMode: false // false = expanded view, true = compact table view
     ]
     
     static func registerViewStateDefaults() {
@@ -57,6 +59,11 @@ extension UserDefaults {
     var sortOrder: SortOrder {
         get { bool(forKey: Keys.sortOrder) ? .ascending : .descending }
         set { set(newValue == .ascending, forKey: Keys.sortOrder) }
+    }
+    
+    var torrentListCompactMode: Bool {
+        get { bool(forKey: Keys.torrentListCompactMode) }
+        set { set(newValue, forKey: Keys.torrentListCompactMode) }
     }
 }
 

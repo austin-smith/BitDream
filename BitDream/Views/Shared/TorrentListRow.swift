@@ -11,7 +11,7 @@ struct TorrentListRow: View {
         #if os(iOS)
         iOSTorrentListRow(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents)
         #elseif os(macOS)
-        macOSTorrentListRow(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents)
+        macOSTorrentListRow(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents, isCompact: false)
         #endif
     }
 }

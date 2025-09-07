@@ -3,238 +3,41 @@ import SwiftUI
 import KeychainAccess
 
 #if os(macOS)
-struct macOSTorrentListRow: View {
+
+// MARK: - Shared Components for macOS Torrent List Views
+
+// MARK: - Torrent Row Modifier
+// Shared modifier for handling torrent row interactions
+struct TorrentRowModifier: ViewModifier {
     @Binding var torrent: Torrent
-    var store: Store
     @Binding var selectedTorrents: Set<Torrent>
+    let store: Store
+    @Binding var deleteDialog: Bool
+    @Binding var labelDialog: Bool
+    @Binding var labelInput: String
+    @Binding var shouldSave: Bool
+    @Binding var showingError: Bool
+    @Binding var errorMessage: String
     
-    @State var deleteDialog: Bool = false
-    @State var labelDialog: Bool = false
-    @State var labelInput: String = ""
-    @State private var shouldSave: Bool = false
-    @State private var showingError = false
-    @State private var errorMessage = ""
-    @Environment(\.colorScheme) var colorScheme
-    
-    var body: some View {
-        VStack {
-            HStack(spacing: 8) {
-                Text(torrent.name)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(alignment: .leading)
-                
-                // Display labels inline if present, but allow them to be truncated
-                createLabelTagsView(for: torrent)
-                    .layoutPriority(-1)  // Give lower priority than the name
-            }
-            
-            createStatusView(for: torrent)
-                .font(.custom("sub", size: 10))
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-                .foregroundColor(.secondary)
-            
-            // Logic here is kind of funky, but we are going to fill up the entire progress bar if the
-            // torrent is still retrieving metadata (as the bar will be colored red)
-            ProgressView(value: torrent.metadataPercentComplete < 1 ? 1 : torrent.percentDone)
-                .tint(progressColorForTorrent(torrent))
-            
-            Text(formatTorrentSubtext(torrent))
-                .font(.custom("sub", size: 10))
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-                .foregroundColor(.secondary)
+    private var affectedTorrents: Set<Torrent> {
+        if selectedTorrents.isEmpty {
+            return Set([torrent])
         }
-        .contentShape(Rectangle())
-        .padding([.top, .bottom, .leading, .trailing], 10)
+        return selectedTorrents.contains(torrent) ? selectedTorrents : Set([torrent])
+    }
+    
+    func body(content: Content) -> some View {
+        content
         .contextMenu {
- 
-            // Play/Pause Button
-            Button(action: {
-                let info = makeConfig(store: store)
-                for t in affectedTorrents {
-                    playPauseTorrent(torrent: t, config: info.config, auth: info.auth, onResponse: { response in
-                        handleTransmissionResponse(response,
-                            onSuccess: {
-                                // Success - torrent state will update automatically
-                            },
-                            onError: { error in
-                                errorMessage = error
-                                showingError = true
-                            }
-                        )
-                    })
-                }
-            }) {
-                HStack {
-                    Image(systemName: torrent.status == TorrentStatus.stopped.rawValue ? "play" : "pause")
-                        .foregroundStyle(.secondary)
-                    Text(torrent.status == TorrentStatus.stopped.rawValue ? "Resume" : "Pause")
-                }
-            }
-            
-            // Resume Now Button (only show for stopped torrents)
-            if torrent.status == TorrentStatus.stopped.rawValue {
-                Button(action: {
-                    for t in affectedTorrents {
-                        resumeTorrentNow(torrent: t, store: store)
-                    }
-                }) {
-                    HStack {
-                        Image(systemName: "play.fill")
-                            .foregroundStyle(.secondary)
-                        Text("Resume Now")
-                    }
-                }
-            }
-
-            Divider()
-            
-            // Priority Menu
-            Menu {
-                Button(action: {
-                    let info = makeConfig(store: store)
-                    updateTorrent(
-                        args: TorrentSetRequestArgs(
-                            ids: Array(affectedTorrents.map { $0.id }),
-                            priority: .high
-                        ),
-                        info: info,
-                        onComplete: { r in }
-                    )
-                }) {
-                    HStack {
-                        Image(systemName: "arrow.up")
-                            .foregroundStyle(.secondary)
-                        Text("High")
-                    }
-                }
-                Button(action: {
-                    let info = makeConfig(store: store)
-                    updateTorrent(
-                        args: TorrentSetRequestArgs(
-                            ids: Array(affectedTorrents.map { $0.id }),
-                            priority: .normal
-                        ),
-                        info: info,
-                        onComplete: { r in }
-                    )
-                }) {
-                    HStack {
-                        Image(systemName: "minus")
-                            .foregroundStyle(.secondary)
-                        Text("Normal")
-                    }
-                }
-                Button(action: {
-                    let info = makeConfig(store: store)
-                    updateTorrent(
-                        args: TorrentSetRequestArgs(
-                            ids: Array(affectedTorrents.map { $0.id }),
-                            priority: .low
-                        ),
-                        info: info,
-                        onComplete: { r in }
-                    )
-                }) {
-                    HStack {
-                        Image(systemName: "arrow.down")
-                            .foregroundStyle(.secondary)
-                        Text("Low")
-                    }
-                }
-            } label: {
-                HStack {
-                    Image(systemName: "flag.badge.ellipsis")
-                        .foregroundStyle(.secondary)
-                    Text("Update Priority")
-                }
-            }
-
-            Button(action: {
-                // For single-torrent editing, pre-fill with existing labels.
-                // For multi-torrent editing, start with empty input so new labels can be appended
-                // without removing or overwriting existing labels.
-                if affectedTorrents.count == 1 {
-                    labelInput = torrent.labels.joined(separator: ", ")
-                } else {
-                    labelInput = ""
-                }
-                labelDialog.toggle()
-            }) {
-                HStack {
-                    Image(systemName: "tag")
-                        .foregroundStyle(.secondary)
-                    Text("Edit Labels")
-                }
-            }
-
-            Divider()
-            
-            // Copy Magnet Link Button - only show if no selection or single selection of this torrent
-            if selectedTorrents.isEmpty || selectedTorrents.count == 1 {
-                Button(action: {
-                    copyMagnetLinkToClipboard(torrent.magnetLink)
-                }) {
-                    HStack {
-                        Image(systemName: "document.on.document")
-                            .foregroundStyle(.secondary)
-                        Text("Copy Magnet Link")
-                    }
-                }
-                
-                Divider()
-
-                // Re-announce Button
-                Button(action: {
-                    for t in affectedTorrents {
-                        reAnnounceToTrackers(torrent: t, store: store)
-                    }
-                }) {
-                    HStack {
-                        Image(systemName: "arrow.left.arrow.right")
-                            .foregroundStyle(.secondary)
-                        Text("Ask For More Peers")
-                    }
-                }
-
-                // Verify Button
-                Button(action: {
-                    let info = makeConfig(store: store)
-                    for t in affectedTorrents {
-                        verifyTorrent(torrent: t, config: info.config, auth: info.auth, onResponse: { response in
-                            handleTransmissionResponse(response,
-                                onSuccess: {
-                                    // Success - verification started
-                                },
-                                onError: { error in
-                                    errorMessage = error
-                                    showingError = true
-                                }
-                            )
-                        })
-                    }
-                }) {
-                    HStack {
-                        Image(systemName: "checkmark.arrow.trianglehead.counterclockwise")
-                            .foregroundStyle(.secondary)
-                        Text("Verify Local Data")
-                    }
-                }
-            }
-
-            Divider()
-            
-            // Delete Button
-            Button(role: .destructive, action: {
-                deleteDialog.toggle()
-            }) {
-                HStack {
-                    Image(systemName: "trash")
-                        .foregroundStyle(.secondary)
-                    Text("Delete")
-                }
-            }
+                createTorrentContextMenu(
+                    torrents: affectedTorrents,
+                    store: store,
+                    labelInput: $labelInput,
+                    labelDialog: $labelDialog,
+                    deleteDialog: $deleteDialog,
+                    showingError: $showingError,
+                    errorMessage: $errorMessage
+                )
         }
         .tint(.primary)
         .id(torrent.id)
@@ -314,12 +117,210 @@ struct macOSTorrentListRow: View {
             .interactiveDismissDisabled(false)
         .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
     }
+}
+
+// MARK: - Context Menu Builder
+@ViewBuilder
+func createTorrentContextMenu(
+    torrents: Set<Torrent>,
+    store: Store,
+    labelInput: Binding<String>,
+    labelDialog: Binding<Bool>,
+    deleteDialog: Binding<Bool>,
+    showingError: Binding<Bool>,
+    errorMessage: Binding<String>
+) -> some View {
+    let firstTorrent = torrents.first!
     
-    private var affectedTorrents: Set<Torrent> {
-        selectedTorrents.contains(torrent) ? selectedTorrents : Set([torrent])
+    // Play/Pause Button
+    Button(action: {
+        let info = makeConfig(store: store)
+        for t in torrents {
+            playPauseTorrent(torrent: t, config: info.config, auth: info.auth, onResponse: { response in
+                handleTransmissionResponse(response,
+                    onSuccess: {
+                        // Success - torrent state will update automatically
+                    },
+                    onError: { error in
+                        errorMessage.wrappedValue = error
+                        showingError.wrappedValue = true
+                    }
+                )
+            })
+        }
+    }) {
+        HStack {
+            Image(systemName: firstTorrent.status == TorrentStatus.stopped.rawValue ? "play" : "pause")
+                .foregroundStyle(.secondary)
+            Text(firstTorrent.status == TorrentStatus.stopped.rawValue ? "Resume" : "Pause")
+        }
+    }
+    
+    // Resume Now Button (only show for stopped torrents)
+    if firstTorrent.status == TorrentStatus.stopped.rawValue {
+        Button(action: {
+            for t in torrents {
+                resumeTorrentNow(torrent: t, store: store)
+            }
+        }) {
+            HStack {
+                Image(systemName: "play.fill")
+                    .foregroundStyle(.secondary)
+                Text("Resume Now")
+            }
+        }
+    }
+
+    Divider()
+    
+    // Priority Menu
+    Menu {
+        Button(action: {
+            let info = makeConfig(store: store)
+            updateTorrent(
+                args: TorrentSetRequestArgs(
+                    ids: Array(torrents.map { $0.id }),
+                    priority: .high
+                ),
+                info: info,
+                onComplete: { r in }
+            )
+        }) {
+            HStack {
+                Image(systemName: "arrow.up")
+                    .foregroundStyle(.secondary)
+                Text("High")
+            }
+        }
+        Button(action: {
+            let info = makeConfig(store: store)
+            updateTorrent(
+                args: TorrentSetRequestArgs(
+                    ids: Array(torrents.map { $0.id }),
+                    priority: .normal
+                ),
+                info: info,
+                onComplete: { r in }
+            )
+        }) {
+            HStack {
+                Image(systemName: "minus")
+                    .foregroundStyle(.secondary)
+                Text("Normal")
+            }
+        }
+        Button(action: {
+            let info = makeConfig(store: store)
+            updateTorrent(
+                args: TorrentSetRequestArgs(
+                    ids: Array(torrents.map { $0.id }),
+                    priority: .low
+                ),
+                info: info,
+                onComplete: { r in }
+            )
+        }) {
+            HStack {
+                Image(systemName: "arrow.down")
+                    .foregroundStyle(.secondary)
+                Text("Low")
+            }
+        }
+    } label: {
+        HStack {
+            Image(systemName: "flag.badge.ellipsis")
+                .foregroundStyle(.secondary)
+            Text("Update Priority")
+        }
+    }
+
+    Button(action: {
+        // For single-torrent editing, pre-fill with existing labels.
+        // For multi-torrent editing, start with empty input so new labels can be appended
+        // without removing or overwriting existing labels.
+        if torrents.count == 1 {
+            labelInput.wrappedValue = torrents.first!.labels.joined(separator: ", ")
+        } else {
+            labelInput.wrappedValue = ""
+        }
+        labelDialog.wrappedValue.toggle()
+    }) {
+        HStack {
+            Image(systemName: "tag")
+                .foregroundStyle(.secondary)
+            Text("Edit Labels")
+        }
+    }
+
+    Divider()
+    
+    // Copy Magnet Link Button - only show if single selection
+    if torrents.count == 1 {
+        Button(action: {
+            copyMagnetLinkToClipboard(firstTorrent.magnetLink)
+        }) {
+            HStack {
+                Image(systemName: "document.on.document")
+                    .foregroundStyle(.secondary)
+                Text("Copy Magnet Link")
+            }
+        }
+        
+        Divider()
+
+        // Re-announce Button
+        Button(action: {
+            for t in torrents {
+                reAnnounceToTrackers(torrent: t, store: store)
+            }
+        }) {
+            HStack {
+                Image(systemName: "arrow.left.arrow.right")
+                    .foregroundStyle(.secondary)
+                Text("Ask For More Peers")
+            }
+        }
+
+        // Verify Button
+        Button(action: {
+            let info = makeConfig(store: store)
+            for t in torrents {
+                verifyTorrent(torrent: t, config: info.config, auth: info.auth, onResponse: { response in
+                    handleTransmissionResponse(response,
+                        onSuccess: {
+                            // Success - verification started
+                        },
+                        onError: { error in
+                            errorMessage.wrappedValue = error
+                            showingError.wrappedValue = true
+                        }
+                    )
+                })
+            }
+        }) {
+            HStack {
+                Image(systemName: "checkmark.arrow.trianglehead.counterclockwise")
+                    .foregroundStyle(.secondary)
+                Text("Verify Local Data")
+            }
+        }
+    }
+
+    Divider()
+    
+    // Delete Button
+    Button(role: .destructive, action: {
+        deleteDialog.wrappedValue.toggle()
+    }) {
+        HStack {
+            Image(systemName: "trash")
+                .foregroundStyle(.secondary)
+            Text("Delete")
+        }
     }
 }
 
+// MARK: - Label Edit View
 struct LabelEditView: View {
     @Binding var labelInput: String
     let existingLabels: [String]
@@ -432,7 +433,28 @@ struct LabelEditView: View {
                 return .ignored
             }
     }
+}
+
+// MARK: - Backward Compatibility
+// This view now just wraps the expanded view for backward compatibility
+struct macOSTorrentListRow: View {
+    @Binding var torrent: Torrent
+    var store: Store
+    @Binding var selectedTorrents: Set<Torrent>
+    let isCompact: Bool
     
+    var body: some View {
+        if isCompact {
+            // This shouldn't be used in compact mode, but provide fallback
+            EmptyView()
+        } else {
+            macOSTorrentListExpandedView(
+                torrent: $torrent,
+                store: store,
+                selectedTorrents: $selectedTorrents
+            )
+        }
+    }
 }
 
 #else
@@ -441,6 +463,7 @@ struct macOSTorrentListRow: View {
     @Binding var torrent: Torrent
     var store: Store
     @Binding var selectedTorrents: Set<Torrent>
+    let isCompact: Bool
     
     var body: some View {
         EmptyView()

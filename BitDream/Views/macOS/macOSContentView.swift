@@ -40,6 +40,7 @@ struct macOSContentView: View {
     @State private var searchText: String = ""
     @State private var includedLabels: Set<String> = []
     @State private var excludedLabels: Set<String> = []
+    @State private var isCompactMode: Bool = UserDefaults.standard.torrentListCompactMode
     
     // Helper function to extract label query from "label:something" syntax
     private func extractLabelQuery(from query: String) -> String {
@@ -199,32 +200,46 @@ struct macOSContentView: View {
                 
                 VStack {
                     // Torrent list
-                    List(selection: torrentSelection) {
-                        if store.torrents.isEmpty {
+                    if store.torrents.isEmpty {
+                        VStack {
+                            Spacer()
                             Text("No dreams available")
                                 .foregroundColor(.gray)
                                 .padding()
-                        } else {
-                            // Break up the complex expression into steps
-                            let filteredTorrents = store.torrents.filtered(by: filterBySelection)
-                                .filter { torrent in
-                                    torrentMatchesSearch(torrent, query: searchText)
-                                }
-                            let sortedTorrents = sortTorrents(filteredTorrents, by: sortProperty, order: sortOrder)
-                            
-                            ForEach(sortedTorrents, id: \.id) { torrent in
-                                TorrentListRow(
-                                    torrent: binding(for: torrent, in: store),
-                                    store: store,
-                                    selectedTorrents: torrentSelection
-                                )
-                                .tag(torrent)
-                                .listRowSeparator(.visible)
+                            Spacer()
+                        }
+                    } else {
+                        // Break up the complex expression into steps
+                        let filteredTorrents = store.torrents.filtered(by: filterBySelection)
+                            .filter { torrent in
+                                torrentMatchesSearch(torrent, query: searchText)
                             }
+                        let sortedTorrents = sortTorrents(filteredTorrents, by: sortProperty, order: sortOrder)
+                        
+                        if isCompactMode {
+                            // Compact table view
+                            macOSTorrentListCompactView(
+                                torrents: sortedTorrents,
+                                selection: $selectedTorrentIds,
+                                store: store
+                            )
+                        } else {
+                            // Expanded list view
+                            List(selection: torrentSelection) {
+                                ForEach(sortedTorrents, id: \.id) { torrent in
+                                    macOSTorrentListExpandedView(
+                                        torrent: binding(for: torrent, in: store),
+                                        store: store,
+                                        selectedTorrents: torrentSelection
+                                    )
+                                    .tag(torrent)
+                                    .listRowSeparator(.visible)
+                                }
+                            }
+                            .listStyle(.inset)
+                            .tint(themeManager.accentColor) // Apply accent color to list selection
                         }
                     }
-                    .listStyle(.inset)
-                    .tint(themeManager.accentColor) // Apply accent color to list selection
                 }
             }
             .navigationTitle(sidebarSelection.rawValue)
@@ -343,9 +358,25 @@ struct macOSContentView: View {
                 //     .help("Resume all paused torrents")
                 // }
                 
-                // Add spacer between sort and inspector buttons
+                // Add spacer between sort and view mode buttons
                 ToolbarItem(placement: .automatic) {
                     Spacer()
+                }
+                
+                // Toggle compact mode button
+                ToolbarItem(placement: .automatic) {
+                    Button(action: {
+                        withAnimation {
+                            isCompactMode.toggle()
+                            UserDefaults.standard.torrentListCompactMode = isCompactMode
+                        }
+                    }) {
+                        Label(
+                            isCompactMode ? "Expanded View" : "Compact View",
+                            systemImage: isCompactMode ? "rectangle.grid.1x2" : "list.bullet"
+                        )
+                    }
+                    .help("Toggle between compact table and expanded list view")
                 }
                 
                 // Toggle inspector button
