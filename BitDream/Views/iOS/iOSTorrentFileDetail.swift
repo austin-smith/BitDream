@@ -31,8 +31,8 @@ func sortFiles(_ files: [TorrentFileRow], by property: FileSortProperty, order: 
             files.sorted { $0.percentDone > $1.percentDone }
     case .type:
         return order == .ascending ?
-            files.sorted { $0.fileExtension.localizedCaseInsensitiveCompare($1.fileExtension) == .orderedAscending } :
-            files.sorted { $0.fileExtension.localizedCaseInsensitiveCompare($1.fileExtension) == .orderedDescending }
+            files.sorted { $0.fileType.localizedCaseInsensitiveCompare($1.fileType) == .orderedAscending } :
+            files.sorted { $0.fileType.localizedCaseInsensitiveCompare($1.fileType) == .orderedDescending }
     case .priority:
         return order == .ascending ?
             files.sorted { $0.priority < $1.priority } :
@@ -328,7 +328,7 @@ struct iOSTorrentFileDetail: View {
         updateLocalFilePriority(fileIndex: row.fileIndex, priority: priority)
         
         let info = makeConfig(store: store)
-        BitDream.setFilePriority(
+        setFilePriority(
             torrentId: torrentId,
             fileIndices: [row.fileIndex],
             priority: priority,

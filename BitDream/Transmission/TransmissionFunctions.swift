@@ -440,7 +440,7 @@ public func setFileWantedStatus(
 }
 
 /// Set priority for specific files in a torrent
-func setFilePriority(
+public func setFilePriority(
     torrentId: Int, 
     fileIndices: [Int], 
     priority: FilePriority, 

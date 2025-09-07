@@ -22,6 +22,13 @@ public enum TorrentPriority: String {
     case low = "priority-low"
 }
 
+// Priority enum for torrent files
+public enum FilePriority: Int {
+    case low = -1
+    case normal = 0
+    case high = 1
+}
+
 public enum TorrentStatus: Int {
     case stopped = 0
     case queuedToVerify = 1

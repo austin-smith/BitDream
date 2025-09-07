@@ -3,12 +3,9 @@ import SwiftUI
 import KeychainAccess
 import UniformTypeIdentifiers
 
-// Priority enum for torrent files
-enum FilePriority: Int {
-    case low = -1
-    case normal = 0
-    case high = 1
-    
+// MARK: - UI Extensions for Domain Models
+
+extension FilePriority {
     var displayText: String {
         switch self {
         case .low: return "Low"
@@ -303,8 +300,8 @@ struct TorrentFileRow: Identifiable {
         "\(Int(percentDone * 100))%"
     }
     
-    var fileExtension: String {
-        BitDream.fileExtension(from: name)
+    var fileType: String {
+        fileExtension(from: name)
     }
     
     var fileSymbol: String {

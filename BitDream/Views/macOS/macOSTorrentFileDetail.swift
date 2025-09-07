@@ -135,7 +135,7 @@ struct macOSTorrentFileDetail: View {
                 }
                 .width(min: 160, ideal: 230)
                 
-                TableColumn("Type", value: \.fileExtension) { row in
+                TableColumn("Type", value: \.fileType) { row in
                     HStack {
                         FileTypeChip(filename: row.name, iconSize: 12)
                         Spacer()

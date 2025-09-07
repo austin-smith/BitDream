@@ -242,10 +242,12 @@ struct iOSLabelEditView: View {
     
     private func saveAndDismiss() {
         // First add any pending tag
-        addNewTag()
+        if addNewTag(from: &newTagInput, to: &workingLabels) {
+            labelInput = workingLabels.joined(separator: ", ")
+        }
         
         // Update the binding
-        updateLabelInput()
+        labelInput = workingLabels.joined(separator: ", ")
         
         // Save to server and refresh
         saveTorrentLabels(torrentId: torrentId, labels: workingLabels, store: store) {
@@ -266,7 +268,7 @@ struct iOSLabelEditView: View {
                         ForEach(Array(workingLabels).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }, id: \.self) { label in
                             LabelTag(label: label) {
                                 workingLabels.remove(label)
-                                updateLabelInput()
+                                labelInput = workingLabels.joined(separator: ", ")
                             }
                         }
                     }
@@ -314,23 +316,13 @@ struct iOSLabelEditView: View {
             if newValue.contains(",") {
                 // Remove the comma and add the tag
                 newTagInput = newValue.replacingOccurrences(of: ",", with: "")
-                addNewTag()
+                if addNewTag(from: &newTagInput, to: &workingLabels) {
+                    labelInput = workingLabels.joined(separator: ", ")
+                }
             }
         }
     }
     
-    private func addNewTag() {
-        let trimmed = newTagInput.trimmingCharacters(in: .whitespaces)
-        if BitDream.addNewTag(trimmedInput: trimmed, to: &workingLabels) {
-            updateLabelInput()
-        }
-        newTagInput = ""
-    }
-    
-    private func updateLabelInput() {
-        // Update the binding with the current working set
-        labelInput = workingLabels.joined(separator: ", ")
-    }
 }
 
 #else

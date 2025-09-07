@@ -240,7 +240,8 @@ struct macOSTorrentListRow: View {
                 
                 LabelEditView(
                     labelInput: $labelInput,
-                    existingLabels: [],
+                    // Show existing labels for single torrent, empty for multi-torrent (append mode)
+                    existingLabels: affectedTorrents.count == 1 ? Array(affectedTorrents.first!.labels) : [],
                     store: store,
                     torrentIds: Array(affectedTorrents.map { $0.id }),
                     selectedTorrents: affectedTorrents,
@@ -341,10 +342,12 @@ struct LabelEditView: View {
     /// existing labels.
     private func saveAndDismiss() {
         // First add any pending tag
-        addNewTag()
+        if addNewTag(from: &newTagInput, to: &workingLabels) {
+            labelInput = workingLabels.joined(separator: ", ")
+        }
         
         // Update the binding
-        updateLabelInput()
+        labelInput = workingLabels.joined(separator: ", ")
         
         // Merge new labels with each torrent's existing labels
         for torrent in selectedTorrents {
@@ -374,7 +377,7 @@ struct LabelEditView: View {
                     ForEach(Array(workingLabels).sorted(), id: \.self) { label in
                         LabelTag(label: label) {
                             workingLabels.remove(label)
-                            updateLabelInput()
+                            labelInput = workingLabels.joined(separator: ", ")
                         }
                     }
                     
@@ -396,7 +399,9 @@ struct LabelEditView: View {
             if newValue.contains(",") {
                 // Remove the comma and add the tag
                 newTagInput = newValue.replacingOccurrences(of: ",", with: "")
-                addNewTag()
+                if addNewTag(from: &newTagInput, to: &workingLabels) {
+                    labelInput = workingLabels.joined(separator: ", ")
+                }
             }
         }
     }
@@ -406,7 +411,11 @@ struct LabelEditView: View {
             .textFieldStyle(.plain)
             .focused($isInputFocused)
             .frame(width: 80)
-            .onSubmit(addNewTag)
+            .onSubmit {
+                if addNewTag(from: &newTagInput, to: &workingLabels) {
+                    labelInput = workingLabels.joined(separator: ", ")
+                }
+            }
             .onTapGesture {
                 isInputFocused = true
             }
@@ -419,18 +428,6 @@ struct LabelEditView: View {
             }
     }
     
-    private func addNewTag() {
-        let trimmed = newTagInput.trimmingCharacters(in: .whitespaces)
-        if BitDream.addNewTag(trimmedInput: trimmed, to: &workingLabels) {
-            updateLabelInput()
-        }
-        newTagInput = ""
-    }
-    
-    private func updateLabelInput() {
-        // Update the binding with the current working set
-        labelInput = workingLabels.joined(separator: ", ")
-    }
 }
 
 #else

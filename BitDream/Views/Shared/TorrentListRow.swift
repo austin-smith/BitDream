@@ -141,14 +141,17 @@ func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: Store, onComp
     )
 }
 
-// Shared function to handle adding new tags
-func addNewTag(trimmedInput: String, to workingLabels: inout Set<String>) -> Bool {
-    if !trimmedInput.isEmpty {
-        if !LabelTag.containsLabel(workingLabels, trimmedInput) {
-            workingLabels.insert(trimmedInput)
+// Shared function to handle adding new tags from input field
+func addNewTag(from input: inout String, to workingLabels: inout Set<String>) -> Bool {
+    let trimmed = input.trimmingCharacters(in: .whitespaces)
+    if !trimmed.isEmpty {
+        if !LabelTag.containsLabel(workingLabels, trimmed) {
+            workingLabels.insert(trimmed)
+            input = ""
             return true
         }
     }
+    input = ""
     return false
 }
 
