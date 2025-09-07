@@ -77,6 +77,9 @@ enum FileTypeCategory: String, CaseIterable {
     case other = "Other"
 }
 
+extension FileTypeCategory {
+    var title: String { rawValue }
+}
 
 /// Get file type category from filename
 func fileTypeCategory(_ pathOrName: String) -> FileTypeCategory {
@@ -213,11 +216,11 @@ struct StatusBadge: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(FileStatus.color(for: wanted).opacity(0.15))
-        .overlay(
-            RoundedRectangle(cornerRadius: 4)
-                .stroke(FileStatus.color(for: wanted).opacity(0.3), lineWidth: 0.5)
-        )
-        .cornerRadius(4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(FileStatus.color(for: wanted).opacity(0.3), lineWidth: 0.5)
+            )
+            .cornerRadius(4)
     }
 }
 

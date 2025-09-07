@@ -355,12 +355,12 @@ struct HeaderView: View {
                 }
                 
                     Section("File Types") {
-                        Toggle("Videos", isOn: $viewModel.showVideos)
-                        Toggle("Audio", isOn: $viewModel.showAudio)
-                        Toggle("Images", isOn: $viewModel.showImages)
-                        Toggle("Documents", isOn: $viewModel.showDocuments)
-                        Toggle("Archives", isOn: $viewModel.showArchives)
-                        Toggle("Other", isOn: $viewModel.showOther)
+                        Toggle(FileTypeCategory.video.title, isOn: $viewModel.showVideos)
+                        Toggle(FileTypeCategory.audio.title, isOn: $viewModel.showAudio)
+                        Toggle(FileTypeCategory.image.title, isOn: $viewModel.showImages)
+                        Toggle(FileTypeCategory.document.title, isOn: $viewModel.showDocuments)
+                        Toggle(FileTypeCategory.archive.title, isOn: $viewModel.showArchives)
+                        Toggle(FileTypeCategory.other.title, isOn: $viewModel.showOther)
                     }
                     
             } label: {

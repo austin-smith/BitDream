@@ -152,9 +152,14 @@ struct macOSTorrentListRow: View {
             }
 
             Button(action: {
-                // Start with empty input so new labels can be added to the selected torrents
+                // For single-torrent editing, pre-fill with existing labels.
+                // For multi-torrent editing, start with empty input so new labels can be appended
                 // without removing or overwriting existing labels.
-                labelInput = ""
+                if affectedTorrents.count == 1 {
+                    labelInput = torrent.labels.joined(separator: ", ")
+                } else {
+                    labelInput = ""
+                }
                 labelDialog.toggle()
             }) {
                 HStack {

@@ -620,12 +620,12 @@ struct FilterSheet: View {
                 }
                 
                 Section("File Types") {
-                    Toggle("Videos", isOn: $showVideos)
-                    Toggle("Audio", isOn: $showAudio)
-                    Toggle("Images", isOn: $showImages)
-                    Toggle("Documents", isOn: $showDocuments)
-                    Toggle("Archives", isOn: $showArchives)
-                    Toggle("Other", isOn: $showOther)
+                    Toggle(FileTypeCategory.video.title, isOn: $showVideos)
+                    Toggle(FileTypeCategory.audio.title, isOn: $showAudio)
+                    Toggle(FileTypeCategory.image.title, isOn: $showImages)
+                    Toggle(FileTypeCategory.document.title, isOn: $showDocuments)
+                    Toggle(FileTypeCategory.archive.title, isOn: $showArchives)
+                    Toggle(FileTypeCategory.other.title, isOn: $showOther)
                 }
                 
                 Section {

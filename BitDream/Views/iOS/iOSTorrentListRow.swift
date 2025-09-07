@@ -285,10 +285,18 @@ struct iOSLabelEditView: View {
                             .textFieldStyle(.roundedBorder)
                             .focused($isInputFocused)
                             .submitLabel(.done)
-                            .onSubmit { addNewTag(from: &newTagInput, to: &workingLabels) }
+                            .onSubmit {
+                                if addNewTag(from: &newTagInput, to: &workingLabels) {
+                                    labelInput = workingLabels.joined(separator: ", ")
+                                }
+                            }
                         
                         if !newTagInput.isEmpty {
-                            Button(action: { addNewTag(from: &newTagInput, to: &workingLabels) }) {
+                            Button(action: {
+                                if addNewTag(from: &newTagInput, to: &workingLabels) {
+                                    labelInput = workingLabels.joined(separator: ", ")
+                                }
+                            }) {
                                 Image(systemName: "plus.circle.fill")
                                     .foregroundColor(.accentColor)
                             }
