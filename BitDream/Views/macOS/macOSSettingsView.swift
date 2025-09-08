@@ -9,6 +9,7 @@ struct macOSSettingsView: View {
     
     // Use ThemeManager instead of direct AppStorage
     @ObservedObject private var themeManager = ThemeManager.shared
+    @AppStorage("showContentTypeIcons") private var showContentTypeIcons: Bool = true
     
     var body: some View {
         // macOS version adapted for the Settings scene
@@ -72,6 +73,12 @@ struct macOSSettingsView: View {
                             }
                         }
                         .padding(.top, 8)
+                        
+                        Divider()
+                            .padding(.vertical, 8)
+                        
+                        // Content Type Icons toggle
+                        Toggle("Show file type icons", isOn: $showContentTypeIcons)
                     }
                     .padding(10)
                 }

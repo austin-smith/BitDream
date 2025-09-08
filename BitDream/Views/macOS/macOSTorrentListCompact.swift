@@ -96,6 +96,7 @@ struct macOSTorrentListCompact: View {
     @Binding var selection: Set<Int>
     @State private var sortOrder = [KeyPathComparator(\TorrentTableRow.name)]
     let store: Store
+    let showContentTypeIcons: Bool
     
     @State private var deleteDialog: Bool = false
     @State private var labelDialog: Bool = false
@@ -162,8 +163,8 @@ struct macOSTorrentListCompact: View {
                 .width(20)
             }
             
-            // Content type icon column
-            if isColumnVisible(.contentIcon) {
+            // Content type icon column (conditional)
+            if showContentTypeIcons && isColumnVisible(.contentIcon) {
                 TableColumn("") { row in
                     Image(systemName: ContentTypeIconMapper.symbolForTorrent(mimeType: row.torrent.primaryMimeType))
                         .font(.system(size: 10))
@@ -548,6 +549,7 @@ struct macOSTorrentListCompact: View {
     let torrents: [Torrent]
     @Binding var selection: Set<Int>
     let store: Store
+    let showContentTypeIcons: Bool
     
     var body: some View {
         EmptyView()

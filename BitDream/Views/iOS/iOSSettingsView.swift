@@ -7,6 +7,7 @@ struct iOSSettingsView: View {
     @State private var showingThemeSettings = false
     @ObservedObject var store: Store
     @ObservedObject private var themeManager = ThemeManager.shared
+    @AppStorage("showContentTypeIcons") private var showContentTypeIcons: Bool = true
     
     var body: some View {
         // iOS version with standard styling
@@ -18,6 +19,8 @@ struct iOSSettingsView: View {
                             Text(mode.rawValue).tag(mode)
                         }
                     }
+                    
+                    Toggle("Show file type icons", isOn: $showContentTypeIcons)
                 }
                 
                 Section(header: Text("Refresh Settings")) {

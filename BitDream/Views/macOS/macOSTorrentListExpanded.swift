@@ -7,6 +7,7 @@ struct macOSTorrentListExpanded: View {
     @Binding var torrent: Torrent
     var store: Store
     @Binding var selectedTorrents: Set<Torrent>
+    var showContentTypeIcons: Bool
     
     @State var deleteDialog: Bool = false
     @State var labelDialog: Bool = false
@@ -20,39 +21,44 @@ struct macOSTorrentListExpanded: View {
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        VStack {
-            HStack(spacing: 8) {
-                // Torrent type icon
+        HStack(spacing: 12) {
+            // Icon column (conditional) - spans full row height
+            if showContentTypeIcons {
                 Image(systemName: ContentTypeIconMapper.symbolForTorrent(mimeType: torrent.primaryMimeType))
-                    .font(.system(size: 12))
+                    .font(.system(size: 16))
                     .foregroundColor(.secondary.opacity(0.6))
-                    .frame(width: 14)
-                
-                Text(torrent.name)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(alignment: .leading)
-                
-                // Display labels inline if present, but allow them to be truncated
-                createLabelTagsView(for: torrent)
-                    .layoutPriority(-1)  // Give lower priority than the name
+                    .frame(width: 20, height: 20)
             }
             
-            createStatusView(for: torrent)
-                .font(.custom("sub", size: 10))
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-                .foregroundColor(.secondary)
-            
-            // Logic here is kind of funky, but we are going to fill up the entire progress bar if the
-            // torrent is still retrieving metadata (as the bar will be colored red)
-            ProgressView(value: torrent.metadataPercentComplete < 1 ? 1 : torrent.percentDone)
-                .tint(progressColorForTorrent(torrent))
-            
-            Text(formatTorrentSubtext(torrent))
-                .font(.custom("sub", size: 10))
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-                .foregroundColor(.secondary)
+            // Content column - all the text content
+            VStack(spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(torrent.name)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    // Display labels inline if present, but allow them to be truncated
+                    createLabelTagsView(for: torrent)
+                        .layoutPriority(-1)  // Give lower priority than the name
+                }
+                
+                createStatusView(for: torrent)
+                    .font(.custom("sub", size: 10))
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .foregroundColor(.secondary)
+                
+                // Logic here is kind of funky, but we are going to fill up the entire progress bar if the
+                // torrent is still retrieving metadata (as the bar will be colored red)
+                ProgressView(value: torrent.metadataPercentComplete < 1 ? 1 : torrent.percentDone)
+                    .tint(progressColorForTorrent(torrent))
+                
+                Text(formatTorrentSubtext(torrent))
+                    .font(.custom("sub", size: 10))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .foregroundColor(.secondary)
+            }
         }
         .contentShape(Rectangle())
         .padding([.top, .bottom, .leading, .trailing], 10)
@@ -79,6 +85,7 @@ struct macOSTorrentListExpanded: View {
     @Binding var torrent: Torrent
     var store: Store
     @Binding var selectedTorrents: Set<Torrent>
+    var showContentTypeIcons: Bool
     
     var body: some View {
         EmptyView()

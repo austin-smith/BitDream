@@ -18,6 +18,7 @@ extension UserDefaults {
         static let sortProperty = "sortProperty"
         static let sortOrder = "sortOrder"
         static let torrentListCompactMode = "torrentListCompactMode"
+        static let showContentTypeIcons = "showContentTypeIcons"
     }
     
     static let viewStateDefaults: [String: Any] = [
@@ -25,7 +26,8 @@ extension UserDefaults {
         Keys.inspectorVisibility: true,
         Keys.sortProperty: "Name", // Default sort property as "Name"
         Keys.sortOrder: true, // true = ascending, false = descending
-        Keys.torrentListCompactMode: false // false = expanded view, true = compact table view
+        Keys.torrentListCompactMode: false, // false = expanded view, true = compact table view
+        Keys.showContentTypeIcons: true // true = show icons, false = hide icons
     ]
     
     static func registerViewStateDefaults() {
@@ -64,6 +66,11 @@ extension UserDefaults {
     var torrentListCompactMode: Bool {
         get { bool(forKey: Keys.torrentListCompactMode) }
         set { set(newValue, forKey: Keys.torrentListCompactMode) }
+    }
+    
+    var showContentTypeIcons: Bool {
+        get { bool(forKey: Keys.showContentTypeIcons) }
+        set { set(newValue, forKey: Keys.showContentTypeIcons) }
     }
 }
 

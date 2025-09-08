@@ -38,6 +38,7 @@ struct iOSContentView: View {
     @State var sortProperty: SortProperty = UserDefaults.standard.sortProperty
     @State var sortOrder: SortOrder = UserDefaults.standard.sortOrder
     @State var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
+    @AppStorage("showContentTypeIcons") private var showContentTypeIcons: Bool = true
     
     var body: some View {
         NavigationSplitView {
@@ -122,7 +123,8 @@ struct iOSContentView: View {
                     TorrentListRow(
                         torrent: binding(for: torrent, in: store),
                         store: store,
-                        selectedTorrents: torrentSelection
+                        selectedTorrents: torrentSelection,
+                        showContentTypeIcons: showContentTypeIcons
                     )
                     .tag(torrent)
                     .id(torrent.id)

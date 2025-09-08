@@ -6,12 +6,13 @@ struct TorrentListRow: View {
     @Binding var torrent: Torrent
     var store: Store
     @Binding var selectedTorrents: Set<Torrent>
+    var showContentTypeIcons: Bool
     
     var body: some View {
         #if os(iOS)
-        iOSTorrentListRow(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents)
+        iOSTorrentListRow(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents, showContentTypeIcons: showContentTypeIcons)
         #elseif os(macOS)
-        macOSTorrentListExpanded(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents)
+        macOSTorrentListExpanded(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents, showContentTypeIcons: showContentTypeIcons)
         #endif
     }
 }

@@ -41,6 +41,7 @@ struct macOSContentView: View {
     @State private var includedLabels: Set<String> = []
     @State private var excludedLabels: Set<String> = []
     @State private var isCompactMode: Bool = UserDefaults.standard.torrentListCompactMode
+    @AppStorage("showContentTypeIcons") private var showContentTypeIcons: Bool = true
     
     // Helper function to extract label query from "label:something" syntax
     private func extractLabelQuery(from query: String) -> String {
@@ -221,7 +222,8 @@ struct macOSContentView: View {
                             macOSTorrentListCompact(
                                 torrents: sortedTorrents,
                                 selection: $selectedTorrentIds,
-                                store: store
+                                store: store,
+                                showContentTypeIcons: showContentTypeIcons
                             )
                         } else {
                             // Expanded list view
@@ -230,13 +232,14 @@ struct macOSContentView: View {
                                     macOSTorrentListExpanded(
                                         torrent: binding(for: torrent, in: store),
                                         store: store,
-                                        selectedTorrents: torrentSelection
+                                        selectedTorrents: torrentSelection,
+                                        showContentTypeIcons: showContentTypeIcons
                                     )
                                     .tag(torrent)
                                     .listRowSeparator(.visible)
                                 }
                             }
-                            .listStyle(.inset)
+                            .listStyle(.plain)
                             .tint(themeManager.accentColor) // Apply accent color to list selection
                         }
                     }
