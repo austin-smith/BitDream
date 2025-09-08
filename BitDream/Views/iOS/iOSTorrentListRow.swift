@@ -18,6 +18,15 @@ struct iOSTorrentListRow: View {
     @State private var errorMessage = ""
     @Environment(\.colorScheme) var colorScheme
     
+    // MARK: - Rename validation helpers
+    private var trimmedRenameInput: String {
+        renameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
+    private var isRenameValid: Bool {
+        validateNewName(renameInput, current: torrent.name) == nil && trimmedRenameInput != torrent.name
+    }
+    
     // Create reusable torrent actions view
     @ViewBuilder
     private func torrentActionsMenu() -> some View {
@@ -277,10 +286,8 @@ struct iOSTorrentListRow: View {
                         .textFieldStyle(.roundedBorder)
                         .submitLabel(.done)
                         .onSubmit {
-                            let trimmed = renameInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                            let invalid = validateNewName(renameInput, current: torrent.name) != nil || trimmed == torrent.name
-                            if !invalid {
-                                let nameToSave = trimmed
+                            if isRenameValid {
+                                let nameToSave = trimmedRenameInput
                                 renameTorrentRoot(torrent: torrent, to: nameToSave, store: store) { err in
                                     if let err = err {
                                         errorMessage = err
@@ -300,10 +307,9 @@ struct iOSTorrentListRow: View {
                         Button("Cancel") { renameDialog = false }
                     }
                     ToolbarItem(placement: .confirmationAction) {
-                        let trimmed = renameInput.trimmingCharacters(in: .whitespacesAndNewlines)
-                        let disabled = validateNewName(renameInput, current: torrent.name) != nil || trimmed == torrent.name
+                        let disabled = !isRenameValid
                         Button("Save") {
-                            let nameToSave = trimmed
+                            let nameToSave = trimmedRenameInput
                             renameTorrentRoot(torrent: torrent, to: nameToSave, store: store) { err in
                                 if let err = err {
                                     errorMessage = err

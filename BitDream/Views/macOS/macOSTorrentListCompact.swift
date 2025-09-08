@@ -67,7 +67,8 @@ struct macOSTorrentListCompact: View {
     @State private var showingError = false
     @State private var errorMessage = ""
     @State private var columnCustomization = TableColumnCustomization<TorrentTableRow>()
-    @AppStorage("mac.compact.columns.v1") private var columnCustomizationData: Data?
+    private static let columnCustomizationKey = "mac.compact.columns.v1"
+    @AppStorage(Self.columnCustomizationKey) private var columnCustomizationData: Data?
     
     
     // Create bindings to the actual torrents in the store (like expanded view does)
@@ -132,7 +133,7 @@ struct macOSTorrentListCompact: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
-            .width(min: 150, ideal: 250, max: 400)
+            .width(min: 150, ideal: 250, max: 600)
             .customizationID("name")
             
             // Progress column
@@ -206,7 +207,7 @@ struct macOSTorrentListCompact: View {
                     }
                 }
             }
-            .width(min: 100, ideal: 140)
+            .width(min: 100, ideal: 140, max: 200)
             .customizationID("speed")
             
             // ETA column
@@ -236,7 +237,7 @@ struct macOSTorrentListCompact: View {
                     }
                 }
             }
-            .width(min: 80, ideal: 120, max: 200)
+            .width(min: 80, ideal: 120, max: 300)
             .customizationID("labels")
         })
         .tableStyle(.inset(alternatesRowBackgrounds: true))
@@ -369,8 +370,11 @@ struct macOSTorrentListCompact: View {
             }
         }
         .onChange(of: columnCustomization) { oldValue, newValue in
-            if let encoded = try? JSONEncoder().encode(newValue) {
+            do {
+                let encoded = try JSONEncoder().encode(newValue)
                 columnCustomizationData = encoded
+            } catch {
+                print("Failed to encode columnCustomization: \(error)")
             }
         }
     }
