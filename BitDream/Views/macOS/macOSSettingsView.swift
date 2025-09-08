@@ -9,7 +9,7 @@ struct macOSSettingsView: View {
     
     // Use ThemeManager instead of direct AppStorage
     @ObservedObject private var themeManager = ThemeManager.shared
-    @AppStorage("showContentTypeIcons") private var showContentTypeIcons: Bool = true
+    @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = AppDefaults.showContentTypeIcons
     
     var body: some View {
         // macOS version adapted for the Settings scene
@@ -141,8 +141,11 @@ struct macOSSettingsView: View {
                 GroupBox(label: Text("Reset").font(.headline)) {
                     VStack {
                         Button("Reset All Settings") {
-                            // Reset accent color to default
-                            themeManager.setAccentColor(.blue)
+                            // Reset to shared defaults
+                            themeManager.setAccentColor(AppDefaults.accentColor)
+                            themeManager.setThemeMode(AppDefaults.themeMode)
+                            showContentTypeIcons = AppDefaults.showContentTypeIcons
+                            store.updatePollInterval(AppDefaults.pollInterval)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 4)

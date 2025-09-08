@@ -364,9 +364,14 @@ struct macOSTorrentListCompact: View {
             .interactiveDismissDisabled(false)
         .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
         .onAppear {
-            if let data = columnCustomizationData,
-               let decoded = try? JSONDecoder().decode(TableColumnCustomization<TorrentTableRow>.self, from: data) {
-                columnCustomization = decoded
+            if let data = columnCustomizationData {
+                do {
+                    let decoded = try JSONDecoder().decode(TableColumnCustomization<TorrentTableRow>.self, from: data)
+                    columnCustomization = decoded
+                } catch {
+                    print("Failed to decode columnCustomizationData: \(error)")
+                    columnCustomization = TableColumnCustomization<TorrentTableRow>()
+                }
             }
         }
         .onChange(of: columnCustomization) { oldValue, newValue in

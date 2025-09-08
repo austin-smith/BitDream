@@ -7,7 +7,7 @@ struct iOSSettingsView: View {
     @State private var showingThemeSettings = false
     @ObservedObject var store: Store
     @ObservedObject private var themeManager = ThemeManager.shared
-    @AppStorage("showContentTypeIcons") private var showContentTypeIcons: Bool = true
+    @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = AppDefaults.showContentTypeIcons
     
     var body: some View {
         // iOS version with standard styling
@@ -49,13 +49,11 @@ struct iOSSettingsView: View {
                 
                 Section(header: Text("Reset")) {
                     Button(action: {
-                        // Reset accent color to default
-                        themeManager.setAccentColor(.blue)
-                        // Reset theme to system
-                        themeManager.setThemeMode(.system)
-                        // Reset other settings
-                        showContentTypeIcons = true
-                        store.updatePollInterval(5.0) // Default poll interval
+                        // Reset to shared defaults
+                        themeManager.setAccentColor(AppDefaults.accentColor)
+                        themeManager.setThemeMode(AppDefaults.themeMode)
+                        showContentTypeIcons = AppDefaults.showContentTypeIcons
+                        store.updatePollInterval(AppDefaults.pollInterval)
                     }) {
                         Text("Reset All Settings")
                             .foregroundColor(.accentColor)
