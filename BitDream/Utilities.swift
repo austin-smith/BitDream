@@ -334,3 +334,154 @@ extension View {
         modifier(TransmissionErrorAlert(isPresented: isPresented, message: message))
     }
 }
+
+/*--------------------------------------------------------------------------------------------
+| Bencode Parser for Torrent Files
+| -------------------------------------------------------------------------------------------*/
+
+/// Torrent metadata structure
+struct TorrentInfo {
+    let name: String
+    let totalSize: Int64
+    let fileCount: Int
+    
+    var formattedSize: String {
+        return byteCountFormatter.string(fromByteCount: totalSize)
+    }
+    
+    var fileCountText: String {
+        return fileCount == 1 ? "1 file" : "\(fileCount) files"
+    }
+}
+
+/// Parse torrent metadata from .torrent file data
+/// - Parameter data: The raw .torrent file data
+/// - Returns: TorrentInfo with name, size, and file count, or nil if parsing fails
+func parseTorrentInfo(from data: Data) -> TorrentInfo? {
+    guard let name = parseBencodeString(data: data, key: "name") else { return nil }
+    
+    let bytes = [UInt8](data)
+    
+    // Try to find "files" key for multi-file torrents
+    if let filesPattern = "5:files".data(using: .utf8),
+       let _ = findPattern([UInt8](filesPattern), in: bytes) {
+        // Multi-file torrent - sum up individual file sizes
+        let (totalSize, fileCount) = parseMultiFileTorrent(bytes: bytes)
+        return TorrentInfo(name: name, totalSize: totalSize, fileCount: fileCount)
+    } else {
+        // Single file torrent - get the "length" field
+        if let length = parseBencodeInteger(data: data, key: "length") {
+            return TorrentInfo(name: name, totalSize: length, fileCount: 1)
+        }
+    }
+    
+    return nil
+}
+
+/// Parse torrent name from .torrent file data (legacy function for compatibility)
+/// - Parameter data: The raw .torrent file data
+/// - Returns: The torrent name from the info dictionary, or nil if parsing fails
+func parseTorrentName(from data: Data) -> String? {
+    return parseBencodeString(data: data, key: "name")
+}
+
+/// Parse a string value from bencode data for a given key (optimized)
+/// - Parameters:
+///   - data: The bencode data
+///   - key: The key to search for
+/// - Returns: The string value, or nil if not found or parsing fails
+private func parseBencodeString(data: Data, key: String) -> String? {
+    // Use faster string search instead of byte-by-byte
+    guard let dataString = String(data: data, encoding: .isoLatin1) else { return nil }
+    let keyPattern = "\(key.count):\(key)"
+    
+    guard let range = dataString.range(of: keyPattern) else { return nil }
+    
+    let afterKey = String(dataString[range.upperBound...])
+    guard let colonIndex = afterKey.firstIndex(of: ":") else { return nil }
+    
+    let lengthStr = String(afterKey[..<colonIndex])
+    guard let length = Int(lengthStr) else { return nil }
+    
+    let valueStart = afterKey.index(after: colonIndex)
+    guard afterKey.distance(from: valueStart, to: afterKey.endIndex) >= length else { return nil }
+    
+    let valueEnd = afterKey.index(valueStart, offsetBy: length)
+    return String(afterKey[valueStart..<valueEnd])
+}
+
+/// Parse an integer value from bencode data for a given key (optimized)
+/// - Parameters:
+///   - data: The bencode data
+///   - key: The key to search for
+/// - Returns: The integer value, or nil if not found or parsing fails
+private func parseBencodeInteger(data: Data, key: String) -> Int64? {
+    guard let dataString = String(data: data, encoding: .isoLatin1) else { return nil }
+    let keyPattern = "\(key.count):\(key)i"
+    
+    guard let range = dataString.range(of: keyPattern) else { return nil }
+    
+    let afterKey = String(dataString[range.upperBound...])
+    guard let eIndex = afterKey.firstIndex(of: "e") else { return nil }
+    
+    let valueStr = String(afterKey[..<eIndex])
+    return Int64(valueStr)
+}
+
+/// Parse multi-file torrent to get total size and file count
+/// - Parameter bytes: The torrent file bytes
+/// - Returns: Tuple of (totalSize, fileCount)
+private func parseMultiFileTorrent(bytes: [UInt8]) -> (Int64, Int) {
+    var totalSize: Int64 = 0
+    var fileCount = 0
+    
+    // Look for length fields in the files list
+    let lengthPattern = "6:lengthi".utf8.map { UInt8($0) }
+    var searchIndex = 0
+    
+    while searchIndex < bytes.count {
+        if let lengthIndex = findPattern(lengthPattern, in: Array(bytes[searchIndex...])) {
+            let actualIndex = searchIndex + lengthIndex + lengthPattern.count
+            
+            // Find the end of this integer
+            var endIndex = actualIndex
+            while endIndex < bytes.count && bytes[endIndex] != UInt8(ascii: "e") {
+                endIndex += 1
+            }
+            
+            if endIndex < bytes.count,
+               let lengthStr = String(bytes: bytes[actualIndex..<endIndex], encoding: .utf8),
+               let length = Int64(lengthStr) {
+                totalSize += length
+                fileCount += 1
+            }
+            
+            searchIndex = endIndex + 1
+        } else {
+            break
+        }
+    }
+    
+    return (totalSize, fileCount)
+}
+
+/// Find a byte pattern in a byte array
+/// - Parameters:
+///   - pattern: The pattern to search for
+///   - data: The data to search in
+/// - Returns: The index of the first occurrence, or nil if not found
+private func findPattern(_ pattern: [UInt8], in data: [UInt8]) -> Int? {
+    guard pattern.count <= data.count else { return nil }
+    
+    for i in 0...(data.count - pattern.count) {
+        var found = true
+        for j in 0..<pattern.count {
+            if data[i + j] != pattern[j] {
+                found = false
+                break
+            }
+        }
+        if found { return i }
+    }
+    return nil
+}

@@ -77,3 +77,27 @@ extension UTType {
         UTType.types(tag: "torrent", tagClass: .filenameExtension, conformingTo: nil).first!
     }
 }
+
+// MARK: - Programmatic Add from .torrent data
+
+/// Adds a torrent by sending a base64-encoded .torrent file to Transmission without presenting UI
+func addTorrentFromFileData(_ fileData: Data, store: Store) {
+    // Ensure server is configured; makeConfig force-unwraps host internally
+    guard store.host != nil else { return }
+
+    let fileStream = fileData.base64EncodedString(options: [])
+    let info = makeConfig(store: store)
+
+    addTorrent(
+        fileUrl: fileStream,
+        saveLocation: store.defaultDownloadDir,
+        auth: info.auth,
+        file: true,
+        config: info.config,
+        onAdd: { response in
+            if response.response != TransmissionResponse.success {
+                print("Failed to add torrent: \(response.response)")
+            }
+        }
+    )
+}

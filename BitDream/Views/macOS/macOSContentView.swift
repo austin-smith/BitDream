@@ -2,6 +2,7 @@ import SwiftUI
 import Foundation
 import KeychainAccess
 import CoreData
+import UniformTypeIdentifiers
 
 #if os(macOS)
 struct macOSContentView: View {
@@ -42,6 +43,118 @@ struct macOSContentView: View {
     @State private var excludedLabels: Set<String> = []
     @State private var isCompactMode: Bool = UserDefaults.standard.torrentListCompactMode
     @AppStorage("showContentTypeIcons") private var showContentTypeIcons: Bool = true
+    
+    // Drag and drop state
+    @State private var isDropTargeted = false
+    @State private var draggedTorrentInfo: [TorrentInfo] = []
+    @State private var isParsingTorrents = false
+    
+    
+    // Handle torrent file drops
+    private func handleTorrentFileDrop(providers: [NSItemProvider]) -> Bool {
+        // Extract filenames for preview and determine if we accept
+        var torrentFiles: [String] = []
+        var accepted = false
+        
+        for provider in providers {
+            if provider.canLoadObject(ofClass: URL.self) || provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+                // Try to get filename for preview
+                if let suggestedName = provider.suggestedName,
+                   suggestedName.lowercased().hasSuffix(".torrent") {
+                    torrentFiles.append(suggestedName)
+                    accepted = true
+                }
+                
+                // Load asynchronously for actual processing
+                if provider.canLoadObject(ofClass: URL.self) {
+                    _ = provider.loadObject(ofClass: URL.self) { url, error in
+                        guard let url = url, url.pathExtension.lowercased() == "torrent" else { return }
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            var didAccess = false
+                            if url.isFileURL {
+                                didAccess = url.startAccessingSecurityScopedResource()
+                            }
+                            defer {
+                                if didAccess { url.stopAccessingSecurityScopedResource() }
+                            }
+                            do {
+                                let data = try Data(contentsOf: url)
+                                DispatchQueue.main.async {
+                                    addTorrentFromFileData(data, store: store)
+                                }
+                            } catch {
+                                print("Failed to read dropped torrent file: \(error)")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Update preview files if we found any
+        if !torrentFiles.isEmpty {
+            // This function is no longer used with the new delegate approach
+            // but keeping for compatibility
+        }
+        
+        return accepted
+    }
+    
+    // Torrent Preview Card Component
+    private var torrentPreviewCard: some View {
+        let totalSize = draggedTorrentInfo.reduce(0) { $0 + $1.totalSize }
+        let totalFiles = draggedTorrentInfo.reduce(0) { $0 + $1.fileCount }
+        let formattedTotalSize = byteCountFormatter.string(fromByteCount: totalSize)
+        let fileCountText = totalFiles == 1 ? "1 file" : "\(totalFiles) files"
+        
+        let displayTitle: String = {
+            if draggedTorrentInfo.count == 1 {
+                return draggedTorrentInfo.first!.name
+            } else {
+                return "\(draggedTorrentInfo.count) Torrents"
+            }
+        }()
+        
+        let iconName = "document.badge.plus"
+        
+        return VStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Image(systemName: iconName)
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                    Text(displayTitle)
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                
+                HStack {
+                    Image(systemName: iconName)
+                        .foregroundColor(.clear)
+                        .font(.caption)
+                    Text(formattedTotalSize)
+                        .font(.system(.subheadline, design: .monospaced))
+                        .foregroundColor(.secondary)
+                    Text("•")
+                        .font(.system(.subheadline, design: .monospaced))
+                        .foregroundColor(.secondary)
+                    Text(fileCountText)
+                        .font(.system(.subheadline, design: .monospaced))
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(.ultraThickMaterial)
+                .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 6)
+        )
+        .frame(maxWidth: 300)
+    }
     
     // Helper function to extract label query from "label:something" syntax
     private func extractLabelQuery(from query: String) -> String {
@@ -204,9 +317,28 @@ struct macOSContentView: View {
                     if store.torrents.isEmpty {
                         VStack {
                             Spacer()
-                            Text("No dreams available")
-                                .foregroundColor(.gray)
-                                .padding()
+                            
+                            if isDropTargeted {
+                                VStack(spacing: 12) {
+                                    Image(systemName: "plus.circle")
+                                        .font(.system(size: 48))
+                                        .foregroundColor(themeManager.accentColor)
+                                    Text("Drop .torrent files here to add")
+                                        .font(.title2)
+                                        .foregroundColor(themeManager.accentColor)
+                                }
+                            } else {
+                                VStack(spacing: 12) {
+                                    Text("💭")
+                                        .font(.system(size: 40))
+                                    Text("No dreams available")
+                                        .foregroundColor(.gray)
+                                    Text("Drag .torrent files here or use the + button")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            
                             Spacer()
                         }
                     } else {
@@ -242,6 +374,37 @@ struct macOSContentView: View {
                             .listStyle(.plain)
                             .tint(themeManager.accentColor) // Apply accent color to list selection
                         }
+                    }
+                }
+                .onDrop(of: [.fileURL], delegate: TorrentDropDelegate(
+                    isDropTargeted: $isDropTargeted,
+                    draggedTorrentInfo: $draggedTorrentInfo,
+                    store: store
+                ))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(themeManager.accentColor.opacity(isDropTargeted ? 0.1 : 0))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .strokeBorder(themeManager.accentColor, lineWidth: isDropTargeted ? 2.5 : 0)
+                                .opacity(isDropTargeted ? 0.8 : 0)
+                        )
+                        .animation(.easeInOut(duration: 0.2), value: isDropTargeted)
+                )
+                .overlay(
+                    // Torrent preview card
+                    Group {
+                        if isDropTargeted && !draggedTorrentInfo.isEmpty {
+                            torrentPreviewCard
+                                .transition(.scale.combined(with: .opacity))
+                        }
+                    }
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isDropTargeted)
+                )
+                .onChange(of: isDropTargeted) { oldValue, newValue in
+                    if !newValue {
+                        // Clear dragged files when drag ends
+                        draggedTorrentInfo = []
                     }
                 }
             }
@@ -540,6 +703,94 @@ struct macOSContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+    }
+}
+
+// MARK: - Custom Drop Delegate
+
+struct TorrentDropDelegate: DropDelegate {
+    @Binding var isDropTargeted: Bool
+    @Binding var draggedTorrentInfo: [TorrentInfo]
+    let store: Store
+    
+    func dropEntered(info: DropInfo) {
+        isDropTargeted = true
+        
+        // Count expected torrents first
+        let providers = info.itemProviders(for: [.fileURL])
+        let expectedCount = providers.count
+        var parsedInfos: [TorrentInfo] = []
+        let group = DispatchGroup()
+        
+        for provider in providers {
+            if provider.canLoadObject(ofClass: URL.self) {
+                group.enter()
+                _ = provider.loadObject(ofClass: URL.self) { url, error in
+                    defer { group.leave() }
+                    guard let url = url, url.pathExtension.lowercased() == "torrent" else { return }
+                    
+                    do {
+                        var didAccess = false
+                        if url.isFileURL {
+                            didAccess = url.startAccessingSecurityScopedResource()
+                        }
+                        defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
+                        
+                        let data = try Data(contentsOf: url)
+                        if let torrentInfo = parseTorrentInfo(from: data) {
+                            parsedInfos.append(torrentInfo)
+                        }
+                    } catch {
+                        print("Failed to parse torrent during drag: \(error)")
+                    }
+                }
+            }
+        }
+        
+        // Update UI only when ALL torrents are parsed
+        group.notify(queue: .main) {
+            draggedTorrentInfo = parsedInfos
+        }
+    }
+    
+    func dropExited(info: DropInfo) {
+        isDropTargeted = false
+        draggedTorrentInfo = []
+    }
+    
+    func performDrop(info: DropInfo) -> Bool {
+        isDropTargeted = false
+        
+        for provider in info.itemProviders(for: [.fileURL]) {
+            if provider.canLoadObject(ofClass: URL.self) {
+                _ = provider.loadObject(ofClass: URL.self) { url, error in
+                    guard let url = url, url.pathExtension.lowercased() == "torrent" else { return }
+                    
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        do {
+                            var didAccess = false
+                            if url.isFileURL {
+                                didAccess = url.startAccessingSecurityScopedResource()
+                            }
+                            defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
+                            
+                            let data = try Data(contentsOf: url)
+                            DispatchQueue.main.async {
+                                addTorrentFromFileData(data, store: store)
+                            }
+                        } catch {
+                            print("Failed to read dropped torrent file: \(error)")
+                        }
+                    }
+                }
+            }
+        }
+        
+        return true
+    }
+    
+    func validateDrop(info: DropInfo) -> Bool {
+        return info.hasItemsConforming(to: [.fileURL])
     }
 }
 

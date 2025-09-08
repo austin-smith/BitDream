@@ -10,6 +10,7 @@ import UserNotifications
 import CoreData
 // Import Store from the main module
 import Foundation
+import Combine
 
 @main
 struct BitDreamApp: App {
@@ -18,6 +19,9 @@ struct BitDreamApp: App {
     // Create a shared store instance that will be used by both the main app and settings
     @StateObject private var store = Store()
     @StateObject private var themeManager = ThemeManager.shared
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(AppFileOpenDelegate.self) private var appFileOpenDelegate
+    #endif
     
     init() {
         // Register default values for view state
@@ -40,6 +44,24 @@ struct BitDreamApp: App {
     }
 
     var body: some Scene {
+        #if os(macOS)
+        Window("BitDream", id: "main") {
+            ContentView()
+                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environmentObject(store) // Pass the shared store to the ContentView
+                .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
+                .environmentObject(themeManager) // Pass the ThemeManager to all views
+                .immediateTheme(manager: themeManager)
+                .onAppear {
+                    // Bind delegate to Store and auto-flush when host becomes available
+                    appFileOpenDelegate.configure(with: store)
+                }
+        }
+        .windowResizability(.contentSize)
+        .commands {
+            CommandGroup(replacing: .newItem) { }
+        }
+        #else
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
@@ -48,6 +70,7 @@ struct BitDreamApp: App {
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
                 .immediateTheme(manager: themeManager)
         }
+        #endif
         
         #if os(macOS)
         Settings {
