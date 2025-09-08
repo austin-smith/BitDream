@@ -108,6 +108,7 @@ public struct Torrent: Codable, Hashable, Identifiable {
     let sizeWhenDone: Int64
     let status: Int
     let totalSize: Int64
+    let uploadRatio: Double
     var downloadedCalc: Int64 { haveUnchecked + haveValid}
     var statusCalc: TorrentStatusCalc {
         if status == TorrentStatus.stopped.rawValue && percentDone == 1 {

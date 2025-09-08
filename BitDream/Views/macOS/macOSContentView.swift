@@ -376,7 +376,7 @@ struct macOSContentView: View {
                             systemImage: isCompactMode ? "rectangle.grid.1x2" : "list.bullet"
                         )
                     }
-                    .help("Toggle between compact table and expanded list view")
+                    .help(isCompactMode ? "Expanded view" : "Compact view")
                 }
                 
                 // Toggle inspector button

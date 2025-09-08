@@ -138,27 +138,69 @@ func setupHost(hosts: FetchedResults<Host>, store: Store) {
 // Stats header view used on both platforms
 struct StatsHeaderView: View {
     @ObservedObject var store: Store
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
-        VStack(spacing: 0) {
-            Divider()
-            HStack {
-                Text(String("\(store.sessionStats?.activeTorrentCount ?? 0) active dreams"))
-                Spacer()
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.down")
-                    Text("\(byteCountFormatter.string(fromByteCount: store.sessionStats?.downloadSpeed ?? 0))/s")
+        HStack(spacing: 12) {
+            // Ratio chip with progress ring
+            HStack(spacing: 4) {
+                ZStack {
+                    Circle()
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 2)
+                        .frame(width: 16, height: 16)
+                    
+                    Circle()
+                        .trim(from: 0, to: min(calculateTotalRatio(store: store), 1.0))
+                        .stroke(calculateTotalRatio(store: store) >= 1.0 ? .green : .orange, lineWidth: 2)
+                        .frame(width: 16, height: 16)
+                        .rotationEffect(.degrees(-90))
                 }
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.up")
-                    Text("\(byteCountFormatter.string(fromByteCount: store.sessionStats?.uploadSpeed ?? 0))/s")
-                }
+                Text(String(format: "%.2f", calculateTotalRatio(store: store)))
+                    .monospacedDigit()
             }
-            .font(.subheadline)
-            .padding([.leading, .trailing])
+            .font(.system(.caption, design: .monospaced))
+            .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            Divider()
+            .background(Color.gray.opacity(0.1))
+            .clipShape(Capsule())
+            .help("Upload ratio")
+            
+            Spacer()
+            
+            HStack(spacing: 8) {
+                // Download speed chip
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.down")
+                        .imageScale(.small)
+                        .foregroundColor(.blue)
+                    Text("\(byteCountFormatter.string(fromByteCount: store.sessionStats?.downloadSpeed ?? 0))/s")
+                        .monospacedDigit()
+                }
+                .font(.system(.caption, design: .monospaced))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.gray.opacity(0.1))
+                .clipShape(Capsule())
+                .help("Download speed")
+                
+                // Upload speed chip
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up")
+                        .imageScale(.small)
+                        .foregroundColor(.green)
+                    Text("\(byteCountFormatter.string(fromByteCount: store.sessionStats?.uploadSpeed ?? 0))/s")
+                        .monospacedDigit()
+                }
+                .font(.system(.caption, design: .monospaced))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.gray.opacity(0.1))
+                .clipShape(Capsule())
+                .help("Upload speed")
+            }
         }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
     }
 }
 
@@ -244,4 +286,15 @@ func updateMacOSAppBadge(count: Int) {
 func getCompletedTorrentsCount(in store: Store) -> Int {
     return store.torrents.filter { $0.statusCalc == .complete }.count
 }
-#endif 
+#endif
+
+// Helper function to calculate total ratio across all torrents
+func calculateTotalRatio(store: Store) -> Double {
+    let totalDownloaded = store.torrents.reduce(0) { $0 + $1.downloadedCalc }
+    let totalUploaded = store.torrents.reduce(0) { sum, torrent in
+        sum + Int64(Double(torrent.downloadedCalc) * torrent.uploadRatio)
+    }
+    
+    guard totalDownloaded > 0 else { return 0.0 }
+    return Double(totalUploaded) / Double(totalDownloaded)
+} 
