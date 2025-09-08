@@ -108,8 +108,8 @@ struct RatioChip: View {
     
     private var progressRingSize: CGFloat {
         switch size {
-        case .compact: return 16
-        case .regular: return 20
+        case .compact: return 14
+        case .regular: return 18
         }
     }
     
