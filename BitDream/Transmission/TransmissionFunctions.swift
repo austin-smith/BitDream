@@ -192,7 +192,7 @@ public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onRe
         "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled", 
         "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete", 
         "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs", 
-        "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status", "uploadRatio", "uploadedEver"
+        "percentDone", "primary-mime-type", "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status", "uploadRatio", "uploadedEver"
     ]
     
     performTransmissionDataRequest(

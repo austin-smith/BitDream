@@ -103,6 +103,7 @@ public struct Torrent: Codable, Hashable, Identifiable {
     let peersGettingFromUs: Int
     let peersSendingToUs: Int
     let percentDone: Double
+    let primaryMimeType: String?
     let rateDownload: Int64
     let rateUpload: Int64
     let sizeWhenDone: Int64
@@ -142,6 +143,37 @@ public struct Torrent: Codable, Hashable, Identifiable {
         else {
             return TorrentStatusCalc.unknown
         }
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case activityDate
+        case addedDate
+        case desiredAvailable
+        case error
+        case errorString
+        case eta
+        case haveUnchecked
+        case haveValid
+        case id
+        case isFinished
+        case isStalled
+        case labels
+        case leftUntilDone
+        case magnetLink
+        case metadataPercentComplete
+        case name
+        case peersConnected
+        case peersGettingFromUs
+        case peersSendingToUs
+        case percentDone
+        case primaryMimeType = "primary-mime-type"
+        case rateDownload
+        case rateUpload
+        case sizeWhenDone
+        case status
+        case totalSize
+        case uploadRatio
+        case uploadedEver
     }
 }
 

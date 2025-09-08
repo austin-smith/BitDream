@@ -17,9 +17,153 @@ struct iOSTorrentListRow: View {
     @State private var errorMessage = ""
     @Environment(\.colorScheme) var colorScheme
     
+    // Create reusable torrent actions view
+    @ViewBuilder
+    private func torrentActionsMenu() -> some View {
+        // Play/Pause Button
+        Button(action: {
+            let info = makeConfig(store: store)
+            playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
+                handleTransmissionResponse(response,
+                    onSuccess: {
+                        // Success - torrent state will update automatically
+                    },
+                    onError: { error in
+                        errorMessage = error
+                        showingError = true
+                    }
+                )
+            })
+        }) {
+            Label(torrent.status == TorrentStatus.stopped.rawValue ? "Resume" : "Pause", 
+                  systemImage: torrent.status == TorrentStatus.stopped.rawValue ? "play" : "pause")
+        }
+        
+        // Resume Now Button (only show for stopped torrents)
+        if torrent.status == TorrentStatus.stopped.rawValue {
+            Button(action: {
+                resumeTorrentNow(torrent: torrent, store: store)
+            }) {
+                Label("Resume Now", systemImage: "play.fill")
+            }
+        }
+
+        Divider()
+        
+        // Priority Menu
+        Menu {
+            Button(action: {
+                let info = makeConfig(store: store)
+                updateTorrent(
+                    args: TorrentSetRequestArgs(
+                        ids: [torrent.id],
+                        priority: .high
+                    ),
+                    info: info,
+                    onComplete: { r in }
+                )
+            }) {
+                Label("High", systemImage: "arrow.up")
+            }
+            Button(action: {
+                let info = makeConfig(store: store)
+                updateTorrent(
+                    args: TorrentSetRequestArgs(
+                        ids: [torrent.id],
+                        priority: .normal
+                    ),
+                    info: info,
+                    onComplete: { r in }
+                )
+            }) {
+                Label("Normal", systemImage: "minus")
+            }
+            Button(action: {
+                let info = makeConfig(store: store)
+                updateTorrent(
+                    args: TorrentSetRequestArgs(
+                        ids: [torrent.id],
+                        priority: .low
+                    ),
+                    info: info,
+                    onComplete: { r in }
+                )
+            }) {
+                Label("Low", systemImage: "arrow.down")
+            }
+        } label: {
+            Label("Update Priority", systemImage: "flag.badge.ellipsis")
+        }
+
+        // Rename
+        Button(action: {
+            renameInput = torrent.name
+            renameDialog = true
+        }) {
+            Label("Rename...", systemImage: "pencil")
+        }
+
+        Button(action: {
+            labelDialog.toggle()
+        }) {
+            Label("Edit Labels...", systemImage: "tag")
+        }
+        
+        Divider()
+        
+        // Copy Magnet Link Button
+        Button(action: {
+            copyMagnetLinkToClipboard(torrent.magnetLink)
+        }) {
+            Label("Copy Magnet Link", systemImage: "document.on.document")
+        }
+        
+        Divider()
+
+        // Re-announce Button
+        Button(action: {
+            reAnnounceToTrackers(torrent: torrent, store: store)
+        }) {
+            Label("Ask For More Peers", systemImage: "arrow.left.arrow.right")
+        }
+
+        // Verify Button
+        Button(action: {
+            let info = makeConfig(store: store)
+            verifyTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
+                handleTransmissionResponse(response,
+                    onSuccess: {
+                        // Success - verification started
+                    },
+                    onError: { error in
+                        errorMessage = error
+                        showingError = true
+                    }
+                )
+            })
+        }) {
+            Label("Verify Local Data", systemImage: "checkmark.arrow.trianglehead.counterclockwise")
+        }
+    
+        Divider()
+        
+        // Delete Button
+        Button(role: .destructive, action: {
+            deleteDialog.toggle()
+        }) {
+            Label("Delete", systemImage: "trash")
+        }
+    }
+    
     var body: some View {
         VStack {
             HStack(spacing: 8) {
+                // Torrent type icon
+                Image(systemName: ContentTypeIconMapper.symbolForTorrent(mimeType: torrent.primaryMimeType))
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary.opacity(0.6))
+                    .frame(width: 14)
+                
                 Text(torrent.name)
                     .lineLimit(1)
                     .truncationMode(.tail)
@@ -48,9 +192,9 @@ struct iOSTorrentListRow: View {
         }
         .contentShape(Rectangle())
         .padding([.top, .bottom, .leading, .trailing], 10)
-        .contextMenu {
-            // Play/Pause Button
-            Button(action: {
+        .swipeActions(edge: .trailing) {
+            // Play/Pause action (rightmost when swiping)
+            Button {
                 let info = makeConfig(store: store)
                 playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
                     handleTransmissionResponse(response,
@@ -63,106 +207,33 @@ struct iOSTorrentListRow: View {
                         }
                     )
                 })
-            }) {
-                Label(torrent.status == TorrentStatus.stopped.rawValue ? "Resume" : "Pause", 
-                      systemImage: torrent.status == TorrentStatus.stopped.rawValue ? "play" : "pause")
-            }
-            
-            // Resume Now Button (only show for stopped torrents)
-            if torrent.status == TorrentStatus.stopped.rawValue {
-                Button(action: {
-                    resumeTorrentNow(torrent: torrent, store: store)
-                }) {
-                    Label("Resume Now", systemImage: "play.fill")
-                }
-            }
-
-            Divider()
-            
-            // Priority Menu
-            Menu {
-                Button(action: {
-                    let info = makeConfig(store: store)
-                    updateTorrent(
-                        args: TorrentSetRequestArgs(
-                            ids: [torrent.id],
-                            priority: .high
-                        ),
-                        info: info,
-                        onComplete: { r in }
-                    )
-                }) {
-                    Label("High", systemImage: "arrow.up")
-                }
-                Button(action: {
-                    let info = makeConfig(store: store)
-                    updateTorrent(
-                        args: TorrentSetRequestArgs(
-                            ids: [torrent.id],
-                            priority: .normal
-                        ),
-                        info: info,
-                        onComplete: { r in }
-                    )
-                }) {
-                    Label("Normal", systemImage: "minus")
-                }
-                Button(action: {
-                    let info = makeConfig(store: store)
-                    updateTorrent(
-                        args: TorrentSetRequestArgs(
-                            ids: [torrent.id],
-                            priority: .low
-                        ),
-                        info: info,
-                        onComplete: { r in }
-                    )
-                }) {
-                    Label("Low", systemImage: "arrow.down")
-                }
             } label: {
-                Label("Update Priority", systemImage: "flag.badge.ellipsis")
+                Image(systemName: torrent.status == TorrentStatus.stopped.rawValue ? "play.fill" : "pause.fill")
             }
-
-            // Rename (iOS: no ellipsis)
-            Button(action: {
-                renameInput = torrent.name
-                renameDialog = true
-            }) {
-                Label("Rename...", systemImage: "pencil")
-            }
-
-            Button(action: {
-                labelDialog.toggle()
-            }) {
-                Label("Edit Labels...", systemImage: "tag")
-            }
+            .tint(torrent.status == TorrentStatus.stopped.rawValue ? .blue : .orange)
             
-            Divider()
-            
-            // Copy Magnet Link Button
-            Button(action: {
-                copyMagnetLinkToClipboard(torrent.magnetLink)
-            }) {
-                Label("Copy Magnet Link", systemImage: "document.on.document")
+            // Three-dot menu with all actions (leftmost when swiping)
+            Menu {
+                torrentActionsMenu()
+            } label: {
+                Image(systemName: "ellipsis.circle")
             }
-            
-            Divider()
-
-            // Re-announce Button
-            Button(action: {
-                reAnnounceToTrackers(torrent: torrent, store: store)
-            }) {
-                Label("Ask For More Peers", systemImage: "arrow.left.arrow.right")
-            }
-
-            // Verify Button
-            Button(action: {
+        }
+        .contextMenu {
+            torrentActionsMenu()
+        }
+        .id(torrent.id)
+        .confirmationDialog(
+            "Delete Torrent",
+            isPresented: $deleteDialog,
+            titleVisibility: .visible
+        ) {
+            Button("Delete file(s)", role: .destructive) {
                 let info = makeConfig(store: store)
-                verifyTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
+                deleteTorrent(torrent: torrent, erase: true, config: info.config, auth: info.auth, onDel: { response in
                     handleTransmissionResponse(response,
                         onSuccess: {
-                            // Success - verification started
+                            // Success - torrent deleted
                         },
                         onError: { error in
                             errorMessage = error
@@ -170,59 +241,25 @@ struct iOSTorrentListRow: View {
                         }
                     )
                 })
-            }) {
-                Label("Verify Local Data", systemImage: "checkmark.arrow.trianglehead.counterclockwise")
             }
-        
-            Divider()
-            
-            // Delete Button
-            Button(role: .destructive, action: {
-                deleteDialog.toggle()
-            }) {
-                Label("Delete", systemImage: "trash")
+            Button("Remove from list only") {
+                let info = makeConfig(store: store)
+                deleteTorrent(torrent: torrent, erase: false, config: info.config, auth: info.auth, onDel: { response in
+                    handleTransmissionResponse(response,
+                        onSuccess: {
+                            // Success - torrent removed from list
+                        },
+                        onError: { error in
+                            errorMessage = error
+                            showingError = true
+                        }
+                    )
+                })
             }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Do you want to delete the file(s) from the disk?")
         }
-        .id(torrent.id)
-        .alert(
-            "Delete Torrent",
-            isPresented: $deleteDialog) {
-                Button(role: .destructive) {
-                    let info = makeConfig(store: store)
-                    deleteTorrent(torrent: torrent, erase: true, config: info.config, auth: info.auth, onDel: { response in
-                        handleTransmissionResponse(response,
-                            onSuccess: {
-                                // Success - torrent deleted
-                            },
-                            onError: { error in
-                                errorMessage = error
-                                showingError = true
-                            }
-                        )
-                    })
-                    deleteDialog.toggle()
-                } label: {
-                    Text("Delete file(s)")
-                }
-                Button("Remove from list only") {
-                    let info = makeConfig(store: store)
-                    deleteTorrent(torrent: torrent, erase: false, config: info.config, auth: info.auth, onDel: { response in
-                        handleTransmissionResponse(response,
-                            onSuccess: {
-                                // Success - torrent removed from list
-                            },
-                            onError: { error in
-                                errorMessage = error
-                                showingError = true
-                            }
-                        )
-                    })
-                    deleteDialog.toggle()
-                }
-            } message: {
-                Text("Do you want to delete the file(s) from the disk?")
-            }
-            .interactiveDismissDisabled(false)
         .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
         .sheet(isPresented: $renameDialog) {
             NavigationView {

@@ -49,21 +49,9 @@ struct FileCompletion {
 
 // MARK: - File Type Utilities
 
-/// Pick an SF Symbol by UTType category
+/// Pick an SF Symbol by UTType category (now uses shared ContentTypeIconMapper)
 func symbolForPath(_ pathOrName: String) -> String {
-    let ext = URL(fileURLWithPath: pathOrName).pathExtension.lowercased()
-    guard let ut = UTType(filenameExtension: ext) else { return "doc" }
-
-    if ut.conforms(to: .image)        { return "photo" }
-    if ut.conforms(to: .movie)        { return "film" }
-    if ut.conforms(to: .audio)        { return "waveform" }
-    if ut.conforms(to: .archive)      { return "archivebox" }
-    if ut.conforms(to: .pdf)          { return "doc.richtext" }
-    if ut.conforms(to: .spreadsheet)  { return "tablecells" }
-    if ut.conforms(to: .presentation) { return "rectangle.on.rectangle" }
-    if ut.conforms(to: .sourceCode)   { return "chevron.left.forwardslash.chevron.right" }
-    if ut.conforms(to: .text)         { return "doc.text" }
-    return "doc"
+    return ContentTypeIconMapper.symbolForFile(pathOrName)
 }
 
 // MARK: - File Type Categories
@@ -81,18 +69,20 @@ extension FileTypeCategory {
     var title: String { rawValue }
 }
 
-/// Get file type category from filename
+/// Get file type category from filename (now uses shared ContentTypeIconMapper)
 func fileTypeCategory(_ pathOrName: String) -> FileTypeCategory {
-    let ext = URL(fileURLWithPath: pathOrName).pathExtension.lowercased()
-    guard let ut = UTType(filenameExtension: ext) else { return .other }
-
-    if ut.conforms(to: .movie) || ut.conforms(to: .video) { return .video }
-    if ut.conforms(to: .audio) { return .audio }
-    if ut.conforms(to: .image) { return .image }
-    if ut.conforms(to: .pdf) || ut.conforms(to: .text) || 
-       ut.conforms(to: .spreadsheet) || ut.conforms(to: .presentation) { return .document }
-    if ut.conforms(to: .archive) { return .archive }
-    return .other
+    let category = ContentTypeIconMapper.categoryForFile(pathOrName)
+    
+    // Map the shared category to the local FileTypeCategory enum
+    switch category {
+    case .video: return .video
+    case .audio: return .audio
+    case .image: return .image
+    case .document: return .document
+    case .archive: return .archive
+    case .executable: return .other  // Map executable to other for file context
+    case .other: return .other
+    }
 }
 
 // MARK: - Shared File Utilities

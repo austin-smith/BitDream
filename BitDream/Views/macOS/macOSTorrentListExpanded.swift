@@ -22,6 +22,12 @@ struct macOSTorrentListExpanded: View {
     var body: some View {
         VStack {
             HStack(spacing: 8) {
+                // Torrent type icon
+                Image(systemName: ContentTypeIconMapper.symbolForTorrent(mimeType: torrent.primaryMimeType))
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary.opacity(0.6))
+                    .frame(width: 14)
+                
                 Text(torrent.name)
                     .lineLimit(1)
                     .truncationMode(.tail)

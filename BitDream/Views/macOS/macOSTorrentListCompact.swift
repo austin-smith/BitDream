@@ -7,6 +7,7 @@ import KeychainAccess
 // MARK: - Column Visibility Model
 enum TorrentTableColumn: String, CaseIterable, Identifiable {
     case statusIcon = "Status Icon"
+    case contentIcon = "Content Type"
     case name = "Name"
     case progress = "Progress"
     case status = "Status"
@@ -157,6 +158,17 @@ struct macOSTorrentListCompact: View {
                         .font(.system(size: 12))
                         .foregroundColor(statusColor(for: row.torrent))
                         .frame(width: 16)
+                }
+                .width(20)
+            }
+            
+            // Content type icon column
+            if isColumnVisible(.contentIcon) {
+                TableColumn("") { row in
+                    Image(systemName: ContentTypeIconMapper.symbolForTorrent(mimeType: row.torrent.primaryMimeType))
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary.opacity(0.6))
+                        .frame(width: 12)
                 }
                 .width(20)
             }

@@ -47,6 +47,7 @@
 		4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */; };
 		4BC5C2B42D7D415100D80AB4 /* iOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */; };
 		4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD938E92D82AF6F006CE97C /* ThemeManager.swift */; };
+		4BEFEE7C2E6E5E69005815FA /* ContentTypeIconMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BEFEE7B2E6E5E69005815FA /* ContentTypeIconMapper.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -91,6 +92,7 @@
 		4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentDetail.swift; sourceTree = "<group>"; };
 		4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentDetail.swift; sourceTree = "<group>"; };
 		4BD938E92D82AF6F006CE97C /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		4BEFEE7B2E6E5E69005815FA /* ContentTypeIconMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentTypeIconMapper.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,6 +126,7 @@
 		4B1DADDD295E6C440037E9FB /* BitDream */ = {
 			isa = PBXGroup;
 			children = (
+				4BEFEE7B2E6E5E69005815FA /* ContentTypeIconMapper.swift */,
 				4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */,
 				4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */,
 				4B1DAE11295E72040037E9FB /* FileAccess.swift */,
@@ -329,6 +332,7 @@
 				4B642D792D7E1EED003CEADC /* macOSServerList.swift in Sources */,
 				4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */,
 				4B6F1EB42D82DB2D003D8F6E /* iOSTorrentListRow.swift in Sources */,
+				4BEFEE7C2E6E5E69005815FA /* ContentTypeIconMapper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
