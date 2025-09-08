@@ -17,13 +17,17 @@ extension UserDefaults {
         static let inspectorVisibility = "inspectorVisibility"
         static let sortProperty = "sortProperty"
         static let sortOrder = "sortOrder"
+        static let torrentListCompactMode = "torrentListCompactMode"
+        static let showContentTypeIcons = "showContentTypeIcons"
     }
     
     static let viewStateDefaults: [String: Any] = [
         Keys.sidebarVisibility: true, // true = show sidebar (.all), false = hide sidebar (.detailOnly)
         Keys.inspectorVisibility: true,
         Keys.sortProperty: "Name", // Default sort property as "Name"
-        Keys.sortOrder: true // true = ascending, false = descending
+        Keys.sortOrder: true, // true = ascending, false = descending
+        Keys.torrentListCompactMode: false, // false = expanded view, true = compact table view
+        Keys.showContentTypeIcons: true // true = show icons, false = hide icons
     ]
     
     static func registerViewStateDefaults() {
@@ -57,6 +61,16 @@ extension UserDefaults {
     var sortOrder: SortOrder {
         get { bool(forKey: Keys.sortOrder) ? .ascending : .descending }
         set { set(newValue == .ascending, forKey: Keys.sortOrder) }
+    }
+    
+    var torrentListCompactMode: Bool {
+        get { bool(forKey: Keys.torrentListCompactMode) }
+        set { set(newValue, forKey: Keys.torrentListCompactMode) }
+    }
+    
+    var showContentTypeIcons: Bool {
+        get { bool(forKey: Keys.showContentTypeIcons) }
+        set { set(newValue, forKey: Keys.showContentTypeIcons) }
     }
 }
 
@@ -131,27 +145,85 @@ func setupHost(hosts: FetchedResults<Host>, store: Store) {
 // Stats header view used on both platforms
 struct StatsHeaderView: View {
     @ObservedObject var store: Store
+    @ObservedObject private var themeManager = ThemeManager.shared
+    @AppStorage(UserDefaultsKeys.ratioDisplayMode) private var ratioDisplayModeRaw: String = AppDefaults.ratioDisplayMode.rawValue
     
+    // MARK: - Computed totals and ratio
+    private var ratioDisplayMode: RatioDisplayMode {
+        RatioDisplayMode(rawValue: ratioDisplayModeRaw) ?? AppDefaults.ratioDisplayMode
+    }
+
+    private var overallTotals: (uploaded: Int64, downloaded: Int64) {
+        switch ratioDisplayMode {
+        case .cumulative:
+            if let s = store.sessionStats?.cumulativeStats {
+                return (uploaded: s.uploadedBytes, downloaded: s.downloadedBytes)
+            }
+        case .current:
+            if let s = store.sessionStats?.currentStats {
+                return (uploaded: s.uploadedBytes, downloaded: s.downloadedBytes)
+            }
+        }
+        let fallbackDownloaded = store.torrents.reduce(0) { $0 + $1.downloadedEver }
+        let fallbackUploaded = store.torrents.reduce(0) { $0 + $1.uploadedEver }
+        return (uploaded: fallbackUploaded, downloaded: fallbackDownloaded)
+    }
+    
+    private var overallRatio: Double {
+        let totals = overallTotals
+        return totals.downloaded > 0 ? Double(totals.uploaded) / Double(totals.downloaded) : 0.0
+    }
+    
+    private var ratioTooltip: String {
+        let totals = overallTotals
+        let mode = ratioDisplayMode == .cumulative ? "Total Ratio" : "Session Ratio"
+        let uploaded = byteCountFormatter.string(fromByteCount: totals.uploaded)
+        let downloaded = byteCountFormatter.string(fromByteCount: totals.downloaded)
+        return "\(mode)\n----------\nUploaded: \(uploaded)\nDownloaded: \(downloaded)"
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            Divider()
-            HStack {
-                Text(String("\(store.sessionStats?.activeTorrentCount ?? 0) active dreams"))
-                Spacer()
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.down")
-                    Text("\(byteCountFormatter.string(fromByteCount: store.sessionStats?.downloadSpeed ?? 0))/s")
+        HStack(spacing: 12) {
+            RatioChip(
+                ratio: overallRatio,
+                size: .compact,
+                helpText: ratioTooltip
+            )
+            .contextMenu {
+                Button(action: { ratioDisplayModeRaw = RatioDisplayMode.cumulative.rawValue }) {
+                    HStack {
+                        if ratioDisplayMode == .cumulative { Image(systemName: "checkmark") }
+                        Text("Total Ratio")
+                    }
                 }
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.up")
-                    Text("\(byteCountFormatter.string(fromByteCount: store.sessionStats?.uploadSpeed ?? 0))/s")
+                Button(action: { ratioDisplayModeRaw = RatioDisplayMode.current.rawValue }) {
+                    HStack {
+                        if ratioDisplayMode == .current { Image(systemName: "checkmark") }
+                        Text("Session Ratio")
+                    }
                 }
             }
-            .font(.subheadline)
-            .padding([.leading, .trailing])
-            .padding(.vertical, 4)
-            Divider()
+            
+            Spacer()
+            
+            HStack(spacing: 8) {
+                SpeedChip(
+                    speed: store.sessionStats?.downloadSpeed ?? 0,
+                    direction: .download,
+                    style: .chip,
+                    size: .compact
+                )
+                
+                SpeedChip(
+                    speed: store.sessionStats?.uploadSpeed ?? 0,
+                    direction: .upload,
+                    style: .chip,
+                    size: .compact
+                )
+            }
         }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
     }
 }
 
@@ -237,4 +309,13 @@ func updateMacOSAppBadge(count: Int) {
 func getCompletedTorrentsCount(in store: Store) -> Int {
     return store.torrents.filter { $0.statusCalc == .complete }.count
 }
-#endif 
+#endif
+
+// Helper function to calculate total ratio across all torrents
+func calculateTotalRatio(store: Store) -> Double {
+    let totalDownloaded = store.torrents.reduce(0) { $0 + $1.downloadedEver }
+    let totalUploaded = store.torrents.reduce(0) { $0 + $1.uploadedEver }
+    
+    guard totalDownloaded > 0 else { return 0.0 }
+    return Double(totalUploaded) / Double(totalDownloaded)
+} 

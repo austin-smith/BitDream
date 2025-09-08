@@ -103,11 +103,15 @@ public struct Torrent: Codable, Hashable, Identifiable {
     let peersGettingFromUs: Int
     let peersSendingToUs: Int
     let percentDone: Double
+    let primaryMimeType: String?
     let rateDownload: Int64
     let rateUpload: Int64
     let sizeWhenDone: Int64
     let status: Int
     let totalSize: Int64
+    let uploadRatio: Double
+    let uploadedEver: Int64
+    let downloadedEver: Int64
     var downloadedCalc: Int64 { haveUnchecked + haveValid}
     var statusCalc: TorrentStatusCalc {
         if status == TorrentStatus.stopped.rawValue && percentDone == 1 {
@@ -141,6 +145,38 @@ public struct Torrent: Codable, Hashable, Identifiable {
             return TorrentStatusCalc.unknown
         }
     }
+    
+    enum CodingKeys: String, CodingKey {
+        case activityDate
+        case addedDate
+        case desiredAvailable
+        case error
+        case errorString
+        case eta
+        case haveUnchecked
+        case haveValid
+        case id
+        case isFinished
+        case isStalled
+        case labels
+        case leftUntilDone
+        case magnetLink
+        case metadataPercentComplete
+        case name
+        case peersConnected
+        case peersGettingFromUs
+        case peersSendingToUs
+        case percentDone
+        case primaryMimeType = "primary-mime-type"
+        case rateDownload
+        case rateUpload
+        case sizeWhenDone
+        case status
+        case totalSize
+        case uploadRatio
+        case uploadedEver
+        case downloadedEver
+    }
 }
 
 public struct TorrentFile: Codable, Identifiable {
@@ -163,6 +199,26 @@ public struct SessionStats: Codable, Hashable {
     let pausedTorrentCount: Int
     let torrentCount: Int
     let uploadSpeed: Int64
+    let cumulativeStats: TransmissionCumulativeStats?
+    let currentStats: TransmissionCumulativeStats?
+    
+    enum CodingKeys: String, CodingKey {
+        case activeTorrentCount
+        case downloadSpeed
+        case pausedTorrentCount
+        case torrentCount
+        case uploadSpeed
+        case cumulativeStats = "cumulative-stats"
+        case currentStats = "current-stats"
+    }
+}
+
+public struct TransmissionCumulativeStats: Codable, Hashable {
+    let downloadedBytes: Int64
+    let filesAdded: Int64
+    let secondsActive: Int64
+    let sessionCount: Int64
+    let uploadedBytes: Int64
 }
 
 // MARK: - Request Argument Models
@@ -194,6 +250,19 @@ public struct TorrentFilesRequestArgs: Codable {
     public init(fields: [String], ids: [Int]) {
         self.fields = fields
         self.ids = ids
+    }
+}
+
+/// Request arguments for torrent-rename-path
+public struct TorrentRenameRequestArgs: Codable {
+    public var ids: [Int]
+    public var path: String
+    public var name: String
+    
+    public init(ids: [Int], path: String, name: String) {
+        self.ids = ids
+        self.path = path
+        self.name = name
     }
 }
 
@@ -328,4 +397,11 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
         case downloadDir = "download-dir"
         case version
     }
+}
+
+/// Response for torrent-rename-path
+public struct TorrentRenameResponseArgs: Codable {
+    public let path: String
+    public let name: String
+    public let id: Int
 }

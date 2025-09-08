@@ -37,11 +37,7 @@ struct iOSTorrentDetail: View {
                         HStack {
                             Text("Status")
                             Spacer()
-                            Image(systemName: "circle.fill")
-                                .foregroundColor(statusColor(for: torrent))
-                                .font(.system(size: 12))
-                            Text(torrent.statusCalc.rawValue)
-                                .foregroundColor(.gray)
+                            TorrentStatusBadge(torrent: torrent)
                         }
                         HStack {
                             Text("Date Added")
@@ -68,12 +64,6 @@ struct iOSTorrentDetail: View {
                     
                     Section(header: Text("Stats")) {
                         HStack {
-                            Text("Downloaded")
-                            Spacer()
-                            Text(details.downloadedFormatted)
-                                .foregroundColor(.gray)
-                        }
-                        HStack {
                             Text("Size When Done")
                             Spacer()
                             Text(details.sizeWhenDoneFormatted)
@@ -83,6 +73,24 @@ struct iOSTorrentDetail: View {
                             Text("Progress")
                             Spacer()
                             Text(details.percentComplete)
+                                .foregroundColor(.gray)
+                        }
+                        HStack {
+                            Text("Downloaded")
+                            Spacer()
+                            Text(details.downloadedFormatted)
+                                .foregroundColor(.gray)
+                        }
+                        HStack {
+                            Text("Uploaded")
+                            Spacer()
+                            Text(details.uploadedFormatted)
+                                .foregroundColor(.gray)
+                        }
+                        HStack {
+                            Text("Upload Ratio")
+                            Spacer()
+                            Text(details.uploadRatio)
                                 .foregroundColor(.gray)
                         }
                     }

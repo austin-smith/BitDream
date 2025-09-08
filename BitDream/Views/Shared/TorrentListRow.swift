@@ -6,12 +6,13 @@ struct TorrentListRow: View {
     @Binding var torrent: Torrent
     var store: Store
     @Binding var selectedTorrents: Set<Torrent>
+    var showContentTypeIcons: Bool
     
     var body: some View {
         #if os(iOS)
-        iOSTorrentListRow(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents)
+        iOSTorrentListRow(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents, showContentTypeIcons: showContentTypeIcons)
         #elseif os(macOS)
-        macOSTorrentListRow(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents)
+        macOSTorrentListExpanded(torrent: $torrent, store: store, selectedTorrents: $selectedTorrents, showContentTypeIcons: showContentTypeIcons)
         #endif
     }
 }
@@ -254,3 +255,48 @@ struct FlowLayout: Layout {
         }
     }
 } 
+
+// MARK: - Shared Rename Helpers
+
+/// Validate a proposed new name for a torrent root (or file/folder component)
+/// - Returns: nil if valid, or a short human-readable error message if invalid
+func validateNewName(_ name: String, current: String) -> String? {
+    let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    if trimmed.isEmpty {
+        return "Name cannot be empty."
+    }
+    if trimmed.contains("/") || trimmed.contains(":") { // avoid path separators and colon (often illegal)
+        return "Name cannot contain path separators."
+    }
+    if trimmed.rangeOfCharacter(from: .controlCharacters) != nil {
+        return "Name contains invalid characters."
+    }
+    return nil
+}
+
+/// Rename the torrent root folder/name using Transmission's torrent-rename-path
+/// - Parameters:
+///   - torrent: The torrent whose root should be renamed
+///   - newName: The new root name
+///   - store: App store for config/auth and refresh
+///   - onComplete: Called with nil on success, or an error message on failure
+func renameTorrentRoot(torrent: Torrent, to newName: String, store: Store, onComplete: @escaping (String?) -> Void) {
+    let info = makeConfig(store: store)
+    // For root rename, Transmission expects the current root path (the torrent's name)
+    renameTorrentPath(
+        torrentId: torrent.id,
+        path: torrent.name,
+        newName: newName,
+        config: info.config,
+        auth: info.auth
+    ) { result in
+        switch result {
+        case .success(_):
+            // Refresh to pick up updated name and files
+            refreshTransmissionData(store: store)
+            onComplete(nil)
+        case .failure(let error):
+            onComplete(error.localizedDescription)
+        }
+    }
+}

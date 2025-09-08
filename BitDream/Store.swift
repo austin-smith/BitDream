@@ -43,12 +43,18 @@ class Store: NSObject, ObservableObject {
     @Published var showConnectionErrorAlert: Bool = false
     @Published var isEditingServerSettings: Bool = false  // Flag to pause reconnection attempts
     
-    @Published var pollInterval: Double = 5.0 // Default poll interval in seconds
+    @Published var pollInterval: Double = AppDefaults.pollInterval // Default poll interval in seconds
     
     var timer: Timer = Timer()
     
     override init() {
         super.init()
+        // Load persisted poll interval if available
+        if let saved = UserDefaults.standard.object(forKey: UserDefaultsKeys.pollInterval) as? Double {
+            self.pollInterval = max(1.0, saved)
+        } else {
+            self.pollInterval = AppDefaults.pollInterval
+        }
     }
     
     public func setHost(host: Host) {
@@ -141,6 +147,8 @@ class Store: NSObject, ObservableObject {
     func updatePollInterval(_ newInterval: Double) {
         // Ensure the interval is at least 1 second
         pollInterval = max(1.0, newInterval)
+        // Persist the new interval
+        UserDefaults.standard.set(pollInterval, forKey: UserDefaultsKeys.pollInterval)
         
         // Stop the current timer
         timer.invalidate()

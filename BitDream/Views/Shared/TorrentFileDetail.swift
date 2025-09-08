@@ -49,50 +49,18 @@ struct FileCompletion {
 
 // MARK: - File Type Utilities
 
-/// Pick an SF Symbol by UTType category
+/// Pick an SF Symbol by UTType category (now uses shared ContentTypeIconMapper)
 func symbolForPath(_ pathOrName: String) -> String {
-    let ext = URL(fileURLWithPath: pathOrName).pathExtension.lowercased()
-    guard let ut = UTType(filenameExtension: ext) else { return "doc" }
-
-    if ut.conforms(to: .image)        { return "photo" }
-    if ut.conforms(to: .movie)        { return "film" }
-    if ut.conforms(to: .audio)        { return "waveform" }
-    if ut.conforms(to: .archive)      { return "archivebox" }
-    if ut.conforms(to: .pdf)          { return "doc.richtext" }
-    if ut.conforms(to: .spreadsheet)  { return "tablecells" }
-    if ut.conforms(to: .presentation) { return "rectangle.on.rectangle" }
-    if ut.conforms(to: .sourceCode)   { return "chevron.left.forwardslash.chevron.right" }
-    if ut.conforms(to: .text)         { return "doc.text" }
-    return "doc"
+    return ContentTypeIconMapper.symbolForFile(pathOrName)
 }
 
-// MARK: - File Type Categories
+// MARK: - File Type Category Helper
 
-enum FileTypeCategory: String, CaseIterable {
-    case video = "Videos"
-    case audio = "Audio"
-    case image = "Images"
-    case document = "Documents"
-    case archive = "Archives"
-    case other = "Other"
-}
-
-extension FileTypeCategory {
-    var title: String { rawValue }
-}
-
-/// Get file type category from filename
-func fileTypeCategory(_ pathOrName: String) -> FileTypeCategory {
-    let ext = URL(fileURLWithPath: pathOrName).pathExtension.lowercased()
-    guard let ut = UTType(filenameExtension: ext) else { return .other }
-
-    if ut.conforms(to: .movie) || ut.conforms(to: .video) { return .video }
-    if ut.conforms(to: .audio) { return .audio }
-    if ut.conforms(to: .image) { return .image }
-    if ut.conforms(to: .pdf) || ut.conforms(to: .text) || 
-       ut.conforms(to: .spreadsheet) || ut.conforms(to: .presentation) { return .document }
-    if ut.conforms(to: .archive) { return .archive }
-    return .other
+/// Get file type category from filename using shared ContentTypeIconMapper
+/// Executables are treated as "Other" for file context filters
+func fileTypeCategory(_ pathOrName: String) -> ContentTypeCategory {
+    let category = ContentTypeIconMapper.categoryForFile(pathOrName)
+    return category == .executable ? .other : category
 }
 
 // MARK: - Shared File Utilities

@@ -94,6 +94,7 @@ struct macOSTorrentFileDetail: View {
             case .image: if !viewModel.showImages { return false }
             case .document: if !viewModel.showDocuments { return false }
             case .archive: if !viewModel.showArchives { return false }
+            case .executable: if !viewModel.showOther { return false }
             case .other: if !viewModel.showOther { return false }
             }
             
@@ -355,12 +356,12 @@ struct HeaderView: View {
                 }
                 
                     Section("File Types") {
-                        Toggle(FileTypeCategory.video.title, isOn: $viewModel.showVideos)
-                        Toggle(FileTypeCategory.audio.title, isOn: $viewModel.showAudio)
-                        Toggle(FileTypeCategory.image.title, isOn: $viewModel.showImages)
-                        Toggle(FileTypeCategory.document.title, isOn: $viewModel.showDocuments)
-                        Toggle(FileTypeCategory.archive.title, isOn: $viewModel.showArchives)
-                        Toggle(FileTypeCategory.other.title, isOn: $viewModel.showOther)
+                        Toggle(ContentTypeCategory.video.title, isOn: $viewModel.showVideos)
+                        Toggle(ContentTypeCategory.audio.title, isOn: $viewModel.showAudio)
+                        Toggle(ContentTypeCategory.image.title, isOn: $viewModel.showImages)
+                        Toggle(ContentTypeCategory.document.title, isOn: $viewModel.showDocuments)
+                        Toggle(ContentTypeCategory.archive.title, isOn: $viewModel.showArchives)
+                        Toggle(ContentTypeCategory.other.title, isOn: $viewModel.showOther)
                     }
                     
             } label: {

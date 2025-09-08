@@ -192,7 +192,7 @@ public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onRe
         "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled", 
         "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete", 
         "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs", 
-        "percentDone", "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status"
+        "percentDone", "primary-mime-type", "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status", "uploadRatio", "uploadedEver", "downloadedEver"
     ]
     
     performTransmissionDataRequest(
@@ -437,6 +437,39 @@ public func setFileWantedStatus(
     }
     
     updateTorrent(args: args, info: info, onComplete: completion)
+}
+
+/// Rename a path (file or folder) within a torrent
+/// - Parameters:
+///   - torrentId: The torrent ID (Transmission expects exactly one id)
+///   - path: The current path (relative to torrent root) to rename. For renaming the torrent root, pass the torrent name.
+///   - newName: The new name for the path component
+///   - config: Server configuration
+///   - auth: Authentication credentials
+///   - completion: Result containing the server's rename response args or an error
+public func renameTorrentPath(
+    torrentId: Int,
+    path: String,
+    newName: String,
+    config: TransmissionConfig,
+    auth: TransmissionAuth,
+    completion: @escaping (Result<TorrentRenameResponseArgs, Error>) -> Void
+) {
+    let args = TorrentRenameRequestArgs(ids: [torrentId], path: path, name: newName)
+    performTransmissionDataRequest(
+        method: "torrent-rename-path",
+        args: args,
+        config: config,
+        auth: auth,
+        completion: { (result: Result<TransmissionGenericResponse<TorrentRenameResponseArgs>, Error>) in
+            switch result {
+            case .success(let response):
+                completion(.success(response.arguments))
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    )
 }
 
 /// Set priority for specific files in a torrent

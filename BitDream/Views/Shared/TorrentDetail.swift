@@ -29,19 +29,19 @@ struct TorrentDetail: View {
 // Shared function to determine torrent status color
 func statusColor(for torrent: Torrent) -> Color {
     if torrent.statusCalc == TorrentStatusCalc.complete || torrent.statusCalc == TorrentStatusCalc.seeding {
-        return .green.opacity(0.75)
+        return .green.opacity(0.9)
     }
     else if torrent.statusCalc == TorrentStatusCalc.paused {
         return .gray
     }
     else if torrent.statusCalc == TorrentStatusCalc.retrievingMetadata {
-        return .red.opacity(0.75)
+        return .red.opacity(0.9)
     }
     else if torrent.statusCalc == TorrentStatusCalc.stalled {
-        return .yellow.opacity(0.7)
+        return .orange.opacity(0.9)
     }
     else {
-        return .blue.opacity(0.75)
+        return .blue.opacity(0.9)
     }
 }
 
@@ -72,17 +72,19 @@ func toggleTorrentPlayPause(torrent: Torrent, store: Store, completion: @escapin
 }
 
 // Shared function to format torrent details
-func formatTorrentDetails(torrent: Torrent) -> (percentComplete: String, percentAvailable: String, downloadedFormatted: String, sizeWhenDoneFormatted: String, activityDate: String, addedDate: String) {
+func formatTorrentDetails(torrent: Torrent) -> (percentComplete: String, percentAvailable: String, downloadedFormatted: String, sizeWhenDoneFormatted: String, uploadedFormatted: String, uploadRatio: String, activityDate: String, addedDate: String) {
     
     let percentComplete = String(format: "%.1f%%", torrent.percentDone * 100)
     let percentAvailable = String(format: "%.1f%%", ((Double(torrent.haveUnchecked + torrent.haveValid + torrent.desiredAvailable) / Double(torrent.sizeWhenDone))) * 100)
     let downloadedFormatted = byteCountFormatter.string(fromByteCount: (torrent.downloadedCalc))
     let sizeWhenDoneFormatted = byteCountFormatter.string(fromByteCount: torrent.sizeWhenDone)
+    let uploadedFormatted = byteCountFormatter.string(fromByteCount: torrent.uploadedEver)
+    let uploadRatio = String(format: "%.2f", torrent.uploadRatio)
     
     let activityDate = dateFormatter.string(from: Date(timeIntervalSince1970: Double(torrent.activityDate)))
     let addedDate = dateFormatter.string(from: Date(timeIntervalSince1970: Double(torrent.addedDate)))
     
-    return (percentComplete, percentAvailable, downloadedFormatted, sizeWhenDoneFormatted, activityDate, addedDate)
+    return (percentComplete, percentAvailable, downloadedFormatted, sizeWhenDoneFormatted, uploadedFormatted, uploadRatio, activityDate, addedDate)
 }
 
 // Shared header view for both platforms
@@ -90,20 +92,31 @@ struct TorrentDetailHeaderView: View {
     var torrent: Torrent
     
     var body: some View {
-        VStack {
-            Divider()
-            HStack {
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.down")
-                    Text("\(byteCountFormatter.string(fromByteCount: torrent.rateDownload))/s")
-                }
-                HStack(spacing: 2) {
-                    Image(systemName: "arrow.up")
-                    Text("\(byteCountFormatter.string(fromByteCount: torrent.rateUpload))/s")
-                }
+        HStack {
+            Spacer()
+            
+            HStack(spacing: 8) {
+                RatioChip(
+                    ratio: torrent.uploadRatio,
+                    size: .compact
+                )
+                
+                SpeedChip(
+                    speed: torrent.rateDownload,
+                    direction: .download,
+                    style: .chip,
+                    size: .compact
+                )
+                
+                SpeedChip(
+                    speed: torrent.rateUpload,
+                    direction: .upload,
+                    style: .chip,
+                    size: .compact
+                )
             }
-            .foregroundColor(.secondary)
-            .font(.subheadline)
+            
+            Spacer()
         }
     }
 }
@@ -127,6 +140,26 @@ struct TorrentDetailToolbar: ToolbarContent {
                 Image(systemName: "ellipsis.circle")
             }
         }
+    }
+}
+
+// Shared status badge component for torrent status
+struct TorrentStatusBadge: View {
+    let torrent: Torrent
+    
+    var body: some View {
+        Text(torrent.statusCalc.rawValue)
+            .font(.caption)
+            .fontWeight(.medium)
+            .foregroundColor(statusColor(for: torrent))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(statusColor(for: torrent).opacity(0.15))
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(statusColor(for: torrent).opacity(0.3), lineWidth: 0.5)
+            )
+            .cornerRadius(6)
     }
 }
 

@@ -117,6 +117,7 @@ struct iOSTorrentFileDetail: View {
             case .image: if !showImages { return false }
             case .document: if !showDocuments { return false }
             case .archive: if !showArchives { return false }
+            case .executable: if !showOther { return false }
             case .other: if !showOther { return false }
             }
             
@@ -620,12 +621,12 @@ struct FilterSheet: View {
                 }
                 
                 Section("File Types") {
-                    Toggle(FileTypeCategory.video.title, isOn: $showVideos)
-                    Toggle(FileTypeCategory.audio.title, isOn: $showAudio)
-                    Toggle(FileTypeCategory.image.title, isOn: $showImages)
-                    Toggle(FileTypeCategory.document.title, isOn: $showDocuments)
-                    Toggle(FileTypeCategory.archive.title, isOn: $showArchives)
-                    Toggle(FileTypeCategory.other.title, isOn: $showOther)
+                    Toggle(ContentTypeCategory.video.title, isOn: $showVideos)
+                    Toggle(ContentTypeCategory.audio.title, isOn: $showAudio)
+                    Toggle(ContentTypeCategory.image.title, isOn: $showImages)
+                    Toggle(ContentTypeCategory.document.title, isOn: $showDocuments)
+                    Toggle(ContentTypeCategory.archive.title, isOn: $showArchives)
+                    Toggle(ContentTypeCategory.other.title, isOn: $showOther)
                 }
                 
                 Section {

@@ -25,20 +25,8 @@ struct macOSTorrentDetail: View {
         
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Header with transfer rates
-                HStack(spacing: 12) {
-                    HStack(spacing: 2) {
-                        Image(systemName: "arrow.down")
-                        Text("\(byteCountFormatter.string(fromByteCount: torrent.rateDownload))/s")
-                    }
-                    HStack(spacing: 2) {
-                        Image(systemName: "arrow.up")
-                        Text("\(byteCountFormatter.string(fromByteCount: torrent.rateUpload))/s")
-                    }
-                    Spacer()
-                }
-                .font(.system(size: 13))
-                .padding(.bottom, 4)
+                TorrentDetailHeaderView(torrent: torrent)
+                    .padding(.bottom, 4)
                 
                 // General section
                 GroupBox {
@@ -49,12 +37,7 @@ struct macOSTorrentDetail: View {
                         DetailRow(label: "Name", value: torrent.name)
                         
                         DetailRow(label: "Status") {
-                            HStack {
-                                Circle()
-                                    .fill(statusColor(for: torrent))
-                                    .frame(width: 8, height: 8)
-                                Text(torrent.statusCalc.rawValue)
-                            }
+                            TorrentStatusBadge(torrent: torrent)
                         }
                         
                         DetailRow(label: "Date Added", value: details.addedDate)
@@ -86,9 +69,11 @@ struct macOSTorrentDetail: View {
                         // Native macOS section header
                         macOSSectionHeader("Stats", icon: "chart.bar")
                         
-                        DetailRow(label: "Downloaded", value: details.downloadedFormatted)
                         DetailRow(label: "Size When Done", value: details.sizeWhenDoneFormatted)
                         DetailRow(label: "Progress", value: details.percentComplete)
+                        DetailRow(label: "Downloaded", value: details.downloadedFormatted)
+                        DetailRow(label: "Uploaded", value: details.uploadedFormatted)
+                        DetailRow(label: "Upload Ratio", value: details.uploadRatio)
                     }
                     .padding(.vertical, 16)
                     .padding(.horizontal, 20)
