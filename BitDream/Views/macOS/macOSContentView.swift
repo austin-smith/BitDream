@@ -44,6 +44,9 @@ struct macOSContentView: View {
     @State private var isCompactMode: Bool = UserDefaults.standard.torrentListCompactMode
     @AppStorage("showContentTypeIcons") private var showContentTypeIcons: Bool = true
     
+    enum FocusTarget: Hashable { case contentList }
+    @FocusState private var focusedTarget: FocusTarget?
+    
     // Drag and drop state
     @State private var isDropTargeted = false
     @State private var draggedTorrentInfo: [TorrentInfo] = []
@@ -198,333 +201,11 @@ struct macOSContentView: View {
     
     var body: some View {       
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            // Sidebar
-            List(selection: $sidebarSelection) {
-                Section("Dreams") {
-                    ForEach(SidebarSelection.allCases) { item in
-                        Label(item.rawValue, systemImage: item.icon)
-                            .badge(torrentCount(for: item))
-                            .tag(item)
-                    }
-                }
-                
-                Section("Servers") {
-                    ForEach(hosts, id: \.self) { host in
-                        Button {
-                            store.setHost(host: host)
-                            // Clear selection when changing host
-                            selectedTorrentIds.removeAll()
-                            // Force refresh data when changing host
-                            updateList(store: store, update: { _ in })
-                        } label: {
-                            HStack {
-                                Label(host.name!, systemImage: "server.rack")
-                                Spacer()
-                                if host == store.host {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.blue)
-                                }
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    
-                    Button {
-                        store.setup.toggle()
-                    } label: {
-                        Label("Add Server", systemImage: "plus")
-                    }
-                    .buttonStyle(.plain)
-                }
-                
-                Section("Settings") {
-                    Button {
-                        store.editServers.toggle()
-                    } label: {
-                        Label("Manage Servers", systemImage: "gearshape")
-                    }
-                    .buttonStyle(.plain)
-                    
-                    Button {
-                        openSettings()
-                    } label: {
-                        Label("Settings", systemImage: "gear")
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .listStyle(SidebarListStyle())
-            .tint(themeManager.accentColor) // Apply accent color to sidebar selection
+            sidebarView
         } detail: {
-            // Content (middle pane)
-            VStack(spacing: 0) {
-                StatsHeaderView(store: store)
-                
-                VStack {
-                    // Torrent list
-                    if store.torrents.isEmpty {
-                        VStack {
-                            Spacer()
-                            
-                            if isDropTargeted {
-                                VStack(spacing: 12) {
-                                    Image(systemName: "plus.circle")
-                                        .font(.system(size: 48))
-                                        .foregroundColor(themeManager.accentColor)
-                                    Text("Drop .torrent files here to add")
-                                        .font(.title2)
-                                        .foregroundColor(themeManager.accentColor)
-                                }
-                            } else {
-                                VStack(spacing: 12) {
-                                    Text("💭")
-                                        .font(.system(size: 40))
-                                    Text("No dreams available")
-                                        .foregroundColor(.gray)
-                                    Text("Drag .torrent files here or use the + button")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            
-                            Spacer()
-                        }
-                    } else {
-                        // Break up the complex expression into steps
-                        let filteredTorrents = store.torrents.filtered(by: filterBySelection)
-                            .filter { torrent in
-                                torrentMatchesSearch(torrent, query: searchText)
-                            }
-                        let sortedTorrents = sortTorrents(filteredTorrents, by: sortProperty, order: sortOrder)
-                        
-                        if isCompactMode {
-                            // Compact table view
-                            macOSTorrentListCompact(
-                                torrents: sortedTorrents,
-                                selection: $selectedTorrentIds,
-                                store: store,
-                                showContentTypeIcons: showContentTypeIcons
-                            )
-                        } else {
-                            // Expanded list view
-                            List(selection: torrentSelection) {
-                                ForEach(sortedTorrents, id: \.id) { torrent in
-                                    macOSTorrentListExpanded(
-                                        torrent: binding(for: torrent, in: store),
-                                        store: store,
-                                        selectedTorrents: torrentSelection,
-                                        showContentTypeIcons: showContentTypeIcons
-                                    )
-                                    .tag(torrent)
-                                    .listRowSeparator(.visible)
-                                }
-                            }
-                            .listStyle(.plain)
-                            .tint(themeManager.accentColor) // Apply accent color to list selection
-                        }
-                    }
-                }
-                .onDrop(of: [.fileURL], delegate: TorrentDropDelegate(
-                    isDropTargeted: $isDropTargeted,
-                    draggedTorrentInfo: $draggedTorrentInfo,
-                    store: store
-                ))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(themeManager.accentColor.opacity(isDropTargeted ? 0.1 : 0))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .strokeBorder(themeManager.accentColor, lineWidth: isDropTargeted ? 2.5 : 0)
-                                .opacity(isDropTargeted ? 0.8 : 0)
-                        )
-                        .animation(.easeInOut(duration: 0.2), value: isDropTargeted)
-                )
-                .overlay(
-                    // Torrent preview card
-                    Group {
-                        if isDropTargeted && !draggedTorrentInfo.isEmpty {
-                            torrentPreviewCard
-                                .transition(.scale.combined(with: .opacity))
-                        }
-                    }
-                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isDropTargeted)
-                )
-                .onChange(of: isDropTargeted) { oldValue, newValue in
-                    if !newValue {
-                        // Clear dragged files when drag ends
-                        draggedTorrentInfo = []
-                    }
-                }
-            }
-            .navigationTitle(sidebarSelection.rawValue)
-            .navigationSubtitle(navigationSubtitle)
-            .searchable(text: $searchText, placement: .toolbar, prompt: "Search torrents") {
-                if !store.availableLabels.isEmpty {
-                    Section("Filter by Labels") {
-                        ForEach(store.availableLabels, id: \.self) { label in
-                            Button(action: {
-                                if includedLabels.contains(label) {
-                                    includedLabels.remove(label)
-                                    excludedLabels.insert(label)
-                                } else if excludedLabels.contains(label) {
-                                    excludedLabels.remove(label)
-                                } else {
-                                    includedLabels.insert(label)
-                                }
-                            }) {
-                                HStack {
-                                    Image(systemName: includedLabels.contains(label) ? "checkmark.circle.fill" : excludedLabels.contains(label) ? "minus.circle.fill" : "circle")
-                                        .foregroundColor(includedLabels.contains(label) ? themeManager.accentColor : excludedLabels.contains(label) ? .red : .secondary)
-                                    
-                                    Text(label)
-                                        .foregroundColor(.primary)
-                                    
-                                    Spacer()
-                                    
-                                    Text("\(store.torrentCount(for: label))")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        
-                        if !includedLabels.isEmpty || !excludedLabels.isEmpty {
-                            Divider()
-                            Button("Clear filters") {
-                                includedLabels.removeAll()
-                                excludedLabels.removeAll()
-                            }
-                        }
-                    }
-                }
-            }
-            .toolbar {              
-                // Content toolbar items
-                ToolbarItem(placement: .automatic) {
-                    Menu {
-                        // Sort properties
-                        ForEach(SortProperty.allCases, id: \.self) { property in
-                            let isSelected = Binding<Bool>(
-                                get: { sortProperty == property },
-                                set: { if $0 { sortProperty = property } }
-                            )
-                            Toggle(isOn: isSelected) {
-                                Text(property.rawValue)
-                            }
-                        }
-                        
-                        Divider()
-                        
-                        // Sort order
-                        let isAscending = Binding<Bool>(
-                            get: { sortOrder == .ascending },
-                            set: { if $0 { sortOrder = .ascending } }
-                        )
-                        Toggle(isOn: isAscending) {
-                            Text("Ascending")
-                        }
-                        
-                        let isDescending = Binding<Bool>(
-                            get: { sortOrder == .descending },
-                            set: { if $0 { sortOrder = .descending } }
-                        )
-                        Toggle(isOn: isDescending) {
-                            Text("Descending")
-                        }
-                    } label: {
-                        Label("Sort", systemImage: "arrow.up.arrow.down.circle")
-                    }
-                }
-
-                // Add torrent button
-                ToolbarItem(placement: .primaryAction) {
-                    Button(action: {
-                        store.isShowingAddAlert.toggle()
-                    }) {
-                        Label("Add Torrent", systemImage: "plus")
-                    }
-                    .help("Add a new torrent")
-                }
-                
-                // // Pause all button
-                // ToolbarItem(placement: .automatic) {
-                //     Button(action: {
-                //         playPauseAllTorrents(start: false, info: makeConfig(store: store), onResponse: { response in
-                //             updateList(store: store, update: {_ in})
-                //         })
-                //     }) {
-                //         Label("Pause All", systemImage: "pause")
-                //     }
-                //     .help("Pause all active torrents")
-                // }
-                
-                // // Resume all button
-                // ToolbarItem(placement: .automatic) {
-                //     Button(action: {
-                //         playPauseAllTorrents(start: true, info: makeConfig(store: store), onResponse: { response in
-                //             updateList(store: store, update: {_ in})
-                //         })
-                //     }) {
-                //         Label("Resume All", systemImage: "play")
-                //     }
-                //     .help("Resume all paused torrents")
-                // }
-                
-                // Add spacer between sort and view mode buttons
-                ToolbarItem(placement: .automatic) {
-                    Spacer()
-                }
-                
-                // Toggle compact mode button
-                ToolbarItem(placement: .automatic) {
-                    Button(action: {
-                        withAnimation {
-                            isCompactMode.toggle()
-                            UserDefaults.standard.torrentListCompactMode = isCompactMode
-                        }
-                    }) {
-                        Label(
-                            isCompactMode ? "Expanded View" : "Compact View",
-                            systemImage: isCompactMode ? "rectangle.grid.1x2" : "list.bullet"
-                        )
-                    }
-                    .help(isCompactMode ? "Expanded view" : "Compact view")
-                }
-                
-                // Toggle inspector button
-                ToolbarItem(placement: .automatic) {
-                    Button(action: {
-                        // Toggle inspector visibility
-                        withAnimation {
-                            isInspectorVisible.toggle()
-                        }
-                    }) {
-                        Label("Inspector", systemImage: "sidebar.right")
-                    }
-                    .help(isInspectorVisible ? "Hide inspector" : "Show inspector")
-                }
-            }
-            .refreshable {
-                updateList(store: store, update: {_ in})
-            }
-            .alert("Connection Error", isPresented: $store.showConnectionErrorAlert) {
-                Button("Edit Server", role: .none) {
-                    store.editServers.toggle()
-                }
-                Button("Retry", role: .none) {
-                    store.reconnect()
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text(store.connectionErrorMessage)
-            }
-            .inspector(isPresented: $isInspectorVisible) {
-                macOSDetail
-                    .inspectorColumnWidth(min: 350, ideal: 400, max: 500)
-            }
+            detailView
         }
+        .defaultFocus($focusedTarget, .contentList)
         .sheet(isPresented: $store.setup) {
             ServerDetail(store: store, viewContext: viewContext, hosts: hosts, isAddNew: true)
         }
@@ -567,9 +248,11 @@ struct macOSContentView: View {
         }
         .onChange(of: columnVisibility) { oldValue, newValue in
             UserDefaults.standard.sidebarVisibility = newValue
+            focusedTarget = .contentList
         }
         .onChange(of: isInspectorVisible) { oldValue, newValue in
             UserDefaults.standard.inspectorVisibility = newValue
+            focusedTarget = .contentList
         }
         .onChange(of: sortProperty) { oldValue, newValue in
             UserDefaults.standard.sortProperty = newValue
@@ -628,9 +311,319 @@ struct macOSContentView: View {
                 }
             }
         }
+        .searchable(text: $searchText, placement: .toolbar, prompt: "Search torrents") {
+            if !store.availableLabels.isEmpty {
+                Section("Filter by Labels") {
+                    ForEach(store.availableLabels, id: \.self) { label in
+                        Button(action: {
+                            if includedLabels.contains(label) {
+                                includedLabels.remove(label)
+                                excludedLabels.insert(label)
+                            } else if excludedLabels.contains(label) {
+                                excludedLabels.remove(label)
+                            } else {
+                                includedLabels.insert(label)
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: includedLabels.contains(label) ? "checkmark.circle.fill" : excludedLabels.contains(label) ? "minus.circle.fill" : "circle")
+                                    .foregroundColor(includedLabels.contains(label) ? themeManager.accentColor : excludedLabels.contains(label) ? .red : .secondary)
+                                
+                                Text(label)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Text("\(store.torrentCount(for: label))")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    
+                    if !includedLabels.isEmpty || !excludedLabels.isEmpty {
+                        Divider()
+                        Button("Clear filters") {
+                            includedLabels.removeAll()
+                            excludedLabels.removeAll()
+                        }
+                    }
+                }
+            }
+        }
+        .toolbar {              
+            // Content toolbar items
+            ToolbarItem(placement: .automatic) {
+                Menu {
+                    // Sort properties
+                    ForEach(SortProperty.allCases, id: \.self) { property in
+                        let isSelected = Binding<Bool>(
+                            get: { sortProperty == property },
+                            set: { if $0 { sortProperty = property } }
+                        )
+                        Toggle(isOn: isSelected) {
+                            Text(property.rawValue)
+                        }
+                    }
+                    
+                    Divider()
+                    
+                    // Sort order
+                    let isAscending = Binding<Bool>(
+                        get: { sortOrder == .ascending },
+                        set: { if $0 { sortOrder = .ascending } }
+                    )
+                    Toggle(isOn: isAscending) {
+                        Text("Ascending")
+                    }
+                    
+                    let isDescending = Binding<Bool>(
+                        get: { sortOrder == .descending },
+                        set: { if $0 { sortOrder = .descending } }
+                    )
+                    Toggle(isOn: isDescending) {
+                        Text("Descending")
+                    }
+                } label: {
+                    Label("Sort", systemImage: "arrow.up.arrow.down.circle")
+                }
+            }
+
+            // Add torrent button
+            ToolbarItem(placement: .primaryAction) {
+                Button(action: {
+                    store.isShowingAddAlert.toggle()
+                }) {
+                    Label("Add Torrent", systemImage: "plus")
+                }
+                .help("Add a new torrent")
+            }
+            
+            // Add spacer between sort and view mode buttons
+            ToolbarItem(placement: .automatic) {
+                Spacer()
+            }
+            
+            // Toggle compact mode button
+            ToolbarItem(placement: .automatic) {
+                Button(action: {
+                    withAnimation {
+                        isCompactMode.toggle()
+                        UserDefaults.standard.torrentListCompactMode = isCompactMode
+                    }
+                }) {
+                    Label(
+                        isCompactMode ? "Expanded View" : "Compact View",
+                        systemImage: isCompactMode ? "rectangle.grid.1x2" : "list.bullet"
+                    )
+                }
+                .help(isCompactMode ? "Expanded view" : "Compact view")
+            }
+            
+            // Toggle inspector button
+            ToolbarItem(placement: .automatic) {
+                Button(action: {
+                    // Toggle inspector visibility
+                    withAnimation {
+                        isInspectorVisible.toggle()
+                    }
+                }) {
+                    Label("Inspector", systemImage: "sidebar.right")
+                }
+                .help(isInspectorVisible ? "Hide inspector" : "Show inspector")
+            }
+        }
     }
     
     // MARK: - macOS Views
+    
+    private var sidebarView: some View {
+        List(selection: $sidebarSelection) {
+            Section("Dreams") {
+                ForEach(SidebarSelection.allCases) { item in
+                    Label(item.rawValue, systemImage: item.icon)
+                        .badge(torrentCount(for: item))
+                        .tag(item)
+                }
+            }
+            
+            Section("Servers") {
+                ForEach(hosts, id: \.self) { host in
+                    Button {
+                        store.setHost(host: host)
+                        // Clear selection when changing host
+                        selectedTorrentIds.removeAll()
+                        // Force refresh data when changing host
+                        updateList(store: store, update: { _ in })
+                    } label: {
+                        HStack {
+                            Label(host.name!, systemImage: "server.rack")
+                            Spacer()
+                            if host == store.host {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                Button {
+                    store.setup.toggle()
+                } label: {
+                    Label("Add Server", systemImage: "plus")
+                }
+                .buttonStyle(.plain)
+            }
+            
+            Section("Settings") {
+                Button {
+                    store.editServers.toggle()
+                } label: {
+                    Label("Manage Servers", systemImage: "gearshape")
+                }
+                .buttonStyle(.plain)
+                
+                Button {
+                    openSettings()
+                } label: {
+                    Label("Settings", systemImage: "gear")
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .listStyle(SidebarListStyle())
+        .tint(themeManager.accentColor) // Apply accent color to sidebar selection
+    }
+    
+    private var detailView: some View {
+        VStack(spacing: 0) {
+            StatsHeaderView(store: store)
+            
+            VStack {
+                // Torrent list
+                if store.torrents.isEmpty {
+                    VStack {
+                        Spacer()
+                        
+                        if isDropTargeted {
+                            VStack(spacing: 12) {
+                                Image(systemName: "plus.circle")
+                                    .font(.system(size: 48))
+                                    .foregroundColor(themeManager.accentColor)
+                                Text("Drop .torrent files here to add")
+                                    .font(.title2)
+                                    .foregroundColor(themeManager.accentColor)
+                            }
+                        } else {
+                            VStack(spacing: 12) {
+                                Text("💭")
+                                    .font(.system(size: 40))
+                                Text("No dreams available")
+                                    .foregroundColor(.gray)
+                                Text("Drag .torrent files here or use the + button")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        
+                        Spacer()
+                    }
+                } else {
+                    // Break up the complex expression into steps
+                    let filteredTorrents = store.torrents.filtered(by: filterBySelection)
+                        .filter { torrent in
+                            torrentMatchesSearch(torrent, query: searchText)
+                        }
+                    let sortedTorrents = sortTorrents(filteredTorrents, by: sortProperty, order: sortOrder)
+                    
+                    if isCompactMode {
+                        // Compact table view
+                        macOSTorrentListCompact(
+                            torrents: sortedTorrents,
+                            selection: $selectedTorrentIds,
+                            store: store,
+                            showContentTypeIcons: showContentTypeIcons
+                        )
+                        .focusable(true)
+                        .focused($focusedTarget, equals: .contentList)
+                    } else {
+                        // Expanded list view
+                        List(selection: torrentSelection) {
+                            ForEach(sortedTorrents, id: \.id) { torrent in
+                                macOSTorrentListExpanded(
+                                    torrent: binding(for: torrent, in: store),
+                                    store: store,
+                                    selectedTorrents: torrentSelection,
+                                    showContentTypeIcons: showContentTypeIcons
+                                )
+                                .tag(torrent)
+                                .listRowSeparator(.visible)
+                            }
+                        }
+                        .listStyle(.plain)
+                        .tint(themeManager.accentColor) // Apply accent color to list selection
+                        .focusable(true)
+                        .focused($focusedTarget, equals: .contentList)
+                    }
+                }
+            }
+            .onDrop(of: [.fileURL], delegate: TorrentDropDelegate(
+                isDropTargeted: $isDropTargeted,
+                draggedTorrentInfo: $draggedTorrentInfo,
+                store: store
+            ))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(themeManager.accentColor.opacity(isDropTargeted ? 0.1 : 0))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(themeManager.accentColor, lineWidth: isDropTargeted ? 2.5 : 0)
+                            .opacity(isDropTargeted ? 0.8 : 0)
+                    )
+                    .animation(.easeInOut(duration: 0.2), value: isDropTargeted)
+            )
+            .overlay(
+                // Torrent preview card
+                Group {
+                    if isDropTargeted && !draggedTorrentInfo.isEmpty {
+                        torrentPreviewCard
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                }
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isDropTargeted)
+            )
+            .onChange(of: isDropTargeted) { oldValue, newValue in
+                if !newValue {
+                    // Clear dragged files when drag ends
+                    draggedTorrentInfo = []
+                }
+            }
+        }
+        .navigationTitle(sidebarSelection.rawValue)
+        .navigationSubtitle(navigationSubtitle)
+        
+        .refreshable {
+            updateList(store: store, update: {_ in})
+        }
+        .alert("Connection Error", isPresented: $store.showConnectionErrorAlert) {
+            Button("Edit Server", role: .none) {
+                store.editServers.toggle()
+            }
+            Button("Retry", role: .none) {
+                store.reconnect()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(store.connectionErrorMessage)
+        }
+        .inspector(isPresented: $isInspectorVisible) {
+            macOSDetail
+                .inspectorColumnWidth(min: 350, ideal: 400, max: 500)
+        }
+    }
     
     private var macOSDetail: some View {
         Group {
