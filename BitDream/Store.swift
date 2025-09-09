@@ -65,6 +65,10 @@ class Store: NSObject, ObservableObject {
     @Published var showGlobalAlert: Bool = false
     @Published var globalAlertTitle: String = "Error"
     @Published var globalAlertMessage: String = ""
+    // Global rename dialog state for menu command
+    @Published var showGlobalRenameDialog: Bool = false
+    @Published var globalRenameInput: String = ""
+    @Published var globalRenameTargetId: Int? = nil
 #endif
     
     // Computed property to get selected torrents

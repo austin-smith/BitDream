@@ -51,6 +51,19 @@ struct FileCommands: Commands {
                 store.isShowingAddAlert.toggle()
             }
             .keyboardShortcut("o", modifiers: [.option, .command])
+            
+            #if os(macOS)
+            Divider()
+            
+            Button("Rename…") {
+                if let firstTorrent = store.selectedTorrents.first {
+                    store.globalRenameInput = firstTorrent.name
+                    store.globalRenameTargetId = firstTorrent.id
+                    store.showGlobalRenameDialog = true
+                }
+            }
+            .disabled(store.selectedTorrents.count != 1)
+            #endif
         }
     }
 }
@@ -372,6 +385,47 @@ struct BitDreamApp: App {
                         }
                     }
                 }
+                #if os(macOS)
+                .sheet(isPresented: $store.showGlobalRenameDialog) {
+                    // Resolve target torrent using the stored ID
+                    if let targetId = store.globalRenameTargetId,
+                       let targetTorrent = store.torrents.first(where: { $0.id == targetId }) {
+                        RenameSheetView(
+                            title: "Rename Torrent",
+                            name: $store.globalRenameInput,
+                            currentName: targetTorrent.name,
+                            onCancel: {
+                                store.showGlobalRenameDialog = false
+                                store.globalRenameInput = ""
+                                store.globalRenameTargetId = nil
+                            },
+                            onSave: { newName in
+                                if let validation = validateNewName(newName, current: targetTorrent.name) {
+                                    store.globalAlertTitle = "Rename Error"
+                                    store.globalAlertMessage = validation
+                                    store.showGlobalAlert = true
+                                    return
+                                }
+                                renameTorrentRoot(torrent: targetTorrent, to: newName, store: store) { error in
+                                    DispatchQueue.main.async {
+                                        if let error = error {
+                                            store.globalAlertTitle = "Rename Error"
+                                            store.globalAlertMessage = error
+                                            store.showGlobalAlert = true
+                                        } else {
+                                            store.showGlobalRenameDialog = false
+                                            store.globalRenameInput = ""
+                                            store.globalRenameTargetId = nil
+                                        }
+                                    }
+                                }
+                            }
+                        )
+                        .frame(width: 420)
+                        .padding()
+                    }
+                }
+                #endif
         }
         .windowResizability(.contentSize)
         .commands {
