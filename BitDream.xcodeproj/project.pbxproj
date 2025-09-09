@@ -24,6 +24,7 @@
 		4B1DAE0E295E6FFB0037E9FB /* ErrorDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */; };
 		4B1DAE10295E702B0037E9FB /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0F295E702B0037E9FB /* Store.swift */; };
 		4B1DAE12295E72040037E9FB /* FileAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE11295E72040037E9FB /* FileAccess.swift */; };
+		4B5E29412E6EBCEF0068CDDC /* AppFileOpenDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5E293F2E6EBCEF0068CDDC /* AppFileOpenDelegate.swift */; };
 		4B642D6C2D7E151A003CEADC /* macOSServerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */; };
 		4B642D6D2D7E151A003CEADC /* iOSServerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B642D6A2D7E151A003CEADC /* iOSServerDetail.swift */; };
 		4B642D792D7E1EED003CEADC /* macOSServerList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B642D782D7E1EED003CEADC /* macOSServerList.swift */; };
@@ -71,6 +72,7 @@
 		4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorDialog.swift; sourceTree = "<group>"; };
 		4B1DAE0F295E702B0037E9FB /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		4B1DAE11295E72040037E9FB /* FileAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileAccess.swift; sourceTree = "<group>"; };
+		4B5E293F2E6EBCEF0068CDDC /* AppFileOpenDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFileOpenDelegate.swift; sourceTree = "<group>"; };
 		4B642D6A2D7E151A003CEADC /* iOSServerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSServerDetail.swift; sourceTree = "<group>"; };
 		4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSServerDetail.swift; sourceTree = "<group>"; };
 		4B642D782D7E1EED003CEADC /* macOSServerList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSServerList.swift; sourceTree = "<group>"; };
@@ -84,6 +86,7 @@
 		4B6F1EBD2D86C926003D8F6E /* iOSTorrentFileDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentFileDetail.swift; sourceTree = "<group>"; };
 		4B6F1EBF2D86D52A003D8F6E /* TorrentFileDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentFileDetail.swift; sourceTree = "<group>"; };
 		4B7EF5702E6E9F0C00C1C281 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		4B908AED2E6EBAC700C2DA5C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSAddTorrent.swift; sourceTree = "<group>"; };
 		4B9CAC552D7E83460094CD03 /* iOSAddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSAddTorrent.swift; sourceTree = "<group>"; };
 		4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBadgeManager.swift; sourceTree = "<group>"; };
@@ -130,6 +133,7 @@
 		4B1DADDD295E6C440037E9FB /* BitDream */ = {
 			isa = PBXGroup;
 			children = (
+				4B908AED2E6EBAC700C2DA5C /* Info.plist */,
 				4B7EF5702E6E9F0C00C1C281 /* AppConfig.swift */,
 				4BEFEE7B2E6E5E69005815FA /* ContentTypeIconMapper.swift */,
 				4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */,
@@ -139,6 +143,7 @@
 				4B1DAE0F295E702B0037E9FB /* Store.swift */,
 				4BD938E92D82AF6F006CE97C /* ThemeManager.swift */,
 				4B1DADF8295E6EBA0037E9FB /* Utilities.swift */,
+				4B5E29402E6EBCEF0068CDDC /* Delegates */,
 				4B1DADFA295E6EE10037E9FB /* Views */,
 				4B1DADFC295E6F0F0037E9FB /* Transmission */,
 				4B1DADE7295E6C450037E9FB /* Assets.xcassets */,
@@ -174,6 +179,14 @@
 				4B1DADFD295E6F390037E9FB /* TransmissionModels.swift */,
 			);
 			path = Transmission;
+			sourceTree = "<group>";
+		};
+		4B5E29402E6EBCEF0068CDDC /* Delegates */ = {
+			isa = PBXGroup;
+			children = (
+				4B5E293F2E6EBCEF0068CDDC /* AppFileOpenDelegate.swift */,
+			);
+			path = Delegates;
 			sourceTree = "<group>";
 		};
 		4B642D752D7E1D4C003CEADC /* iOS */ = {
@@ -309,6 +322,7 @@
 				4B1DAE10295E702B0037E9FB /* Store.swift in Sources */,
 				4B1DADF9295E6EBA0037E9FB /* Utilities.swift in Sources */,
 				4B6F1EB02D82D340003D8F6E /* iOSSettingsView.swift in Sources */,
+				4B5E29412E6EBCEF0068CDDC /* AppFileOpenDelegate.swift in Sources */,
 				4B6F1EBC2D86C908003D8F6E /* macOSTorrentFileDetail.swift in Sources */,
 				4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */,
 				4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */,
@@ -475,6 +489,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BitDream/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = BitDream;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -517,6 +532,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BitDream/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = BitDream;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;

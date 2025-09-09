@@ -87,6 +87,17 @@ class ThemeManager: ObservableObject {
         UserDefaults.standard.set(mode.rawValue, forKey: themeModeKey)
     }
     
+    func cycleThemeMode() {
+        switch themeMode {
+        case .system:
+            setThemeMode(.light)
+        case .light:
+            setThemeMode(.dark)
+        case .dark:
+            setThemeMode(.system)
+        }
+    }
+    
     // Helper to convert ThemeMode to ColorScheme
     func colorScheme() -> ColorScheme? {
         switch themeMode {

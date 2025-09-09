@@ -6,7 +6,7 @@ import KeychainAccess
 struct iOSTorrentListRow: View {
     @Binding var torrent: Torrent
     var store: Store
-    @Binding var selectedTorrents: Set<Torrent>  // Added for API compatibility
+    @Binding var selectedTorrents: Set<Torrent>
     var showContentTypeIcons: Bool
     
     @State var deleteDialog: Bool = false
