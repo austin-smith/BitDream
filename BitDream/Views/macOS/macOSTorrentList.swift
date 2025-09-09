@@ -201,7 +201,7 @@ func createTorrentContextMenu(
             Text("Pause")
         }
     }
-    .disabled(torrents.count == 1 && firstTorrent.status == TorrentStatus.stopped.rawValue)
+    .disabled(torrents.shouldDisablePause)
 
     // Resume Button (always shown; disabled for single non-stopped)
     Button(action: {
@@ -227,7 +227,7 @@ func createTorrentContextMenu(
             Text("Resume")
         }
     }
-    .disabled(torrents.count == 1 && firstTorrent.status != TorrentStatus.stopped.rawValue)
+    .disabled(torrents.shouldDisableResume)
     
     // Resume Now Button (always shown; disabled for single non-stopped)
     Button(action: {
@@ -241,7 +241,7 @@ func createTorrentContextMenu(
             Text("Resume Now")
         }
     }
-    .disabled(torrents.count == 1 && firstTorrent.status != TorrentStatus.stopped.rawValue)
+    .disabled(torrents.shouldDisableResume)
 
     Divider()
     

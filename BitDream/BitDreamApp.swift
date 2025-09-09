@@ -42,6 +42,208 @@ struct FileCommands: Commands {
     }
 }
 
+#if os(macOS)
+// Torrent Commands for macOS torrent management
+struct TorrentCommands: Commands {
+    @ObservedObject var store: Store
+    
+    var body: some Commands {
+        CommandMenu("Torrent") {
+            // Selected torrent actions
+            Button("Pause Selected") {
+                pauseSelectedTorrents()
+            }
+            .keyboardShortcut(".", modifiers: .command)
+            .disabled(store.selectedTorrents.shouldDisablePauseAction)
+            
+            Button("Resume Selected") {
+                resumeSelectedTorrents()
+            }
+            .keyboardShortcut("/", modifiers: .command)
+            .disabled(store.selectedTorrents.shouldDisableResumeAction)
+            
+            Button("Resume Selected Now") {
+                resumeSelectedTorrentsNow()
+            }
+            .disabled(store.selectedTorrents.shouldDisableResumeAction)
+            
+            Divider()
+            
+            // Remove action
+            Button("Remove...") {
+                store.showingMenuRemoveConfirmation = true
+            }
+            .keyboardShortcut(.delete, modifiers: .command)
+            .disabled(store.selectedTorrents.isEmpty)
+            
+            Divider()
+            
+            // All torrents actions
+            Button("Pause All") {
+                pauseAllTorrents()
+            }
+            .keyboardShortcut(".", modifiers: [.option, .command])
+            .disabled(store.torrents.isEmpty)
+            
+            Button("Resume All") {
+                resumeAllTorrents()
+            }
+            .keyboardShortcut("/", modifiers: [.option, .command])
+            .disabled(store.torrents.isEmpty)
+            
+            Divider()
+            
+            // Verify action
+            Button("Verify Local Data") {
+                verifySelectedTorrents()
+            }
+            .disabled(store.selectedTorrents.isEmpty)
+        }
+    }
+    
+    // MARK: - Action Implementations
+    
+    private func pauseSelectedTorrents() {
+        let selected = Array(store.selectedTorrents)
+        guard !selected.isEmpty else { return }
+        
+        let info = makeConfig(store: store)
+        let ids = selected.map { $0.id }
+        
+        performTransmissionStatusRequest(
+            method: "torrent-stop",
+            args: ["ids": ids] as [String: [Int]],
+            config: info.config,
+            auth: info.auth
+        ) { response in
+            handleTransmissionResponse(response,
+                onSuccess: {},
+                onError: { error in
+                    DispatchQueue.main.async {
+                        store.debugBrief = "Failed to pause torrents"
+                        store.debugMessage = error
+                        store.isError = true
+                    }
+                }
+            )
+        }
+    }
+    
+    private func resumeSelectedTorrents() {
+        let selected = Array(store.selectedTorrents)
+        guard !selected.isEmpty else { return }
+        
+        let info = makeConfig(store: store)
+        let ids = selected.map { $0.id }
+        
+        performTransmissionStatusRequest(
+            method: "torrent-start",
+            args: ["ids": ids] as [String: [Int]],
+            config: info.config,
+            auth: info.auth
+        ) { response in
+            handleTransmissionResponse(response,
+                onSuccess: {},
+                onError: { error in
+                    DispatchQueue.main.async {
+                        store.debugBrief = "Failed to resume torrents"
+                        store.debugMessage = error
+                        store.isError = true
+                    }
+                }
+            )
+        }
+    }
+    
+    private func resumeSelectedTorrentsNow() {
+        let selected = Array(store.selectedTorrents)
+        guard !selected.isEmpty else { return }
+        
+        let info = makeConfig(store: store)
+        let ids = selected.map { $0.id }
+        
+        performTransmissionStatusRequest(
+            method: "torrent-start-now",
+            args: ["ids": ids] as [String: [Int]],
+            config: info.config,
+            auth: info.auth
+        ) { response in
+            handleTransmissionResponse(response,
+                onSuccess: {},
+                onError: { error in
+                    DispatchQueue.main.async {
+                        store.debugBrief = "Failed to resume torrents now"
+                        store.debugMessage = error
+                        store.isError = true
+                    }
+                }
+            )
+        }
+    }
+    
+    
+    private func pauseAllTorrents() {
+        guard !store.torrents.isEmpty else { return }
+        
+        let info = makeConfig(store: store)
+        
+        playPauseAllTorrents(start: false, info: info) { response in
+            handleTransmissionResponse(response,
+                onSuccess: {},
+                onError: { error in
+                    DispatchQueue.main.async {
+                        store.debugBrief = "Failed to pause all torrents"
+                        store.debugMessage = error
+                        store.isError = true
+                    }
+                }
+            )
+        }
+    }
+    
+    private func resumeAllTorrents() {
+        guard !store.torrents.isEmpty else { return }
+        
+        let info = makeConfig(store: store)
+        
+        playPauseAllTorrents(start: true, info: info) { response in
+            handleTransmissionResponse(response,
+                onSuccess: {},
+                onError: { error in
+                    DispatchQueue.main.async {
+                        store.debugBrief = "Failed to resume all torrents"
+                        store.debugMessage = error
+                        store.isError = true
+                    }
+                }
+            )
+        }
+    }
+    
+    private func verifySelectedTorrents() {
+        let selected = Array(store.selectedTorrents)
+        guard !selected.isEmpty else { return }
+        
+        let info = makeConfig(store: store)
+        
+        for torrent in selected {
+            verifyTorrent(torrent: torrent, config: info.config, auth: info.auth) { response in
+                handleTransmissionResponse(response,
+                    onSuccess: {},
+                    onError: { error in
+                        DispatchQueue.main.async {
+                            store.debugBrief = "Failed to verify torrent"
+                            store.debugMessage = error
+                            store.isError = true
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+#endif
+
 // View Commands for view-related toggles
 struct ViewCommands: Commands {
     @AppStorage("torrentListCompactMode") private var isCompactMode: Bool = false
@@ -121,6 +323,9 @@ struct BitDreamApp: App {
             FileCommands(store: store)
             SearchCommands(store: store)
             ViewCommands()
+            #if os(macOS)
+            TorrentCommands(store: store)
+            #endif
             CommandGroup(after: .sidebar) {
                 Menu("Appearance") {
                     Picker("Appearance", selection: $themeManager.themeMode) {

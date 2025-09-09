@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4B054C862E6FEB58004DDB99 /* TorrentExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B054C852E6FEB58004DDB99 /* TorrentExtensions.swift */; };
 		4B1DADDF295E6C440037E9FB /* BitDreamApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */; };
 		4B1DADE1295E6C440037E9FB /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADE0295E6C440037E9FB /* Persistence.swift */; };
 		4B1DADE4295E6C440037E9FB /* BitDream.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADE2295E6C440037E9FB /* BitDream.xcdatamodeld */; };
@@ -54,6 +55,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4B054C852E6FEB58004DDB99 /* TorrentExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentExtensions.swift; sourceTree = "<group>"; };
 		4B1DADDB295E6C440037E9FB /* BitDream.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BitDream.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitDreamApp.swift; sourceTree = "<group>"; };
 		4B1DADE0295E6C440037E9FB /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
@@ -142,6 +144,7 @@
 				4B1DADE0295E6C440037E9FB /* Persistence.swift */,
 				4B1DAE0F295E702B0037E9FB /* Store.swift */,
 				4BD938E92D82AF6F006CE97C /* ThemeManager.swift */,
+				4B054C852E6FEB58004DDB99 /* TorrentExtensions.swift */,
 				4B1DADF8295E6EBA0037E9FB /* Utilities.swift */,
 				4B5E29402E6EBCEF0068CDDC /* Delegates */,
 				4B1DADFA295E6EE10037E9FB /* Views */,
@@ -324,6 +327,7 @@
 				4B6F1EB02D82D340003D8F6E /* iOSSettingsView.swift in Sources */,
 				4B5E29412E6EBCEF0068CDDC /* AppFileOpenDelegate.swift in Sources */,
 				4B6F1EBC2D86C908003D8F6E /* macOSTorrentFileDetail.swift in Sources */,
+				4B054C862E6FEB58004DDB99 /* TorrentExtensions.swift in Sources */,
 				4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */,
 				4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */,
 				4B1DADFE295E6F390037E9FB /* TransmissionModels.swift in Sources */,

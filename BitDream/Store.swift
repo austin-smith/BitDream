@@ -46,6 +46,19 @@ class Store: NSObject, ObservableObject {
     @Published var pollInterval: Double = AppDefaults.pollInterval // Default poll interval in seconds
     @Published var shouldActivateSearch: Bool = false
     
+    // Selection state for menu commands (macOS only)
+    @Published var selectedTorrentIds: Set<Int> = []
+    
+    // Computed property to get selected torrents
+    var selectedTorrents: Set<Torrent> {
+        Set(selectedTorrentIds.compactMap { id in
+            torrents.first { $0.id == id }
+        })
+    }
+    
+    // Confirmation dialog state for menu remove command
+    @Published var showingMenuRemoveConfirmation = false
+    
     var timer: Timer = Timer()
     
     override init() {

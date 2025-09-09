@@ -16,18 +16,14 @@ struct macOSContentView: View {
     // Add ThemeManager to access accent color
     @ObservedObject private var themeManager = ThemeManager.shared
     
-    @State private var selectedTorrentIds: Set<Int> = []
-    
-    // Computed property to get the selected torrents from the IDs
+    // Computed property to get the selected torrents from the Store
     private var torrentSelection: Binding<Set<Torrent>> {
         Binding<Set<Torrent>>(
             get: {
-                Set(selectedTorrentIds.compactMap { id in
-                    store.torrents.first { $0.id == id }
-                })
+                store.selectedTorrents
             },
             set: { newSelection in
-                selectedTorrentIds = Set(newSelection.map { $0.id })
+                store.selectedTorrentIds = Set(newSelection.map { $0.id })
             }
         )
     }
@@ -188,6 +184,34 @@ struct macOSContentView: View {
     // Update the app badge
     private func updateAppBadge() {
         updateMacOSAppBadge(count: completedTorrentsCount)
+    }
+    
+    // Remove selected torrents from menu command
+    private func removeSelectedTorrentsFromMenu(deleteData: Bool) {
+        let selected = Array(store.selectedTorrents)
+        guard !selected.isEmpty else { return }
+        
+        let info = makeConfig(store: store)
+        
+        for torrent in selected {
+            deleteTorrent(torrent: torrent, erase: deleteData, config: info.config, auth: info.auth) { response in
+                handleTransmissionResponse(response,
+                    onSuccess: {},
+                    onError: { error in
+                        DispatchQueue.main.async {
+                            store.debugBrief = "Failed to remove torrent"
+                            store.debugMessage = error
+                            store.isError = true
+                        }
+                    }
+                )
+            }
+        }
+        
+        // Clear selection after removal
+        DispatchQueue.main.async {
+            store.selectedTorrentIds.removeAll()
+        }
     }
     
     // Computed property for navigation subtitle
@@ -484,7 +508,7 @@ struct macOSContentView: View {
                     Button {
                         store.setHost(host: host)
                         // Clear selection when changing host
-                        selectedTorrentIds.removeAll()
+                        store.selectedTorrentIds.removeAll()
                         // Force refresh data when changing host
                         updateList(store: store, update: { _ in })
                     } label: {
@@ -573,7 +597,7 @@ struct macOSContentView: View {
                         // Compact table view
                         macOSTorrentListCompact(
                             torrents: sortedTorrents,
-                            selection: $selectedTorrentIds,
+                            selection: $store.selectedTorrentIds,
                             store: store,
                             showContentTypeIcons: showContentTypeIcons
                         )
@@ -649,6 +673,21 @@ struct macOSContentView: View {
         } message: {
             Text(store.connectionErrorMessage)
         }
+        .alert(
+            "Remove \(store.selectedTorrents.count > 1 ? "\(store.selectedTorrents.count) Torrents" : "Torrent")",
+            isPresented: $store.showingMenuRemoveConfirmation) {
+                Button(role: .destructive) {
+                    removeSelectedTorrentsFromMenu(deleteData: true)
+                } label: {
+                    Text("Delete file(s)")
+                }
+                Button("Remove from list only") {
+                    removeSelectedTorrentsFromMenu(deleteData: false)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Do you want to delete the file(s) from the disk?")
+            }
         .inspector(isPresented: $isInspectorVisible) {
             macOSDetail
                 .inspectorColumnWidth(min: 350, ideal: 400, max: 500)
