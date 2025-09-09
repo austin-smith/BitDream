@@ -41,7 +41,7 @@ struct macOSContentView: View {
     @State private var searchText: String = ""
     @State private var includedLabels: Set<String> = []
     @State private var excludedLabels: Set<String> = []
-    @State private var isCompactMode: Bool = UserDefaults.standard.torrentListCompactMode
+    @AppStorage("torrentListCompactMode") private var isCompactMode: Bool = false
     @AppStorage("showContentTypeIcons") private var showContentTypeIcons: Bool = true
     
     enum FocusTarget: Hashable { case contentList }
@@ -431,7 +431,6 @@ struct macOSContentView: View {
                 Button(action: {
                     withAnimation {
                         isCompactMode.toggle()
-                        UserDefaults.standard.torrentListCompactMode = isCompactMode
                     }
                 }) {
                     Label(

@@ -28,6 +28,22 @@ struct SearchCommands: Commands {
     }
 }
 
+// View Commands for view-related toggles
+struct ViewCommands: Commands {
+    @AppStorage("torrentListCompactMode") private var isCompactMode: Bool = false
+    @AppStorage("showContentTypeIcons") private var showContentTypeIcons: Bool = true
+    
+    var body: some Commands {
+        CommandGroup(after: .toolbar) {
+            Divider()
+            
+            Toggle("Compact View", isOn: $isCompactMode)
+            
+            Toggle("Show File Type Icons", isOn: $showContentTypeIcons)
+        }
+    }
+}
+
 @main
 struct BitDreamApp: App {
     let persistenceController = PersistenceController.shared
@@ -43,7 +59,6 @@ struct BitDreamApp: App {
     @State private var showAppearanceHUD: Bool = false
     @State private var appearanceHUDText: String = ""
     @State private var hideHUDWork: DispatchWorkItem?
-    
     
     init() {
         // Register default values for view state
@@ -90,6 +105,7 @@ struct BitDreamApp: App {
         .commands {
             CommandGroup(replacing: .newItem) { }
             SearchCommands(store: store)
+            ViewCommands()
             CommandGroup(after: .sidebar) {
                 Menu("Appearance") {
                     Picker("Appearance", selection: $themeManager.themeMode) {
