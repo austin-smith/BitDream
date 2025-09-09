@@ -37,10 +37,12 @@ struct macOSTorrentListExpanded: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .layoutPriority(0)  // Normal priority for name
                     
                     // Display labels inline if present, but allow them to be truncated
                     createLabelTagsView(for: torrent)
-                        .layoutPriority(-1)  // Give lower priority than the name
+                        .layoutPriority(1)  // Higher priority ensures labels get space
+                        .fixedSize(horizontal: true, vertical: false)  // Don't compress labels
                 }
                 
                 createStatusView(for: torrent)

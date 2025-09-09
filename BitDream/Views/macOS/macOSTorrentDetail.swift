@@ -121,7 +121,7 @@ struct macOSTorrentDetail: View {
                     Button(role: .destructive, action: {
                         showingDeleteConfirmation = true
                     }) {
-                        Label("Delete Dream", systemImage: "trash")
+                        Label("Delete…", systemImage: "trash")
                     }
                 }
                 .padding(.top, 8)

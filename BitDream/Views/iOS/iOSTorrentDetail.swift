@@ -131,7 +131,7 @@ struct iOSTorrentDetail: View {
                         HStack {
                             HStack{
                                 Image(systemName: "trash")
-                                Text("Delete Dream")
+                                Text("Delete…")
                                 Spacer()
                             }
                         }
