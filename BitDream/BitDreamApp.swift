@@ -12,6 +12,22 @@ import CoreData
 import Foundation
 import Combine
 
+
+// Search Commands for menu and keyboard shortcut
+struct SearchCommands: Commands {
+    @ObservedObject var store: Store
+    
+    var body: some Commands {
+        CommandGroup(after: .textEditing) {
+            Divider()
+            Button("Search Torrents") {
+                store.shouldActivateSearch.toggle()
+            }
+            .keyboardShortcut("f", modifiers: .command)
+        }
+    }
+}
+
 @main
 struct BitDreamApp: App {
     let persistenceController = PersistenceController.shared
@@ -27,6 +43,7 @@ struct BitDreamApp: App {
     @State private var showAppearanceHUD: Bool = false
     @State private var appearanceHUDText: String = ""
     @State private var hideHUDWork: DispatchWorkItem?
+    
     
     init() {
         // Register default values for view state
@@ -72,6 +89,7 @@ struct BitDreamApp: App {
         .windowResizability(.contentSize)
         .commands {
             CommandGroup(replacing: .newItem) { }
+            SearchCommands(store: store)
             CommandGroup(after: .sidebar) {
                 Menu("Appearance") {
                     Picker("Appearance", selection: $themeManager.themeMode) {

@@ -44,6 +44,7 @@ class Store: NSObject, ObservableObject {
     @Published var isEditingServerSettings: Bool = false  // Flag to pause reconnection attempts
     
     @Published var pollInterval: Double = AppDefaults.pollInterval // Default poll interval in seconds
+    @Published var shouldActivateSearch: Bool = false
     
     var timer: Timer = Timer()
     
