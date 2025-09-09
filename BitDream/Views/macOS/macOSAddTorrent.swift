@@ -23,6 +23,12 @@ struct macOSAddTorrent: View {
     @State private var errorMessage: String? = nil
     @State private var showingError = false
     @State private var selectedTorrentFiles: [(name: String, data: Data)] = []
+    private enum ActiveImporter {
+        case torrentFiles
+        case downloadFolder
+    }
+    @State private var activeImporter: ActiveImporter? = nil
+    @State private var isShowingImporter: Bool = false
     
     enum TorrentInputMethod: String, CaseIterable, Identifiable {
         case magnetLink = "Magnet Link"
@@ -90,6 +96,41 @@ struct macOSAddTorrent: View {
         }, message: {
             Text(errorMessage ?? "An unknown error occurred")
         })
+        .fileImporter(
+            isPresented: $isShowingImporter,
+            allowedContentTypes: activeImporter == .downloadFolder ? [.folder] : [UTType.torrent],
+            allowsMultipleSelection: activeImporter == .torrentFiles
+        ) { result in
+            switch activeImporter {
+            case .torrentFiles:
+                switch result {
+                case .success(let urls):
+                    for url in urls {
+                        do {
+                            let fileData = try Data(contentsOf: url)
+                            selectedTorrentFiles.append((name: url.lastPathComponent, data: fileData))
+                        } catch {
+                            handleAddTorrentError("Error loading torrent file: \(error.localizedDescription)", errorMessage: $errorMessage, showingError: $showingError)
+                        }
+                    }
+                case .failure(let error):
+                    handleAddTorrentError("File import failed: \(error.localizedDescription)", errorMessage: $errorMessage, showingError: $showingError)
+                }
+            case .downloadFolder:
+                switch result {
+                case .success(let urls):
+                    if let url = urls.first {
+                        downloadDir = url.path
+                    }
+                case .failure(let error):
+                    handleAddTorrentError("Folder selection failed: \(error.localizedDescription)", errorMessage: $errorMessage, showingError: $showingError)
+                }
+            case .none:
+                break
+            }
+            // Reset active importer after completion
+            activeImporter = nil
+        }
     }
     
     // MARK: - Form View
@@ -226,7 +267,8 @@ struct macOSAddTorrent: View {
                             Spacer()
                             
                             Button("Choose Files...") {
-                                openTorrentFilePicker()
+                                activeImporter = .torrentFiles
+                                isShowingImporter = true
                             }
                             .controlSize(.regular)
                         }
@@ -250,7 +292,8 @@ struct macOSAddTorrent: View {
                         .frame(height: 24)
                     
                     Button(action: {
-                        openDownloadLocationPicker()
+                        activeImporter = .downloadFolder
+                        isShowingImporter = true
                     }) {
                         Image(systemName: "folder")
                     }
@@ -262,28 +305,21 @@ struct macOSAddTorrent: View {
         .padding()
         .onAppear {
             downloadDir = store.defaultDownloadDir
-        }
-    }
-    
-    // MARK: - File Pickers
-    private func openTorrentFilePicker() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.allowedContentTypes = [UTType(tag: "torrent", tagClass: .filenameExtension, conformingTo: nil)!]
-        
-        if panel.runModal() == .OK {
-            for url in panel.urls {
-                do {
-                    let fileData = try Data(contentsOf: url)
-                    selectedTorrentFiles.append((name: url.lastPathComponent, data: fileData))
-                } catch {
-                    handleAddTorrentError("Error loading torrent file: \(error.localizedDescription)", errorMessage: $errorMessage, showingError: $showingError)
+            #if os(macOS)
+            if let initial = store.addTorrentInitialMode {
+                switch initial {
+                case .magnet:
+                    inputMethod = .magnetLink
+                case .file:
+                    inputMethod = .torrentFile
                 }
+                store.addTorrentInitialMode = nil
             }
+            #endif
         }
     }
     
+    // MARK: - File Pickers (SwiftUI wrappers handled by .fileImporter)
     private func addTorrentFile(fileData: Data) {
         let fileStream = fileData.base64EncodedString(options: NSData.Base64EncodingOptions(rawValue: 0))
         
@@ -297,9 +333,7 @@ struct macOSAddTorrent: View {
             onAdd: { response in
                 // Ensure UI updates happen on the main thread
                 DispatchQueue.main.async {
-                    if response.response == TransmissionResponse.success {
-                        store.isShowingAddAlert.toggle()
-                    } else {
+                    if response.response != TransmissionResponse.success {
                         handleAddTorrentError("Failed to add torrent: \(response.response)", errorMessage: $errorMessage, showingError: $showingError)
                     }
                 }
@@ -307,16 +341,7 @@ struct macOSAddTorrent: View {
         )
     }
     
-    private func openDownloadLocationPicker() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        
-        if panel.runModal() == .OK, let url = panel.url {
-            downloadDir = url.path
-        }
-    }
+    // Download folder selection handled by .fileImporter
 }
 
 // MARK: - Preview

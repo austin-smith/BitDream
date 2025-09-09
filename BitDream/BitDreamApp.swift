@@ -11,6 +11,7 @@ import CoreData
 // Import Store from the main module
 import Foundation
 import Combine
+import UniformTypeIdentifiers
 
 
 // Search Commands for menu and keyboard shortcut
@@ -34,10 +35,22 @@ struct FileCommands: Commands {
     
     var body: some Commands {
         CommandGroup(after: .newItem) {
-            Button("Add Torrent…") {
+            Button("Add Torrent from File…") {
+                #if os(macOS)
+                store.presentGlobalTorrentFileImporter = true
+                #else
                 store.isShowingAddAlert.toggle()
+                #endif
             }
             .keyboardShortcut("o", modifiers: .command)
+
+            Button("Add Torrent from Magnet Link…") {
+                #if os(macOS)
+                store.addTorrentInitialMode = .magnet
+                #endif
+                store.isShowingAddAlert.toggle()
+            }
+            .keyboardShortcut("o", modifiers: [.option, .command])
         }
     }
 }
@@ -315,6 +328,50 @@ struct BitDreamApp: App {
                     }
                 }
                 .animation(.easeOut(duration: 0.25), value: showAppearanceHUD)
+                .alert(store.globalAlertTitle, isPresented: $store.showGlobalAlert) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text(store.globalAlertMessage)
+                }
+                .fileImporter(
+                    isPresented: $store.presentGlobalTorrentFileImporter,
+                    allowedContentTypes: [UTType.torrent],
+                    allowsMultipleSelection: true
+                ) { result in
+                    switch result {
+                    case .success(let urls):
+                        var failures: [(String, String)] = []
+                        for url in urls {
+                            do {
+                                let data = try Data(contentsOf: url)
+                                addTorrentFromFileData(data, store: store)
+                            } catch {
+                                failures.append((url.lastPathComponent, error.localizedDescription))
+                            }
+                        }
+                        if !failures.isEmpty {
+                            DispatchQueue.main.async {
+                                if failures.count == 1, let first = failures.first {
+                                    store.globalAlertTitle = "Error"
+                                    store.globalAlertMessage = "Failed to open '\(first.0)'\n\n\(first.1)"
+                                } else {
+                                    let list = failures.prefix(10).map { "- \($0.0): \($0.1)" }.joined(separator: "\n")
+                                    let remainder = failures.count - min(failures.count, 10)
+                                    let suffix = remainder > 0 ? "\n...and \(remainder) more" : ""
+                                    store.globalAlertTitle = "Error"
+                                    store.globalAlertMessage = "Failed to open \(failures.count) torrent files\n\n\(list)\(suffix)"
+                                }
+                                store.showGlobalAlert = true
+                            }
+                        }
+                    case .failure(let error):
+                        DispatchQueue.main.async {
+                            store.globalAlertTitle = "Error"
+                            store.globalAlertMessage = "File import failed\n\n\(error.localizedDescription)"
+                            store.showGlobalAlert = true
+                        }
+                    }
+                }
         }
         .windowResizability(.contentSize)
         .commands {

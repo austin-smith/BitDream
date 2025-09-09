@@ -9,6 +9,13 @@ import SwiftUI
 import Foundation
 import KeychainAccess
 
+#if os(macOS)
+enum AddTorrentInitialMode {
+    case magnet
+    case file
+}
+#endif
+
 struct Server {
     var config: TransmissionConfig
     var auth: TransmissionAuth
@@ -48,6 +55,17 @@ class Store: NSObject, ObservableObject {
     
     // Selection state for menu commands (macOS only)
     @Published var selectedTorrentIds: Set<Int> = []
+    
+#if os(macOS)
+    // Controls how the Add Torrent flow should start when invoked from menu
+    @Published var addTorrentInitialMode: AddTorrentInitialMode? = nil
+    // Triggers a global file importer from top-level window
+    @Published var presentGlobalTorrentFileImporter: Bool = false
+    // Global native alert state for macOS
+    @Published var showGlobalAlert: Bool = false
+    @Published var globalAlertTitle: String = "Error"
+    @Published var globalAlertMessage: String = ""
+#endif
     
     // Computed property to get selected torrents
     var selectedTorrents: Set<Torrent> {
