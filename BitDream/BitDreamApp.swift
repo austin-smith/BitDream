@@ -562,7 +562,7 @@ struct BitDreamApp: App {
         #if os(macOS)
         Settings {
             SettingsView(store: store) // Use the same store instance
-                .frame(minWidth: 500, idealWidth: 550, maxWidth: 650, minHeight: 300, idealHeight: 350, maxHeight: 450)
+                .frame(minWidth: 500, idealWidth: 550, maxWidth: 650)
                 .environmentObject(themeManager) // Pass the ThemeManager to the Settings view
                 .immediateTheme(manager: themeManager)
         }
