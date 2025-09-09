@@ -54,7 +54,7 @@
 		4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD938E92D82AF6F006CE97C /* ThemeManager.swift */; };
 		4BE364BA2E6E75B300CF1A33 /* SharedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE364B92E6E75B300CF1A33 /* SharedComponents.swift */; };
 		4BEFEE7C2E6E5E69005815FA /* ContentTypeIconMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BEFEE7B2E6E5E69005815FA /* ContentTypeIconMapper.swift */; };
-		4BFFAA012E7F000000000001 /* TorrentActionsMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BFFAA002E7F000000000001 /* TorrentActionsMenu.swift */; };
+		4BFFAA012E7F000000000001 /* macOSTorrentActionsMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BFFAA002E7F000000000001 /* macOSTorrentActionsMenu.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -107,7 +107,7 @@
 		4BD938E92D82AF6F006CE97C /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		4BE364B92E6E75B300CF1A33 /* SharedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComponents.swift; sourceTree = "<group>"; };
 		4BEFEE7B2E6E5E69005815FA /* ContentTypeIconMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentTypeIconMapper.swift; sourceTree = "<group>"; };
-		4BFFAA002E7F000000000001 /* TorrentActionsMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentActionsMenu.swift; sourceTree = "<group>"; };
+		4BFFAA002E7F000000000001 /* macOSTorrentActionsMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentActionsMenu.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -215,12 +215,12 @@
 				4B642D782D7E1EED003CEADC /* macOSServerList.swift */,
 				4B6F1EAD2D82D337003D8F6E /* macOSSettingsView.swift */,
 				4B73985D2E70181D00D06E5D /* macOSStatisticsView.swift */,
+				4BFFAA002E7F000000000001 /* macOSTorrentActionsMenu.swift */,
 				4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */,
 				4B6F1EBB2D86C908003D8F6E /* macOSTorrentFileDetail.swift */,
 				4BC2C9272E6E22B800011971 /* macOSTorrentList.swift */,
 				4BC2C9282E6E22B800011971 /* macOSTorrentListCompact.swift */,
 				4BC2C9292E6E22B800011971 /* macOSTorrentListExpanded.swift */,
-				4BFFAA002E7F000000000001 /* TorrentActionsMenu.swift */,
 			);
 			path = macOS;
 			sourceTree = "<group>";
@@ -370,7 +370,7 @@
 				4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */,
 				4B6F1EB42D82DB2D003D8F6E /* iOSTorrentListRow.swift in Sources */,
 				4BEFEE7C2E6E5E69005815FA /* ContentTypeIconMapper.swift in Sources */,
-				4BFFAA012E7F000000000001 /* TorrentActionsMenu.swift in Sources */,
+				4BFFAA012E7F000000000001 /* macOSTorrentActionsMenu.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
