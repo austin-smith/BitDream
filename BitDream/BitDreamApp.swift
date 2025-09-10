@@ -493,11 +493,11 @@ struct BitDreamApp: App {
             SidebarCommands()
             CommandGroup(before: .sidebar) {
                 Divider()
-                Menu("Appearance") {
+                Menu {
                     Picker("Appearance", selection: $themeManager.themeMode) {
-                        Text("System").tag(ThemeMode.system)
-                        Text("Light").tag(ThemeMode.light)
-                        Text("Dark").tag(ThemeMode.dark)
+                        Label("System", systemImage: "circle.lefthalf.filled").tag(ThemeMode.system)
+                        Label("Light", systemImage: "sun.max").tag(ThemeMode.light)
+                        Label("Dark", systemImage: "moon").tag(ThemeMode.dark)
                     }
                     .pickerStyle(.inline)
                     
@@ -517,6 +517,8 @@ struct BitDreamApp: App {
                         Label("Toggle Appearance", systemImage: "circle.lefthalf.filled")
                     }
                     .keyboardShortcut("j", modifiers: .command)
+                } label: {
+                    Label("Appearance", systemImage: "circle.lefthalf.filled")
                 }
                 Divider()
             }
