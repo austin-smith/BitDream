@@ -104,6 +104,7 @@ public struct Torrent: Codable, Hashable, Identifiable {
     let peersSendingToUs: Int
     let percentDone: Double
     let primaryMimeType: String?
+    let queuePosition: Int
     let rateDownload: Int64
     let rateUpload: Int64
     let sizeWhenDone: Int64
@@ -168,6 +169,7 @@ public struct Torrent: Codable, Hashable, Identifiable {
         case peersSendingToUs
         case percentDone
         case primaryMimeType = "primary-mime-type"
+        case queuePosition
         case rateDownload
         case rateUpload
         case sizeWhenDone

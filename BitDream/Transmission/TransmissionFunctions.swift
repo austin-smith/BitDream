@@ -192,7 +192,7 @@ public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onRe
         "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled", 
         "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete", 
         "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs", 
-        "percentDone", "primary-mime-type", "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status", "uploadRatio", "uploadedEver", "downloadedEver"
+        "percentDone", "primary-mime-type", "queuePosition", "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status", "uploadRatio", "uploadedEver", "downloadedEver"
     ]
     
     performTransmissionDataRequest(
@@ -519,4 +519,82 @@ public func setFilePriority(
     }
     
     updateTorrent(args: args, info: info, onComplete: completion)
+}
+
+// MARK: - Queue Management Functions
+
+/// Move torrents to the top of the queue
+/// - Parameters:
+///   - ids: Array of torrent IDs to move
+///   - info: Tuple containing server config and auth info
+///   - completion: Called when the server's response is received
+public func queueMoveTop(
+    ids: [Int],
+    info: (config: TransmissionConfig, auth: TransmissionAuth),
+    completion: @escaping (TransmissionResponse) -> Void
+) {
+    performTransmissionStatusRequest(
+        method: "queue-move-top",
+        args: ["ids": ids] as [String: [Int]],
+        config: info.config,
+        auth: info.auth,
+        completion: completion
+    )
+}
+
+/// Move torrents up one position in the queue
+/// - Parameters:
+///   - ids: Array of torrent IDs to move
+///   - info: Tuple containing server config and auth info
+///   - completion: Called when the server's response is received
+public func queueMoveUp(
+    ids: [Int],
+    info: (config: TransmissionConfig, auth: TransmissionAuth),
+    completion: @escaping (TransmissionResponse) -> Void
+) {
+    performTransmissionStatusRequest(
+        method: "queue-move-up",
+        args: ["ids": ids] as [String: [Int]],
+        config: info.config,
+        auth: info.auth,
+        completion: completion
+    )
+}
+
+/// Move torrents down one position in the queue
+/// - Parameters:
+///   - ids: Array of torrent IDs to move
+///   - info: Tuple containing server config and auth info
+///   - completion: Called when the server's response is received
+public func queueMoveDown(
+    ids: [Int],
+    info: (config: TransmissionConfig, auth: TransmissionAuth),
+    completion: @escaping (TransmissionResponse) -> Void
+) {
+    performTransmissionStatusRequest(
+        method: "queue-move-down",
+        args: ["ids": ids] as [String: [Int]],
+        config: info.config,
+        auth: info.auth,
+        completion: completion
+    )
+}
+
+/// Move torrents to the bottom of the queue
+/// - Parameters:
+///   - ids: Array of torrent IDs to move
+///   - info: Tuple containing server config and auth info
+///   - completion: Called when the server's response is received
+public func queueMoveBottom(
+    ids: [Int],
+    info: (config: TransmissionConfig, auth: TransmissionAuth),
+    completion: @escaping (TransmissionResponse) -> Void
+) {
+    performTransmissionStatusRequest(
+        method: "queue-move-bottom",
+        args: ["ids": ids] as [String: [Int]],
+        config: info.config,
+        auth: info.auth,
+        completion: completion
+    )
 }

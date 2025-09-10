@@ -156,6 +156,8 @@ func createTorrentContextMenu(
 
     Divider()
     
+    // MARK: - Priority & Queue Section
+    
     // Priority Menu
     Menu {
         Button(action: {
@@ -216,6 +218,90 @@ func createTorrentContextMenu(
             Text("Update Priority")
         }
     }
+
+    // Queue Position Menu
+    Menu {
+        Button(action: {
+            let info = makeConfig(store: store)
+            queueMoveTop(ids: Array(torrents.map { $0.id }), info: info) { response in
+                handleTransmissionResponse(response,
+                    onSuccess: {},
+                    onError: { error in
+                        errorMessage.wrappedValue = error
+                        showingError.wrappedValue = true
+                    }
+                )
+            }
+        }) {
+            HStack {
+                Image(systemName: "arrow.up.to.line")
+                    .foregroundStyle(.secondary)
+                Text("Move to Front")
+            }
+        }
+        Button(action: {
+            let info = makeConfig(store: store)
+            queueMoveUp(ids: Array(torrents.map { $0.id }), info: info) { response in
+                handleTransmissionResponse(response,
+                    onSuccess: {},
+                    onError: { error in
+                        errorMessage.wrappedValue = error
+                        showingError.wrappedValue = true
+                    }
+                )
+            }
+        }) {
+            HStack {
+                Image(systemName: "arrow.up")
+                    .foregroundStyle(.secondary)
+                Text("Move Up")
+            }
+        }
+        Button(action: {
+            let info = makeConfig(store: store)
+            queueMoveDown(ids: Array(torrents.map { $0.id }), info: info) { response in
+                handleTransmissionResponse(response,
+                    onSuccess: {},
+                    onError: { error in
+                        errorMessage.wrappedValue = error
+                        showingError.wrappedValue = true
+                    }
+                )
+            }
+        }) {
+            HStack {
+                Image(systemName: "arrow.down")
+                    .foregroundStyle(.secondary)
+                Text("Move Down")
+            }
+        }
+        Button(action: {
+            let info = makeConfig(store: store)
+            queueMoveBottom(ids: Array(torrents.map { $0.id }), info: info) { response in
+                handleTransmissionResponse(response,
+                    onSuccess: {},
+                    onError: { error in
+                        errorMessage.wrappedValue = error
+                        showingError.wrappedValue = true
+                    }
+                )
+            }
+        }) {
+            HStack {
+                Image(systemName: "arrow.down.to.line")
+                    .foregroundStyle(.secondary)
+                Text("Move to Back")
+            }
+        }
+    } label: {
+        HStack {
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(.secondary)
+            Text("Move in Queue")
+        }
+    }
+
+    Divider()
 
     // Rename Button (moved into edit section)
     Button(action: {

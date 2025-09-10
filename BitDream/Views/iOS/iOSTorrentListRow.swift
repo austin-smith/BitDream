@@ -60,6 +60,8 @@ struct iOSTorrentListRow: View {
 
         Divider()
         
+        // MARK: - Priority & Queue Section
+        
         // Priority Menu
         Menu {
             Button(action: {
@@ -104,6 +106,70 @@ struct iOSTorrentListRow: View {
         } label: {
             Label("Update Priority", systemImage: "flag.badge.ellipsis")
         }
+
+        // Queue Position Menu
+        Menu {
+            Button(action: {
+                let info = makeConfig(store: store)
+                queueMoveTop(ids: [torrent.id], info: info) { response in
+                    handleTransmissionResponse(response,
+                        onSuccess: {},
+                        onError: { error in
+                            errorMessage = error
+                            showingError = true
+                        }
+                    )
+                }
+            }) {
+                Label("Move to Front", systemImage: "arrow.up.to.line")
+            }
+            Button(action: {
+                let info = makeConfig(store: store)
+                queueMoveUp(ids: [torrent.id], info: info) { response in
+                    handleTransmissionResponse(response,
+                        onSuccess: {},
+                        onError: { error in
+                            errorMessage = error
+                            showingError = true
+                        }
+                    )
+                }
+            }) {
+                Label("Move Up", systemImage: "arrow.up")
+            }
+            Button(action: {
+                let info = makeConfig(store: store)
+                queueMoveDown(ids: [torrent.id], info: info) { response in
+                    handleTransmissionResponse(response,
+                        onSuccess: {},
+                        onError: { error in
+                            errorMessage = error
+                            showingError = true
+                        }
+                    )
+                }
+            }) {
+                Label("Move Down", systemImage: "arrow.down")
+            }
+            Button(action: {
+                let info = makeConfig(store: store)
+                queueMoveBottom(ids: [torrent.id], info: info) { response in
+                    handleTransmissionResponse(response,
+                        onSuccess: {},
+                        onError: { error in
+                            errorMessage = error
+                            showingError = true
+                        }
+                    )
+                }
+            }) {
+                Label("Move to Back", systemImage: "arrow.down.to.line")
+            }
+        } label: {
+            Label("Move in Queue", systemImage: "line.3.horizontal")
+        }
+
+        Divider()
 
         // Rename
         Button(action: {

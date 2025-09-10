@@ -120,6 +120,37 @@ struct TorrentCommands: Commands {
             
             Divider()
             
+            // Queue movement actions
+            Button(action: {
+                moveSelectedTorrentsToFront()
+            }) {
+                Label("Move to Front of Queue", systemImage: "arrow.up.to.line")
+            }
+            .disabled(store.selectedTorrents.isEmpty)
+            
+            Button(action: {
+                moveSelectedTorrentsUp()
+            }) {
+                Label("Move Up in Queue", systemImage: "arrow.up")
+            }
+            .disabled(store.selectedTorrents.isEmpty)
+            
+            Button(action: {
+                moveSelectedTorrentsDown()
+            }) {
+                Label("Move Down in Queue", systemImage: "arrow.down")
+            }
+            .disabled(store.selectedTorrents.isEmpty)
+            
+            Button(action: {
+                moveSelectedTorrentsToBack()
+            }) {
+                Label("Move to Back of Queue", systemImage: "arrow.down.to.line")
+            }
+            .disabled(store.selectedTorrents.isEmpty)
+            
+            Divider()
+            
             // All torrents actions
             Button(action: {
                 pauseAllTorrents()
@@ -298,6 +329,84 @@ struct TorrentCommands: Commands {
                     }
                 )
             }
+        }
+    }
+    
+    // MARK: - Queue Movement Helper Functions
+    
+    private func moveSelectedTorrentsToFront() {
+        let selectedIds = Array(store.selectedTorrents.map { $0.id })
+        guard !selectedIds.isEmpty else { return }
+        
+        let info = makeConfig(store: store)
+        queueMoveTop(ids: selectedIds, info: info) { response in
+            handleTransmissionResponse(response,
+                onSuccess: {},
+                onError: { error in
+                    DispatchQueue.main.async {
+                        store.globalAlertTitle = "Queue Error"
+                        store.globalAlertMessage = error
+                        store.showGlobalAlert = true
+                    }
+                }
+            )
+        }
+    }
+    
+    private func moveSelectedTorrentsUp() {
+        let selectedIds = Array(store.selectedTorrents.map { $0.id })
+        guard !selectedIds.isEmpty else { return }
+        
+        let info = makeConfig(store: store)
+        queueMoveUp(ids: selectedIds, info: info) { response in
+            handleTransmissionResponse(response,
+                onSuccess: {},
+                onError: { error in
+                    DispatchQueue.main.async {
+                        store.globalAlertTitle = "Queue Error"
+                        store.globalAlertMessage = error
+                        store.showGlobalAlert = true
+                    }
+                }
+            )
+        }
+    }
+    
+    private func moveSelectedTorrentsDown() {
+        let selectedIds = Array(store.selectedTorrents.map { $0.id })
+        guard !selectedIds.isEmpty else { return }
+        
+        let info = makeConfig(store: store)
+        queueMoveDown(ids: selectedIds, info: info) { response in
+            handleTransmissionResponse(response,
+                onSuccess: {},
+                onError: { error in
+                    DispatchQueue.main.async {
+                        store.globalAlertTitle = "Queue Error"
+                        store.globalAlertMessage = error
+                        store.showGlobalAlert = true
+                    }
+                }
+            )
+        }
+    }
+    
+    private func moveSelectedTorrentsToBack() {
+        let selectedIds = Array(store.selectedTorrents.map { $0.id })
+        guard !selectedIds.isEmpty else { return }
+        
+        let info = makeConfig(store: store)
+        queueMoveBottom(ids: selectedIds, info: info) { response in
+            handleTransmissionResponse(response,
+                onSuccess: {},
+                onError: { error in
+                    DispatchQueue.main.async {
+                        store.globalAlertTitle = "Queue Error"
+                        store.globalAlertMessage = error
+                        store.showGlobalAlert = true
+                    }
+                }
+            )
         }
     }
 }
