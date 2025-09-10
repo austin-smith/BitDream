@@ -171,7 +171,7 @@ func updateList(store: Store, update: @escaping ([Torrent]) -> Void, retry: Int 
                 // If we were in an error state before, this means we've successfully reconnected
                 let wasInErrorState = store.connectionError
                 
-                // Clear error state
+                // Batch all state changes together
                 store.connectionError = false
                 store.connectionErrorMessage = ""
                 
@@ -210,7 +210,7 @@ func updateSessionStats(store: Store, update: @escaping (SessionStats) -> Void, 
                 // If we were in an error state before, this means we've successfully reconnected
                 let wasInErrorState = store.connectionError
                 
-                // Clear error state
+                // Batch all state changes together
                 store.connectionError = false
                 store.connectionErrorMessage = ""
                 
@@ -229,14 +229,12 @@ func refreshTransmissionData(store: Store) {
     // update the list of torrents when new host is set
     updateList(store: store, update: { vals in
         DispatchQueue.main.async {
-            store.objectWillChange.send()
             store.torrents = vals
         }
     })
     
     updateSessionStats(store: store, update: { vals in
         DispatchQueue.main.async {
-            store.objectWillChange.send()
             store.sessionStats = vals
         }
     })
@@ -245,7 +243,6 @@ func refreshTransmissionData(store: Store) {
     // also reset default download directory when new host is set
     getSession(config: info.config, auth: info.auth) { sessionInfo in
         DispatchQueue.main.async {
-            store.objectWillChange.send()
             store.defaultDownloadDir = sessionInfo.downloadDir
             
             // Update version in CoreData

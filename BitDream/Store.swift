@@ -52,6 +52,8 @@ class Store: NSObject, ObservableObject {
     
     @Published var pollInterval: Double = AppDefaults.pollInterval // Default poll interval in seconds
     @Published var shouldActivateSearch: Bool = false
+    @Published var shouldToggleInspector: Bool = false
+    @Published var isInspectorVisible: Bool = UserDefaults.standard.inspectorVisibility
     
     // Selection state for menu commands (macOS only)
     @Published var selectedTorrentIds: Set<Int> = []

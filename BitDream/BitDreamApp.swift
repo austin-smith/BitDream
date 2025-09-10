@@ -414,13 +414,13 @@ struct TorrentCommands: Commands {
 
 // View Commands for view-related toggles
 struct ViewCommands: Commands {
+    @ObservedObject var store: Store
     @AppStorage("torrentListCompactMode") private var isCompactMode: Bool = false
     @AppStorage("showContentTypeIcons") private var showContentTypeIcons: Bool = true
     
     var body: some Commands {
         CommandGroup(after: .toolbar) {
             Divider()
-            
             Toggle(isOn: $isCompactMode) {
                 Label("Compact View", systemImage: "list.bullet")
             }
@@ -597,8 +597,20 @@ struct BitDreamApp: App {
             CommandGroup(replacing: .newItem) { }
             FileCommands(store: store)
             SearchCommands(store: store)
-            ViewCommands()
+            ViewCommands(store: store)
             TorrentCommands(store: store)
+            
+            // Panel Commands - group inspector with sidebar
+            CommandGroup(after: .toolbar) {
+                Divider()
+                Button(action: {
+                    store.shouldToggleInspector.toggle()
+                }) {
+                    Label(store.isInspectorVisible ? "Hide Inspector" : "Show Inspector", systemImage: "sidebar.right")
+                }
+                .keyboardShortcut("i", modifiers: [.option, .command])
+            }
+            
             SidebarCommands()
             CommandGroup(before: .sidebar) {
                 Divider()

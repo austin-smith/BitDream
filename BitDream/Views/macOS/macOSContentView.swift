@@ -410,6 +410,7 @@ struct macOSContentView: View {
         }
         .onChange(of: isInspectorVisible) { oldValue, newValue in
             UserDefaults.standard.inspectorVisibility = newValue
+            store.isInspectorVisible = newValue
             focusedTarget = .contentList
         }
         .onChange(of: sortProperty) { oldValue, newValue in
@@ -422,6 +423,14 @@ struct macOSContentView: View {
             if newValue {
                 isSearchPresented = true
                 store.shouldActivateSearch = false
+            }
+        }
+        .onChange(of: store.shouldToggleInspector) { oldValue, newValue in
+            if newValue {
+                withAnimation {
+                    isInspectorVisible.toggle()
+                }
+                store.shouldToggleInspector = false
             }
         }
         .onChange(of: searchText) { oldValue, newValue in

@@ -127,17 +127,35 @@ func createTorrentSelectionBinding(selectedId: Binding<Int?>, in store: Store) -
 
 // Helper function to set up the host
 func setupHost(hosts: FetchedResults<Host>, store: Store) {
-    hosts.forEach { h in
-        if (h.isDefault) {
-            store.setHost(host: h)
+    // First, try to restore the last selected server from UserDefaults
+    if let savedHostURI = UserDefaults.standard.string(forKey: "selectedHost"),
+       !savedHostURI.isEmpty,
+       let savedHostURL = URL(string: savedHostURI) {
+        
+        // Find the saved host by matching Core Data object ID
+        if let savedHost = hosts.first(where: { $0.objectID.uriRepresentation() == savedHostURL }) {
+            store.setHost(host: savedHost)
+            return
+        } else {
+            // Clean up invalid saved selection
+            UserDefaults.standard.removeObject(forKey: "selectedHost")
         }
     }
-    if (store.host != nil) {
-        store.startTimer()
-    } else {
-        // Create a new host
-        store.setup = true
+    
+    // If no valid saved selection, fall back to default server
+    if let defaultHost = hosts.first(where: { $0.isDefault }) {
+        store.setHost(host: defaultHost)
+        return
     }
+    
+    // If no default server, use the first available server
+    if let firstHost = hosts.first {
+        store.setHost(host: firstHost)
+        return
+    }
+    
+    // If no servers exist, show setup
+    store.setup = true
 }
 
 // MARK: - Shared Views

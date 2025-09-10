@@ -19,4 +19,5 @@ enum UserDefaultsKeys {
     static let pollInterval = "pollIntervalKey"
     static let showContentTypeIcons = "showContentTypeIcons"
     static let ratioDisplayMode = "ratioDisplayMode"
+    static let selectedHost = "selectedHost"
 }
