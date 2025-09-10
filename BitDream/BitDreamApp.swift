@@ -21,8 +21,10 @@ struct SearchCommands: Commands {
     var body: some Commands {
         CommandGroup(after: .textEditing) {
             Divider()
-            Button("Search Torrents") {
+            Button(action: {
                 store.shouldActivateSearch.toggle()
+            }) {
+                Label("Search Torrents", systemImage: "magnifyingglass")
             }
             .keyboardShortcut("f", modifiers: .command)
         }
@@ -35,32 +37,38 @@ struct FileCommands: Commands {
     
     var body: some Commands {
         CommandGroup(after: .newItem) {
-            Button("Add Torrent from File…") {
+            Button(action: {
                 #if os(macOS)
                 store.presentGlobalTorrentFileImporter = true
                 #else
                 store.isShowingAddAlert.toggle()
                 #endif
+            }) {
+                Label("Add Torrent from File…", systemImage: "doc.badge.plus")
             }
             .keyboardShortcut("o", modifiers: .command)
 
-            Button("Add Torrent from Magnet Link…") {
+            Button(action: {
                 #if os(macOS)
                 store.addTorrentInitialMode = .magnet
                 #endif
                 store.isShowingAddAlert.toggle()
+            }) {
+                Label("Add Torrent from Magnet Link…", systemImage: "link.badge.plus")
             }
             .keyboardShortcut("o", modifiers: [.option, .command])
             
             #if os(macOS)
             Divider()
             
-            Button("Rename…") {
+            Button(action: {
                 if let firstTorrent = store.selectedTorrents.first {
                     store.globalRenameInput = firstTorrent.name
                     store.globalRenameTargetId = firstTorrent.id
                     store.showGlobalRenameDialog = true
                 }
+            }) {
+                Label("Rename…", systemImage: "pencil")
             }
             .disabled(store.selectedTorrents.count != 1)
             #endif
@@ -76,28 +84,36 @@ struct TorrentCommands: Commands {
     var body: some Commands {
         CommandMenu("Torrent") {
             // Selected torrent actions
-            Button("Pause Selected") {
+            Button(action: {
                 pauseSelectedTorrents()
+            }) {
+                Label("Pause Selected", systemImage: "pause")
             }
             .keyboardShortcut(".", modifiers: .command)
             .disabled(store.selectedTorrents.shouldDisablePause)
             
-            Button("Resume Selected") {
+            Button(action: {
                 resumeSelectedTorrents()
+            }) {
+                Label("Resume Selected", systemImage: "play")
             }
             .keyboardShortcut("/", modifiers: .command)
             .disabled(store.selectedTorrents.shouldDisableResume)
             
-            Button("Resume Selected Now") {
+            Button(action: {
                 resumeSelectedTorrentsNow()
+            }) {
+                Label("Resume Selected Now", systemImage: "play.fill")
             }
             .disabled(store.selectedTorrents.shouldDisableResume)
             
             Divider()
             
             // Remove action
-            Button("Remove…") {
+            Button(action: {
                 store.showingMenuRemoveConfirmation = true
+            }) {
+                Label("Remove…", systemImage: "trash")
             }
             .keyboardShortcut(.delete, modifiers: .command)
             .disabled(store.selectedTorrents.isEmpty)
@@ -105,14 +121,18 @@ struct TorrentCommands: Commands {
             Divider()
             
             // All torrents actions
-            Button("Pause All") {
+            Button(action: {
                 pauseAllTorrents()
+            }) {
+                Label("Pause All", systemImage: "pause.circle")
             }
             .keyboardShortcut(".", modifiers: [.option, .command])
             .disabled(store.torrents.isEmpty)
             
-            Button("Resume All") {
+            Button(action: {
                 resumeAllTorrents()
+            }) {
+                Label("Resume All", systemImage: "play.circle")
             }
             .keyboardShortcut("/", modifiers: [.option, .command])
             .disabled(store.torrents.isEmpty)
@@ -120,14 +140,18 @@ struct TorrentCommands: Commands {
             Divider()
             
             // Ask for more peers action
-            Button("Ask For More Peers") {
+            Button(action: {
                 reannounceSelectedTorrents()
+            }) {
+                Label("Ask For More Peers", systemImage: "arrow.left.arrow.right")
             }
             .disabled(store.selectedTorrents.isEmpty)
             
             // Verify action
-            Button("Verify Local Data") {
+            Button(action: {
                 verifySelectedTorrents()
+            }) {
+                Label("Verify Local Data", systemImage: "checkmark.arrow.trianglehead.counterclockwise")
             }
             .disabled(store.selectedTorrents.isEmpty)
         }
@@ -288,9 +312,13 @@ struct ViewCommands: Commands {
         CommandGroup(after: .toolbar) {
             Divider()
             
-            Toggle("Compact View", isOn: $isCompactMode)
+            Toggle(isOn: $isCompactMode) {
+                Label("Compact View", systemImage: "list.bullet")
+            }
             
-            Toggle("Show File Type Icons", isOn: $showContentTypeIcons)
+            Toggle(isOn: $showContentTypeIcons) {
+                Label("Show File Type Icons", systemImage: "doc.richtext")
+            }
         }
     }
 }
@@ -302,8 +330,10 @@ struct AppCommands: Commands {
     
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
-            Button("About BitDream") {
+            Button(action: {
                 openWindow(id: "about")
+            }) {
+                Label("About BitDream", systemImage: "info.circle")
             }
         }
     }
@@ -463,17 +493,17 @@ struct BitDreamApp: App {
             SidebarCommands()
             CommandGroup(before: .sidebar) {
                 Divider()
-                Menu("Appearance") {
+                Menu {
                     Picker("Appearance", selection: $themeManager.themeMode) {
-                        Text("System").tag(ThemeMode.system)
-                        Text("Light").tag(ThemeMode.light)
-                        Text("Dark").tag(ThemeMode.dark)
+                        Label("System", systemImage: "circle.lefthalf.filled").tag(ThemeMode.system)
+                        Label("Light", systemImage: "sun.max").tag(ThemeMode.light)
+                        Label("Dark", systemImage: "moon").tag(ThemeMode.dark)
                     }
                     .pickerStyle(.inline)
                     
                     Divider()
                     
-                    Button("Toggle Appearance") {
+                    Button(action: {
                         themeManager.cycleThemeMode()
                         appearanceHUDText = "Appearance: \(themeManager.themeMode.rawValue)"
                         hideHUDWork?.cancel()
@@ -483,13 +513,19 @@ struct BitDreamApp: App {
                         }
                         hideHUDWork = work
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.8, execute: work)
+                    }) {
+                        Label("Toggle Appearance", systemImage: "circle.lefthalf.filled")
                     }
                     .keyboardShortcut("j", modifiers: .command)
+                } label: {
+                    Label("Appearance", systemImage: "circle.lefthalf.filled")
                 }
                 Divider()
             }
         }
-        // Statistics window
+        // Statistics window - Intentionally using Window (not WindowGroup) to appear in Window menu
+        // This follows Apple's pattern for utility/tool windows that users should be able to manage
+        // Statistics is a user-manageable utility window, unlike About which is informational-only
         Window("Statistics", id: "statistics") {
             macOSStatisticsView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
@@ -501,9 +537,12 @@ struct BitDreamApp: App {
         }
         .windowResizability(.contentSize)
         
-        // About window
-        Window("About BitDream", id: "about") {
+        // About window - Using WindowGroup to prevent automatic Window menu entry
+        // This follows Apple's recommended pattern for auxiliary windows that shouldn't
+        // appear in the Window menu, as About windows are not user-managed utility windows
+        WindowGroup(id: "about") {
             macOSAboutView()
+                .navigationTitle("About BitDream")  // Proper window title handling
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
                 .frame(width: 320, height: 400)
@@ -525,7 +564,7 @@ struct BitDreamApp: App {
         #if os(macOS)
         Settings {
             SettingsView(store: store) // Use the same store instance
-                .frame(minWidth: 500, idealWidth: 550, maxWidth: 650, minHeight: 300, idealHeight: 350, maxHeight: 450)
+                .frame(minWidth: 500, idealWidth: 550, maxWidth: 650)
                 .environmentObject(themeManager) // Pass the ThemeManager to the Settings view
                 .immediateTheme(manager: themeManager)
         }
