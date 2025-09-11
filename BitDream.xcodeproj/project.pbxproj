@@ -47,6 +47,7 @@
 		4BC2C92A2E6E22B800011971 /* macOSTorrentList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC2C9272E6E22B800011971 /* macOSTorrentList.swift */; };
 		4BC2C92B2E6E22B800011971 /* macOSTorrentListExpanded.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC2C9292E6E22B800011971 /* macOSTorrentListExpanded.swift */; };
 		4BC2C92C2E6E22B800011971 /* macOSTorrentListCompact.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC2C9282E6E22B800011971 /* macOSTorrentListCompact.swift */; };
+		4BC4A4BA2E7248A300578D08 /* macOSMenuCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC4A4B92E7248A300578D08 /* macOSMenuCommands.swift */; };
 		4BC5C2AA2D7D20B500D80AB4 /* iOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */; };
 		4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */; };
 		4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */; };
@@ -100,6 +101,7 @@
 		4BC2C9272E6E22B800011971 /* macOSTorrentList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentList.swift; sourceTree = "<group>"; };
 		4BC2C9282E6E22B800011971 /* macOSTorrentListCompact.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentListCompact.swift; sourceTree = "<group>"; };
 		4BC2C9292E6E22B800011971 /* macOSTorrentListExpanded.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentListExpanded.swift; sourceTree = "<group>"; };
+		4BC4A4B92E7248A300578D08 /* macOSMenuCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSMenuCommands.swift; sourceTree = "<group>"; };
 		4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSContentView.swift; sourceTree = "<group>"; };
 		4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentView.swift; sourceTree = "<group>"; };
 		4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentDetail.swift; sourceTree = "<group>"; };
@@ -211,6 +213,7 @@
 				4B73985F2E7029BD00D06E5D /* macOSAboutView.swift */,
 				4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */,
 				4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */,
+				4BC4A4B92E7248A300578D08 /* macOSMenuCommands.swift */,
 				4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */,
 				4B642D782D7E1EED003CEADC /* macOSServerList.swift */,
 				4B6F1EAD2D82D337003D8F6E /* macOSSettingsView.swift */,
@@ -326,6 +329,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4BC4A4BA2E7248A300578D08 /* macOSMenuCommands.swift in Sources */,
 				4B1DADE4295E6C440037E9FB /* BitDream.xcdatamodeld in Sources */,
 				4B7EF5712E6E9F0C00C1C281 /* AppConfig.swift in Sources */,
 				4B1DADDF295E6C440037E9FB /* BitDreamApp.swift in Sources */,
