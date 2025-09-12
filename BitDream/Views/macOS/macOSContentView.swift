@@ -37,6 +37,7 @@ struct macOSContentView: View {
     @State private var searchText: String = ""
     @State private var includedLabels: Set<String> = []
     @State private var excludedLabels: Set<String> = []
+    @State private var showOnlyNoLabels: Bool = false
     @AppStorage(UserDefaultsKeys.torrentListCompactMode) private var isCompactMode: Bool = false
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = true
     
@@ -49,6 +50,7 @@ struct macOSContentView: View {
     // Drag and drop state
     @State private var isDropTargeted = false
     @State private var draggedTorrentInfo: [TorrentInfo] = []
+    @State private var showingFilterPopover = false
     
     // Torrent Preview Card Component
     private var torrentPreviewCard: some View {
@@ -108,15 +110,16 @@ struct macOSContentView: View {
         .frame(maxWidth: 400, minHeight: 80)
     }
     
-    // Helper function to extract label query from "label:something" syntax
-    private func extractLabelQuery(from query: String) -> String {
-        let colonIndex = query.firstIndex(of: ":")
-        return colonIndex != nil ? String(query[query.index(after: colonIndex!)...]) : ""
-    }
-    
     // Helper function to check if a torrent matches the search query and label filters
     private func torrentMatchesSearch(_ torrent: Torrent, query: String) -> Bool {
-        // Check label filters first
+        // Check no-labels filter first
+        if showOnlyNoLabels {
+            if !torrent.labels.isEmpty {
+                return false
+            }
+        }
+        
+        // Check label filters
         if !includedLabels.isEmpty {
             let hasIncludedLabel = torrent.labels.contains { torrentLabel in
                 includedLabels.contains { includedLabel in
@@ -144,27 +147,8 @@ struct macOSContentView: View {
             return true
         }
         
-        // Check for label-specific search syntax: "label:tv"
-        if query.lowercased().hasPrefix("label:") {
-            let labelQuery = extractLabelQuery(from: query)
-            if labelQuery.isEmpty {
-                // Show all torrents with any labels
-                return !torrent.labels.isEmpty
-            }
-            return torrent.labels.contains { label in
-                label.localizedCaseInsensitiveContains(labelQuery)
-            }
-        }
-        
-        // Search in name
-        if torrent.name.localizedCaseInsensitiveContains(query) {
-            return true
-        }
-        
-        // Search in labels
-        return torrent.labels.contains { label in
-            label.localizedCaseInsensitiveContains(query)
-        }
+        // Search in name only (simplified text search)
+        return torrent.name.localizedCaseInsensitiveContains(query)
     }
     
     // Computed property to get counts for each category
@@ -214,15 +198,23 @@ struct macOSContentView: View {
         }
     }
     
+    // Computed properties for filter state
+    private var hasActiveFilters: Bool {
+        !includedLabels.isEmpty || !excludedLabels.isEmpty || showOnlyNoLabels
+    }
+    
+    private var activeFilterCount: Int {
+        includedLabels.count + excludedLabels.count + (showOnlyNoLabels ? 1 : 0)
+    }
+    
     // Computed property for navigation subtitle
     private var navigationSubtitle: String {
         let count = torrentCount(for: sidebarSelection)
         var subtitle = "\(count) dream\(count == 1 ? "" : "s")"
         
         // Add label filter indicators
-        let totalFilters = includedLabels.count + excludedLabels.count
-        if totalFilters > 0 {
-            subtitle += " • \(totalFilters) label filter\(totalFilters == 1 ? "" : "s")"
+        if hasActiveFilters {
+            subtitle += " • \(activeFilterCount) label filter\(activeFilterCount == 1 ? "" : "s")"
         }
         
         return subtitle
@@ -287,49 +279,11 @@ struct macOSContentView: View {
         }
     }
     
-    // Search suggestions extracted to reduce type-check complexity
+    // Search suggestions - simplified for text search only
     private var searchSuggestions: some View {
         Group {
-            if !store.availableLabels.isEmpty {
-                Section("Filter by Labels") {
-                    ForEach(store.availableLabels, id: \.self) { label in
-                        Button(action: {
-                            if includedLabels.contains(label) {
-                                includedLabels.remove(label)
-                                excludedLabels.insert(label)
-                            } else if excludedLabels.contains(label) {
-                                excludedLabels.remove(label)
-                            } else {
-                                includedLabels.insert(label)
-                            }
-                        }) {
-                            HStack {
-                                Image(systemName: includedLabels.contains(label) ? "checkmark.circle.fill" : excludedLabels.contains(label) ? "minus.circle.fill" : "circle")
-                                    .foregroundColor(includedLabels.contains(label) ? themeManager.accentColor : excludedLabels.contains(label) ? .red : .secondary)
-                                
-                                Text(label)
-                                    .foregroundColor(.primary)
-                                
-                                Spacer()
-                                
-                                Text("\(store.torrentCount(for: label))")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    
-                    if !includedLabels.isEmpty || !excludedLabels.isEmpty {
-                        Divider()
-                        Button("Clear filters") {
-                            includedLabels.removeAll()
-                            excludedLabels.removeAll()
-                        }
-                    }
-                }
-            }
+            // Could add recent searches or other text-based suggestions here in the future
+            EmptyView()
         }
     }
     
@@ -366,31 +320,91 @@ struct macOSContentView: View {
         }
     }
     
-    // Extracted to simplify onChange(of: searchText)
-    private func handleSearchTextChange(oldValue: String, newValue: String) {
-        if newValue.lowercased().hasPrefix("label:") {
-            let labelQuery = extractLabelQuery(from: newValue)
-            let currentExactMatches = Set(store.availableLabels.filter { label in
-                !labelQuery.isEmpty && label.lowercased() == labelQuery.lowercased()
-            })
-            includedLabels = includedLabels.intersection(currentExactMatches)
-            if !labelQuery.isEmpty {
-                let exactMatch = store.availableLabels.first { label in
-                    label.lowercased() == labelQuery.lowercased()
-                }
-                if let exactLabel = exactMatch {
-                    if !includedLabels.contains(exactLabel) {
-                        includedLabels.insert(exactLabel)
-                        excludedLabels.remove(exactLabel)
+    // Filter menu content for the filter button
+    private var filterMenuContent: some View {
+        Group {
+            Section("Filter by Labels") {
+                // Available labels
+                if !store.availableLabels.isEmpty {
+                    ForEach(store.availableLabels, id: \.self) { label in
+                        Button(action: {
+                            // Clear no-labels filter when selecting specific labels
+                            if showOnlyNoLabels {
+                                showOnlyNoLabels = false
+                            }
+                            
+                            if includedLabels.contains(label) {
+                                includedLabels.remove(label)
+                                excludedLabels.insert(label)
+                            } else if excludedLabels.contains(label) {
+                                excludedLabels.remove(label)
+                            } else {
+                                includedLabels.insert(label)
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: includedLabels.contains(label) ? "checkmark.circle.fill" : excludedLabels.contains(label) ? "minus.circle.fill" : "circle")
+                                    .foregroundColor(includedLabels.contains(label) ? themeManager.accentColor : excludedLabels.contains(label) ? .red : .secondary)
+                                
+                                Text(label)
+                                    .foregroundColor(.primary)
+                                
+                                Spacer()
+                                
+                                Text("\(store.torrentCount(for: label))")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
+                    
+                    Divider()
                 }
+                
+                // No labels option at bottom
+                Button(action: {
+                    showOnlyNoLabels.toggle()
+                    // Clear other label filters when showing no labels
+                    if showOnlyNoLabels {
+                        includedLabels.removeAll()
+                        excludedLabels.removeAll()
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: showOnlyNoLabels ? "checkmark.circle.fill" : "circle")
+                            .foregroundColor(showOnlyNoLabels ? themeManager.accentColor : .secondary)
+                        
+                        Text("No labels")
+                            .foregroundColor(.primary)
+                            .italic()
+                        
+                        Spacer()
+                        
+                        Text("\(store.torrents.filter { $0.labels.isEmpty }.count)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
-        } else {
-            if oldValue.lowercased().hasPrefix("label:") && !newValue.lowercased().hasPrefix("label:") {
-                includedLabels.removeAll()
-                excludedLabels.removeAll()
+            
+            if hasActiveFilters {
+                Divider()
+                Button("Clear All Filters") {
+                    includedLabels.removeAll()
+                    excludedLabels.removeAll()
+                    showOnlyNoLabels = false
+                }
             }
         }
+    }
+    
+    // Extracted to simplify onChange(of: searchText)
+    private func handleSearchTextChange(oldValue: String, newValue: String) {
+        // Clear selection if the selected torrent no longer matches the search
         if let selectedTorrent = torrentSelection.wrappedValue.first {
             let matchesSearch = torrentMatchesSearch(selectedTorrent, query: searchText)
             let filteredTorrents = store.torrents.filtered(by: filterBySelection)
@@ -445,6 +459,26 @@ struct macOSContentView: View {
                     sortMenuContent
                 } label: {
                     Label("Sort", systemImage: "arrow.up.arrow.down.circle")
+                }
+            }
+            
+            // Filter button
+            ToolbarItem(placement: .automatic) {
+                Button(action: {
+                    showingFilterPopover.toggle()
+                }) {
+                    Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
+                        .if(hasActiveFilters) { view in
+                            view.foregroundColor(themeManager.accentColor)
+                        }
+                }
+                .help(hasActiveFilters ? "Active filters (\(activeFilterCount))" : "Filter torrents")
+                .popover(isPresented: $showingFilterPopover, arrowEdge: .bottom) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        filterMenuContent
+                    }
+                    .padding()
+                    .frame(minWidth: 250)
                 }
             }
             
