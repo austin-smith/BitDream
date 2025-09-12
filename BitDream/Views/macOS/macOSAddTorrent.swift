@@ -327,6 +327,13 @@ struct macOSAddTorrent: View {
                 }
                 store.addTorrentInitialMode = nil
             }
+            // Pre-fill magnet link if provided by delegate
+            if let prefill = store.addTorrentPrefill, !prefill.isEmpty {
+                inputMethod = .magnetLink
+                alertInput = prefill
+                // Clear after consuming so subsequent opens don't reuse it
+                store.addTorrentPrefill = nil
+            }
             #endif
         }
     }

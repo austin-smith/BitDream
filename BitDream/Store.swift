@@ -31,6 +31,8 @@ class Store: NSObject, ObservableObject {
     @Published var defaultDownloadDir: String = ""
     
     @Published var isShowingAddAlert: Bool = false
+    // When presenting Add Torrent, optional prefill for the magnet link input (macOS only used)
+    @Published var addTorrentPrefill: String? = nil
     @Published var isShowingServerAlert: Bool = false
     @Published var editServers: Bool = false {
         didSet {

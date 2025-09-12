@@ -9,12 +9,24 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
     private var hostCancellable: AnyCancellable?
 
     func application(_ sender: NSApplication, openFile filename: String) -> Bool {
-        enqueue(urls: [URL(fileURLWithPath: filename)])
+        // Handle both file paths and magnet URLs passed as strings
+        if filename.lowercased().hasPrefix("magnet:"), let url = URL(string: filename) {
+            enqueue(urls: [url])
+        } else {
+            enqueue(urls: [URL(fileURLWithPath: filename)])
+        }
         return true
     }
 
     func application(_ sender: NSApplication, openFiles filenames: [String]) {
-        enqueue(urls: filenames.map { URL(fileURLWithPath: $0) })
+        // Convert any magnet strings to URLs; leave others as file URLs
+        let urls: [URL] = filenames.compactMap { name in
+            if name.lowercased().hasPrefix("magnet:"), let url = URL(string: name) {
+                return url
+            }
+            return URL(fileURLWithPath: name)
+        }
+        enqueue(urls: urls)
         sender.reply(toOpenOrPrint: .success)
     }
 
@@ -39,12 +51,18 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
     }
 
     private func enqueue(urls: [URL]) {
-        let torrents = urls.filter { $0.pathExtension.lowercased() == "torrent" }
-        guard !torrents.isEmpty else { return }
+        // Accept either .torrent files or magnet: URLs
+        let accepted: [URL] = urls.filter { url in
+            if url.isFileURL {
+                return url.pathExtension.lowercased() == "torrent"
+            }
+            return url.scheme?.lowercased() == "magnet"
+        }
+        guard !accepted.isEmpty else { return }
         if let store = storeProvider?(), store.host != nil {
-            process(torrents, with: store)
+            process(accepted, with: store)
         } else {
-            pendingOpenFiles.append(contentsOf: torrents)
+            pendingOpenFiles.append(contentsOf: accepted)
         }
     }
 
@@ -60,18 +78,32 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
             var failures: [(filename: String, message: String)] = []
             for url in urls {
                 do {
-                    var didAccess = false
-                    if url.isFileURL {
-                        didAccess = url.startAccessingSecurityScopedResource()
-                    }
-                    defer {
-                        if didAccess { url.stopAccessingSecurityScopedResource() }
-                    }
-                    let data = try Data(contentsOf: url)
-                    
-                    // Switch back to main queue for the actual add operation
-                    DispatchQueue.main.async {
-                        addTorrentFromFileData(data, store: store)
+                    if url.scheme?.lowercased() == "magnet" {
+                        // Validate magnet and present Add Torrent with prefill
+                        let magnetString = url.absoluteString
+                        guard Self.isValidMagnet(magnetString) else {
+                            throw NSError(domain: "com.bitdream", code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid magnet link"])
+                        }
+                        DispatchQueue.main.async {
+                            store.addTorrentPrefill = magnetString
+                            #if os(macOS)
+                            store.addTorrentInitialMode = .magnet
+                            #endif
+                            store.isShowingAddAlert = true
+                        }
+                    } else {
+                        // File URL path: read data and route to .torrent handler
+                        var didAccess = false
+                        if url.isFileURL {
+                            didAccess = url.startAccessingSecurityScopedResource()
+                        }
+                        defer {
+                            if didAccess { url.stopAccessingSecurityScopedResource() }
+                        }
+                        let data = try Data(contentsOf: url)
+                        DispatchQueue.main.async {
+                            addTorrentFromFileData(data, store: store)
+                        }
                     }
                 } catch {
                     failures.append((filename: url.lastPathComponent, message: error.localizedDescription))
@@ -98,6 +130,17 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
                 }
             }
         }
+    }
+
+    // Basic magnet validation per spec: scheme and xt=urn:btih
+    private static func isValidMagnet(_ magnet: String) -> Bool {
+        guard magnet.count <= 4096 else { return false }
+        guard let url = URL(string: magnet), url.scheme?.lowercased() == "magnet" else { return false }
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = components.queryItems else { return false }
+        if let xt = items.first(where: { $0.name.lowercased() == "xt" })?.value?.lowercased() {
+            return xt.hasPrefix("urn:btih:")
+        }
+        return false
     }
 
     func configure(with store: Store) {
