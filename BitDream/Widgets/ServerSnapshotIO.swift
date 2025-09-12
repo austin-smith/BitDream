@@ -8,7 +8,7 @@
 import Foundation
 import WidgetKit
 
-func writeServersIndexIfPossible(store: Store) {
+func writeServersIndex(store: Store) {
     guard let host = store.host else { return }
     let id = host.objectID.uriRepresentation().absoluteString
     let name = host.name ?? host.server ?? "Server"
@@ -22,7 +22,7 @@ func writeServersIndexIfPossible(store: Store) {
     _ = AppGroupJSON.write(updated, to: url)
 }
 
-func writeSessionSnapshotIfPossible(store: Store, stats: SessionStats) {
+func writeSessionSnapshot(store: Store, stats: SessionStats) {
     guard let host = store.host else { return }
     let id = host.objectID.uriRepresentation().absoluteString
     let name = host.name ?? host.server ?? "Server"

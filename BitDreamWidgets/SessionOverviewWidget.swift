@@ -13,7 +13,7 @@ struct SessionOverviewProvider: AppIntentTimelineProvider {
     typealias Intent = SessionOverviewIntent
 
     func placeholder(in context: Context) -> Entry {
-        Entry(date: .now, snapshot: SessionOverviewSnapshot(serverId: "placeholder", serverName: "Server", active: 2, paused: 5, total: 12, downloadSpeed: 1_200_000, uploadSpeed: 140_000, ratio: 1.42, timestamp: .now), isStale: false)
+        Entry(date: .now, snapshot: nil, isStale: false)
     }
 
     func snapshot(for configuration: Intent, in context: Context) async -> Entry {
@@ -45,7 +45,7 @@ struct SessionOverviewWidget: Widget {
                 .containerBackground(.background, for: .widget)
         }
         .configurationDisplayName("Session Overview")
-        .description("Active, paused, total, and speeds for a server.")
+        .description("Total, speeds, and ratio for a server.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

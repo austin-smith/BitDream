@@ -223,8 +223,8 @@ func updateSessionStats(store: Store, update: @escaping (SessionStats) -> Void, 
             }
             let stats = sessions!
             update(stats)
-            // Write snapshot for widgets (best-effort)
-            writeSessionSnapshotIfPossible(store: store, stats: stats)
+            // Write widget snapshot; non-blocking and non-fatal on failure
+            writeSessionSnapshot(store: store, stats: stats)
         }
     })
 }
@@ -258,7 +258,7 @@ func refreshTransmissionData(store: Store) {
         }
     }
     // Also refresh servers index for widgets
-    writeServersIndexIfPossible(store: store)
+    writeServersIndex(store: store)
 }
 
 /*--------------------------------------------------------------------------------------------

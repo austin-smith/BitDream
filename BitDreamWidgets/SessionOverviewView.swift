@@ -40,21 +40,19 @@ struct SessionOverviewView: View {
 
                 if family == .systemSmall {
                     VStack(alignment: .leading, spacing: 6) {
-                        StatRow(label: "Active", value: "\(snap.active)", sfSymbol: "arrow.down.circle")
+                        StatRow(label: "Total", value: "\(snap.total)", sfSymbol: "tray.full")
                         StatRow(label: "DL", value: formatSpeed(snap.downloadSpeed), sfSymbol: "arrow.down")
                         StatRow(label: "UL", value: formatSpeed(snap.uploadSpeed), sfSymbol: "arrow.up")
                     }
                 } else {
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 4) {
-                            StatRow(label: "Active", value: "\(snap.active)", sfSymbol: "arrow.down.circle")
-                            StatRow(label: "Paused", value: "\(snap.paused)", sfSymbol: "pause.circle")
                             StatRow(label: "Total", value: "\(snap.total)", sfSymbol: "tray.full")
+                            StatRow(label: "Ratio", value: formatRatio(snap.ratio), sfSymbol: "equal.circle")
                         }
                         VStack(alignment: .leading, spacing: 4) {
                             StatRow(label: "DL", value: formatSpeed(snap.downloadSpeed), sfSymbol: "arrow.down")
                             StatRow(label: "UL", value: formatSpeed(snap.uploadSpeed), sfSymbol: "arrow.up")
-                            StatRow(label: "Ratio", value: formatRatio(snap.ratio), sfSymbol: "equal.circle")
                         }
                     }
                 }
