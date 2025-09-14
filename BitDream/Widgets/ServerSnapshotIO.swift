@@ -31,6 +31,11 @@ func writeSessionSnapshot(store: Store, stats: SessionStats) {
     let paused = stats.pausedTorrentCount
     let total = stats.torrentCount
 
+    // Calculate status counts using existing filter logic
+    let totalCount = store.torrents.count
+    let downloadingCount = store.torrents.filter { $0.statusCalc == .downloading }.count
+    let completedCount = store.torrents.filter { $0.statusCalc == .complete }.count
+
     let uploaded = stats.currentStats?.uploadedBytes ?? 0
     let downloaded = stats.currentStats?.downloadedBytes ?? 0
     let ratio = (downloaded > 0) ? (Double(uploaded) / Double(downloaded)) : 0
@@ -41,6 +46,9 @@ func writeSessionSnapshot(store: Store, stats: SessionStats) {
         active: active,
         paused: paused,
         total: total,
+        totalCount: totalCount,
+        downloadingCount: downloadingCount,
+        completedCount: completedCount,
         downloadSpeed: stats.downloadSpeed,
         uploadSpeed: stats.uploadSpeed,
         ratio: ratio,

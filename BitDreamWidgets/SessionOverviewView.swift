@@ -1,44 +1,16 @@
 import SwiftUI
 import WidgetKit
 
-// MARK: - Widget Ratio Chip
-
-enum WidgetSpeedChipSize {
-    case compact
-    case regular
-    
-    var font: Font {
-        switch self {
-        case .compact: return .system(.caption, design: .monospaced)
-        case .regular: return .system(.footnote, design: .monospaced)
-        }
-    }
-    
-    var horizontalPadding: CGFloat {
-        switch self {
-        case .compact: return 8
-        case .regular: return 10
-        }
-    }
-    
-    var verticalPadding: CGFloat {
-        switch self {
-        case .compact: return 4
-        case .regular: return 6
-        }
-    }
-}
+// MARK: - Widget Components
 
 struct WidgetRatioChip: View {
     let ratio: Double
-    var size: WidgetSpeedChipSize = .compact
     
-    private var progressRingSize: CGFloat {
-        switch size {
-        case .compact: return 12  // Smaller for header use
-        case .regular: return 18
-        }
+    init(ratio: Double) {
+        self.ratio = ratio
     }
+    
+    private var progressRingSize: CGFloat = 12
     
     var body: some View {
         HStack(spacing: 3) {
@@ -66,13 +38,67 @@ struct WidgetRatioChip: View {
     }
 }
 
-// MARK: - Compact Speed Display
+// MARK: - Placeholder View
 
-struct CompactSpeedView: View {
-    let downloadSpeed: Int64
-    let uploadSpeed: Int64
+struct PlaceholderView: View {
+    private let headerHeight: CGFloat = 32
     
-    // Recreate byteCountFormatter locally since we can't import from Utilities
+    var body: some View {
+        ZStack {
+            // Main content below banner (banner is drawn in container background)
+            VStack(spacing: 16) {
+                // Torrent counts - 3 column layout with placeholder shapes
+                HStack(spacing: 0) {
+                    // Total placeholder
+                    VStack(spacing: 4) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(.primary.opacity(0.3))
+                            .frame(width: 28, height: 24)
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(.secondary.opacity(0.3))
+                            .frame(width: 32, height: 11)
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    // Downloading placeholder
+                    VStack(spacing: 4) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(.primary.opacity(0.3))
+                            .frame(width: 20, height: 24)
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(.secondary.opacity(0.3))
+                            .frame(width: 64, height: 11)
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    // Completed placeholder
+                    VStack(spacing: 4) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(.primary.opacity(0.3))
+                            .frame(width: 20, height: 24)
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(.secondary.opacity(0.3))
+                            .frame(width: 28, height: 11)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer(minLength: 0)
+            }
+            .padding(.top, headerHeight)
+            .padding(.vertical, 16)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Session Overview Widget View
+
+struct SessionOverviewView: View {
+    let entry: SessionOverviewEntry
+    
+    // Byte formatter for speeds
     private var byteCountFormatter: ByteCountFormatter {
         let formatter = ByteCountFormatter()
         formatter.allowsNonnumericFormatting = false
@@ -80,100 +106,98 @@ struct CompactSpeedView: View {
         formatter.allowedUnits = [.useKB, .useMB, .useGB, .useTB]
         return formatter
     }
-    
-    var body: some View {
-        HStack(spacing: 6) {
-            HStack(spacing: 2) {
-                Image(systemName: "arrow.down")
-                    .imageScale(.small)
-                Text(formatSpeed(downloadSpeed))
-                    .monospacedDigit()
-            }
-            
-            HStack(spacing: 2) {
-                Image(systemName: "arrow.up")
-                    .imageScale(.small)
-                Text(formatSpeed(uploadSpeed))
-                    .monospacedDigit()
-            }
-        }
-        .font(.system(.caption2, design: .monospaced))
-    }
-    
-    private func formatSpeed(_ speed: Int64) -> String {
-        if speed == 0 { return "0" }
-        let formatted = byteCountFormatter.string(fromByteCount: speed)
-        return formatted.replacingOccurrences(of: " bytes", with: "B")
-            .replacingOccurrences(of: " KB", with: "K")
-            .replacingOccurrences(of: " MB", with: "M")
-            .replacingOccurrences(of: " GB", with: "G")
-    }
-}
-
-
-struct SessionOverviewView: View {
-    let entry: SessionOverviewEntry
 
     var body: some View {
-        if let snap = entry.snapshot {
+        if entry.isPlaceholder {
+            PlaceholderView()
+        } else if let snap = entry.snapshot {
             let headerHeight: CGFloat = 32 // Match the container header height
-            ZStack(alignment: .topLeading) {
+            ZStack {
                 // Main content below banner (banner is drawn in container background)
-                VStack(spacing: 8) {
-                    // Stats display - keep it simple and compact
-                    HStack(spacing: 16) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "tray.full")
-                                    .imageScale(.small)
-                                    .foregroundStyle(.secondary)
-                                Text("Total")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Text("\(snap.total)")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .monospacedDigit()
-                        }
-                        
-                        Spacer()
-                        
-                        VStack(alignment: .trailing, spacing: 3) {
-                            Text("Ratio")
-                                .font(.caption)
+                VStack(spacing: 16) {
+                    // Torrent counts - 3 column layout with proper spacing
+                    HStack(spacing: 0) {
+                        // Total
+                        VStack(spacing: 4) {
+                            Text("\(snap.totalCount)")
+                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .foregroundStyle(.primary)
+                            Text("Total")
+                                .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(.secondary)
-                            WidgetRatioChip(ratio: snap.ratio)
                         }
+                        .frame(maxWidth: .infinity)
+                        
+                        // Downloading
+                        VStack(spacing: 4) {
+                            Text("\(snap.downloadingCount)")
+                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .foregroundStyle(.primary)
+                            Text("Downloading")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        // Completed
+                        VStack(spacing: 4) {
+                            Text("\(snap.completedCount)")
+                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .foregroundStyle(.primary)
+                            Text("Done")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
                     }
+                    .padding(.horizontal, 20)
                     
                     Spacer(minLength: 0)
                 }
                 .padding(.top, headerHeight)
-                .padding(10)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                // Header visuals handled in container background; keep only spacing via top padding above
+                .padding(.vertical, 16)
+                
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            VStack(spacing: 4) {
-                Image(systemName: "server.rack")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                Text("Select Server")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .multilineTextAlignment(.center)
-                Text("Edit this widget to choose a server.")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
+            // Configuration state
+            let headerHeight: CGFloat = 32 // Match the container header height
+            ZStack {
+                VStack(spacing: 12) {
+                    Image(systemName: "server.rack")
+                        .font(.system(size: 28))
+                        .foregroundStyle(.secondary)
+                    
+                    Text("Select Server")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.primary)
+                    
+                    Text("Edit this widget to select a server.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                }
+                .padding(.top, headerHeight)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
             }
-            .padding(8)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+    
+    // Helper to format time ago
+    private func timeAgoString(from date: Date) -> String {
+        let interval = Date().timeIntervalSince(date)
+        let minutes = Int(interval / 60)
+        
+        if minutes < 1 {
+            return "just now"
+        } else if minutes < 60 {
+            return "\(minutes)m ago"
+        } else {
+            let hours = minutes / 60
+            return "\(hours)h ago"
         }
     }
 }
@@ -181,8 +205,119 @@ struct SessionOverviewView: View {
 #if DEBUG
 struct SessionOverviewView_Previews: PreviewProvider {
     static var previews: some View {
-        SessionOverviewView(entry: .init(date: .now, snapshot: .init(serverId: "1", serverName: "Home Server", active: 2, paused: 5, total: 12, downloadSpeed: 1_200_000, uploadSpeed: 140_000, ratio: 1.42, timestamp: .now), isStale: false))
+        Group {
+            // High activity with fast speeds
+            SessionOverviewView(entry: .init(
+                date: .now, 
+                snapshot: .init(
+                    serverId: "1", 
+                    serverName: "Home NAS", 
+                    active: 8, 
+                    paused: 2, 
+                    total: 25, 
+                    totalCount: 25, 
+                    downloadingCount: 8, 
+                    completedCount: 15, 
+                    downloadSpeed: 12_800_000, // 12.8 MB/s
+                    uploadSpeed: 3_200_000,   // 3.2 MB/s
+                    ratio: 2.15, 
+                    timestamp: .now
+                ), 
+                isStale: false,
+                isPlaceholder: false
+            ))
             .previewContext(WidgetPreviewContext(family: .systemMedium))
+            .previewDisplayName("High Activity")
+            
+            // Idle state - all completed
+            SessionOverviewView(entry: .init(
+                date: .now, 
+                snapshot: .init(
+                    serverId: "2", 
+                    serverName: "Seedbox Pro", 
+                    active: 0, 
+                    paused: 0, 
+                    total: 42, 
+                    totalCount: 42, 
+                    downloadingCount: 0, 
+                    completedCount: 42, 
+                    downloadSpeed: 0, 
+                    uploadSpeed: 1_250_000, // Still seeding
+                    ratio: 4.73, 
+                    timestamp: .now
+                ), 
+                isStale: false,
+                isPlaceholder: false
+            ))
+            .previewContext(WidgetPreviewContext(family: .systemMedium))
+            .previewDisplayName("Idle/Seeding")
+            
+            // Long server name test
+            SessionOverviewView(entry: .init(
+                date: .now, 
+                snapshot: .init(
+                    serverId: "3", 
+                    serverName: "My Very Long Server Name That Should Truncate", 
+                    active: 3, 
+                    paused: 1, 
+                    total: 8, 
+                    totalCount: 8, 
+                    downloadingCount: 3, 
+                    completedCount: 4, 
+                    downloadSpeed: 5_600_000, 
+                    uploadSpeed: 850_000, 
+                    ratio: 0.67, 
+                    timestamp: .now
+                ), 
+                isStale: false,
+                isPlaceholder: false
+            ))
+            .previewContext(WidgetPreviewContext(family: .systemMedium))
+            .previewDisplayName("Long Name")
+            
+            // Low ratio scenario
+            SessionOverviewView(entry: .init(
+                date: .now, 
+                snapshot: .init(
+                    serverId: "4", 
+                    serverName: "Remote Server", 
+                    active: 2, 
+                    paused: 6, 
+                    total: 18, 
+                    totalCount: 18, 
+                    downloadingCount: 2, 
+                    completedCount: 10, 
+                    downloadSpeed: 450_000, 
+                    uploadSpeed: 125_000, 
+                    ratio: 0.23, // Low ratio
+                    timestamp: .now
+                ), 
+                isStale: false,
+                isPlaceholder: false
+            ))
+            .previewContext(WidgetPreviewContext(family: .systemMedium))
+            .previewDisplayName("Low Ratio")
+            
+            // Placeholder state
+            SessionOverviewView(entry: .init(
+                date: .now, 
+                snapshot: nil, 
+                isStale: false,
+                isPlaceholder: true
+            ))
+            .previewContext(WidgetPreviewContext(family: .systemMedium))
+            .previewDisplayName("Loading Placeholder")
+            
+            // No server selected
+            SessionOverviewView(entry: .init(
+                date: .now, 
+                snapshot: nil, 
+                isStale: false,
+                isPlaceholder: false
+            ))
+            .previewContext(WidgetPreviewContext(family: .systemMedium))
+            .previewDisplayName("No Server Selected")
+        }
     }
 }
 #endif

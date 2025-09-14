@@ -83,11 +83,19 @@ private final class RefreshOperation: Operation, @unchecked Sendable {
 
         let group = DispatchGroup()
         var stats: SessionStats?
+        var torrents: [Torrent] = []
 
         // Fetch session stats
         group.enter()
         getSessionStats(config: config, auth: auth) { s, _ in
             stats = s
+            group.leave()
+        }
+
+        // Fetch torrent list for status breakdown
+        group.enter()
+        getTorrents(config: config, auth: auth) { t, _ in
+            torrents = t ?? []
             group.leave()
         }
 
@@ -99,6 +107,7 @@ private final class RefreshOperation: Operation, @unchecked Sendable {
         // Write snapshots
         let tmpStore = Store()
         tmpStore.host = host
+        tmpStore.torrents = torrents  // Populate with fetched torrents
         writeServersIndex(store: tmpStore)
         writeSessionSnapshot(store: tmpStore, stats: stats)
     }

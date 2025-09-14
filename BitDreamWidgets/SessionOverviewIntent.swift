@@ -7,7 +7,7 @@ import AppIntents
 
 struct SessionOverviewIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Session Overview"
-    static var description = IntentDescription("Shows counts and speeds for a selected server.")
+    static var description = IntentDescription("Monitor torrent counts and transfer speeds for your server.")
 
     @Parameter(title: "Server")
     var server: ServerEntity?
