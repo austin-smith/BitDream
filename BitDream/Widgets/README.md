@@ -41,8 +41,10 @@
 - Budget: Respects system-controlled reload budgets; cadence targeted at ~15–30 minutes but ultimately governed by iOS.
 
 ### macOS Behavior
-- Uses the app’s existing refresh loop to keep snapshots current while the app is running.
-- No BGTaskScheduler on macOS; if true background/launch-at-login behavior is needed, integrate a login item helper separately.
+- Uses the app's existing refresh loop to keep snapshots current while the app is running.
+- NSBackgroundActivityScheduler continues updates when app is minimized/hidden (15 minute intervals).
+- Background scheduler respects system power management and coordinates with user poll interval settings.
+- No updates when app is completely quit; requires Login Item helper for that functionality.
 
 ### Security Model
 - The widget extension never handles credentials.
@@ -78,7 +80,7 @@
 
 ### Deep Linking
 - Scheme: `bitdream://`
-- Builder: `DeepLinkBuilder.serverURL(serverId:)` in `BitDream/AppConfig.swift`.
+- Builder: `DeepLinkBuilder.serverURL(serverId:)` in `BitDream/Widgets/WidgetKitBridge.swift`.
 - Widget: `.widgetURL(DeepLinkBuilder.serverURL(serverId: snap.serverId))` per entry.
 - App handling: `BitDreamApp` uses `.onOpenURL` to parse `bitdream://server?id=<coredata-URI>`, resolves the `Host` by URI, and calls `store.setHost(host:)` to navigate.
 - Benefit: Each widget instance opens directly to its configured server.
@@ -86,16 +88,30 @@
 ### Source of Truth
 - The app (Store + BackgroundRefreshManager on iOS) is the sole producer of widget data.
 - The widget is a pure consumer, with read-only access to the App Group files.
+- Provider networking: widget extension intentionally performs no network I/O (by design).
+
+### Background Refresh Roadmap (Hybrid Approach)
+
+**Phase 1 (DONE)**: NSBackgroundActivityScheduler
+- macOS widgets update when app is minimized/hidden
+- Shared refresh logic between iOS and macOS
+
+**Phase 2**: Login Item Helper
+- macOS widgets update even when app is quit
+- Uses SMAppService, reuses existing refresh logic
+- User-controlled via settings
+
+**Phase 3**: Background Refresh Optimization
+- iOS: Cancel old BG tasks before scheduling new ones
+- Reload coalescing: Check `getCurrentConfigurations` before reloading
+- Network reachability checks before attempting refresh
 
 ### Known gaps / next steps
-- macOS background updates when the app isn’t running are not implemented.
-  - Option A: add `NSBackgroundActivityScheduler` to coalesce refreshes while the app is open but idle.
-  - Option B: add a Login Item helper (`SMAppService`) to refresh when the app is closed.
-- No WidgetKit push notifications. Current strategy relies on timelines + app-triggered reloads.
-- iOS BG hygiene: we don’t cancel existing BG requests before scheduling a new one; consider `BGTaskScheduler.shared.cancelAllTaskRequests()` (or per-identifier cancellation) before submit.
-- Reload coalescing: `WidgetCenter.reloadTimelines` is called after each snapshot write; add throttling and `getCurrentConfigurations` checks to reload only when a matching configuration exists.
-- Timeline relevance: `relevance()` not implemented; adding relevance improves Smart Stack surfacing.
-- “Last updated” affordance: not shown; consider a compact timestamp label instead of any iconography.
-- Provider networking: widget extension intentionally performs no network I/O; alternative is self-fetch with Keychain sharing and careful budgeting.
+- macOS background updates when the app isn't running (Phase 2 of roadmap addresses this)
+- iOS BG hygiene: no cancellation of existing BG requests before scheduling new ones
+- Reload coalescing: `WidgetCenter.reloadTimelines` called after each snapshot write
+- Timeline relevance: `relevance()` not implemented; affects Smart Stack surfacing
+- "Last updated" affordance: not shown; consider compact timestamp label
+- Provider networking: widget extension intentionally performs no network I/O
 
 

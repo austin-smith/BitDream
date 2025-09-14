@@ -249,6 +249,11 @@ class Store: NSObject, ObservableObject {
         
         // Start a new timer with the updated interval
         startTimer()
+        
+        // Update the macOS background scheduler with new interval
+        #if os(macOS)
+        BackgroundActivityScheduler.updateInterval(newInterval)
+        #endif
     }
     
     // MARK: - Label Management

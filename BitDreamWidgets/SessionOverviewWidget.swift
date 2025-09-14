@@ -145,7 +145,7 @@ private struct SessionOverviewBackground: View {
                         .frame(width: family == .systemSmall ? 70 : 80, height: 11)
                 } else {
                     Text(entry.snapshot?.serverName ?? "")
-                        .font(.system(size: family == .systemSmall ? 10 : 11, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                         .foregroundStyle(.white.opacity(0.9))

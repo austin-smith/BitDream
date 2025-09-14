@@ -55,6 +55,10 @@ struct BitDreamApp: App {
         #if os(iOS)
         BackgroundRefreshManager.register()
         #endif
+        
+        #if os(macOS)
+        BackgroundActivityScheduler.register()
+        #endif
     }
 
     var body: some Scene {
@@ -81,6 +85,11 @@ struct BitDreamApp: App {
                 .onAppear {
                     // Bind delegate to Store and auto-flush when host becomes available
                     appFileOpenDelegate.configure(with: store)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                    #if os(macOS)
+                    BackgroundActivityScheduler.unregister()
+                    #endif
                 }
                 .overlay(alignment: .center) {
                     if showAppearanceHUD {

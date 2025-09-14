@@ -213,22 +213,23 @@ struct SessionOverviewView: View {
         } else {
             let headerHeight: CGFloat = 32
             ZStack {
-                VStack(spacing: 12) {
+                VStack(spacing: family == .systemSmall ? 6 : 12) {
                     Image(systemName: "server.rack")
-                        .font(.system(size: 28))
+                        .font(.system(size: family == .systemSmall ? 20 : 28))
                         .foregroundStyle(.secondary)
                     Text("Select Server")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.system(size: family == .systemSmall ? 13 : 15, weight: .medium))
                         .foregroundStyle(.primary)
                     Text("Edit this widget to select a server.")
-                        .font(.system(size: 13))
+                        .font(.system(size: family == .systemSmall ? 11 : 13))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.top, headerHeight)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
+                .padding(.horizontal, family == .systemSmall ? 12 : 20)
+                .padding(.bottom, family == .systemSmall ? 12 : 20)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
