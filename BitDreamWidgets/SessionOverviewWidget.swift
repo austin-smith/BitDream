@@ -105,10 +105,14 @@ struct SessionOverviewProvider: AppIntentTimelineProvider {
 struct SessionOverviewWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "SessionOverviewWidget", intent: SessionOverviewIntent.self, provider: SessionOverviewProvider()) { entry in
+            let deepLink: URL? = entry.snapshot.flatMap { snap in
+                DeepLinkBuilder.serverURL(serverId: snap.serverId)
+            }
             SessionOverviewView(entry: entry)
                 .containerBackground(for: .widget) {
                     SessionOverviewBackground(entry: entry)
                 }
+                .widgetURL(deepLink)
         }
         .configurationDisplayName("Server Monitor")
         .description("Monitor torrent counts and transfer speeds for your server.")

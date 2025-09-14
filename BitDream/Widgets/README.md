@@ -55,6 +55,7 @@
   - macOS app target
   - Widget extension target
 - iOS only: Add `BGTaskSchedulerPermittedIdentifiers` to Info.plist with `crapshack.BitDream.refresh`.
+ - macOS widget extension: Enable App Sandbox capability (required for the extension to load/show on macOS).
 
 ### Performance and Budgeting
 - Keep snapshot files small and writes atomic.
@@ -65,6 +66,7 @@
 - iOS: Xcode → Debug → Simulate Background Fetch to validate BG task execution and widget updates.
 - Verify the App Group container path returns a valid URL in both app and extension.
 - Use Widget Previews for layout across supported families (small/medium).
+- Deep links: Tap the widget to open BitDream directly to the selected server.
 
 ### Error Tolerance
 - If a snapshot is missing or unreadable, the widget presents a configuration prompt rather than failing.
@@ -73,6 +75,13 @@
 ### Extensibility
 - Additional widget families/screens can reuse the same snapshot mechanism.
 - To add more configuration parameters, extend the App Intent and persist those values as part of the widget’s configuration only (not in the snapshot).
+
+### Deep Linking
+- Scheme: `bitdream://`
+- Builder: `DeepLinkBuilder.serverURL(serverId:)` in `BitDream/AppConfig.swift`.
+- Widget: `.widgetURL(DeepLinkBuilder.serverURL(serverId: snap.serverId))` per entry.
+- App handling: `BitDreamApp` uses `.onOpenURL` to parse `bitdream://server?id=<coredata-URI>`, resolves the `Host` by URI, and calls `store.setHost(host:)` to navigate.
+- Benefit: Each widget instance opens directly to its configured server.
 
 ### Source of Truth
 - The app (Store + BackgroundRefreshManager on iOS) is the sole producer of widget data.
@@ -86,7 +95,6 @@
 - iOS BG hygiene: we don’t cancel existing BG requests before scheduling a new one; consider `BGTaskScheduler.shared.cancelAllTaskRequests()` (or per-identifier cancellation) before submit.
 - Reload coalescing: `WidgetCenter.reloadTimelines` is called after each snapshot write; add throttling and `getCurrentConfigurations` checks to reload only when a matching configuration exists.
 - Timeline relevance: `relevance()` not implemented; adding relevance improves Smart Stack surfacing.
-- Deep links: widget tap doesn’t route into a specific server view yet; add URL/intent handling in the host app.
 - “Last updated” affordance: not shown; consider a compact timestamp label instead of any iconography.
 - Provider networking: widget extension intentionally performs no network I/O; alternative is self-fetch with Keychain sharing and careful budgeting.
 

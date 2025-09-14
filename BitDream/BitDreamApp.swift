@@ -66,6 +66,18 @@ struct BitDreamApp: App {
                 .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
                 .immediateTheme(manager: themeManager)
+                .onOpenURL { url in
+                    // Handle bitdream://server?id=<coredata-URI>
+                    guard url.scheme == DeepLinkConfig.scheme else { return }
+                    let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+                    let id = components?.queryItems?.first(where: { $0.name == DeepLinkConfig.QueryKey.id })?.value
+                    guard let id, let hostURL = URL(string: id) else { return }
+                    let ctx = persistenceController.container.viewContext
+                    if let oid = ctx.persistentStoreCoordinator?.managedObjectID(forURIRepresentation: hostURL),
+                       let host = try? ctx.existingObject(with: oid) as? Host {
+                        store.setHost(host: host)
+                    }
+                }
                 .onAppear {
                     // Bind delegate to Store and auto-flush when host becomes available
                     appFileOpenDelegate.configure(with: store)

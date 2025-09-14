@@ -22,6 +22,27 @@ enum AppDefaults {
     static let startupConnectionBehavior: StartupConnectionBehavior = .lastUsed
 }
 
+// MARK: - Deep Link Config
+enum DeepLinkConfig {
+    static let scheme: String = "bitdream"
+    enum Path {
+        static let server: String = "server"
+    }
+    enum QueryKey {
+        static let id: String = "id"
+    }
+}
+
+enum DeepLinkBuilder {
+    static func serverURL(serverId: String) -> URL? {
+        var components = URLComponents()
+        components.scheme = DeepLinkConfig.scheme
+        components.host = DeepLinkConfig.Path.server
+        components.queryItems = [URLQueryItem(name: DeepLinkConfig.QueryKey.id, value: serverId)]
+        return components.url
+    }
+}
+
 enum UserDefaultsKeys {
     static let pollInterval = "pollInterval"
     static let torrentListCompactMode = "torrentListCompactMode"
