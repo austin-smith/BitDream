@@ -107,110 +107,120 @@ struct SessionOverviewWidget: Widget {
         AppIntentConfiguration(kind: "SessionOverviewWidget", intent: SessionOverviewIntent.self, provider: SessionOverviewProvider()) { entry in
             SessionOverviewView(entry: entry)
                 .containerBackground(for: .widget) {
-                    // Full-bleed background with banner and header content
-                    let headerHeight: CGFloat = 32
-                    ZStack(alignment: .topLeading) {
-                        ContainerRelativeShape().fill(.background)
-                        // Banner layer
-                        Color(red: 0x67/255.0, green: 0xa3/255.0, blue: 0xd9/255.0)
-                        .frame(height: headerHeight)
-                        .frame(maxWidth: .infinity, alignment: .top)
-
-                        // Header content inside the banner - server name or placeholder
-                        HStack {
-                            if entry.isPlaceholder {
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(.white.opacity(0.5))
-                                    .frame(width: 80, height: 11)
-                            } else {
-                                Text(entry.snapshot?.serverName ?? "")
-                                    .font(.system(size: 11, weight: .medium))
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.8)
-                                    .foregroundStyle(.white.opacity(0.9))
-                            }
-                            
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .frame(height: headerHeight, alignment: .center)
-                        
-                        // Bottom performance metrics: ALL CENTERED
-                        if entry.isPlaceholder {
-                            VStack {
-                                Spacer()
-                                HStack(spacing: 8) {
-                                    // Ratio chip placeholder
-                                    Capsule()
-                                        .fill(.gray.opacity(0.2))
-                                        .frame(width: 48, height: 20)
-                                    
-                                    // Download speed placeholder
-                                    Capsule()
-                                        .fill(.gray.opacity(0.2))
-                                        .frame(width: 65, height: 18)
-                                    
-                                    // Upload speed placeholder
-                                    Capsule()
-                                        .fill(.gray.opacity(0.2))
-                                        .frame(width: 60, height: 18)
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                            .padding(.bottom, 8)
-                        } else if let snap = entry.snapshot {
-                            VStack {
-                                Spacer()
-                                HStack(spacing: 8) {
-                                    let formatter: ByteCountFormatter = {
-                                        var f = ByteCountFormatter()
-                                        f.allowsNonnumericFormatting = false
-                                        f.countStyle = .file
-                                        f.allowedUnits = [.useKB, .useMB, .useGB, .useTB]
-                                        return f
-                                    }()
-                                    let speedFont = Font.system(size: 10, weight: .regular, design: .monospaced)
-
-                                    // Ratio chip
-                                    WidgetRatioChip(ratio: snap.ratio)
-                                    
-                                    // Download speed
-                                    HStack(spacing: 2) {
-                                        Image(systemName: "arrow.down")
-                                            .foregroundColor(.blue)
-                                        Text("\(formatter.string(fromByteCount: snap.downloadSpeed))/s")
-                                    }
-                                    .font(speedFont)
-                                    .foregroundStyle(.primary)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 3)
-                                    .background(Color.gray.opacity(0.1))
-                                    .clipShape(Capsule())
-                                    
-                                    // Upload speed
-                                    HStack(spacing: 2) {
-                                        Image(systemName: "arrow.up")
-                                            .foregroundColor(.green)
-                                        Text("\(formatter.string(fromByteCount: snap.uploadSpeed))/s")
-                                    }
-                                    .font(speedFont)
-                                    .foregroundStyle(.primary)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 3)
-                                    .background(Color.gray.opacity(0.1))
-                                    .clipShape(Capsule())
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                            .padding(.bottom, 8)
-                        }
-                    }
+                    SessionOverviewBackground(entry: entry)
                 }
         }
         .configurationDisplayName("Server Monitor")
         .description("Monitor torrent counts and transfer speeds for your server.")
-        .supportedFamilies([.systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
 
+
+// MARK: - Background overlay with banner and bottom speed chips
+private struct SessionOverviewBackground: View {
+    let entry: SessionOverviewEntry
+    @Environment(\.widgetFamily) var family
+
+    private var headerHeight: CGFloat { 32 }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            ContainerRelativeShape().fill(.background)
+            // Banner layer
+            Color(red: 0x67/255.0, green: 0xa3/255.0, blue: 0xd9/255.0)
+                .frame(height: headerHeight)
+                .frame(maxWidth: .infinity, alignment: .top)
+
+            // Header content inside the banner - server name or placeholder
+            HStack {
+                if entry.isPlaceholder {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(.white.opacity(0.5))
+                        .frame(width: family == .systemSmall ? 70 : 80, height: 11)
+                } else {
+                    Text(entry.snapshot?.serverName ?? "")
+                        .font(.system(size: family == .systemSmall ? 10 : 11, weight: .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .frame(height: headerHeight, alignment: .center)
+
+            // Bottom performance metrics: ALL CENTERED
+            if entry.isPlaceholder {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 8) {
+                        // For small, two chips; medium had three including ratio
+                        if family != .systemSmall {
+                            Capsule()
+                                .fill(.gray.opacity(0.2))
+                                .frame(width: 48, height: 20)
+                        }
+                        Capsule()
+                            .fill(.gray.opacity(0.2))
+                            .frame(width: 65, height: 18)
+                        Capsule()
+                            .fill(.gray.opacity(0.2))
+                            .frame(width: 60, height: 18)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.bottom, 8)
+            } else if let snap = entry.snapshot {
+                VStack {
+                    Spacer()
+                    HStack(spacing: 8) {
+                        let formatter: ByteCountFormatter = {
+                            let f = ByteCountFormatter()
+                            f.allowsNonnumericFormatting = false
+                            f.countStyle = .file
+                            f.allowedUnits = [.useKB, .useMB, .useGB, .useTB]
+                            return f
+                        }()
+                        let speedFont = Font.system(size: 10, weight: .regular, design: .monospaced)
+
+                        // Only show ratio on medium
+                        if family != .systemSmall {
+                            WidgetRatioChip(ratio: snap.ratio)
+                        }
+
+                        // Download speed
+                        HStack(spacing: 2) {
+                            Image(systemName: "arrow.down")
+                                .foregroundColor(.blue)
+                            Text("\(formatter.string(fromByteCount: snap.downloadSpeed))/s")
+                        }
+                        .font(speedFont)
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.gray.opacity(0.1))
+                        .clipShape(Capsule())
+
+                        // Upload speed
+                        HStack(spacing: 2) {
+                            Image(systemName: "arrow.up")
+                                .foregroundColor(.green)
+                            Text("\(formatter.string(fromByteCount: snap.uploadSpeed))/s")
+                        }
+                        .font(speedFont)
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.gray.opacity(0.1))
+                        .clipShape(Capsule())
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.bottom, 8)
+            }
+        }
+    }
+}

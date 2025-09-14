@@ -41,7 +41,7 @@ struct WidgetRatioChip: View {
 // MARK: - Placeholder View
 
 struct PlaceholderView: View {
-    private let headerHeight: CGFloat = 32
+    private var headerHeight: CGFloat { 32 }
     
     var body: some View {
         ZStack {
@@ -95,8 +95,64 @@ struct PlaceholderView: View {
 
 // MARK: - Session Overview Widget View
 
+// Small family layout: icons-only (Downloading, Seeding, Done)
+struct SessionOverviewSmallView: View {
+    let snap: SessionOverviewSnapshot
+    private var headerHeight: CGFloat { 32 }
+
+    var body: some View {
+        ZStack {
+            VStack(spacing: 12) {
+                HStack(spacing: 0) {
+                    VStack(spacing: 3) {
+                        Text("\(snap.totalCount)")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(.primary)
+                            .minimumScaleFactor(0.8)
+                        Image(systemName: "tray.full")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    VStack(spacing: 3) {
+                        Text("\(snap.downloadingCount)")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(.primary)
+                            .minimumScaleFactor(0.8)
+                        Image(systemName: "arrow.down.circle")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    VStack(spacing: 3) {
+                        Text("\(snap.completedCount)")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(.primary)
+                            .minimumScaleFactor(0.8)
+                        Image(systemName: "checkmark.circle")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.horizontal, 20)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.top, headerHeight)
+            .padding(.vertical, 10)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Session Overview Widget View
+
 struct SessionOverviewView: View {
     let entry: SessionOverviewEntry
+    @Environment(\.widgetFamily) var family
     
     // Byte formatter for speeds
     private var byteCountFormatter: ByteCountFormatter {
@@ -111,67 +167,59 @@ struct SessionOverviewView: View {
         if entry.isPlaceholder {
             PlaceholderView()
         } else if let snap = entry.snapshot {
-            let headerHeight: CGFloat = 32 // Match the container header height
-            ZStack {
-                // Main content below banner (banner is drawn in container background)
-                VStack(spacing: 16) {
-                    // Torrent counts - 3 column layout with proper spacing
-                    HStack(spacing: 0) {
-                        // Total
-                        VStack(spacing: 4) {
-                            Text("\(snap.totalCount)")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundStyle(.primary)
-                            Text("Total")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.secondary)
+            if family == .systemSmall {
+                SessionOverviewSmallView(snap: snap)
+            } else {
+                let headerHeight: CGFloat = 32 // medium header
+                ZStack {
+                    VStack(spacing: 16) {
+                        HStack(spacing: 0) {
+                            VStack(spacing: 4) {
+                                Text("\(snap.totalCount)")
+                                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.primary)
+                                Text("Total")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            VStack(spacing: 4) {
+                                Text("\(snap.downloadingCount)")
+                                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.primary)
+                                Text("Downloading")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            VStack(spacing: 4) {
+                                Text("\(snap.completedCount)")
+                                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.primary)
+                                Text("Done")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
                         }
-                        .frame(maxWidth: .infinity)
-                        
-                        // Downloading
-                        VStack(spacing: 4) {
-                            Text("\(snap.downloadingCount)")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundStyle(.primary)
-                            Text("Downloading")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        
-                        // Completed
-                        VStack(spacing: 4) {
-                            Text("\(snap.completedCount)")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundStyle(.primary)
-                            Text("Done")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 20)
+                        Spacer(minLength: 0)
                     }
-                    .padding(.horizontal, 20)
-                    
-                    Spacer(minLength: 0)
+                    .padding(.top, headerHeight)
+                    .padding(.vertical, 16)
                 }
-                .padding(.top, headerHeight)
-                .padding(.vertical, 16)
-                
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            // Configuration state
-            let headerHeight: CGFloat = 32 // Match the container header height
+            let headerHeight: CGFloat = 32
             ZStack {
                 VStack(spacing: 12) {
                     Image(systemName: "server.rack")
                         .font(.system(size: 28))
                         .foregroundStyle(.secondary)
-                    
                     Text("Select Server")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(.primary)
-                    
                     Text("Edit this widget to select a server.")
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
@@ -317,6 +365,72 @@ struct SessionOverviewView_Previews: PreviewProvider {
             ))
             .previewContext(WidgetPreviewContext(family: .systemMedium))
             .previewDisplayName("No Server Selected")
+
+            // Small: Active
+            SessionOverviewView(entry: .init(
+                date: .now,
+                snapshot: .init(
+                    serverId: "1",
+                    serverName: "Home NAS",
+                    active: 8,
+                    paused: 2,
+                    total: 25,
+                    totalCount: 25,
+                    downloadingCount: 5,
+                    completedCount: 15,
+                    downloadSpeed: 12_800_000,
+                    uploadSpeed: 3_200_000,
+                    ratio: 2.15,
+                    timestamp: .now
+                ),
+                isStale: false,
+                isPlaceholder: false
+            ))
+            .previewContext(WidgetPreviewContext(family: .systemSmall))
+            .previewDisplayName("Small • Active")
+
+            // Small: Idle
+            SessionOverviewView(entry: .init(
+                date: .now,
+                snapshot: .init(
+                    serverId: "2",
+                    serverName: "Seedbox",
+                    active: 0,
+                    paused: 0,
+                    total: 42,
+                    totalCount: 42,
+                    downloadingCount: 0,
+                    completedCount: 42,
+                    downloadSpeed: 0,
+                    uploadSpeed: 1_250_000,
+                    ratio: 4.73,
+                    timestamp: .now
+                ),
+                isStale: false,
+                isPlaceholder: false
+            ))
+            .previewContext(WidgetPreviewContext(family: .systemSmall))
+            .previewDisplayName("Small • Idle")
+
+            // Small: Placeholder
+            SessionOverviewView(entry: .init(
+                date: .now,
+                snapshot: nil,
+                isStale: false,
+                isPlaceholder: true
+            ))
+            .previewContext(WidgetPreviewContext(family: .systemSmall))
+            .previewDisplayName("Small • Placeholder")
+
+            // Small: No Server Selected
+            SessionOverviewView(entry: .init(
+                date: .now,
+                snapshot: nil,
+                isStale: false,
+                isPlaceholder: false
+            ))
+            .previewContext(WidgetPreviewContext(family: .systemSmall))
+            .previewDisplayName("Small • No Server")
         }
     }
 }
