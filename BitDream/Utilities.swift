@@ -9,6 +9,8 @@ import Foundation
 import SwiftUI
 import CoreData
 import KeychainAccess
+import WidgetKit
+import UniformTypeIdentifiers
 
 /*--------------------------------------------------------------------------------------------
  Sorting stuff
@@ -219,7 +221,10 @@ func updateSessionStats(store: Store, update: @escaping (SessionStats) -> Void, 
                     store.showConnectionErrorAlert = false
                 }
             }
-            update(sessions!)
+            let stats = sessions!
+            update(stats)
+            // Write widget snapshot; non-blocking and non-fatal on failure
+            writeSessionSnapshot(store: store, stats: stats)
         }
     })
 }
@@ -252,6 +257,8 @@ func refreshTransmissionData(store: Store) {
             }
         }
     }
+    // Also refresh servers index for widgets
+    writeServersIndex(store: store)
 }
 
 /*--------------------------------------------------------------------------------------------

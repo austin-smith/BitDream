@@ -29,7 +29,19 @@
 				<string>magnet</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>BitDream</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>bitdream</string>
+			</array>
+		</dict>
 	</array>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 	<dict>
@@ -51,6 +63,10 @@
 		<string>application/x-bittorrent</string>
 		</dict>
 	</dict>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>crapshack.BitDream.refresh</string>
 	</array>
 </dict>
 </plist>

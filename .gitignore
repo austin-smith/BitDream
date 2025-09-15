@@ -11,3 +11,6 @@ xcuserdata/
 
 # Claude
 CLAUDE.md
+
+# Build folder
+build/

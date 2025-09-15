@@ -29,6 +29,10 @@ struct BitDreamApp: App {
     @State private var appearanceHUDText: String = ""
     @State private var hideHUDWork: DispatchWorkItem?
     
+    #if os(iOS)
+    @Environment(\.scenePhase) private var scenePhase
+    #endif
+    
     init() {
         // Register default values for view state
         UserDefaults.registerViewStateDefaults()
@@ -47,6 +51,14 @@ struct BitDreamApp: App {
             }
         }
         #endif
+        
+        #if os(iOS)
+        BackgroundRefreshManager.register()
+        #endif
+        
+        #if os(macOS)
+        BackgroundActivityScheduler.register()
+        #endif
     }
 
     var body: some Scene {
@@ -58,9 +70,24 @@ struct BitDreamApp: App {
                 .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
                 .immediateTheme(manager: themeManager)
+                .onOpenURL { url in
+                    // Handle bitdream://server?id=<coredata-URI>
+                    guard url.scheme == DeepLinkConfig.scheme else { return }
+                    let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+                    let id = components?.queryItems?.first(where: { $0.name == DeepLinkConfig.QueryKey.id })?.value
+                    guard let id, let hostURL = URL(string: id) else { return }
+                    let ctx = persistenceController.container.viewContext
+                    if let oid = ctx.persistentStoreCoordinator?.managedObjectID(forURIRepresentation: hostURL),
+                       let host = try? ctx.existingObject(with: oid) as? Host {
+                        store.setHost(host: host)
+                    }
+                }
                 .onAppear {
                     // Bind delegate to Store and auto-flush when host becomes available
                     appFileOpenDelegate.configure(with: store)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                    BackgroundActivityScheduler.unregister()
                 }
                 .overlay(alignment: .center) {
                     if showAppearanceHUD {
@@ -207,6 +234,12 @@ struct BitDreamApp: App {
                 .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
                 .immediateTheme(manager: themeManager)
+                .task { BackgroundRefreshManager.schedule() }
+                .onChange(of: scenePhase) { oldPhase, newPhase in
+                    if newPhase == .background {
+                        BackgroundRefreshManager.schedule()
+                    }
+                }
         }
         #endif
         
