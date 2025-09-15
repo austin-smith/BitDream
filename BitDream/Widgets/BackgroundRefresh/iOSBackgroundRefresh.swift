@@ -18,6 +18,8 @@ enum BackgroundRefreshManager {
     }
 
     static func schedule(earliestBegin interval: TimeInterval = defaultRefreshInterval) {
+        // Ensure only one pending refresh request exists for this identifier
+        BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: taskIdentifier)
         let request = BGAppRefreshTaskRequest(identifier: taskIdentifier)
         request.earliestBeginDate = Date().addingTimeInterval(interval)
         do { try BGTaskScheduler.shared.submit(request) } catch {

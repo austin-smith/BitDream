@@ -5,8 +5,10 @@ import CoreData
 import KeychainAccess
 import WidgetKit
 
-/// Shared operation that fetches data for all servers and writes widget snapshots
-final class WidgetRefreshOperation: Operation, @unchecked Sendable {
+/// Shared operation that fetches data for all servers and writes widget snapshots.
+/// Concurrency: Runs on an `OperationQueue`, confines mutable state to the operation's
+/// execution context, and uses a private Core Data background context.
+final class WidgetRefreshOperation: Operation {
     private let context: NSManagedObjectContext
     private let keychain = Keychain(service: "crapshack.BitDream")
     private static let backgroundWaitTimeout: DispatchTimeInterval = .seconds(15)
