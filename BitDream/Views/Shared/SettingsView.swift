@@ -50,14 +50,22 @@ class SessionSettingsEditModel: ObservableObject {
     @Published var values: [String: Any] = [:]
     @Published var freeSpaceInfo: String?
     @Published var isCheckingSpace = false
+    @Published var portTestResult: String?
+    @Published var isTestingPort = false
+    @Published var blocklistUpdateResult: String?
+    @Published var isUpdatingBlocklist = false
     private var saveTimer: Timer?
     var store: Store?
     
     func setup(store: Store) {
         self.store = store
-        // Clear free space info when switching servers
+        // Clear info when switching servers
         freeSpaceInfo = nil
         isCheckingSpace = false
+        portTestResult = nil
+        isTestingPort = false
+        blocklistUpdateResult = nil
+        isUpdatingBlocklist = false
     }
     
     func setValue<T>(_ key: String, _ value: T, original: T) where T: Equatable {
@@ -158,6 +166,9 @@ class SessionSettingsEditModel: ObservableObject {
         // Blocklist
         args.blocklistEnabled = values["blocklistEnabled"] as? Bool
         args.blocklistUrl = values["blocklistUrl"] as? String
+        
+        // Default Trackers
+        args.defaultTrackers = values["defaultTrackers"] as? String
         
         // Cache
         args.cacheSizeMb = values["cacheSizeMb"] as? Int
@@ -357,10 +368,32 @@ func networkSection(config: TransmissionSessionResponseArguments, editModel: Ses
                     ), format: .number.grouping(.never))
                     .frame(width: 60)
                     .textFieldStyle(.roundedBorder)
+                    
+                    Button("Check Port") {
+                        checkPort(editModel: editModel, ipProtocol: nil)
+                    }
+                    .disabled(editModel.isTestingPort)
                 }
                 Text("Port number for incoming peer connections")
                     .font(.caption)
                     .foregroundColor(.secondary)
+                
+                if editModel.isTestingPort {
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .scaleEffect(0.3)
+                            .frame(width: 8, height: 8)
+                        Text("Testing port...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 4)
+                } else if let portTestResult = editModel.portTestResult {
+                    Text(portTestResult)
+                        .font(.caption)
+                        .foregroundColor(portTestResult.contains("open") ? .green : .orange)
+                        .padding(.top, 4)
+                }
                 
                 Toggle("Randomize port on launch", isOn: Binding(
                     get: { editModel.getValue("peerPortRandomOnStart", fallback: config.peerPortRandomOnStart) },
@@ -492,10 +525,59 @@ func networkSection(config: TransmissionSessionResponseArguments, editModel: Ses
                 HStack {
                     Text("Blocklist rules active")
                     Spacer()
-                    Text("\(config.blocklistSize)")
-                        .foregroundColor(.secondary)
-                        .font(.system(.body, design: .monospaced))
+                    if editModel.isUpdatingBlocklist {
+                        ProgressView()
+                            .scaleEffect(0.3)
+                            .frame(width: 8, height: 8)
+                        Text("Updating...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("\(config.blocklistSize)")
+                            .foregroundColor(.secondary)
+                            .font(.system(.body, design: .monospaced))
+                    }
+                    Button("Update") {
+                        updateBlocklist(editModel: editModel)
+                    }
+                    .disabled(editModel.isUpdatingBlocklist || !editModel.getValue("blocklistEnabled", fallback: config.blocklistEnabled))
                 }
+                
+                if let blocklistUpdateResult = editModel.blocklistUpdateResult {
+                    Text(blocklistUpdateResult)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 4)
+                }
+            }
+            
+            Divider()
+                .padding(.vertical, 4)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Default Public Trackers")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .padding(.bottom, 4)
+                
+                Text("Trackers added to all public torrents")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                TextEditor(text: Binding(
+                    get: { editModel.getValue("defaultTrackers", fallback: config.defaultTrackers) },
+                    set: { editModel.setValue("defaultTrackers", $0, original: config.defaultTrackers) }
+                ))
+                .font(.system(.caption, design: .monospaced))
+                .frame(minHeight: 80)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                )
+                
+                Text("To add a backup URL, add it on the next line after a primary URL.\nTo add a new primary URL, add it after a blank line.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
         }
         .padding(16)
@@ -758,6 +840,63 @@ func checkDirectoryFreeSpace(path: String, editModel: SessionSettingsEditModel) 
                 editModel.freeSpaceInfo = "Free: \(freeSpace) of \(totalSpace) (\(String(format: "%.1f", percentUsed))% used)"
             case .failure(let error):
                 editModel.freeSpaceInfo = "Error: \(error.localizedDescription)"
+            }
+        }
+    }
+}
+
+func checkPort(editModel: SessionSettingsEditModel, ipProtocol: String? = nil) {
+    guard let store = editModel.store,
+          let serverInfo = store.currentServerInfo else { return }
+    
+    editModel.isTestingPort = true
+    editModel.portTestResult = nil
+    
+    testPort(
+        ipProtocol: ipProtocol,
+        config: serverInfo.config,
+        auth: serverInfo.auth
+    ) { result in
+        DispatchQueue.main.async {
+            editModel.isTestingPort = false
+            switch result {
+            case .success(let response):
+                if response.portIsOpen == true {
+                    let protocolName = response.ipProtocol?.uppercased() ?? "IP"
+                    editModel.portTestResult = "Port is open (\(protocolName))"
+                } else if response.portIsOpen == false {
+                    let protocolName = response.ipProtocol?.uppercased() ?? "IP"
+                    editModel.portTestResult = "Port is closed (\(protocolName))"
+                } else {
+                    editModel.portTestResult = "Port check site is down"
+                }
+            case .failure(let error):
+                editModel.portTestResult = "Failed to test port: \(error.localizedDescription)"
+            }
+        }
+    }
+}
+
+func updateBlocklist(editModel: SessionSettingsEditModel) {
+    guard let store = editModel.store,
+          let serverInfo = store.currentServerInfo else { return }
+    
+    editModel.isUpdatingBlocklist = true
+    editModel.blocklistUpdateResult = nil
+    
+    updateBlocklist(
+        config: serverInfo.config,
+        auth: serverInfo.auth
+    ) { result in
+        DispatchQueue.main.async {
+            editModel.isUpdatingBlocklist = false
+            switch result {
+            case .success(let response):
+                editModel.blocklistUpdateResult = "Updated blocklist: \(response.blocklistSize) rules"
+                // Refresh session configuration to get the updated blocklist size
+                store.refreshSessionConfiguration()
+            case .failure(let error):
+                editModel.blocklistUpdateResult = "Failed to update blocklist: \(error.localizedDescription)"
             }
         }
     }

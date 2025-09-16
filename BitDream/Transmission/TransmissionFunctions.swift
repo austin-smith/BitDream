@@ -372,7 +372,9 @@ public func getSession(config: TransmissionConfig, auth: TransmissionAuth, onRes
         // Blocklist
         "blocklist-enabled",
         "blocklist-size",
-        "blocklist-url"
+        "blocklist-url",
+        // Default Trackers
+        "default-trackers"
     ]
     
     performTransmissionDataRequest(
@@ -693,6 +695,59 @@ public func checkFreeSpace(
         config: config,
         auth: auth
     ) { (result: Result<TransmissionGenericResponse<FreeSpaceResponse>, Error>) in
+        switch result {
+        case .success(let response):
+            completion(.success(response.arguments))
+        case .failure(let error):
+            completion(.failure(error))
+        }
+    }
+}
+
+/// Test if the peer listening port is accessible from the outside world
+/// - Parameters:
+///   - ipProtocol: Optional IP protocol to test ("ipv4" or "ipv6"). If nil, uses OS default.
+///   - config: Server configuration
+///   - auth: Authentication credentials
+///   - completion: Result containing port test response or error
+public func testPort(
+    ipProtocol: String? = nil,
+    config: TransmissionConfig,
+    auth: TransmissionAuth,
+    completion: @escaping (Result<PortTestResponse, Error>) -> Void
+) {
+    let args = PortTestRequestArgs(ipProtocol: ipProtocol)
+    performTransmissionDataRequest(
+        method: "port-test",
+        args: args,
+        config: config,
+        auth: auth
+    ) { (result: Result<TransmissionGenericResponse<PortTestResponse>, Error>) in
+        switch result {
+        case .success(let response):
+            completion(.success(response.arguments))
+        case .failure(let error):
+            completion(.failure(error))
+        }
+    }
+}
+
+/// Update the blocklist from the configured blocklist URL
+/// - Parameters:
+///   - config: Server configuration
+///   - auth: Authentication credentials
+///   - completion: Result containing the new blocklist size or error
+public func updateBlocklist(
+    config: TransmissionConfig,
+    auth: TransmissionAuth,
+    completion: @escaping (Result<BlocklistUpdateResponse, Error>) -> Void
+) {
+    performTransmissionDataRequest(
+        method: "blocklist-update",
+        args: EmptyArguments(),
+        config: config,
+        auth: auth
+    ) { (result: Result<TransmissionGenericResponse<BlocklistUpdateResponse>, Error>) in
         switch result {
         case .success(let response):
             completion(.success(response.arguments))

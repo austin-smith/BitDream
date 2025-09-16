@@ -440,6 +440,9 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
     public let blocklistSize: Int
     public let blocklistUrl: String
     
+    // Default Trackers
+    public let defaultTrackers: String
+    
     public init(
         downloadDir: String,
         version: String,
@@ -481,7 +484,8 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
         peerLimitPerTorrent: Int,
         blocklistEnabled: Bool,
         blocklistSize: Int,
-        blocklistUrl: String
+        blocklistUrl: String,
+        defaultTrackers: String
     ) {
         self.downloadDir = downloadDir
         self.version = version
@@ -524,6 +528,7 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
         self.blocklistEnabled = blocklistEnabled
         self.blocklistSize = blocklistSize
         self.blocklistUrl = blocklistUrl
+        self.defaultTrackers = defaultTrackers
     }
     
     enum CodingKeys: String, CodingKey {
@@ -568,6 +573,7 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
         case blocklistEnabled = "blocklist-enabled"
         case blocklistSize = "blocklist-size"
         case blocklistUrl = "blocklist-url"
+        case defaultTrackers = "default-trackers"
     }
 }
 
@@ -645,6 +651,9 @@ public struct TransmissionSessionSetRequestArgs: Codable {
     public var blocklistEnabled: Bool?
     public var blocklistUrl: String?
     
+    // Default Trackers
+    public var defaultTrackers: String?
+    
     // Cache
     public var cacheSizeMb: Int?
     
@@ -698,6 +707,7 @@ public struct TransmissionSessionSetRequestArgs: Codable {
         case peerLimitPerTorrent = "peer-limit-per-torrent"
         case blocklistEnabled = "blocklist-enabled"
         case blocklistUrl = "blocklist-url"
+        case defaultTrackers = "default-trackers"
         case cacheSizeMb = "cache-size-mb"
         case scriptTorrentDoneEnabled = "script-torrent-done-enabled"
         case scriptTorrentDoneFilename = "script-torrent-done-filename"
@@ -705,5 +715,40 @@ public struct TransmissionSessionSetRequestArgs: Codable {
         case scriptTorrentAddedFilename = "script-torrent-added-filename"
         case scriptTorrentDoneSeedingEnabled = "script-torrent-done-seeding-enabled"
         case scriptTorrentDoneSeedingFilename = "script-torrent-done-seeding-filename"
+    }
+}
+
+// MARK: - Port Test Models
+
+/// Request arguments for port-test method
+public struct PortTestRequestArgs: Codable {
+    public var ipProtocol: String?
+    
+    public init(ipProtocol: String? = nil) {
+        self.ipProtocol = ipProtocol
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case ipProtocol = "ip_protocol"
+    }
+}
+
+/// Response for port-test method
+public struct PortTestResponse: Codable {
+    public let portIsOpen: Bool?
+    public let ipProtocol: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case portIsOpen = "port-is-open"
+        case ipProtocol = "ip_protocol"
+    }
+}
+
+/// Response for blocklist-update method
+public struct BlocklistUpdateResponse: Codable {
+    public let blocklistSize: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case blocklistSize = "blocklist-size"
     }
 }
