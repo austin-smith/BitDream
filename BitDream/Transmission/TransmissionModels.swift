@@ -404,6 +404,7 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
     public let incompleteDir: String
     public let incompleteDirEnabled: Bool
     public let startAddedTorrents: Bool
+    public let renamePartialFiles: Bool
     
     // Queue Management
     public let downloadQueueEnabled: Bool
@@ -412,14 +413,22 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
     public let seedQueueSize: Int
     public let seedRatioLimited: Bool
     public let seedRatioLimit: Double
+    public let idleSeedingLimit: Int
+    public let idleSeedingLimitEnabled: Bool
+    public let queueStalledEnabled: Bool
+    public let queueStalledMinutes: Int
     
     // Network Settings
     public let peerPort: Int
+    public let peerPortRandomOnStart: Bool
     public let portForwardingEnabled: Bool
     public let dhtEnabled: Bool
     public let pexEnabled: Bool
+    public let lpdEnabled: Bool
     public let encryption: String
     public let utpEnabled: Bool
+    public let peerLimitGlobal: Int
+    public let peerLimitPerTorrent: Int
     
     public init(
         downloadDir: String,
@@ -434,18 +443,27 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
         incompleteDir: String,
         incompleteDirEnabled: Bool,
         startAddedTorrents: Bool,
+        renamePartialFiles: Bool,
         downloadQueueEnabled: Bool,
         downloadQueueSize: Int,
         seedQueueEnabled: Bool,
         seedQueueSize: Int,
         seedRatioLimited: Bool,
         seedRatioLimit: Double,
+        idleSeedingLimit: Int,
+        idleSeedingLimitEnabled: Bool,
+        queueStalledEnabled: Bool,
+        queueStalledMinutes: Int,
         peerPort: Int,
+        peerPortRandomOnStart: Bool,
         portForwardingEnabled: Bool,
         dhtEnabled: Bool,
         pexEnabled: Bool,
+        lpdEnabled: Bool,
         encryption: String,
-        utpEnabled: Bool
+        utpEnabled: Bool,
+        peerLimitGlobal: Int,
+        peerLimitPerTorrent: Int
     ) {
         self.downloadDir = downloadDir
         self.version = version
@@ -459,18 +477,27 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
         self.incompleteDir = incompleteDir
         self.incompleteDirEnabled = incompleteDirEnabled
         self.startAddedTorrents = startAddedTorrents
+        self.renamePartialFiles = renamePartialFiles
         self.downloadQueueEnabled = downloadQueueEnabled
         self.downloadQueueSize = downloadQueueSize
         self.seedQueueEnabled = seedQueueEnabled
         self.seedQueueSize = seedQueueSize
         self.seedRatioLimited = seedRatioLimited
         self.seedRatioLimit = seedRatioLimit
+        self.idleSeedingLimit = idleSeedingLimit
+        self.idleSeedingLimitEnabled = idleSeedingLimitEnabled
+        self.queueStalledEnabled = queueStalledEnabled
+        self.queueStalledMinutes = queueStalledMinutes
         self.peerPort = peerPort
+        self.peerPortRandomOnStart = peerPortRandomOnStart
         self.portForwardingEnabled = portForwardingEnabled
         self.dhtEnabled = dhtEnabled
         self.pexEnabled = pexEnabled
+        self.lpdEnabled = lpdEnabled
         self.encryption = encryption
         self.utpEnabled = utpEnabled
+        self.peerLimitGlobal = peerLimitGlobal
+        self.peerLimitPerTorrent = peerLimitPerTorrent
     }
     
     enum CodingKeys: String, CodingKey {
@@ -486,18 +513,27 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
         case incompleteDir = "incomplete-dir"
         case incompleteDirEnabled = "incomplete-dir-enabled"
         case startAddedTorrents = "start-added-torrents"
+        case renamePartialFiles = "rename-partial-files"
         case downloadQueueEnabled = "download-queue-enabled"
         case downloadQueueSize = "download-queue-size"
         case seedQueueEnabled = "seed-queue-enabled"
         case seedQueueSize = "seed-queue-size"
         case seedRatioLimited = "seedRatioLimited"
         case seedRatioLimit = "seedRatioLimit"
+        case idleSeedingLimit = "idle-seeding-limit"
+        case idleSeedingLimitEnabled = "idle-seeding-limit-enabled"
+        case queueStalledEnabled = "queue-stalled-enabled"
+        case queueStalledMinutes = "queue-stalled-minutes"
         case peerPort = "peer-port"
+        case peerPortRandomOnStart = "peer-port-random-on-start"
         case portForwardingEnabled = "port-forwarding-enabled"
         case dhtEnabled = "dht-enabled"
         case pexEnabled = "pex-enabled"
+        case lpdEnabled = "lpd-enabled"
         case encryption = "encryption"
         case utpEnabled = "utp-enabled"
+        case peerLimitGlobal = "peer-limit-global"
+        case peerLimitPerTorrent = "peer-limit-per-torrent"
     }
 }
 

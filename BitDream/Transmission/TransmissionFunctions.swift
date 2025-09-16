@@ -340,20 +340,30 @@ public func getSession(config: TransmissionConfig, auth: TransmissionAuth, onRes
         "incomplete-dir",
         "incomplete-dir-enabled",
         "start-added-torrents",
+        "rename-partial-files",
         // Queue Management
         "download-queue-enabled",
         "download-queue-size",
+        // Seeding
         "seed-queue-enabled",
         "seed-queue-size",
         "seedRatioLimited",
         "seedRatioLimit",
+        "idle-seeding-limit",
+        "idle-seeding-limit-enabled",
+        "queue-stalled-enabled",
+        "queue-stalled-minutes",
         // Network Settings
         "peer-port",
+        "peer-port-random-on-start",
         "port-forwarding-enabled",
         "dht-enabled",
         "pex-enabled",
+        "lpd-enabled",
         "encryption",
-        "utp-enabled"
+        "utp-enabled",
+        "peer-limit-global",
+        "peer-limit-per-torrent"
     ]
     
     performTransmissionDataRequest(

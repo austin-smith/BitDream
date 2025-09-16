@@ -92,16 +92,6 @@ struct macOSSettingsView: View {
                     .padding(10)
                 }
                 
-                Spacer()
-            }
-            .padding(20)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .tabItem {
-                Label("General", systemImage: "gear")
-            }
-            
-            // Advanced Tab
-            VStack(alignment: .leading, spacing: 20) {
                 // Connection Settings section
                 GroupBox(label: Text("Connection Settings").font(.headline)) {
                     VStack(alignment: .leading, spacing: 12) {
@@ -170,17 +160,78 @@ struct macOSSettingsView: View {
             .padding(20)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .tabItem {
-                Label("Advanced", systemImage: "gearshape.2")
+                Label("General", systemImage: "gear")
             }
             
-            // Server Configuration Tab
+            // Torrents Tab (Files + Queues)
             VStack(alignment: .leading, spacing: 20) {
-                serverConfigurationContent(store: store, editModel: editModel)
+                if let config = store.sessionConfiguration {
+                    fileManagementSection(config: config, editModel: editModel)
+                    queueManagementSection(config: config, editModel: editModel)
+                    seedingSection(config: config, editModel: editModel)
+                        .onAppear {
+                            editModel.setup(store: store)
+                        }
+                    Spacer()
+                } else {
+                    ContentUnavailableView(
+                        "No Server Connected",
+                        systemImage: "arrow.down.circle",
+                        description: Text("Torrent settings will appear when connected to a server.")
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
             .padding(20)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .tabItem {
-                Label("Server Configuration", systemImage: "server.rack")
+                Label("Torrents", systemImage: "arrow.down.circle")
+            }
+            
+            // Speed Limits Tab
+            VStack(alignment: .leading, spacing: 20) {
+                if let config = store.sessionConfiguration {
+                    speedLimitsSection(config: config, editModel: editModel)
+                        .onAppear {
+                            editModel.setup(store: store)
+                        }
+                    Spacer()
+                } else {
+                    ContentUnavailableView(
+                        "No Server Connected",
+                        systemImage: "speedometer",
+                        description: Text("Speed limit settings will appear when connected to a server.")
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .tabItem {
+                Label("Speed Limits", systemImage: "speedometer")
+            }
+            
+            // Network Tab
+            VStack(alignment: .leading, spacing: 20) {
+                if let config = store.sessionConfiguration {
+                    networkSection(config: config, editModel: editModel)
+                        .onAppear {
+                            editModel.setup(store: store)
+                        }
+                    Spacer()
+                } else {
+                    ContentUnavailableView(
+                        "No Server Connected",
+                        systemImage: "network",
+                        description: Text("Network settings will appear when connected to a server.")
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .tabItem {
+                Label("Network", systemImage: "network")
             }
         }
         .accentColor(themeManager.accentColor) // Apply the accent color to the TabView

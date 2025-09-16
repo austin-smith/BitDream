@@ -169,39 +169,16 @@ class SessionSettingsEditModel: ObservableObject {
     }
 }
 
-@ViewBuilder
-func serverConfigurationContent(store: Store, editModel: SessionSettingsEditModel) -> some View {
-    if let config = store.sessionConfiguration {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                speedLimitsSection(config: config, editModel: editModel)
-                networkSection(config: config, editModel: editModel)
-                queueManagementSection(config: config, editModel: editModel)
-                fileManagementSection(config: config, editModel: editModel)
-            }
-            .padding(.bottom, 20)
-        }
-        .onAppear {
-            editModel.setup(store: store)
-        }
-    } else {
-        ContentUnavailableView(
-            "No Server Configuration",
-            systemImage: "server.rack",
-            description: Text("Server configuration will appear when connected to a server.")
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
+// Note: serverConfigurationContent removed - each section is now a separate tab in macOSSettingsView
 
 // MARK: - Settings Sections
 
 @ViewBuilder
 func speedLimitsSection(config: TransmissionSessionResponseArguments, editModel: SessionSettingsEditModel) -> some View {
-    GroupBox(label: Text("Speed Limits").font(.headline)) {
-        VStack(alignment: .leading, spacing: 12) {
+    GroupBox {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Toggle("Download Limit", isOn: Binding(
+                Toggle("Download limit", isOn: Binding(
                     get: { editModel.getValue("speedLimitDownEnabled", fallback: config.speedLimitDownEnabled) },
                     set: { editModel.setValue("speedLimitDownEnabled", $0, original: config.speedLimitDownEnabled) }
                 ))
@@ -211,13 +188,15 @@ func speedLimitsSection(config: TransmissionSessionResponseArguments, editModel:
                     get: { editModel.getValue("speedLimitDown", fallback: config.speedLimitDown) },
                     set: { editModel.setValue("speedLimitDown", $0, original: config.speedLimitDown) }
                 ), format: .number)
-                .frame(width: 80)
+                .frame(width: 100)
                 .textFieldStyle(.roundedBorder)
                 .disabled(!editModel.getValue("speedLimitDownEnabled", fallback: config.speedLimitDownEnabled))
+                Text("KB/s")
+                    .foregroundColor(.secondary)
             }
             
-    HStack {
-                Toggle("Upload Limit", isOn: Binding(
+            HStack {
+                Toggle("Upload limit", isOn: Binding(
                     get: { editModel.getValue("speedLimitUpEnabled", fallback: config.speedLimitUpEnabled) },
                     set: { editModel.setValue("speedLimitUpEnabled", $0, original: config.speedLimitUpEnabled) }
                 ))
@@ -227,17 +206,23 @@ func speedLimitsSection(config: TransmissionSessionResponseArguments, editModel:
                     get: { editModel.getValue("speedLimitUp", fallback: config.speedLimitUp) },
                     set: { editModel.setValue("speedLimitUp", $0, original: config.speedLimitUp) }
                 ), format: .number)
-                .frame(width: 80)
+                .frame(width: 100)
                 .textFieldStyle(.roundedBorder)
                 .disabled(!editModel.getValue("speedLimitUpEnabled", fallback: config.speedLimitUpEnabled))
+                Text("KB/s")
+                    .foregroundColor(.secondary)
             }
             
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Alternate Speed Limits")
+            Divider()
+                .padding(.vertical, 4)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Alternate Speed Limits", systemImage: "tortoise")
                     .font(.subheadline)
-            .foregroundColor(.secondary)
+                    .foregroundColor(.secondary)
+                    .padding(.bottom, 4)
                 
-                Toggle("Alternate Speed Mode", isOn: Binding(
+                Toggle("Enable alternate speeds", isOn: Binding(
                     get: { editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled) },
                     set: { editModel.setValue("altSpeedEnabled", $0, original: config.altSpeedEnabled) }
                 ))
@@ -245,151 +230,232 @@ func speedLimitsSection(config: TransmissionSessionResponseArguments, editModel:
                 
                 HStack {
                     Text("Download")
+                        .frame(width: 80, alignment: .leading)
                     Spacer()
                     TextField("KB/s", value: Binding(
                         get: { editModel.getValue("altSpeedDown", fallback: config.altSpeedDown) },
                         set: { editModel.setValue("altSpeedDown", $0, original: config.altSpeedDown) }
                     ), format: .number)
-                    .frame(width: 80)
+                    .frame(width: 100)
                     .textFieldStyle(.roundedBorder)
                     .disabled(!editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled))
+                    Text("KB/s")
+                        .foregroundColor(.secondary)
                 }
                 
                 HStack {
                     Text("Upload")
+                        .frame(width: 80, alignment: .leading)
                     Spacer()
                     TextField("KB/s", value: Binding(
                         get: { editModel.getValue("altSpeedUp", fallback: config.altSpeedUp) },
                         set: { editModel.setValue("altSpeedUp", $0, original: config.altSpeedUp) }
                     ), format: .number)
-                    .frame(width: 80)
+                    .frame(width: 100)
                     .textFieldStyle(.roundedBorder)
                     .disabled(!editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled))
+                    Text("KB/s")
+                        .foregroundColor(.secondary)
                 }
             }
         }
-        .padding(10)
+        .padding(16)
     }
 }
 
 @ViewBuilder
 func networkSection(config: TransmissionSessionResponseArguments, editModel: SessionSettingsEditModel) -> some View {
-    GroupBox(label: Text("Network").font(.headline)) {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Peer Port")
-                Spacer()
-                TextField("Port", value: Binding(
-                    get: { editModel.getValue("peerPort", fallback: config.peerPort) },
-                    set: { editModel.setValue("peerPort", $0, original: config.peerPort) }
-                ), format: .number.grouping(.never))
-                .frame(width: 80)
-                .textFieldStyle(.roundedBorder)
-            }
-            
-            Toggle("Port Forwarding", isOn: Binding(
-                get: { editModel.getValue("portForwardingEnabled", fallback: config.portForwardingEnabled) },
-                set: { editModel.setValue("portForwardingEnabled", $0, original: config.portForwardingEnabled) }
-            ))
-            .platformToggleStyle()
-            
-            HStack {
-                Text("Encryption")
-                Spacer()
-                Picker("", selection: Binding(
-                    get: { editModel.getValue("encryption", fallback: config.encryption) },
-                    set: { editModel.setValue("encryption", $0, original: config.encryption) }
-                )) {
-                    Text("Required").tag("required")
-                    Text("Preferred").tag("preferred") 
-                    Text("Tolerated").tag("tolerated")
+    GroupBox {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Peer listening port")
+                    Spacer()
+                    TextField("Port", value: Binding(
+                        get: { editModel.getValue("peerPort", fallback: config.peerPort) },
+                        set: { editModel.setValue("peerPort", $0, original: config.peerPort) }
+                    ), format: .number.grouping(.never))
+                    .frame(width: 60)
+                    .textFieldStyle(.roundedBorder)
                 }
-                .pickerStyle(.menu)
-                .frame(width: 120)
+                Text("Port number for incoming peer connections")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Toggle("Randomize port on launch", isOn: Binding(
+                    get: { editModel.getValue("peerPortRandomOnStart", fallback: config.peerPortRandomOnStart) },
+                    set: { editModel.setValue("peerPortRandomOnStart", $0, original: config.peerPortRandomOnStart) }
+                ))
+                .platformToggleStyle()
+                .padding(.top, 8)
             }
             
-            Toggle("DHT", isOn: Binding(
-                get: { editModel.getValue("dhtEnabled", fallback: config.dhtEnabled) },
-                set: { editModel.setValue("dhtEnabled", $0, original: config.dhtEnabled) }
-            ))
-            .platformToggleStyle()
-            Toggle("PEX", isOn: Binding(
-                get: { editModel.getValue("pexEnabled", fallback: config.pexEnabled) },
-                set: { editModel.setValue("pexEnabled", $0, original: config.pexEnabled) }
-            ))
-            .platformToggleStyle()
-            Toggle("µTP", isOn: Binding(
-                get: { editModel.getValue("utpEnabled", fallback: config.utpEnabled) },
-                set: { editModel.setValue("utpEnabled", $0, original: config.utpEnabled) }
-            ))
-            .platformToggleStyle()
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Encryption")
+                    Spacer()
+                    Picker("", selection: Binding(
+                        get: { editModel.getValue("encryption", fallback: config.encryption) },
+                        set: { editModel.setValue("encryption", $0, original: config.encryption) }
+                    )) {
+                        Text("Required").tag("required")
+                        Text("Preferred").tag("preferred") 
+                        Text("Tolerated").tag("tolerated")
+                    }
+                    .pickerStyle(.menu)
+                    .frame(width: 100)
+                }
+                Text("How strictly to enforce encrypted peer connections")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            Divider()
+                .padding(.vertical, 4)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Peer Exchange")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .padding(.bottom, 4)
+                
+                Toggle("Enable port forwarding", isOn: Binding(
+                    get: { editModel.getValue("portForwardingEnabled", fallback: config.portForwardingEnabled) },
+                    set: { editModel.setValue("portForwardingEnabled", $0, original: config.portForwardingEnabled) }
+                ))
+                .platformToggleStyle()
+                
+                Toggle("Enable DHT (Distributed Hash Table)", isOn: Binding(
+                    get: { editModel.getValue("dhtEnabled", fallback: config.dhtEnabled) },
+                    set: { editModel.setValue("dhtEnabled", $0, original: config.dhtEnabled) }
+                ))
+                .platformToggleStyle()
+                
+                Toggle("Enable PEX (Peer Exchange)", isOn: Binding(
+                    get: { editModel.getValue("pexEnabled", fallback: config.pexEnabled) },
+                    set: { editModel.setValue("pexEnabled", $0, original: config.pexEnabled) }
+                ))
+                .platformToggleStyle()
+                
+                Toggle("Enable LPD (Local Peer Discovery)", isOn: Binding(
+                    get: { editModel.getValue("lpdEnabled", fallback: config.lpdEnabled) },
+                    set: { editModel.setValue("lpdEnabled", $0, original: config.lpdEnabled) }
+                ))
+                .platformToggleStyle()
+                
+                Toggle("Enable µTP (Micro Transport Protocol)", isOn: Binding(
+                    get: { editModel.getValue("utpEnabled", fallback: config.utpEnabled) },
+                    set: { editModel.setValue("utpEnabled", $0, original: config.utpEnabled) }
+                ))
+                .platformToggleStyle()
+            }
+            
+            Divider()
+                .padding(.vertical, 4)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Peer Limits")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .padding(.bottom, 4)
+                
+                HStack {
+                    Text("Maximum global peers")
+                    Spacer()
+                    TextField("", value: Binding(
+                        get: { editModel.getValue("peerLimitGlobal", fallback: config.peerLimitGlobal) },
+                        set: { editModel.setValue("peerLimitGlobal", $0, original: config.peerLimitGlobal) }
+                    ), format: .number.grouping(.never))
+                    .frame(width: 60)
+                    .textFieldStyle(.roundedBorder)
+                }
+                
+                HStack {
+                    Text("Maximum peers per torrent")
+                    Spacer()
+                    TextField("", value: Binding(
+                        get: { editModel.getValue("peerLimitPerTorrent", fallback: config.peerLimitPerTorrent) },
+                        set: { editModel.setValue("peerLimitPerTorrent", $0, original: config.peerLimitPerTorrent) }
+                    ), format: .number.grouping(.never))
+                    .frame(width: 60)
+                    .textFieldStyle(.roundedBorder)
+                }
+            }
         }
-        .padding(10)
+        .padding(16)
     }
 }
 
 @ViewBuilder
 func queueManagementSection(config: TransmissionSessionResponseArguments, editModel: SessionSettingsEditModel) -> some View {
     GroupBox(label: Text("Queue Management").font(.headline)) {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 20) {
             HStack {
-                Toggle("Download Queue", isOn: Binding(
+                Toggle("Download queue size", isOn: Binding(
                     get: { editModel.getValue("downloadQueueEnabled", fallback: config.downloadQueueEnabled) },
                     set: { editModel.setValue("downloadQueueEnabled", $0, original: config.downloadQueueEnabled) }
                 ))
                 .platformToggleStyle()
                 Spacer()
-                TextField("Size", value: Binding(
+                TextField("", value: Binding(
                     get: { editModel.getValue("downloadQueueSize", fallback: config.downloadQueueSize) },
                     set: { editModel.setValue("downloadQueueSize", $0, original: config.downloadQueueSize) }
                 ), format: .number)
                 .frame(width: 60)
                 .textFieldStyle(.roundedBorder)
                 .disabled(!editModel.getValue("downloadQueueEnabled", fallback: config.downloadQueueEnabled))
+                Text("active downloads")
+                    .foregroundColor(.secondary)
             }
             
             HStack {
-                Toggle("Seed Queue", isOn: Binding(
+                Toggle("Seed queue size", isOn: Binding(
                     get: { editModel.getValue("seedQueueEnabled", fallback: config.seedQueueEnabled) },
                     set: { editModel.setValue("seedQueueEnabled", $0, original: config.seedQueueEnabled) }
                 ))
                 .platformToggleStyle()
                 Spacer()
-                TextField("Size", value: Binding(
+                TextField("", value: Binding(
                     get: { editModel.getValue("seedQueueSize", fallback: config.seedQueueSize) },
                     set: { editModel.setValue("seedQueueSize", $0, original: config.seedQueueSize) }
                 ), format: .number)
                 .frame(width: 60)
                 .textFieldStyle(.roundedBorder)
                 .disabled(!editModel.getValue("seedQueueEnabled", fallback: config.seedQueueEnabled))
+                Text("active seeds")
+                    .foregroundColor(.secondary)
             }
             
             HStack {
-                Toggle("Seed Ratio Limit", isOn: Binding(
-                    get: { editModel.getValue("seedRatioLimited", fallback: config.seedRatioLimited) },
-                    set: { editModel.setValue("seedRatioLimited", $0, original: config.seedRatioLimited) }
+                Toggle("Consider idle torrents as stalled after", isOn: Binding(
+                    get: { editModel.getValue("queueStalledEnabled", fallback: config.queueStalledEnabled) },
+                    set: { editModel.setValue("queueStalledEnabled", $0, original: config.queueStalledEnabled) }
                 ))
                 .platformToggleStyle()
                 Spacer()
-                TextField("Ratio", value: Binding(
-                    get: { editModel.getValue("seedRatioLimit", fallback: config.seedRatioLimit) },
-                    set: { editModel.setValue("seedRatioLimit", $0, original: config.seedRatioLimit) }
-                ), format: .number.precision(.fractionLength(2)))
-                .frame(width: 80)
+                TextField("", value: Binding(
+                    get: { editModel.getValue("queueStalledMinutes", fallback: config.queueStalledMinutes) },
+                    set: { editModel.setValue("queueStalledMinutes", $0, original: config.queueStalledMinutes) }
+                ), format: .number)
+                .frame(width: 50)
                 .textFieldStyle(.roundedBorder)
-                .disabled(!editModel.getValue("seedRatioLimited", fallback: config.seedRatioLimited))
+                .disabled(!editModel.getValue("queueStalledEnabled", fallback: config.queueStalledEnabled))
+                Text("minutes")
+                    .foregroundColor(.secondary)
             }
         }
-        .padding(10)
+        .padding(16)
     }
 }
 
 @ViewBuilder
 func fileManagementSection(config: TransmissionSessionResponseArguments, editModel: SessionSettingsEditModel) -> some View {
     GroupBox(label: Text("File Management").font(.headline)) {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Download Directory")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
                 TextField("Path", text: Binding(
                     get: { editModel.getValue("downloadDir", fallback: config.downloadDir) },
                     set: { editModel.setValue("downloadDir", $0, original: config.downloadDir) }
@@ -397,34 +463,79 @@ func fileManagementSection(config: TransmissionSessionResponseArguments, editMod
                 .textFieldStyle(.roundedBorder)
             }
             
-            HStack {
-                Toggle("Incomplete Directory", isOn: Binding(
+            VStack(alignment: .leading, spacing: 12) {
+                Toggle("Use separate incomplete directory", isOn: Binding(
                     get: { editModel.getValue("incompleteDirEnabled", fallback: config.incompleteDirEnabled) },
                     set: { editModel.setValue("incompleteDirEnabled", $0, original: config.incompleteDirEnabled) }
                 ))
                 .platformToggleStyle()
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Incomplete Directory Path")
-                TextField("Path", text: Binding(
+                
+                TextField("Incomplete directory path", text: Binding(
                     get: { editModel.getValue("incompleteDir", fallback: config.incompleteDir) },
                     set: { editModel.setValue("incompleteDir", $0, original: config.incompleteDir) }
                 ))
                 .textFieldStyle(.roundedBorder)
                 .disabled(!editModel.getValue("incompleteDirEnabled", fallback: config.incompleteDirEnabled))
+                .padding(.leading, 20)
             }
             
-            Toggle("Start Added Torrents", isOn: Binding(
+            Toggle("Start transfers when added", isOn: Binding(
                 get: { editModel.getValue("startAddedTorrents", fallback: config.startAddedTorrents) },
                 set: { editModel.setValue("startAddedTorrents", $0, original: config.startAddedTorrents) }
             ))
             .platformToggleStyle()
+            
+            Toggle("Append .part to incomplete files", isOn: Binding(
+                get: { editModel.getValue("renamePartialFiles", fallback: config.renamePartialFiles) },
+                set: { editModel.setValue("renamePartialFiles", $0, original: config.renamePartialFiles) }
+            ))
+            .platformToggleStyle()
         }
-        .padding(10)
+        .padding(16)
     }
 }
 
+@ViewBuilder
+func seedingSection(config: TransmissionSessionResponseArguments, editModel: SessionSettingsEditModel) -> some View {
+    GroupBox(label: Text("Seeding").font(.headline)) {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Toggle("Stop seeding at ratio", isOn: Binding(
+                    get: { editModel.getValue("seedRatioLimited", fallback: config.seedRatioLimited) },
+                    set: { editModel.setValue("seedRatioLimited", $0, original: config.seedRatioLimited) }
+                ))
+                .platformToggleStyle()
+                Spacer()
+                TextField("", value: Binding(
+                    get: { editModel.getValue("seedRatioLimit", fallback: config.seedRatioLimit) },
+                    set: { editModel.setValue("seedRatioLimit", $0, original: config.seedRatioLimit) }
+                ), format: .number.precision(.fractionLength(2)))
+                .frame(width: 80)
+                .textFieldStyle(.roundedBorder)
+                .disabled(!editModel.getValue("seedRatioLimited", fallback: config.seedRatioLimited))
+            }
+            
+            HStack {
+                Toggle("Stop seeding when inactive for", isOn: Binding(
+                    get: { editModel.getValue("idleSeedingLimitEnabled", fallback: config.idleSeedingLimitEnabled) },
+                    set: { editModel.setValue("idleSeedingLimitEnabled", $0, original: config.idleSeedingLimitEnabled) }
+                ))
+                .platformToggleStyle()
+                Spacer()
+                TextField("", value: Binding(
+                    get: { editModel.getValue("idleSeedingLimit", fallback: config.idleSeedingLimit) },
+                    set: { editModel.setValue("idleSeedingLimit", $0, original: config.idleSeedingLimit) }
+                ), format: .number)
+                .frame(width: 50)
+                .textFieldStyle(.roundedBorder)
+                .disabled(!editModel.getValue("idleSeedingLimitEnabled", fallback: config.idleSeedingLimitEnabled))
+                Text("minutes")
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(16)
+    }
+}
 
 // Platform-specific toggle styling
 extension View {
