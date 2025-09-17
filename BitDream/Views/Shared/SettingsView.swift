@@ -193,6 +193,12 @@ class SessionSettingsEditModel: ObservableObject {
 func speedLimitsSection(config: TransmissionSessionResponseArguments, editModel: SessionSettingsEditModel) -> some View {
     GroupBox {
         VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Speed Limits")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .padding(.bottom, 4)
+                
             HStack {
                 Toggle("Download limit", isOn: Binding(
                     get: { editModel.getValue("speedLimitDownEnabled", fallback: config.speedLimitDownEnabled) },
@@ -228,6 +234,7 @@ func speedLimitsSection(config: TransmissionSessionResponseArguments, editModel:
                 Text("KB/s")
                     .foregroundColor(.secondary)
             }
+            }
             
             Divider()
                 .padding(.vertical, 4)
@@ -245,8 +252,7 @@ func speedLimitsSection(config: TransmissionSessionResponseArguments, editModel:
                 .platformToggleStyle()
                 
                 HStack {
-                    Text("Download")
-                        .frame(width: 80, alignment: .leading)
+                    Text("Download limit")
                     Spacer()
                     TextField("KB/s", value: Binding(
                         get: { editModel.getValue("altSpeedDown", fallback: config.altSpeedDown) },
@@ -260,8 +266,7 @@ func speedLimitsSection(config: TransmissionSessionResponseArguments, editModel:
                 }
                 
                 HStack {
-                    Text("Upload")
-                        .frame(width: 80, alignment: .leading)
+                    Text("Upload limit")
                     Spacer()
                     TextField("KB/s", value: Binding(
                         get: { editModel.getValue("altSpeedUp", fallback: config.altSpeedUp) },
@@ -274,17 +279,14 @@ func speedLimitsSection(config: TransmissionSessionResponseArguments, editModel:
                         .foregroundColor(.secondary)
                 }
                 
-                Divider()
-                    .padding(.vertical, 8)
+                Toggle("Schedule alternate speeds", isOn: Binding(
+                    get: { editModel.getValue("altSpeedTimeEnabled", fallback: config.altSpeedTimeEnabled) },
+                    set: { editModel.setValue("altSpeedTimeEnabled", $0, original: config.altSpeedTimeEnabled) }
+                ))
+                .platformToggleStyle()
+                .padding(.top, 8)
                 
-                VStack(alignment: .leading, spacing: 12) {
-                    Toggle("Schedule alternate speeds", isOn: Binding(
-                        get: { editModel.getValue("altSpeedTimeEnabled", fallback: config.altSpeedTimeEnabled) },
-                        set: { editModel.setValue("altSpeedTimeEnabled", $0, original: config.altSpeedTimeEnabled) }
-                    ))
-                    .platformToggleStyle()
-                    
-                    HStack(spacing: 12) {
+                HStack(spacing: 12) {
                         Picker("", selection: Binding(
                             get: { editModel.getValue("altSpeedTimeDay", fallback: config.altSpeedTimeDay) },
                             set: { editModel.setValue("altSpeedTimeDay", $0, original: config.altSpeedTimeDay) }
@@ -347,7 +349,7 @@ func speedLimitsSection(config: TransmissionSessionResponseArguments, editModel:
                         
                         Spacer()
                     }
-                }
+                    .disabled(!editModel.getValue("altSpeedTimeEnabled", fallback: config.altSpeedTimeEnabled))
             }
         }
         .padding(16)
@@ -358,41 +360,46 @@ func speedLimitsSection(config: TransmissionSessionResponseArguments, editModel:
 func networkSection(config: TransmissionSessionResponseArguments, editModel: SessionSettingsEditModel) -> some View {
     GroupBox {
         VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("Peer listening port")
-                    Spacer()
-                    TextField("Port", value: Binding(
-                        get: { editModel.getValue("peerPort", fallback: config.peerPort) },
-                        set: { editModel.setValue("peerPort", $0, original: config.peerPort) }
-                    ), format: .number.grouping(.never))
-                    .frame(width: 60)
-                    .textFieldStyle(.roundedBorder)
-                    
-                    Button("Check Port") {
-                        checkPort(editModel: editModel, ipProtocol: nil)
-                    }
-                    .disabled(editModel.isTestingPort)
-                }
-                Text("Port number for incoming peer connections")
-                    .font(.caption)
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Connection")
+                    .font(.subheadline)
                     .foregroundColor(.secondary)
+                    .padding(.bottom, 4)
                 
-                if editModel.isTestingPort {
-                    HStack(spacing: 6) {
-                        ProgressView()
-                            .scaleEffect(0.3)
-                            .frame(width: 8, height: 8)
-                        Text("Testing port...")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Peer listening port")
+                        Spacer()
+                        TextField("Port", value: Binding(
+                            get: { editModel.getValue("peerPort", fallback: config.peerPort) },
+                            set: { editModel.setValue("peerPort", $0, original: config.peerPort) }
+                        ), format: .number.grouping(.never))
+                        .frame(width: 60)
+                        .textFieldStyle(.roundedBorder)
+                        
+                        Button("Check Port") {
+                            checkPort(editModel: editModel, ipProtocol: nil)
+                        }
+                        .disabled(editModel.isTestingPort)
                     }
-                    .padding(.top, 4)
-                } else if let portTestResult = editModel.portTestResult {
-                    Text(portTestResult)
+                    Text("Port number for incoming peer connections")
                         .font(.caption)
-                        .foregroundColor(portTestResult.contains("open") ? .green : .orange)
-                        .padding(.top, 4)
+                        .foregroundColor(.secondary)
+                    
+                    if editModel.isTestingPort {
+                        HStack(spacing: 6) {
+                            ProgressView()
+                                .scaleEffect(0.3)
+                                .frame(width: 8, height: 8)
+                            Text("Testing port...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    } else if let portTestResult = editModel.portTestResult {
+                        Text(portTestResult)
+                            .font(.caption)
+                            .foregroundColor(portTestResult.contains("open") ? .green : .orange)
+                    }
                 }
                 
                 Toggle("Randomize port on launch", isOn: Binding(
@@ -400,27 +407,26 @@ func networkSection(config: TransmissionSessionResponseArguments, editModel: Ses
                     set: { editModel.setValue("peerPortRandomOnStart", $0, original: config.peerPortRandomOnStart) }
                 ))
                 .platformToggleStyle()
-                .padding(.top, 8)
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("Encryption")
-                    Spacer()
-                    Picker("", selection: Binding(
-                        get: { editModel.getValue("encryption", fallback: config.encryption) },
-                        set: { editModel.setValue("encryption", $0, original: config.encryption) }
-                    )) {
-                        Text("Required").tag("required")
-                        Text("Preferred").tag("preferred") 
-                        Text("Tolerated").tag("tolerated")
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Encryption")
+                        Spacer()
+                        Picker("", selection: Binding(
+                            get: { editModel.getValue("encryption", fallback: config.encryption) },
+                            set: { editModel.setValue("encryption", $0, original: config.encryption) }
+                        )) {
+                            Text("Required").tag("required")
+                            Text("Preferred").tag("preferred") 
+                            Text("Tolerated").tag("tolerated")
+                        }
+                        .pickerStyle(.menu)
+                        .frame(width: 100)
                     }
-                    .pickerStyle(.menu)
-                    .frame(width: 100)
+                    Text("How strictly to enforce encrypted peer connections")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
-                Text("How strictly to enforce encrypted peer connections")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
             }
             
             Divider()
