@@ -2,6 +2,8 @@ import SwiftUI
 import Foundation
 
 #if os(iOS)
+typealias PlatformSettingsView = iOSSettingsView
+
 struct iOSSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingThemeSettings = false

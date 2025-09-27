@@ -36,16 +36,13 @@ struct SettingsView: View {
     }
     
     var body: some View {
-        #if os(iOS)
-        iOSSettingsView(store: store)
-        #elseif os(macOS)
-        macOSSettingsView(store: store)
-        #endif
+        PlatformSettingsView(store: store)
     }
 }
 
 // MARK: - Shared Server Configuration Components
 
+@MainActor
 class SessionSettingsEditModel: ObservableObject {
     @Published var values: [String: Any] = [:]
     @Published var freeSpaceInfo: String?
@@ -86,8 +83,11 @@ class SessionSettingsEditModel: ObservableObject {
     
     private func scheduleAutoSave() {
         saveTimer?.invalidate()
-        saveTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
-            self.saveChanges()
+        saveTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in
+                self.saveChanges()
+            }
         }
     }
     
@@ -206,7 +206,6 @@ struct SpeedLimitsContent: View {
                     get: { editModel.getValue("speedLimitDownEnabled", fallback: config.speedLimitDownEnabled) },
                     set: { editModel.setValue("speedLimitDownEnabled", $0, original: config.speedLimitDownEnabled) }
                 ))
-                .platformToggleStyle()
                 
                 if editModel.getValue("speedLimitDownEnabled", fallback: config.speedLimitDownEnabled) {
                     HStack {
@@ -216,11 +215,6 @@ struct SpeedLimitsContent: View {
                             get: { editModel.getValue("speedLimitDown", fallback: config.speedLimitDown) },
                             set: { editModel.setValue("speedLimitDown", $0, original: config.speedLimitDown) }
                         ), format: .number)
-                        .platformTextFieldStyle()
-                        .iosNumberPad()
-                        #if os(macOS)
-                        .frame(width: 100)
-                        #endif
                         Text("KB/s")
                             .foregroundColor(.secondary)
                     }
@@ -230,7 +224,6 @@ struct SpeedLimitsContent: View {
                     get: { editModel.getValue("speedLimitUpEnabled", fallback: config.speedLimitUpEnabled) },
                     set: { editModel.setValue("speedLimitUpEnabled", $0, original: config.speedLimitUpEnabled) }
                 ))
-                .platformToggleStyle()
                 
                 if editModel.getValue("speedLimitUpEnabled", fallback: config.speedLimitUpEnabled) {
                     HStack {
@@ -240,11 +233,6 @@ struct SpeedLimitsContent: View {
                             get: { editModel.getValue("speedLimitUp", fallback: config.speedLimitUp) },
                             set: { editModel.setValue("speedLimitUp", $0, original: config.speedLimitUp) }
                         ), format: .number)
-                        .platformTextFieldStyle()
-                        .iosNumberPad()
-                        #if os(macOS)
-                        .frame(width: 100)
-                        #endif
                         Text("KB/s")
                             .foregroundColor(.secondary)
                     }
@@ -268,7 +256,6 @@ struct SpeedLimitsContent: View {
                     get: { editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled) },
                     set: { editModel.setValue("altSpeedEnabled", $0, original: config.altSpeedEnabled) }
                 ))
-                .platformToggleStyle()
                 
                 if editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled) {
                     HStack {
@@ -278,11 +265,6 @@ struct SpeedLimitsContent: View {
                             get: { editModel.getValue("altSpeedDown", fallback: config.altSpeedDown) },
                             set: { editModel.setValue("altSpeedDown", $0, original: config.altSpeedDown) }
                         ), format: .number)
-                        .platformTextFieldStyle()
-                        .iosNumberPad()
-                        #if os(macOS)
-                        .frame(width: 100)
-                        #endif
                         Text("KB/s")
                             .foregroundColor(.secondary)
                     }
@@ -294,11 +276,6 @@ struct SpeedLimitsContent: View {
                             get: { editModel.getValue("altSpeedUp", fallback: config.altSpeedUp) },
                             set: { editModel.setValue("altSpeedUp", $0, original: config.altSpeedUp) }
                         ), format: .number)
-                        .platformTextFieldStyle()
-                        .iosNumberPad()
-                        #if os(macOS)
-                        .frame(width: 100)
-                        #endif
                         Text("KB/s")
                             .foregroundColor(.secondary)
                     }
@@ -308,7 +285,6 @@ struct SpeedLimitsContent: View {
                     get: { editModel.getValue("altSpeedTimeEnabled", fallback: config.altSpeedTimeEnabled) },
                     set: { editModel.setValue("altSpeedTimeEnabled", $0, original: config.altSpeedTimeEnabled) }
                 ))
-                .platformToggleStyle()
                 .padding(.top, 8)
                 
                 if editModel.getValue("altSpeedTimeEnabled", fallback: config.altSpeedTimeEnabled) {
@@ -400,20 +376,13 @@ struct NetworkContent: View {
                             get: { editModel.getValue("peerPort", fallback: config.peerPort) },
                             set: { editModel.setValue("peerPort", $0, original: config.peerPort) }
                         ), format: .number.grouping(.never))
-                        .platformTextFieldStyle()
-                        .iosNumberPad()
-                        #if os(macOS)
-                        .frame(width: 60)
-                        #endif
+                        
                     }
                     
                     Button("Check Port") {
                         checkPort(editModel: editModel, ipProtocol: nil)
                     }
                     .disabled(editModel.isTestingPort)
-                    #if os(iOS)
-                    .frame(maxWidth: .infinity)
-                    #endif
                     
                     Text("Port number for incoming peer connections")
                         .font(.caption)
@@ -439,7 +408,6 @@ struct NetworkContent: View {
                     get: { editModel.getValue("peerPortRandomOnStart", fallback: config.peerPortRandomOnStart) },
                     set: { editModel.setValue("peerPortRandomOnStart", $0, original: config.peerPortRandomOnStart) }
                 ))
-                .platformToggleStyle()
                 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
@@ -454,9 +422,6 @@ struct NetworkContent: View {
                             Text("Tolerated").tag("tolerated")
                         }
                         .pickerStyle(.menu)
-                        #if os(macOS)
-                        .frame(width: 100)
-                        #endif
                     }
                     Text("How strictly to enforce encrypted peer connections")
                         .font(.caption)
@@ -481,31 +446,26 @@ struct NetworkContent: View {
                     get: { editModel.getValue("portForwardingEnabled", fallback: config.portForwardingEnabled) },
                     set: { editModel.setValue("portForwardingEnabled", $0, original: config.portForwardingEnabled) }
                 ))
-                .platformToggleStyle()
                 
                 Toggle("Enable DHT (Distributed Hash Table)", isOn: Binding(
                     get: { editModel.getValue("dhtEnabled", fallback: config.dhtEnabled) },
                     set: { editModel.setValue("dhtEnabled", $0, original: config.dhtEnabled) }
                 ))
-                .platformToggleStyle()
                 
                 Toggle("Enable PEX (Peer Exchange)", isOn: Binding(
                     get: { editModel.getValue("pexEnabled", fallback: config.pexEnabled) },
                     set: { editModel.setValue("pexEnabled", $0, original: config.pexEnabled) }
                 ))
-                .platformToggleStyle()
                 
                 Toggle("Enable LPD (Local Peer Discovery)", isOn: Binding(
                     get: { editModel.getValue("lpdEnabled", fallback: config.lpdEnabled) },
                     set: { editModel.setValue("lpdEnabled", $0, original: config.lpdEnabled) }
                 ))
-                .platformToggleStyle()
                 
                 Toggle("Enable µTP (Micro Transport Protocol)", isOn: Binding(
                     get: { editModel.getValue("utpEnabled", fallback: config.utpEnabled) },
                     set: { editModel.setValue("utpEnabled", $0, original: config.utpEnabled) }
                 ))
-                .platformToggleStyle()
             }
             
             if showHeadings {
@@ -528,11 +488,7 @@ struct NetworkContent: View {
                         get: { editModel.getValue("peerLimitGlobal", fallback: config.peerLimitGlobal) },
                         set: { editModel.setValue("peerLimitGlobal", $0, original: config.peerLimitGlobal) }
                     ), format: .number.grouping(.never))
-                    .platformTextFieldStyle()
-                    .iosNumberPad()
-                    #if os(macOS)
-                    .frame(width: 60)
-                    #endif
+                    
                 }
                 
                 HStack {
@@ -542,11 +498,7 @@ struct NetworkContent: View {
                         get: { editModel.getValue("peerLimitPerTorrent", fallback: config.peerLimitPerTorrent) },
                         set: { editModel.setValue("peerLimitPerTorrent", $0, original: config.peerLimitPerTorrent) }
                     ), format: .number.grouping(.never))
-                    .platformTextFieldStyle()
-                    .iosNumberPad()
-                    #if os(macOS)
-                    .frame(width: 60)
-                    #endif
+                    
                 }
             }
             
@@ -567,7 +519,6 @@ struct NetworkContent: View {
                     get: { editModel.getValue("blocklistEnabled", fallback: config.blocklistEnabled) },
                     set: { editModel.setValue("blocklistEnabled", $0, original: config.blocklistEnabled) }
                 ))
-                .platformToggleStyle()
                 
                 if editModel.getValue("blocklistEnabled", fallback: config.blocklistEnabled) {
                     VStack(alignment: .leading, spacing: 8) {
@@ -578,7 +529,7 @@ struct NetworkContent: View {
                             get: { editModel.getValue("blocklistUrl", fallback: config.blocklistUrl) },
                             set: { editModel.setValue("blocklistUrl", $0, original: config.blocklistUrl) }
                         ))
-                        .platformTextFieldStyle()
+                        
                     }
                     
                     HStack {
@@ -592,19 +543,17 @@ struct NetworkContent: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         } else {
-                            Text("\(config.blocklistSize)")
+                            Text(config.blocklistSize.formatted())
                                 .foregroundColor(.secondary)
                                 .font(.system(.body, design: .monospaced))
                         }
                     }
                     
-                    Button("Update Blocklist") {
+                Button("Update Blocklist") {
                         updateBlocklist(editModel: editModel)
                     }
-                    .disabled(editModel.isUpdatingBlocklist)
-                    #if os(iOS)
-                    .frame(maxWidth: .infinity)
-                    #endif
+                .disabled(editModel.isUpdatingBlocklist)
+                
                     
                     if let blocklistUpdateResult = editModel.blocklistUpdateResult {
                         Text(blocklistUpdateResult)
@@ -629,7 +578,6 @@ struct QueueManagementContent: View {
                 get: { editModel.getValue("downloadQueueEnabled", fallback: config.downloadQueueEnabled) },
                 set: { editModel.setValue("downloadQueueEnabled", $0, original: config.downloadQueueEnabled) }
             ))
-            .platformToggleStyle()
             
             if editModel.getValue("downloadQueueEnabled", fallback: config.downloadQueueEnabled) {
                 HStack {
@@ -639,11 +587,7 @@ struct QueueManagementContent: View {
                         get: { editModel.getValue("downloadQueueSize", fallback: config.downloadQueueSize) },
                         set: { editModel.setValue("downloadQueueSize", $0, original: config.downloadQueueSize) }
                     ), format: .number)
-                    .platformTextFieldStyle()
-                    .iosNumberPad()
-                    #if os(macOS)
-                    .frame(width: 60)
-                    #endif
+                    
                 }
             }
             
@@ -651,7 +595,6 @@ struct QueueManagementContent: View {
                 get: { editModel.getValue("seedQueueEnabled", fallback: config.seedQueueEnabled) },
                 set: { editModel.setValue("seedQueueEnabled", $0, original: config.seedQueueEnabled) }
             ))
-            .platformToggleStyle()
             
             if editModel.getValue("seedQueueEnabled", fallback: config.seedQueueEnabled) {
                 HStack {
@@ -661,11 +604,7 @@ struct QueueManagementContent: View {
                         get: { editModel.getValue("seedQueueSize", fallback: config.seedQueueSize) },
                         set: { editModel.setValue("seedQueueSize", $0, original: config.seedQueueSize) }
                     ), format: .number)
-                    .platformTextFieldStyle()
-                    .iosNumberPad()
-                    #if os(macOS)
-                    .frame(width: 60)
-                    #endif
+                    
                 }
             }
             
@@ -673,7 +612,6 @@ struct QueueManagementContent: View {
                 get: { editModel.getValue("queueStalledEnabled", fallback: config.queueStalledEnabled) },
                 set: { editModel.setValue("queueStalledEnabled", $0, original: config.queueStalledEnabled) }
             ))
-            .platformToggleStyle()
             
             if editModel.getValue("queueStalledEnabled", fallback: config.queueStalledEnabled) {
                 HStack {
@@ -683,11 +621,7 @@ struct QueueManagementContent: View {
                         get: { editModel.getValue("queueStalledMinutes", fallback: config.queueStalledMinutes) },
                         set: { editModel.setValue("queueStalledMinutes", $0, original: config.queueStalledMinutes) }
                     ), format: .number)
-                    .platformTextFieldStyle()
-                    .iosNumberPad()
-                    #if os(macOS)
-                    .frame(width: 50)
-                    #endif
+                    
                     Text("minutes")
                         .foregroundColor(.secondary)
                 }
@@ -714,7 +648,7 @@ struct FileManagementContent: View {
                     get: { editModel.getValue("downloadDir", fallback: config.downloadDir) },
                     set: { editModel.setValue("downloadDir", $0, original: config.downloadDir) }
                 ))
-                .platformTextFieldStyle()
+                
                 
                 Button("Check Space") {
                     checkDirectoryFreeSpace(
@@ -722,9 +656,7 @@ struct FileManagementContent: View {
                         editModel: editModel
                     )
                 }
-                #if os(iOS)
-                .frame(maxWidth: .infinity)
-                #endif
+                
                 
                 if let freeSpaceInfo = editModel.freeSpaceInfo {
                     HStack(spacing: 6) {
@@ -745,18 +677,14 @@ struct FileManagementContent: View {
                 Toggle("Use separate incomplete directory", isOn: Binding(
                     get: { editModel.getValue("incompleteDirEnabled", fallback: config.incompleteDirEnabled) },
                     set: { editModel.setValue("incompleteDirEnabled", $0, original: config.incompleteDirEnabled) }
-                ))
-                .platformToggleStyle()
+            ))
                 
                 if editModel.getValue("incompleteDirEnabled", fallback: config.incompleteDirEnabled) {
                     TextField("Incomplete directory path", text: Binding(
                         get: { editModel.getValue("incompleteDir", fallback: config.incompleteDir) },
                         set: { editModel.setValue("incompleteDir", $0, original: config.incompleteDir) }
                     ))
-                    .platformTextFieldStyle()
-                    #if os(macOS)
-                    .padding(.leading, 20)
-                    #endif
+                    
                 }
             }
             
@@ -764,7 +692,6 @@ struct FileManagementContent: View {
                 get: { editModel.getValue("startAddedTorrents", fallback: config.startAddedTorrents) },
                 set: { editModel.setValue("startAddedTorrents", $0, original: config.startAddedTorrents) }
             ))
-            .platformToggleStyle()
             
             Toggle(isOn: Binding(
                 get: { editModel.getValue("trashOriginalTorrentFiles", fallback: config.trashOriginalTorrentFiles) },
@@ -782,7 +709,6 @@ struct FileManagementContent: View {
                     Text(" files")
                 }
             }
-            .platformToggleStyle()
             
             Toggle(isOn: Binding(
                 get: { editModel.getValue("renamePartialFiles", fallback: config.renamePartialFiles) },
@@ -800,7 +726,6 @@ struct FileManagementContent: View {
                     Text(" to incomplete files")
                 }
             }
-            .platformToggleStyle()
         }
     }
 }
@@ -816,7 +741,6 @@ struct SeedingContent: View {
                 get: { editModel.getValue("seedRatioLimited", fallback: config.seedRatioLimited) },
                 set: { editModel.setValue("seedRatioLimited", $0, original: config.seedRatioLimited) }
             ))
-            .platformToggleStyle()
             
             if editModel.getValue("seedRatioLimited", fallback: config.seedRatioLimited) {
                 HStack {
@@ -826,10 +750,7 @@ struct SeedingContent: View {
                         get: { editModel.getValue("seedRatioLimit", fallback: config.seedRatioLimit) },
                         set: { editModel.setValue("seedRatioLimit", $0, original: config.seedRatioLimit) }
                     ), format: .number.precision(.fractionLength(2)))
-                    .platformTextFieldStyle()
-                    #if os(macOS)
-                    .frame(width: 60)
-                    #endif
+                    
                 }
             }
             
@@ -837,7 +758,6 @@ struct SeedingContent: View {
                 get: { editModel.getValue("idleSeedingLimitEnabled", fallback: config.idleSeedingLimitEnabled) },
                 set: { editModel.setValue("idleSeedingLimitEnabled", $0, original: config.idleSeedingLimitEnabled) }
             ))
-            .platformToggleStyle()
             
             if editModel.getValue("idleSeedingLimitEnabled", fallback: config.idleSeedingLimitEnabled) {
                 HStack {
@@ -847,11 +767,7 @@ struct SeedingContent: View {
                         get: { editModel.getValue("idleSeedingLimit", fallback: config.idleSeedingLimit) },
                         set: { editModel.setValue("idleSeedingLimit", $0, original: config.idleSeedingLimit) }
                     ), format: .number)
-                    .platformTextFieldStyle()
-                    .iosNumberPad()
-                    #if os(macOS)
-                    .frame(width: 50)
-                    #endif
+                    
                     Text("minutes")
                         .foregroundColor(.secondary)
                 }
@@ -860,34 +776,7 @@ struct SeedingContent: View {
     }
 }
 
-// Platform-specific toggle styling
-extension View {
-    func platformToggleStyle() -> some View {
-        #if os(macOS)
-        self.toggleStyle(.checkbox)
-        #elseif os(iOS)
-        self.toggleStyle(.switch)
-        #endif
-    }
-
-    // Use native text field appearance per platform
-    func platformTextFieldStyle() -> some View {
-        #if os(macOS)
-        self.textFieldStyle(.roundedBorder)
-        #elseif os(iOS)
-        self
-        #endif
-    }
-    
-    // On iOS, attach a number pad where appropriate; no-op on macOS
-    func iosNumberPad() -> some View {
-        #if os(iOS)
-        self.keyboardType(.numberPad)
-        #else
-        self
-        #endif
-    }
-}
+// Intentionally empty: all platform-specific View modifiers are defined per-platform
 
 // Shared extension for creating a Binding<StartupConnectionBehavior> from a raw String binding
 extension Binding where Value == StartupConnectionBehavior {
@@ -901,6 +790,7 @@ extension Binding where Value == StartupConnectionBehavior {
 
 // MARK: - Helper Functions
 
+@MainActor
 func checkDirectoryFreeSpace(path: String, editModel: SessionSettingsEditModel) {
     guard let store = editModel.store,
           let serverInfo = store.currentServerInfo else { return }
@@ -934,6 +824,7 @@ func checkDirectoryFreeSpace(path: String, editModel: SessionSettingsEditModel) 
     }
 }
 
+@MainActor
 func checkPort(editModel: SessionSettingsEditModel, ipProtocol: String? = nil) {
     guard let store = editModel.store,
           let serverInfo = store.currentServerInfo else { return }
@@ -966,6 +857,7 @@ func checkPort(editModel: SessionSettingsEditModel, ipProtocol: String? = nil) {
     }
 }
 
+@MainActor
 func updateBlocklist(editModel: SessionSettingsEditModel) {
     guard let store = editModel.store,
           let serverInfo = store.currentServerInfo else { return }
