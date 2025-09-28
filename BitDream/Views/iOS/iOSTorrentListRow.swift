@@ -14,6 +14,9 @@ struct iOSTorrentListRow: View {
     @State var labelInput: String = ""
     @State private var renameDialog: Bool = false
     @State private var renameInput: String = ""
+    @State private var moveDialog: Bool = false
+    @State private var movePath: String = ""
+    @State private var moveShouldMove: Bool = true
     @State private var showingError = false
     @State private var errorMessage = ""
     @Environment(\.colorScheme) var colorScheme
@@ -170,6 +173,14 @@ struct iOSTorrentListRow: View {
         }
 
         Divider()
+
+        // Set Location… (single torrent on iOS)
+        Button(action: {
+            movePath = store.defaultDownloadDir
+            moveDialog = true
+        }) {
+            Label("Set Location…", systemImage: "folder.badge.gearshape")
+        }
 
         // Rename
         Button(action: {
@@ -389,6 +400,61 @@ struct iOSTorrentListRow: View {
                 }
             }
             // focus handled on TextField onAppear
+        }
+        .sheet(isPresented: $moveDialog) {
+            NavigationView {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Set Files Location")
+                        .font(.headline)
+                        .padding(.top)
+                    if let path = torrent.downloadDir {
+                        Text("Current: \(path)")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .textSelection(.disabled)
+                    }
+                    TextField("Destination path", text: $movePath)
+                        .textFieldStyle(.roundedBorder)
+                    Toggle(isOn: $moveShouldMove) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Move files on disk")
+                            Text("When enabled, physically moves/renames the torrent's data into this folder on the server. When disabled, does not move files, and instead simply links this torrent to files already in the selected folder.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    Spacer()
+                }
+                .padding()
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { moveDialog = false }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        let disabled = movePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        Button("Set Location") {
+                            let info = makeConfig(store: store)
+                            let args = TorrentSetLocationRequestArgs(ids: [torrent.id], location: movePath.trimmingCharacters(in: .whitespacesAndNewlines), move: moveShouldMove)
+                            setTorrentLocation(args: args, info: info) { response in
+                                handleTransmissionResponse(response,
+                                    onSuccess: {
+                                        refreshTransmissionData(store: store)
+                                        moveDialog = false
+                                    },
+                                    onError: { error in
+                                        errorMessage = error
+                                        showingError = true
+                                    }
+                                )
+                            }
+                        }
+                        .disabled(disabled)
+                    }
+                }
+            }
         }
         .sheet(isPresented: $labelDialog) {
             NavigationView {

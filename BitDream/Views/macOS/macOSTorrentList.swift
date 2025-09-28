@@ -50,6 +50,9 @@ struct TorrentRowModifier: ViewModifier {
     @Binding var renameDialog: Bool
     @Binding var renameInput: String
     @Binding var renameTargetId: Int?
+    @State private var moveDialog: Bool = false
+    @State private var movePath: String = ""
+    @State private var moveShouldMove: Bool = true
     
     private var affectedTorrents: Set<Torrent> {
         if selectedTorrents.isEmpty {
@@ -70,6 +73,9 @@ struct TorrentRowModifier: ViewModifier {
                     renameInput: $renameInput,
                     renameDialog: $renameDialog,
                     renameTargetId: $renameTargetId,
+                    movePath: $movePath,
+                    moveDialog: $moveDialog,
+                    moveShouldMove: $moveShouldMove,
                     showingError: $showingError,
                     errorMessage: $errorMessage
                 )
@@ -108,6 +114,19 @@ struct TorrentRowModifier: ViewModifier {
             .frame(width: 420)
             .padding()
         }
+        .sheet(isPresented: $moveDialog) {
+            MoveSheetContent(
+                store: store,
+                selectedTorrents: affectedTorrents,
+                movePath: $movePath,
+                moveShouldMove: $moveShouldMove,
+                isPresented: $moveDialog,
+                showingError: $showingError,
+                errorMessage: $errorMessage
+            )
+            .frame(width: 480)
+            .padding()
+        }
     }
 }
 
@@ -122,6 +141,9 @@ func createTorrentContextMenu(
     renameInput: Binding<String>,
     renameDialog: Binding<Bool>,
     renameTargetId: Binding<Int?>,
+    movePath: Binding<String>,
+    moveDialog: Binding<Bool>,
+    moveShouldMove: Binding<Bool>,
     showingError: Binding<Bool>,
     errorMessage: Binding<String>
 ) -> some View {
@@ -331,6 +353,19 @@ func createTorrentContextMenu(
     }
 
     Divider()
+    
+    // Set Location… (supports multi-select)
+    Button(action: {
+        // Prefill with server default download dir if available
+        movePath.wrappedValue = store.defaultDownloadDir
+        moveDialog.wrappedValue = true
+    }) {
+        HStack {
+            Image(systemName: "folder.badge.gearshape")
+                .foregroundStyle(.secondary)
+            Text("Set Location…")
+        }
+    }
 
     // Rename Button (moved into edit section)
     Button(action: {
@@ -600,6 +635,70 @@ struct LabelEditView: View {
                 }
                 return .ignored
             }
+    }
+}
+
+// MARK: - Move Sheet View
+struct MoveSheetContent: View {
+    let store: Store
+    let selectedTorrents: Set<Torrent>
+    @Binding var movePath: String
+    @Binding var moveShouldMove: Bool
+    @Binding var isPresented: Bool
+    @Binding var showingError: Bool
+    @Binding var errorMessage: String
+    
+    
+    private var isMoveEnabled: Bool {
+        !movePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Set Files Location\(selectedTorrents.count > 1 ? " (\(selectedTorrents.count) torrents)" : "")")
+                .font(.headline)
+            if let path = selectedTorrents.first?.downloadDir {
+                Text("Current: \(path)")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .textSelection(.disabled)
+            }
+            TextField("Destination path", text: $movePath)
+                .textFieldStyle(.roundedBorder)
+            Toggle(isOn: $moveShouldMove) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Move files on disk")
+                    Text("When enabled, physically moves/renames the torrent's data into this folder on the server. When disabled, does not move files, and instead simply links this torrent to files already in the selected folder.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            HStack {
+                Spacer()
+                Button("Cancel") { isPresented = false }
+                    .keyboardShortcut(.cancelAction)
+                Button("Set Location") {
+                    let info = makeConfig(store: store)
+                    let ids = Array(selectedTorrents.map { $0.id })
+                    let args = TorrentSetLocationRequestArgs(ids: ids, location: movePath.trimmingCharacters(in: .whitespacesAndNewlines), move: moveShouldMove)
+                    setTorrentLocation(args: args, info: info) { response in
+                        handleTransmissionResponse(response, onSuccess: {
+                            refreshTransmissionData(store: store)
+                            isPresented = false
+                        }, onError: { err in
+                            errorMessage = err
+                            showingError = true
+                        })
+                    }
+                }
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+                .disabled(!isMoveEnabled)
+            }
+        }
+        .padding(.vertical)
     }
 }
 

@@ -188,11 +188,13 @@ private func executeTorrentAction(actionMethod: String, torrentId: Int, config: 
 /// Makes a request to the server for a list of the currently running torrents
 public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @escaping ([Torrent]?, String?) -> Void) -> Void {
     let fields: [String] = [
-        "activityDate", "addedDate", "desiredAvailable", "error", "errorString", 
-        "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled", 
-        "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete", 
-        "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs", 
-        "percentDone", "primary-mime-type", "queuePosition", "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status", "uploadRatio", "uploadedEver", "downloadedEver"
+        "activityDate", "addedDate", "desiredAvailable", "error", "errorString",
+        "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled",
+        "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete",
+        "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs",
+        "percentDone", "primary-mime-type", "downloadDir", "queuePosition",
+        "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status",
+        "uploadRatio", "uploadedEver", "downloadedEver"
     ]
     
     performTransmissionDataRequest(
@@ -520,6 +522,25 @@ public func setFileWantedStatus(
     }
     
     updateTorrent(args: args, info: info, onComplete: completion)
+}
+
+/// Move or relocate torrent data on the server
+/// - Parameters:
+///   - args: TorrentSetLocationRequestArgs with ids, destination location, and move flag
+///   - info: Tuple containing server config and auth info
+///   - completion: Called with TransmissionResponse status
+public func setTorrentLocation(
+    args: TorrentSetLocationRequestArgs,
+    info: (config: TransmissionConfig, auth: TransmissionAuth),
+    completion: @escaping (TransmissionResponse) -> Void
+) {
+    performTransmissionStatusRequest(
+        method: "torrent-set-location",
+        args: args,
+        config: info.config,
+        auth: info.auth,
+        completion: completion
+    )
 }
 
 /// Rename a path (file or folder) within a torrent
