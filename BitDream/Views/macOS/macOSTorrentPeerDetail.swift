@@ -35,7 +35,7 @@ struct macOSTorrentPeerDetail: View {
                     }
                 }
                 if let from = peersFrom {
-                    Text("From: Tracker \(from.fromTracker) • PEX \(from.fromPex) • DHT \(from.fromDht) • LPD \(from.fromLpd) • Incoming \(from.fromIncoming) • Cache \(from.fromCache) • LTEP \(from.fromLtep)")
+                    Text(peersFromSummary(from))
                         .font(.footnote)
                         .foregroundColor(.secondary)
                         .lineLimit(2)
@@ -81,21 +81,10 @@ struct macOSTorrentPeerDetail: View {
                         ProtocolBadge(text: peer.isUTP ? "uTP" : "TCP")
                     }
                     TableColumn("Flags") { peer in
-                        let tip = """
-                        Peer flags
-                        Client interested: \(peer.clientIsInterested ? "true" : "false")
-                        Client choked: \(peer.clientIsChoked ? "true" : "false")
-                        Peer interested: \(peer.peerIsInterested ? "true" : "false")
-                        Peer choked: \(peer.peerIsChoked ? "true" : "false")
-                        Encrypted: \(peer.isEncrypted ? "true" : "false")
-                        Protocol: \(peer.isUTP ? "uTP" : "TCP")
-                        Downloading from us: \(peer.isDownloadingFrom ? "true" : "false")
-                        Uploading to peer: \(peer.isUploadingTo ? "true" : "false")
-                        """
                         Text(peer.flagStr)
                             .font(.caption)
                             .foregroundColor(.secondary)
-                            .help(tip)
+                            .help(peerFlagsHelp(peer))
                     }
                     // Removed Incoming and State columns per request
                 }

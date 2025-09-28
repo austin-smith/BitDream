@@ -14,6 +14,9 @@ struct iOSTorrentDetail: View {
     @State public var files: [TorrentFile] = []
     @State public var fileStats: [TorrentFileStats] = []
     @State private var isShowingFilesSheet = false
+    @State private var peers: [Peer] = []
+    @State private var peersFrom: PeersFrom? = nil
+    @State private var isShowingPeersSheet = false
     
     var body: some View {
         // Use shared formatting function
@@ -53,6 +56,21 @@ struct iOSTorrentDetail: View {
                                 Text("Files")
                                 Spacer()
                                 Text("\(files.count)")
+                                    .foregroundColor(.gray)
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        
+                        Button(action: {
+                            isShowingPeersSheet = true
+                        }) {
+                            HStack {
+                                Text("Peers")
+                                Spacer()
+                                Text("\(peers.count)")
                                     .foregroundColor(.gray)
                                 Image(systemName: "chevron.right")
                                     .font(.caption)
@@ -144,6 +162,11 @@ struct iOSTorrentDetail: View {
                     files = fetchedFiles
                     fileStats = fetchedStats
                 }
+                // Fetch peers initially
+                fetchTorrentPeers(transferId: torrent.id, store: store) { fetchedPeers, fetchedFrom in
+                    peers = fetchedPeers
+                    peersFrom = fetchedFrom
+                }
             }
             .toolbar {
                 // Use shared toolbar
@@ -162,6 +185,22 @@ struct iOSTorrentDetail: View {
                         }
                     }
             }
+        }
+        .sheet(isPresented: $isShowingPeersSheet) {
+            iOSTorrentPeerDetail(
+                torrentName: torrent.name,
+                torrentId: torrent.id,
+                store: store,
+                peers: peers,
+                peersFrom: peersFrom,
+                onRefresh: {
+                    fetchTorrentPeers(transferId: torrent.id, store: store) { fetchedPeers, fetchedFrom in
+                        peers = fetchedPeers
+                        peersFrom = fetchedFrom
+                    }
+                },
+                onDone: { isShowingPeersSheet = false }
+            )
         }
     }
 }

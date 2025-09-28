@@ -34,3 +34,25 @@ struct BoolCheckIcon: View {
             .help("\(label): \(value ? "true" : "false")")
     }
 }
+
+// MARK: - Shared Peer Helpers
+
+/// Build a user-friendly help/tooltip text for a peer's state flags
+func peerFlagsHelp(_ peer: Peer) -> String {
+    """
+    Peer flags
+    Client interested: \(peer.clientIsInterested ? "true" : "false")
+    Client choked: \(peer.clientIsChoked ? "true" : "false")
+    Peer interested: \(peer.peerIsInterested ? "true" : "false")
+    Peer choked: \(peer.peerIsChoked ? "true" : "false")
+    Encrypted: \(peer.isEncrypted ? "true" : "false")
+    Protocol: \(peer.isUTP ? "uTP" : "TCP")
+    Downloading from us: \(peer.isDownloadingFrom ? "true" : "false")
+    Uploading to peer: \(peer.isUploadingTo ? "true" : "false")
+    """
+}
+
+/// Build a concise summary string for where peers were discovered from
+func peersFromSummary(_ from: PeersFrom) -> String {
+    "From: Tracker \(from.fromTracker) • PEX \(from.fromPex) • DHT \(from.fromDht) • LPD \(from.fromLpd) • Incoming \(from.fromIncoming) • Cache \(from.fromCache) • LTEP \(from.fromLtep)"
+}
