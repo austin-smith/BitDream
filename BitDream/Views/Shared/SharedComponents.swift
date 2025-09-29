@@ -140,6 +140,36 @@ struct RatioChip: View {
     }
 }
 
+// MARK: - FileProgressView (shared)
+
+/// Progress view with bar and percentage for consistent styling across platforms
+struct FileProgressView: View {
+    let percentDone: Double
+    var showDetailedText: Bool = false
+    var bytesCompleted: Int64 = 0
+    var totalSize: Int64 = 0
+    
+    var body: some View {
+        HStack(spacing: 6) {
+            ProgressView(value: percentDone)
+                .progressViewStyle(.linear)
+                .tint(percentDone >= 1.0 ? .green : .blue)
+                .frame(minWidth: showDetailedText ? 100 : 50)
+            
+            if showDetailedText {
+                Text("\(String(format: "%.1f%%", percentDone * 100))")
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundColor(.secondary)
+            } else {
+                Text("\(Int(percentDone * 100))%")
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundColor(.secondary)
+                    .frame(width: 30, alignment: .trailing)
+            }
+        }
+    }
+}
+
 // MARK: - Helper Extensions
 
 extension View {

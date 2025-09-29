@@ -14,6 +14,13 @@ struct iOSTorrentDetail: View {
     @State public var files: [TorrentFile] = []
     @State public var fileStats: [TorrentFileStats] = []
     @State private var isShowingFilesSheet = false
+    @State private var peers: [Peer] = []
+    @State private var peersFrom: PeersFrom? = nil
+    @State private var isShowingPeersSheet = false
+    @State private var pieceCount: Int = 0
+    @State private var pieceSize: Int64 = 0
+    @State private var piecesBitfield: String = ""
+    @State private var piecesHaveCount: Int = 0
     
     var body: some View {
         // Use shared formatting function
@@ -46,20 +53,32 @@ struct iOSTorrentDetail: View {
                                 .foregroundColor(.gray)
                         }
                         
-                        Button(action: {
-                            isShowingFilesSheet = true
-                        }) {
-                            HStack {
-                                Text("Files")
-                                Spacer()
-                                Text("\(files.count)")
-                                    .foregroundColor(.gray)
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
+                        NavigationLink {
+                            iOSTorrentFileDetail(files: files, fileStats: fileStats, torrentId: torrent.id, store: store)
+                                .navigationBarTitleDisplayMode(.inline)
+                        } label: {
+                            LabeledContent("Files", value: NumberFormatter.localizedString(from: NSNumber(value: files.count), number: .decimal))
                         }
-                        .buttonStyle(.plain)
+                        
+                        NavigationLink {
+                            iOSTorrentPeerDetail(
+                                torrentName: torrent.name,
+                                torrentId: torrent.id,
+                                store: store,
+                                peers: peers,
+                                peersFrom: peersFrom,
+                                onRefresh: {
+                                    fetchTorrentPeers(transferId: torrent.id, store: store) { fetchedPeers, fetchedFrom in
+                                        peers = fetchedPeers
+                                        peersFrom = fetchedFrom
+                                    }
+                                },
+                                onDone: { /* no-op in push */ }
+                            )
+                            .navigationBarTitleDisplayMode(.inline)
+                        } label: {
+                            LabeledContent("Peers", value: "\(peers.count)")
+                        }
                     }
                     
                     Section(header: Text("Stats")) {
@@ -92,6 +111,20 @@ struct iOSTorrentDetail: View {
                             Spacer()
                             Text(details.uploadRatio)
                                 .foregroundColor(.gray)
+                        }
+                    }
+                    
+                    // Pieces section
+                    if pieceCount > 0 && !piecesBitfield.isEmpty {
+                        Section(header: Text("Pieces")) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                PiecesGridView(pieceCount: pieceCount, piecesBitfieldBase64: piecesBitfield)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                Text("\(piecesHaveCount) of \(pieceCount) pieces • \(byteCountFormatter.string(fromByteCount: pieceSize)) each")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                         }
                     }
                     
@@ -144,25 +177,28 @@ struct iOSTorrentDetail: View {
                     files = fetchedFiles
                     fileStats = fetchedStats
                 }
+                // Fetch peers initially
+                fetchTorrentPeers(transferId: torrent.id, store: store) { fetchedPeers, fetchedFrom in
+                    peers = fetchedPeers
+                    peersFrom = fetchedFrom
+                }
+                // Fetch pieces
+                let info = makeConfig(store: store)
+                getTorrentPieces(transferId: torrent.id, info: info) { count, size, bitfield in
+                    pieceCount = count
+                    pieceSize = size
+                    piecesBitfield = bitfield
+                    let haveSet = decodePiecesBitfield(base64String: bitfield, pieceCount: count)
+                    piecesHaveCount = haveSet.reduce(0) { $0 + ($1 ? 1 : 0) }
+                }
             }
             .toolbar {
                 // Use shared toolbar
                 TorrentDetailToolbar(torrent: torrent, store: store)
             }
         }
-        .sheet(isPresented: $isShowingFilesSheet) {
-            NavigationView {
-                iOSTorrentFileDetail(files: files, fileStats: fileStats, torrentId: torrent.id, store: store)
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("Done") {
-                                isShowingFilesSheet = false
-                            }
-                        }
-                    }
-            }
-        }
+        
+        
     }
 }
 

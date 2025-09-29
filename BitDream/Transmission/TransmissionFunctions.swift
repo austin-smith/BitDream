@@ -188,11 +188,13 @@ private func executeTorrentAction(actionMethod: String, torrentId: Int, config: 
 /// Makes a request to the server for a list of the currently running torrents
 public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @escaping ([Torrent]?, String?) -> Void) -> Void {
     let fields: [String] = [
-        "activityDate", "addedDate", "desiredAvailable", "error", "errorString", 
-        "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled", 
-        "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete", 
-        "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs", 
-        "percentDone", "primary-mime-type", "queuePosition", "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status", "uploadRatio", "uploadedEver", "downloadedEver"
+        "activityDate", "addedDate", "desiredAvailable", "error", "errorString",
+        "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled",
+        "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete",
+        "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs",
+        "percentDone", "primary-mime-type", "downloadDir", "queuePosition",
+        "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status",
+        "uploadRatio", "uploadedEver", "downloadedEver"
     ]
     
     performTransmissionDataRequest(
@@ -522,6 +524,25 @@ public func setFileWantedStatus(
     updateTorrent(args: args, info: info, onComplete: completion)
 }
 
+/// Move or relocate torrent data on the server
+/// - Parameters:
+///   - args: TorrentSetLocationRequestArgs with ids, destination location, and move flag
+///   - info: Tuple containing server config and auth info
+///   - completion: Called with TransmissionResponse status
+public func setTorrentLocation(
+    args: TorrentSetLocationRequestArgs,
+    info: (config: TransmissionConfig, auth: TransmissionAuth),
+    completion: @escaping (TransmissionResponse) -> Void
+) {
+    performTransmissionStatusRequest(
+        method: "torrent-set-location",
+        args: args,
+        config: info.config,
+        auth: info.auth,
+        completion: completion
+    )
+}
+
 /// Rename a path (file or folder) within a torrent
 /// - Parameters:
 ///   - torrentId: The torrent ID (Transmission expects exactly one id)
@@ -753,6 +774,78 @@ public func updateBlocklist(
             completion(.success(response.arguments))
         case .failure(let error):
             completion(.failure(error))
+        }
+    }
+}
+
+// MARK: - Peer Queries
+
+/// Gets the list of peers (and peersFrom breakdown) for a torrent
+/// - Parameters:
+///   - transferId: The ID of the torrent
+///   - info: Tuple containing server config and auth info
+///   - onReceived: Callback providing peers and optional peersFrom breakdown
+public func getTorrentPeers(
+    transferId: Int,
+    info: (config: TransmissionConfig, auth: TransmissionAuth),
+    onReceived: @escaping (_ peers: [Peer], _ peersFrom: PeersFrom?) -> Void
+) {
+    let args = TorrentFilesRequestArgs(
+        fields: ["peers", "peersFrom"],
+        ids: [transferId]
+    )
+    
+    performTransmissionDataRequest(
+        method: "torrent-get",
+        args: args,
+        config: info.config,
+        auth: info.auth
+    ) { (result: Result<TransmissionGenericResponse<TorrentPeersResponseTorrents>, Error>) in
+        switch result {
+        case .success(let response):
+            if let peersData = response.arguments.torrents.first {
+                onReceived(peersData.peers, peersData.peersFrom)
+            } else {
+                onReceived([], nil)
+            }
+        case .failure(_):
+            onReceived([], nil)
+        }
+    }
+}
+
+// MARK: - Pieces Queries
+
+/// Gets the pieces bitfield and metadata for a torrent
+/// - Parameters:
+///   - transferId: The ID of the torrent
+///   - info: Tuple containing server config and auth info
+///   - onReceived: Callback providing pieceCount, pieceSize, and base64-encoded pieces bitfield
+public func getTorrentPieces(
+    transferId: Int,
+    info: (config: TransmissionConfig, auth: TransmissionAuth),
+    onReceived: @escaping (_ pieceCount: Int, _ pieceSize: Int64, _ piecesBitfieldBase64: String) -> Void
+) {
+    let args = TorrentFilesRequestArgs(
+        fields: ["pieceCount", "pieceSize", "pieces"],
+        ids: [transferId]
+    )
+    
+    performTransmissionDataRequest(
+        method: "torrent-get",
+        args: args,
+        config: info.config,
+        auth: info.auth
+    ) { (result: Result<TransmissionGenericResponse<TorrentPiecesResponseTorrents>, Error>) in
+        switch result {
+        case .success(let response):
+            if let piecesData = response.arguments.torrents.first {
+                onReceived(piecesData.pieceCount, piecesData.pieceSize, piecesData.pieces)
+            } else {
+                onReceived(0, 0, "")
+            }
+        case .failure(_):
+            onReceived(0, 0, "")
         }
     }
 }

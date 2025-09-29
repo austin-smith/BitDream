@@ -54,6 +54,15 @@ func fetchTorrentFiles(transferId: Int, store: Store, completion: @escaping ([To
     })
 }
 
+// Shared function to fetch torrent peers
+func fetchTorrentPeers(transferId: Int, store: Store, completion: @escaping ([Peer], PeersFrom?) -> Void) {
+    let info = makeConfig(store: store)
+    
+    getTorrentPeers(transferId: transferId, info: info, onReceived: { peers, peersFrom in
+        completion(peers, peersFrom)
+    })
+}
+
 // Shared function to play/pause a torrent
 func toggleTorrentPlayPause(torrent: Torrent, store: Store, completion: @escaping () -> Void = {}) {
     let info = makeConfig(store: store)

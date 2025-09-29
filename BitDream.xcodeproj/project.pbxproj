@@ -52,6 +52,8 @@
 		4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */; };
 		4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */; };
 		4BC5C2B42D7D415100D80AB4 /* iOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */; };
+		4BC6F24B2E89F8510037DFDF /* PiecesGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC6F24A2E89F8510037DFDF /* PiecesGridView.swift */; };
+		4BC6F24D2E8A069F0037DFDF /* BitDreamAppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4BC6F24C2E8A069F0037DFDF /* BitDreamAppIcon.icon */; };
 		4BCF274F2E774EDC00F6BF76 /* DataWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274E2E774EDC00F6BF76 /* DataWriter.swift */; };
 		4BCF27502E774EDC00F6BF76 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274D2E774EDC00F6BF76 /* DataModels.swift */; };
 		4BCF27512E774F3E00F6BF76 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274D2E774EDC00F6BF76 /* DataModels.swift */; };
@@ -64,6 +66,9 @@
 		4BDACD572E73DBBE0074F714 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BDACD502E73DBBE0074F714 /* AppGroup.swift */; };
 		4BE364BA2E6E75B300CF1A33 /* SharedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE364B92E6E75B300CF1A33 /* SharedComponents.swift */; };
 		4BEFEE7C2E6E5E69005815FA /* ContentTypeIconMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BEFEE7B2E6E5E69005815FA /* ContentTypeIconMapper.swift */; };
+		4BF593B72E89BF5500A8C1FC /* macOSTorrentPeerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF593B62E89BF5500A8C1FC /* macOSTorrentPeerDetail.swift */; };
+		4BF593B92E89BF6300A8C1FC /* TorrentPeerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF593B82E89BF6300A8C1FC /* TorrentPeerDetail.swift */; };
+		4BF593BB2E89C8C400A8C1FC /* iOSTorrentPeerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF593BA2E89C8C400A8C1FC /* iOSTorrentPeerDetail.swift */; };
 		4BFFAA012E7F000000000001 /* macOSTorrentActionsMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BFFAA002E7F000000000001 /* macOSTorrentActionsMenu.swift */; };
 /* End PBXBuildFile section */
 
@@ -138,6 +143,8 @@
 		4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentView.swift; sourceTree = "<group>"; };
 		4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentDetail.swift; sourceTree = "<group>"; };
 		4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentDetail.swift; sourceTree = "<group>"; };
+		4BC6F24A2E89F8510037DFDF /* PiecesGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiecesGridView.swift; sourceTree = "<group>"; };
+		4BC6F24C2E8A069F0037DFDF /* BitDreamAppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIcon.icon; sourceTree = "<group>"; };
 		4BCF274D2E774EDC00F6BF76 /* DataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataModels.swift; sourceTree = "<group>"; };
 		4BCF274E2E774EDC00F6BF76 /* DataWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataWriter.swift; sourceTree = "<group>"; };
 		4BD855492E77424B00606224 /* WidgetKitBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetKitBridge.swift; sourceTree = "<group>"; };
@@ -149,6 +156,9 @@
 		4BDACD502E73DBBE0074F714 /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
 		4BE364B92E6E75B300CF1A33 /* SharedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComponents.swift; sourceTree = "<group>"; };
 		4BEFEE7B2E6E5E69005815FA /* ContentTypeIconMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentTypeIconMapper.swift; sourceTree = "<group>"; };
+		4BF593B62E89BF5500A8C1FC /* macOSTorrentPeerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentPeerDetail.swift; sourceTree = "<group>"; };
+		4BF593B82E89BF6300A8C1FC /* TorrentPeerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentPeerDetail.swift; sourceTree = "<group>"; };
+		4BF593BA2E89C8C400A8C1FC /* iOSTorrentPeerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentPeerDetail.swift; sourceTree = "<group>"; };
 		4BFFAA002E7F000000000001 /* macOSTorrentActionsMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentActionsMenu.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -196,6 +206,7 @@
 				4BDACD1A2E73DB220074F714 /* BitDreamWidgets */,
 				4BDACD152E73DB220074F714 /* Frameworks */,
 				4B1DADDC295E6C440037E9FB /* Products */,
+				4BC6F24C2E8A069F0037DFDF /* BitDreamAppIcon.icon */,
 			);
 			sourceTree = "<group>";
 		};
@@ -270,6 +281,7 @@
 				4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */,
 				4B6F1EBD2D86C926003D8F6E /* iOSTorrentFileDetail.swift */,
 				4B6F1EB32D82DB2D003D8F6E /* iOSTorrentListRow.swift */,
+				4BF593BA2E89C8C400A8C1FC /* iOSTorrentPeerDetail.swift */,
 			);
 			path = iOS;
 			sourceTree = "<group>";
@@ -291,6 +303,7 @@
 				4BC2C9272E6E22B800011971 /* macOSTorrentList.swift */,
 				4BC2C9282E6E22B800011971 /* macOSTorrentListCompact.swift */,
 				4BC2C9292E6E22B800011971 /* macOSTorrentListExpanded.swift */,
+				4BF593B62E89BF5500A8C1FC /* macOSTorrentPeerDetail.swift */,
 			);
 			path = macOS;
 			sourceTree = "<group>";
@@ -302,6 +315,7 @@
 				4BEFEE7B2E6E5E69005815FA /* ContentTypeIconMapper.swift */,
 				4B1DADE5295E6C440037E9FB /* ContentView.swift */,
 				4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */,
+				4BC6F24A2E89F8510037DFDF /* PiecesGridView.swift */,
 				4BE364B92E6E75B300CF1A33 /* SharedComponents.swift */,
 				4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */,
 				4B1DAE0B295E6FEF0037E9FB /* ServerList.swift */,
@@ -309,6 +323,7 @@
 				4B1DAE05295E6FC80037E9FB /* TorrentDetail.swift */,
 				4B6F1EBF2D86D52A003D8F6E /* TorrentFileDetail.swift */,
 				4B6F1EB12D82DB21003D8F6E /* TorrentListRow.swift */,
+				4BF593B82E89BF6300A8C1FC /* TorrentPeerDetail.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -439,6 +454,7 @@
 			files = (
 				4B1DADEC295E6C450037E9FB /* Preview Assets.xcassets in Resources */,
 				4B1DADE8295E6C450037E9FB /* Assets.xcassets in Resources */,
+				4BC6F24D2E8A069F0037DFDF /* BitDreamAppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -462,8 +478,10 @@
 				4B1DADDF295E6C440037E9FB /* BitDreamApp.swift in Sources */,
 				4B1DADE1295E6C440037E9FB /* Persistence.swift in Sources */,
 				4B1DAE10295E702B0037E9FB /* Store.swift in Sources */,
+				4BF593BB2E89C8C400A8C1FC /* iOSTorrentPeerDetail.swift in Sources */,
 				4B1DADF9295E6EBA0037E9FB /* Utilities.swift in Sources */,
 				4B6F1EB02D82D340003D8F6E /* iOSSettingsView.swift in Sources */,
+				4BC6F24B2E89F8510037DFDF /* PiecesGridView.swift in Sources */,
 				4B6F1EBC2D86C908003D8F6E /* macOSTorrentFileDetail.swift in Sources */,
 				4B054C862E6FEB58004DDB99 /* TorrentExtensions.swift in Sources */,
 				4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */,
@@ -483,6 +501,8 @@
 				4BCF27502E774EDC00F6BF76 /* DataModels.swift in Sources */,
 				4B9CAC562D7E83460094CD03 /* iOSAddTorrent.swift in Sources */,
 				4BE364BA2E6E75B300CF1A33 /* SharedComponents.swift in Sources */,
+				4BF593B72E89BF5500A8C1FC /* macOSTorrentPeerDetail.swift in Sources */,
+				4BF593B92E89BF6300A8C1FC /* TorrentPeerDetail.swift in Sources */,
 				4BC5C2AA2D7D20B500D80AB4 /* iOSContentView.swift in Sources */,
 				4B642D6D2D7E151A003CEADC /* iOSServerDetail.swift in Sources */,
 				4BDACD572E73DBBE0074F714 /* AppGroup.swift in Sources */,
@@ -645,7 +665,7 @@
 		4B1DADF0295E6C450037E9FB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = BitDream/BitDream.entitlements;
@@ -689,7 +709,7 @@
 		4B1DADF1295E6C450037E9FB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = BitDream/BitDream.entitlements;

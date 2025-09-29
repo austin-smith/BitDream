@@ -17,6 +17,9 @@ struct TorrentActionsToolbarMenu: View {
     @State private var renameDialog: Bool = false
     @State private var renameInput: String = ""
     @State private var renameTargetId: Int? = nil
+    @State private var moveDialog: Bool = false
+    @State private var movePath: String = ""
+    @State private var moveShouldMove: Bool = true
     
     var body: some View {
         Menu {
@@ -34,6 +37,9 @@ struct TorrentActionsToolbarMenu: View {
                     renameInput: $renameInput,
                     renameDialog: $renameDialog,
                     renameTargetId: $renameTargetId,
+                    movePath: $movePath,
+                    moveDialog: $moveDialog,
+                    moveShouldMove: $moveShouldMove,
                     showingError: $showingError,
                     errorMessage: $errorMessage
                 )
@@ -151,6 +157,19 @@ struct TorrentActionsToolbarMenu: View {
                 .frame(width: 420)
                 .padding()
             }
+        }
+        .sheet(isPresented: $moveDialog) {
+            MoveSheetContent(
+                store: store,
+                selectedTorrents: selectedTorrents,
+                movePath: $movePath,
+                moveShouldMove: $moveShouldMove,
+                isPresented: $moveDialog,
+                showingError: $showingError,
+                errorMessage: $errorMessage
+            )
+            .frame(width: 480)
+            .padding()
         }
     }
 }

@@ -39,6 +39,7 @@ struct iOSContentView: View {
     @State var sortOrder: SortOrder = UserDefaults.standard.sortOrder
     @State var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = true
+    @State private var searchText: String = ""
     
     var body: some View {
         NavigationSplitView {
@@ -56,9 +57,11 @@ struct iOSContentView: View {
             .refreshable {
                 updateList(store: store, update: {_ in})
             }
+            .searchable(text: $searchText, prompt: "Search torrents")
             .toolbar {
                 serverToolbarItem
                 actionToolbarItems
+                bottomToolbarItems
             }
             .onAppear {
                 if store.host == nil {
@@ -117,8 +120,13 @@ struct iOSContentView: View {
                     .foregroundColor(.gray)
                     .padding()
             } else {
-                let filteredTorrents = store.torrents.filtered(by: filterBySelection)
-                let sortedTorrents = sortTorrents(filteredTorrents, by: sortProperty, order: sortOrder)
+                let filteredByStatus = store.torrents.filtered(by: filterBySelection)
+                let filteredBySearch = searchText.isEmpty
+                    ? filteredByStatus
+                    : filteredByStatus.filter { torrent in
+                        torrent.name.localizedCaseInsensitiveContains(searchText)
+                    }
+                let sortedTorrents = sortTorrents(filteredBySearch, by: sortProperty, order: sortOrder)
                 ForEach(sortedTorrents, id: \.id) { torrent in
                     TorrentListRow(
                         torrent: binding(for: torrent, in: store),
@@ -264,20 +272,33 @@ struct iOSContentView: View {
                 Divider()
                 
                 Button(action: {
-                    store.isShowingAddAlert.toggle()
-                }) {
-                    Label("Add Torrent", systemImage: "plus")
-                }
-                
-                Divider()
-                
-                Button(action: {
                     store.showSettings.toggle()
                 }) {
                     Label("Settings", systemImage: "gear")
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
+            }
+        }
+    }
+    
+    // MARK: - Bottom Toolbar (Native iOS 26)
+    
+    private var bottomToolbarItems: some ToolbarContent {
+        Group {
+            // iOS 26 native search placement in bottom toolbar
+            if #available(iOS 26.0, *) {
+                DefaultToolbarItem(kind: .search, placement: .bottomBar)
+                ToolbarSpacer(.flexible, placement: .bottomBar)
+            }
+            
+            ToolbarItem(placement: .bottomBar) {
+                Button(action: {
+                    store.isShowingAddAlert.toggle()
+                }) {
+                    Label("Add Torrent", systemImage: "plus")
+                }
+                .foregroundStyle(.tint)
             }
         }
     }

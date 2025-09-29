@@ -66,6 +66,9 @@ struct macOSTorrentListCompact: View {
     @State private var renameTargetId: Int? = nil
     @State private var showingError = false
     @State private var errorMessage = ""
+    @State private var moveDialog: Bool = false
+    @State private var movePath: String = ""
+    @State private var moveShouldMove: Bool = true
     @State private var columnCustomization = TableColumnCustomization<TorrentTableRow>()
     private static let columnCustomizationKey = "mac.compact.columns.v1"
     @AppStorage(Self.columnCustomizationKey) private var columnCustomizationData: Data?
@@ -274,6 +277,22 @@ struct macOSTorrentListCompact: View {
             )
             .frame(width: 400)
         }
+        .sheet(isPresented: $moveDialog) {
+            let selectedTorrentsSet = Set(selection.compactMap { id in
+                store.torrents.first { $0.id == id }
+            })
+            MoveSheetContent(
+                store: store,
+                selectedTorrents: selectedTorrentsSet,
+                movePath: $movePath,
+                moveShouldMove: $moveShouldMove,
+                isPresented: $moveDialog,
+                showingError: $showingError,
+                errorMessage: $errorMessage
+            )
+            .frame(width: 480)
+            .padding()
+        }
         .torrentDeleteAlert(
             isPresented: $deleteDialog,
             selectedTorrents: {
@@ -383,7 +402,6 @@ struct macOSTorrentListCompact: View {
                 self.selection = Set(rows.map { $0.id })
             }
         } else {
-            // The context menu will be handled by TorrentRowModifier
             createTorrentContextMenu(
                 torrents: Set(selectedTorrents),
                 store: store,
@@ -393,6 +411,9 @@ struct macOSTorrentListCompact: View {
                 renameInput: $renameInput,
                 renameDialog: $renameDialog,
                 renameTargetId: $renameTargetId,
+                movePath: $movePath,
+                moveDialog: $moveDialog,
+                moveShouldMove: $moveShouldMove,
                 showingError: $showingError,
                 errorMessage: $errorMessage
             )

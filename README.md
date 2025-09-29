@@ -1,7 +1,7 @@
 # BitDream
 
 <p align="center">
-  <img src="BitDream/Assets.xcassets/AppIcon.appiconset/mac512.png" width="128" height="128" alt="BitDream Icon">
+  <img src="BitDream/Assets.xcassets/BitDreamAppIcon-Default-83.5x83.5.imageset/BitDreamAppIcon-iOS-Default-83.5x83.5@2x.png" width="128" height="128" alt="BitDream Icon">
 </p>
 
 BitDream is a native and feature-rich remote control client for Transmission web server. It provides a modern, seamless interface to manage your Transmission server from anywhere.
@@ -23,4 +23,4 @@ BitDream connects to Transmission's RPC (Remote Procedure Call) interface, allow
 
 ## Support
 
-For support, please [create an issue](https://github.com/yourusername/BitDream/issues) in this repository. 
+For support, please [create an issue](https://github.com/austin-smith/BitDream/issues) in this repository. 

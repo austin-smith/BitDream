@@ -134,6 +134,13 @@ public let byteCountFormatter: ByteCountFormatter = {
     return formatter
 }()
 
+/// Shared speed formatting helper (Bytes per second -> human-readable short string)
+func formatSpeed(_ bytesPerSecond: Int64) -> String {
+    if bytesPerSecond <= 0 { return "0 B/s" }
+    let base = byteCountFormatter.string(fromByteCount: bytesPerSecond)
+    return "\(base)/s"
+}
+
 /*--------------------------------------------------------------------------------------------
  Colors
  -------------------------------------------------------------------------------------------*/
