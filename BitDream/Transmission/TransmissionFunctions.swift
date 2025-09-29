@@ -813,3 +813,39 @@ public func getTorrentPeers(
         }
     }
 }
+
+// MARK: - Pieces Queries
+
+/// Gets the pieces bitfield and metadata for a torrent
+/// - Parameters:
+///   - transferId: The ID of the torrent
+///   - info: Tuple containing server config and auth info
+///   - onReceived: Callback providing pieceCount, pieceSize, and base64-encoded pieces bitfield
+public func getTorrentPieces(
+    transferId: Int,
+    info: (config: TransmissionConfig, auth: TransmissionAuth),
+    onReceived: @escaping (_ pieceCount: Int, _ pieceSize: Int64, _ piecesBitfieldBase64: String) -> Void
+) {
+    let args = TorrentFilesRequestArgs(
+        fields: ["pieceCount", "pieceSize", "pieces"],
+        ids: [transferId]
+    )
+    
+    performTransmissionDataRequest(
+        method: "torrent-get",
+        args: args,
+        config: info.config,
+        auth: info.auth
+    ) { (result: Result<TransmissionGenericResponse<TorrentPiecesResponseTorrents>, Error>) in
+        switch result {
+        case .success(let response):
+            if let piecesData = response.arguments.torrents.first {
+                onReceived(piecesData.pieceCount, piecesData.pieceSize, piecesData.pieces)
+            } else {
+                onReceived(0, 0, "")
+            }
+        case .failure(_):
+            onReceived(0, 0, "")
+        }
+    }
+}

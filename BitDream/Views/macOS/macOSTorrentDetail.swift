@@ -21,6 +21,10 @@ struct macOSTorrentDetail: View {
     @State private var showingDeleteConfirmation = false
     @State private var showingDeleteError = false
     @State private var deleteErrorMessage = ""
+    @State private var pieceCount: Int = 0
+    @State private var pieceSize: Int64 = 0
+    @State private var piecesBitfield: String = ""
+    @State private var piecesHaveCount: Int = 0
     
     var body: some View {
         // Use shared formatting function
@@ -98,6 +102,26 @@ struct macOSTorrentDetail: View {
                     .padding(.horizontal, 20)
                 }
                 .padding(.bottom, 8)
+
+                // Pieces section
+                if pieceCount > 0 && !piecesBitfield.isEmpty {
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 10) {
+                            macOSSectionHeader("Pieces", icon: "square.grid.2x2")
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                PiecesGridView(pieceCount: pieceCount, piecesBitfieldBase64: piecesBitfield)
+                                    .frame(maxWidth: .infinity)
+                                Text("\(piecesHaveCount)/\(pieceCount) pieces • \(byteCountFormatter.string(fromByteCount: pieceSize)) each")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 16)
+                        .padding(.horizontal, 20)
+                    }
+                    .padding(.bottom, 8)
+                }
                 
                 // Additional Info section
                 GroupBox {
@@ -209,6 +233,16 @@ struct macOSTorrentDetail: View {
             fetchTorrentPeers(transferId: torrent.id, store: store) { fetchedPeers, fetchedFrom in
                 peers = fetchedPeers
                 peersFrom = fetchedFrom
+            }
+            // Fetch pieces
+            let info = makeConfig(store: store)
+            getTorrentPieces(transferId: torrent.id, info: info) { count, size, bitfield in
+                pieceCount = count
+                pieceSize = size
+                piecesBitfield = bitfield
+                // Compute how many pieces are present
+                let haveSet = decodePiecesBitfield(base64String: bitfield, pieceCount: count)
+                piecesHaveCount = haveSet.reduce(0) { $0 + ($1 ? 1 : 0) }
             }
         }
         .toolbar {

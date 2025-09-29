@@ -17,6 +17,10 @@ struct iOSTorrentDetail: View {
     @State private var peers: [Peer] = []
     @State private var peersFrom: PeersFrom? = nil
     @State private var isShowingPeersSheet = false
+    @State private var pieceCount: Int = 0
+    @State private var pieceSize: Int64 = 0
+    @State private var piecesBitfield: String = ""
+    @State private var piecesHaveCount: Int = 0
     
     var body: some View {
         // Use shared formatting function
@@ -110,6 +114,20 @@ struct iOSTorrentDetail: View {
                         }
                     }
                     
+                    // Pieces section
+                    if pieceCount > 0 && !piecesBitfield.isEmpty {
+                        Section(header: Text("Pieces")) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                PiecesGridView(pieceCount: pieceCount, piecesBitfieldBase64: piecesBitfield)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                Text("\(piecesHaveCount)/\(pieceCount) pieces • \(byteCountFormatter.string(fromByteCount: pieceSize)) each")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                        }
+                    }
+                    
                     Section(header: Text("Additional Info")) {
                         HStack {
                             Text("Availability")
@@ -163,6 +181,15 @@ struct iOSTorrentDetail: View {
                 fetchTorrentPeers(transferId: torrent.id, store: store) { fetchedPeers, fetchedFrom in
                     peers = fetchedPeers
                     peersFrom = fetchedFrom
+                }
+                // Fetch pieces
+                let info = makeConfig(store: store)
+                getTorrentPieces(transferId: torrent.id, info: info) { count, size, bitfield in
+                    pieceCount = count
+                    pieceSize = size
+                    piecesBitfield = bitfield
+                    let haveSet = decodePiecesBitfield(base64String: bitfield, pieceCount: count)
+                    piecesHaveCount = haveSet.reduce(0) { $0 + ($1 ? 1 : 0) }
                 }
             }
             .toolbar {

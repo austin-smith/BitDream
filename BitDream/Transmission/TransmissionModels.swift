@@ -812,3 +812,15 @@ public struct TorrentPeersResponseData: Codable {
 public struct TorrentPeersResponseTorrents: Codable {
     public let torrents: [TorrentPeersResponseData]
 }
+
+/// Response object for pieces inside torrents list
+public struct TorrentPiecesResponseData: Codable {
+    public let pieceCount: Int
+    public let pieceSize: Int64
+    public let pieces: String
+}
+
+/// Response wrapper for torrent pieces `torrent-get` response
+public struct TorrentPiecesResponseTorrents: Codable {
+    public let torrents: [TorrentPiecesResponseData]
+}
