@@ -166,14 +166,6 @@ private enum AlternateIconHelper {
             completion(error)
         }
     }
-    
-    static func availableAlternateIconNames() -> [String] {
-        guard let icons = Bundle.main.object(forInfoDictionaryKey: "CFBundleIcons") as? [String: Any],
-              let alternates = icons["CFBundleAlternateIcons"] as? [String: Any] else {
-            return []
-        }
-        return alternates.keys.sorted()
-    }
 }
 
 private struct AppIconOption: Identifiable, Equatable {
@@ -219,7 +211,7 @@ private struct AppIconPickerView: View {
     }
     
     private func reloadOptions() {
-        let presentations = AppIconCatalog.presentations(for: [])
+        let presentations = AppIconCatalog.presentations()
         options = presentations.map { p in
             AppIconOption(
                 id: p.key ?? "__default__",

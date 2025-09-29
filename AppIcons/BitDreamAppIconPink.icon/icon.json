@@ -6,7 +6,7 @@
     {
       "layers" : [
         {
-          "glass" : true,
+          "glass" : false,
           "hidden" : false,
           "image-name" : "clouds-pink.png",
           "name" : "clouds-pink",

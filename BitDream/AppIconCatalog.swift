@@ -21,14 +21,7 @@ public struct AppIconPresentation {
 }
 
 /// Single source of truth for app icon names and preview assets (iOS-only).
-///
-/// How to use:
-/// - Add small square preview images to BitDream/Assets.xcassets with names matching `previewAssetName`.
-/// - Fill `entries` below with one item per icon you support. Use `key: nil` for the default icon.
-/// - Keys for alternates must match CFBundleAlternateIcons (what you pass to setAlternateIconName).
 public enum AppIconCatalog {
-    /// EDIT THIS: Manage all icons here.
-    /// Example rows are commented; replace with your real keys and preview asset names.
     public static let entries: [AppIconPresentation] = [
         AppIconPresentation(key: nil, title: "Blue Dreams (Default)", previewAssetName: "AppIconPreview-Default", order: 0),
         AppIconPresentation(key: "BitDreamAppIconPink", title: "Pink Dreams", previewAssetName: "AppIconPreview-Pink", order: 10),
@@ -37,7 +30,7 @@ public enum AppIconCatalog {
     ]
 
     // Return the icons exactly as defined in `entries`
-    public static func presentations(for _: [String]) -> [AppIconPresentation] {
+    public static func presentations() -> [AppIconPresentation] {
         var result: [AppIconPresentation] = []
         // Default first (use provided default if present, otherwise fallback)
         if let def = entries.first(where: { $0.key == nil }) {
