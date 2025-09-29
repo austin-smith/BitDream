@@ -6,13 +6,9 @@
     {
       "layers" : [
         {
-          "blend-mode" : "normal",
-          "fill" : "automatic",
           "glass" : false,
-          "hidden" : false,
           "image-name" : "clouds-blue.png",
           "name" : "clouds-blue",
-          "opacity" : 1,
           "position" : {
             "scale" : 3.5,
             "translation-in-points" : [

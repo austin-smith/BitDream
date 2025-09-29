@@ -25,9 +25,8 @@
 		4B1DAE0E295E6FFB0037E9FB /* ErrorDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */; };
 		4B1DAE10295E702B0037E9FB /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0F295E702B0037E9FB /* Store.swift */; };
 		4B4E4C1B2E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4B4E4C182E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon */; };
-		4B4E4C1C2E8A1F6E00418FD7 /* BitDreamAppIconPink.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4B4E4C192E8A1F6E00418FD7 /* BitDreamAppIconPink.icon */; };
+		4B4E4C1C2E8A1F6E00418FD7 /* BitDreamAppIconDefault.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4B4E4C192E8A1F6E00418FD7 /* BitDreamAppIconDefault.icon */; };
 		4B4E4C8A2E8A2B4D00418FD7 /* AppIconCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4E4C892E8A2B4D00418FD7 /* AppIconCatalog.swift */; };
-		4B61EA992E8A35A1005BD750 /* BitDreamAppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4B61EA982E8A35A1005BD750 /* BitDreamAppIcon.icon */; };
 		4B61EA9D2E8A396D005BD750 /* BitDreamAppIconPinkBg.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4B61EA9C2E8A396D005BD750 /* BitDreamAppIconPinkBg.icon */; };
 		4B642D6C2D7E151A003CEADC /* macOSServerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */; };
 		4B642D6D2D7E151A003CEADC /* iOSServerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B642D6A2D7E151A003CEADC /* iOSServerDetail.swift */; };
@@ -64,6 +63,7 @@
 		4BD8554A2E77424B00606224 /* WidgetKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD855492E77424B00606224 /* WidgetKitBridge.swift */; };
 		4BD8554B2E77424B00606224 /* WidgetKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD855492E77424B00606224 /* WidgetKitBridge.swift */; };
 		4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD938E92D82AF6F006CE97C /* ThemeManager.swift */; };
+		4BDA6AA92E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4BDA6AA82E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon */; };
 		4BDACD172E73DB220074F714 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4BDACD162E73DB220074F714 /* WidgetKit.framework */; };
 		4BDACD192E73DB220074F714 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4BDACD182E73DB220074F714 /* SwiftUI.framework */; };
 		4BDACD2A2E73DB230074F714 /* BitDreamWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4BDACD142E73DB220074F714 /* BitDreamWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -120,9 +120,8 @@
 		4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorDialog.swift; sourceTree = "<group>"; };
 		4B1DAE0F295E702B0037E9FB /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		4B4E4C182E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIconBlue.icon; sourceTree = "<group>"; };
-		4B4E4C192E8A1F6E00418FD7 /* BitDreamAppIconPink.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIconPink.icon; sourceTree = "<group>"; };
+		4B4E4C192E8A1F6E00418FD7 /* BitDreamAppIconDefault.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIconDefault.icon; sourceTree = "<group>"; };
 		4B4E4C892E8A2B4D00418FD7 /* AppIconCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconCatalog.swift; sourceTree = "<group>"; };
-		4B61EA982E8A35A1005BD750 /* BitDreamAppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIcon.icon; sourceTree = "<group>"; };
 		4B61EA9C2E8A396D005BD750 /* BitDreamAppIconPinkBg.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIconPinkBg.icon; sourceTree = "<group>"; };
 		4B642D6A2D7E151A003CEADC /* iOSServerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSServerDetail.swift; sourceTree = "<group>"; };
 		4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSServerDetail.swift; sourceTree = "<group>"; };
@@ -157,6 +156,7 @@
 		4BCF274E2E774EDC00F6BF76 /* DataWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataWriter.swift; sourceTree = "<group>"; };
 		4BD855492E77424B00606224 /* WidgetKitBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetKitBridge.swift; sourceTree = "<group>"; };
 		4BD938E92D82AF6F006CE97C /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		4BDA6AA82E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIconPixelyClouds.icon; sourceTree = "<group>"; };
 		4BDACD142E73DB220074F714 /* BitDreamWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BitDreamWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4BDACD162E73DB220074F714 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		4BDACD182E73DB220074F714 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -215,7 +215,6 @@
 				4BDACD1A2E73DB220074F714 /* BitDreamWidgets */,
 				4BDACD152E73DB220074F714 /* Frameworks */,
 				4B1DADDC295E6C440037E9FB /* Products */,
-				4B61EA982E8A35A1005BD750 /* BitDreamAppIcon.icon */,
 			);
 			sourceTree = "<group>";
 		};
@@ -283,9 +282,10 @@
 		4B4E4C1A2E8A1F6E00418FD7 /* AppIcons */ = {
 			isa = PBXGroup;
 			children = (
+				4B4E4C192E8A1F6E00418FD7 /* BitDreamAppIconDefault.icon */,
 				4B4E4C182E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon */,
-				4B4E4C192E8A1F6E00418FD7 /* BitDreamAppIconPink.icon */,
 				4B61EA9C2E8A396D005BD750 /* BitDreamAppIconPinkBg.icon */,
+				4BDA6AA82E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon */,
 			);
 			path = AppIcons;
 			sourceTree = "<group>";
@@ -472,12 +472,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4B61EA992E8A35A1005BD750 /* BitDreamAppIcon.icon in Resources */,
 				4B61EA9D2E8A396D005BD750 /* BitDreamAppIconPinkBg.icon in Resources */,
 				4B4E4C1B2E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon in Resources */,
-				4B4E4C1C2E8A1F6E00418FD7 /* BitDreamAppIconPink.icon in Resources */,
+				4B4E4C1C2E8A1F6E00418FD7 /* BitDreamAppIconDefault.icon in Resources */,
 				4B1DADEC295E6C450037E9FB /* Preview Assets.xcassets in Resources */,
 				4B1DADE8295E6C450037E9FB /* Assets.xcassets in Resources */,
+				4BDA6AA92E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -689,7 +689,7 @@
 		4B1DADF0295E6C450037E9FB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIconDefault;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = BitDream/BitDream.entitlements;
@@ -733,7 +733,7 @@
 		4B1DADF1295E6C450037E9FB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIconDefault;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = BitDream/BitDream.entitlements;
