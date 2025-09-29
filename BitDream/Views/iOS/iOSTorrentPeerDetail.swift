@@ -160,5 +160,3 @@ struct iOSTorrentPeerDetail: View {
     var body: some View { EmptyView() }
 }
 #endif
-
-

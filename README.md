@@ -23,4 +23,4 @@ BitDream connects to Transmission's RPC (Remote Procedure Call) interface, allow
 
 ## Support
 
-For support, please [create an issue](https://github.com/yourusername/BitDream/issues) in this repository. 
+For support, please [create an issue](https://github.com/austin-smith/BitDream/issues) in this repository. 

@@ -107,5 +107,3 @@ struct macOSTorrentPeerDetail: View {
     var body: some View { EmptyView() }
 }
 #endif
-
-

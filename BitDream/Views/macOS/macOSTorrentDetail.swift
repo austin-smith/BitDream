@@ -112,7 +112,7 @@ struct macOSTorrentDetail: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 PiecesGridView(pieceCount: pieceCount, piecesBitfieldBase64: piecesBitfield)
                                     .frame(maxWidth: .infinity)
-                                Text("\(piecesHaveCount)/\(pieceCount) pieces • \(byteCountFormatter.string(fromByteCount: pieceSize)) each")
+                                Text("\(piecesHaveCount) of \(pieceCount) pieces • \(byteCountFormatter.string(fromByteCount: pieceSize)) each")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }

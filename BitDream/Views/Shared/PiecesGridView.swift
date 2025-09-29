@@ -97,5 +97,3 @@ private func computeColumns(availableWidth: CGFloat, cellSize: CGFloat, cellSpac
     // Ensure at least 8 columns for visual density; width-bounded so it won't overflow
     return max(8, Int(floor((availableWidth + cellSpacing) / unit)))
 }
-
-
