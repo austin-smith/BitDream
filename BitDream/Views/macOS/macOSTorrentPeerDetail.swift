@@ -93,8 +93,6 @@ struct macOSTorrentPeerDetail: View {
     }
 }
 
- 
-
 #else
 struct macOSTorrentPeerDetail: View {
     let torrentName: String
