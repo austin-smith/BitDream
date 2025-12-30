@@ -24,7 +24,7 @@ public struct AppIconPresentation {
 public enum AppIconCatalog {
     public static let entries: [AppIconPresentation] = [
         AppIconPresentation(key: nil, title: "Byte-sized Dreams", previewAssetName: "AppIconPreview-Default", order: 0),
-        AppIconPresentation(key: "BitDreamAppIconPink", title: "Blue Clouds", previewAssetName: "AppIconPreview-Blue", order: 10),
+        AppIconPresentation(key: "BitDreamAppIconBlue", title: "Blue Clouds", previewAssetName: "AppIconPreview-Blue", order: 10),
         AppIconPresentation(key: "BitDreamAppIconPinkBg", title: "Pink Sky", previewAssetName: "AppIconPreview-PinkBG", order: 20),
         AppIconPresentation(key: "BitDreamAppIconPixelyClouds", title: "Cloudy Day", previewAssetName: "AppIconPreview-PixelyClouds", order: 30),
         AppIconPresentation(key: "AppIcon-OG", title: "The O.G.", previewAssetName: "AppIconPreview-OG", order: 40)

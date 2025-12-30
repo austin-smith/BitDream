@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -171,7 +171,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		4BDACD2B2E73DB230074F714 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		4BDACD2B2E73DB230074F714 /* Exceptions for "BitDreamWidgets" folder in "BitDreamWidgetsExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -181,8 +181,19 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4BCF27582E7751D400F6BF76 /* BackgroundRefresh */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = BackgroundRefresh; sourceTree = "<group>"; };
-		4BDACD1A2E73DB220074F714 /* BitDreamWidgets */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (4BDACD2B2E73DB230074F714 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = BitDreamWidgets; sourceTree = "<group>"; };
+		4BCF27582E7751D400F6BF76 /* BackgroundRefresh */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BackgroundRefresh;
+			sourceTree = "<group>";
+		};
+		4BDACD1A2E73DB220074F714 /* BitDreamWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				4BDACD2B2E73DB230074F714 /* Exceptions for "BitDreamWidgets" folder in "BitDreamWidgetsExtension" target */,
+			);
+			path = BitDreamWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -446,7 +457,6 @@
 				};
 			};
 			buildConfigurationList = 4B1DADD6295E6C440037E9FB /* Build configuration list for PBXProject "BitDream" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -457,6 +467,7 @@
 			packageReferences = (
 				4B1DADF5295E6D790037E9FB /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 			);
+			preferredProjectObjectVersion = 77;
 			productRefGroup = 4B1DADDC295E6C440037E9FB /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
