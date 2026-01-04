@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -90,14 +90,12 @@
 /* Begin PBXCopyFilesBuildPhase section */
 		4BDACD2F2E73DB230074F714 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolderSpec = 13;
+			dstSubfolder = PlugIns;
 			files = (
 				4BDACD2A2E73DB230074F714 /* BitDreamWidgetsExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -201,20 +199,16 @@
 /* Begin PBXFrameworksBuildPhase section */
 		4B1DADD8295E6C440037E9FB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				4B1DADF7295E6D790037E9FB /* KeychainAccess in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4BDACD112E73DB220074F714 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				4BDACD192E73DB220074F714 /* SwiftUI.framework in Frameworks */,
 				4BDACD172E73DB220074F714 /* WidgetKit.framework in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -429,14 +423,10 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			fileSystemSynchronizedGroups = (
 				4BDACD1A2E73DB220074F714 /* BitDreamWidgets */,
 			);
 			name = BitDreamWidgetsExtension;
-			packageProductDependencies = (
-			);
 			productName = BitDreamWidgetsExtension;
 			productReference = 4BDACD142E73DB220074F714 /* BitDreamWidgetsExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -449,7 +439,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1640;
-				LastUpgradeCheck = 1620;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					4B1DADDA295E6C440037E9FB = {
 						CreatedOnToolsVersion = 14.2;
@@ -470,7 +460,7 @@
 			packageReferences = (
 				4B1DADF5295E6D790037E9FB /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 			);
-			preferredProjectObjectVersion = 77;
+			preferredProjectObjectVersion = 90;
 			productRefGroup = 4B1DADDC295E6C440037E9FB /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -484,7 +474,6 @@
 /* Begin PBXResourcesBuildPhase section */
 		4B1DADD9295E6C440037E9FB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				4B61EA9D2E8A396D005BD750 /* BitDreamAppIconPinkBg.icon in Resources */,
 				4B4E4C1B2E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon in Resources */,
@@ -493,21 +482,17 @@
 				4B1DADE8295E6C450037E9FB /* Assets.xcassets in Resources */,
 				4BDA6AA92E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4BDACD122E73DB220074F714 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		4B1DADD7295E6C440037E9FB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				4BC4A4BA2E7248A300578D08 /* macOSMenuCommands.swift in Sources */,
 				4B1DADE4295E6C440037E9FB /* BitDream.xcdatamodeld in Sources */,
@@ -565,17 +550,14 @@
 				4BEFEE7C2E6E5E69005815FA /* ContentTypeIconMapper.swift in Sources */,
 				4BFFAA012E7F000000000001 /* macOSTorrentActionsMenu.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		4BDACD102E73DB220074F714 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				4B8670062E73DE6E0004ECBA /* AppGroup.swift in Sources */,
 				4BD8554A2E77424B00606224 /* WidgetKitBridge.swift in Sources */,
 				4BCF27512E774F3E00F6BF76 /* DataModels.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -588,7 +570,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		4B1DADED295E6C450037E9FB /* Debug */ = {
+		4B1DADED295E6C450037E9FB /* Debug configuration for PBXProject "BitDream" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -623,6 +605,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = T778QMSML9;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -643,12 +626,13 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
-		4B1DADEE295E6C450037E9FB /* Release */ = {
+		4B1DADEE295E6C450037E9FB /* Release configuration for PBXProject "BitDream" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -683,6 +667,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = T778QMSML9;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -696,12 +681,13 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
 			name = Release;
 		};
-		4B1DADF0295E6C450037E9FB /* Debug */ = {
+		4B1DADF0295E6C450037E9FB /* Debug configuration for PBXNativeTarget "BitDream" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIconDefault;
@@ -712,9 +698,11 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"BitDream/Preview Content\"";
-				DEVELOPMENT_TEAM = T778QMSML9;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BitDream/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = BitDream;
@@ -733,7 +721,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -745,7 +733,7 @@
 			};
 			name = Debug;
 		};
-		4B1DADF1295E6C450037E9FB /* Release */ = {
+		4B1DADF1295E6C450037E9FB /* Release configuration for PBXNativeTarget "BitDream" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIconDefault;
@@ -756,9 +744,11 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"BitDream/Preview Content\"";
-				DEVELOPMENT_TEAM = T778QMSML9;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BitDream/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = BitDream;
@@ -777,7 +767,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -789,7 +779,7 @@
 			};
 			name = Release;
 		};
-		4BDACD2D2E73DB230074F714 /* Debug */ = {
+		4BDACD2D2E73DB230074F714 /* Debug configuration for PBXNativeTarget "BitDreamWidgetsExtension" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -798,21 +788,22 @@
 				CODE_SIGN_ENTITLEMENTS = BitDreamWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = T778QMSML9;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BitDreamWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = BitDreamWidgets;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.1;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream.BitDreamWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -829,7 +820,7 @@
 			};
 			name = Debug;
 		};
-		4BDACD2E2E73DB230074F714 /* Release */ = {
+		4BDACD2E2E73DB230074F714 /* Release configuration for PBXNativeTarget "BitDreamWidgetsExtension" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -838,21 +829,22 @@
 				CODE_SIGN_ENTITLEMENTS = BitDreamWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = T778QMSML9;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BitDreamWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = BitDreamWidgets;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.1;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream.BitDreamWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -875,28 +867,25 @@
 		4B1DADD6295E6C440037E9FB /* Build configuration list for PBXProject "BitDream" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				4B1DADED295E6C450037E9FB /* Debug */,
-				4B1DADEE295E6C450037E9FB /* Release */,
+				4B1DADED295E6C450037E9FB /* Debug configuration for PBXProject "BitDream" */,
+				4B1DADEE295E6C450037E9FB /* Release configuration for PBXProject "BitDream" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		4B1DADEF295E6C450037E9FB /* Build configuration list for PBXNativeTarget "BitDream" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				4B1DADF0295E6C450037E9FB /* Debug */,
-				4B1DADF1295E6C450037E9FB /* Release */,
+				4B1DADF0295E6C450037E9FB /* Debug configuration for PBXNativeTarget "BitDream" */,
+				4B1DADF1295E6C450037E9FB /* Release configuration for PBXNativeTarget "BitDream" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		4BDACD2C2E73DB230074F714 /* Build configuration list for PBXNativeTarget "BitDreamWidgetsExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				4BDACD2D2E73DB230074F714 /* Debug */,
-				4BDACD2E2E73DB230074F714 /* Release */,
+				4BDACD2D2E73DB230074F714 /* Debug configuration for PBXNativeTarget "BitDreamWidgetsExtension" */,
+				4BDACD2E2E73DB230074F714 /* Release configuration for PBXNativeTarget "BitDreamWidgetsExtension" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
