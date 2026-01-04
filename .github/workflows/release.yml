@@ -30,7 +30,7 @@ jobs:
         run: |
           mkdir -p dmg-contents
           cp -R build/BitDream.xcarchive/Products/Applications/BitDream.app dmg-contents/
-          hdiutil create -volname "BitDream" -srcfolder dmg-contents -ov -format UDZO "BitDream-${{ github.ref_name }}.dmg"
+          hdiutil create -volname "BitDream" -srcfolder dmg-contents -ov -format UDZO "BitDream-${{ github.ref_name }}-arm64.dmg"
 
       - name: Create GitHub Release
         env:
@@ -39,4 +39,4 @@ jobs:
           gh release create ${{ github.ref_name }} \
             --title "${{ github.ref_name }}" \
             --generate-notes \
-            BitDream-${{ github.ref_name }}.dmg
+            BitDream-${{ github.ref_name }}-arm64.dmg
