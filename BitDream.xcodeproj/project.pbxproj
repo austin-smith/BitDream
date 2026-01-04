@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -24,6 +24,10 @@
 		4B1DAE0C295E6FEF0037E9FB /* ServerList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0B295E6FEF0037E9FB /* ServerList.swift */; };
 		4B1DAE0E295E6FFB0037E9FB /* ErrorDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */; };
 		4B1DAE10295E702B0037E9FB /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0F295E702B0037E9FB /* Store.swift */; };
+		4B4E4C1B2E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4B4E4C182E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon */; };
+		4B4E4C1C2E8A1F6E00418FD7 /* BitDreamAppIconDefault.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4B4E4C192E8A1F6E00418FD7 /* BitDreamAppIconDefault.icon */; };
+		4B4E4C8A2E8A2B4D00418FD7 /* AppIconCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4E4C892E8A2B4D00418FD7 /* AppIconCatalog.swift */; };
+		4B61EA9D2E8A396D005BD750 /* BitDreamAppIconPinkBg.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4B61EA9C2E8A396D005BD750 /* BitDreamAppIconPinkBg.icon */; };
 		4B642D6C2D7E151A003CEADC /* macOSServerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */; };
 		4B642D6D2D7E151A003CEADC /* iOSServerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B642D6A2D7E151A003CEADC /* iOSServerDetail.swift */; };
 		4B642D792D7E1EED003CEADC /* macOSServerList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B642D782D7E1EED003CEADC /* macOSServerList.swift */; };
@@ -53,17 +57,18 @@
 		4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */; };
 		4BC5C2B42D7D415100D80AB4 /* iOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */; };
 		4BC6F24B2E89F8510037DFDF /* PiecesGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC6F24A2E89F8510037DFDF /* PiecesGridView.swift */; };
-		4BC6F24D2E8A069F0037DFDF /* BitDreamAppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4BC6F24C2E8A069F0037DFDF /* BitDreamAppIcon.icon */; };
 		4BCF274F2E774EDC00F6BF76 /* DataWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274E2E774EDC00F6BF76 /* DataWriter.swift */; };
 		4BCF27502E774EDC00F6BF76 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274D2E774EDC00F6BF76 /* DataModels.swift */; };
 		4BCF27512E774F3E00F6BF76 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274D2E774EDC00F6BF76 /* DataModels.swift */; };
 		4BD8554A2E77424B00606224 /* WidgetKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD855492E77424B00606224 /* WidgetKitBridge.swift */; };
 		4BD8554B2E77424B00606224 /* WidgetKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD855492E77424B00606224 /* WidgetKitBridge.swift */; };
 		4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD938E92D82AF6F006CE97C /* ThemeManager.swift */; };
+		4BDA6AA92E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4BDA6AA82E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon */; };
 		4BDACD172E73DB220074F714 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4BDACD162E73DB220074F714 /* WidgetKit.framework */; };
 		4BDACD192E73DB220074F714 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4BDACD182E73DB220074F714 /* SwiftUI.framework */; };
 		4BDACD2A2E73DB230074F714 /* BitDreamWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4BDACD142E73DB220074F714 /* BitDreamWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4BDACD572E73DBBE0074F714 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BDACD502E73DBBE0074F714 /* AppGroup.swift */; };
+		4BDE147F2F0B015C00FF6A46 /* AppIconManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BDE147E2F0B015C00FF6A46 /* AppIconManager.swift */; };
 		4BE364BA2E6E75B300CF1A33 /* SharedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE364B92E6E75B300CF1A33 /* SharedComponents.swift */; };
 		4BEFEE7C2E6E5E69005815FA /* ContentTypeIconMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BEFEE7B2E6E5E69005815FA /* ContentTypeIconMapper.swift */; };
 		4BF593B72E89BF5500A8C1FC /* macOSTorrentPeerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF593B62E89BF5500A8C1FC /* macOSTorrentPeerDetail.swift */; };
@@ -115,6 +120,10 @@
 		4B1DAE0B295E6FEF0037E9FB /* ServerList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerList.swift; sourceTree = "<group>"; };
 		4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorDialog.swift; sourceTree = "<group>"; };
 		4B1DAE0F295E702B0037E9FB /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		4B4E4C182E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIconBlue.icon; sourceTree = "<group>"; };
+		4B4E4C192E8A1F6E00418FD7 /* BitDreamAppIconDefault.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIconDefault.icon; sourceTree = "<group>"; };
+		4B4E4C892E8A2B4D00418FD7 /* AppIconCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconCatalog.swift; sourceTree = "<group>"; };
+		4B61EA9C2E8A396D005BD750 /* BitDreamAppIconPinkBg.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIconPinkBg.icon; sourceTree = "<group>"; };
 		4B642D6A2D7E151A003CEADC /* iOSServerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSServerDetail.swift; sourceTree = "<group>"; };
 		4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSServerDetail.swift; sourceTree = "<group>"; };
 		4B642D782D7E1EED003CEADC /* macOSServerList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSServerList.swift; sourceTree = "<group>"; };
@@ -131,7 +140,7 @@
 		4B73985D2E70181D00D06E5D /* macOSStatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSStatisticsView.swift; sourceTree = "<group>"; };
 		4B73985F2E7029BD00D06E5D /* macOSAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSAboutView.swift; sourceTree = "<group>"; };
 		4B7EF5702E6E9F0C00C1C281 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
-		4B908AED2E6EBAC700C2DA5C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		4B908AED2E6EBAC700C2DA5C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSAddTorrent.swift; sourceTree = "<group>"; };
 		4B9CAC552D7E83460094CD03 /* iOSAddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSAddTorrent.swift; sourceTree = "<group>"; };
 		4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBadgeManager.swift; sourceTree = "<group>"; };
@@ -144,16 +153,17 @@
 		4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentDetail.swift; sourceTree = "<group>"; };
 		4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentDetail.swift; sourceTree = "<group>"; };
 		4BC6F24A2E89F8510037DFDF /* PiecesGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiecesGridView.swift; sourceTree = "<group>"; };
-		4BC6F24C2E8A069F0037DFDF /* BitDreamAppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIcon.icon; sourceTree = "<group>"; };
 		4BCF274D2E774EDC00F6BF76 /* DataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataModels.swift; sourceTree = "<group>"; };
 		4BCF274E2E774EDC00F6BF76 /* DataWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataWriter.swift; sourceTree = "<group>"; };
 		4BD855492E77424B00606224 /* WidgetKitBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetKitBridge.swift; sourceTree = "<group>"; };
 		4BD938E92D82AF6F006CE97C /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		4BDA6AA82E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIconPixelyClouds.icon; sourceTree = "<group>"; };
 		4BDACD142E73DB220074F714 /* BitDreamWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BitDreamWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4BDACD162E73DB220074F714 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		4BDACD182E73DB220074F714 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		4BDACD382E73DB520074F714 /* BitDreamWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BitDreamWidgetsExtension.entitlements; sourceTree = "<group>"; };
 		4BDACD502E73DBBE0074F714 /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
+		4BDE147E2F0B015C00FF6A46 /* AppIconManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconManager.swift; sourceTree = "<group>"; };
 		4BE364B92E6E75B300CF1A33 /* SharedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComponents.swift; sourceTree = "<group>"; };
 		4BEFEE7B2E6E5E69005815FA /* ContentTypeIconMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentTypeIconMapper.swift; sourceTree = "<group>"; };
 		4BF593B62E89BF5500A8C1FC /* macOSTorrentPeerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentPeerDetail.swift; sourceTree = "<group>"; };
@@ -163,7 +173,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		4BDACD2B2E73DB230074F714 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		4BDACD2B2E73DB230074F714 /* Exceptions for "BitDreamWidgets" folder in "BitDreamWidgetsExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -173,8 +183,19 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4BCF27582E7751D400F6BF76 /* BackgroundRefresh */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = BackgroundRefresh; sourceTree = "<group>"; };
-		4BDACD1A2E73DB220074F714 /* BitDreamWidgets */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (4BDACD2B2E73DB230074F714 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = BitDreamWidgets; sourceTree = "<group>"; };
+		4BCF27582E7751D400F6BF76 /* BackgroundRefresh */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BackgroundRefresh;
+			sourceTree = "<group>";
+		};
+		4BDACD1A2E73DB220074F714 /* BitDreamWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				4BDACD2B2E73DB230074F714 /* Exceptions for "BitDreamWidgets" folder in "BitDreamWidgetsExtension" target */,
+			);
+			path = BitDreamWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -201,12 +222,12 @@
 		4B1DADD2295E6C440037E9FB = {
 			isa = PBXGroup;
 			children = (
+				4B4E4C1A2E8A1F6E00418FD7 /* AppIcons */,
 				4BDACD382E73DB520074F714 /* BitDreamWidgetsExtension.entitlements */,
 				4B1DADDD295E6C440037E9FB /* BitDream */,
 				4BDACD1A2E73DB220074F714 /* BitDreamWidgets */,
 				4BDACD152E73DB220074F714 /* Frameworks */,
 				4B1DADDC295E6C440037E9FB /* Products */,
-				4BC6F24C2E8A069F0037DFDF /* BitDreamAppIcon.icon */,
 			);
 			sourceTree = "<group>";
 		};
@@ -225,6 +246,8 @@
 				4B908AED2E6EBAC700C2DA5C /* Info.plist */,
 				4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */,
 				4B7EF5702E6E9F0C00C1C281 /* AppConfig.swift */,
+				4B4E4C892E8A2B4D00418FD7 /* AppIconCatalog.swift */,
+				4BDE147E2F0B015C00FF6A46 /* AppIconManager.swift */,
 				4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */,
 				4B1DADE0295E6C440037E9FB /* Persistence.swift */,
 				4B1DAE0F295E702B0037E9FB /* Store.swift */,
@@ -268,6 +291,17 @@
 				4B1DADFD295E6F390037E9FB /* TransmissionModels.swift */,
 			);
 			path = Transmission;
+			sourceTree = "<group>";
+		};
+		4B4E4C1A2E8A1F6E00418FD7 /* AppIcons */ = {
+			isa = PBXGroup;
+			children = (
+				4B4E4C192E8A1F6E00418FD7 /* BitDreamAppIconDefault.icon */,
+				4B4E4C182E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon */,
+				4B61EA9C2E8A396D005BD750 /* BitDreamAppIconPinkBg.icon */,
+				4BDA6AA82E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon */,
+			);
+			path = AppIcons;
 			sourceTree = "<group>";
 		};
 		4B642D752D7E1D4C003CEADC /* iOS */ = {
@@ -426,7 +460,6 @@
 				};
 			};
 			buildConfigurationList = 4B1DADD6295E6C440037E9FB /* Build configuration list for PBXProject "BitDream" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -437,6 +470,7 @@
 			packageReferences = (
 				4B1DADF5295E6D790037E9FB /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 			);
+			preferredProjectObjectVersion = 77;
 			productRefGroup = 4B1DADDC295E6C440037E9FB /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -452,9 +486,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4B61EA9D2E8A396D005BD750 /* BitDreamAppIconPinkBg.icon in Resources */,
+				4B4E4C1B2E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon in Resources */,
+				4B4E4C1C2E8A1F6E00418FD7 /* BitDreamAppIconDefault.icon in Resources */,
 				4B1DADEC295E6C450037E9FB /* Preview Assets.xcassets in Resources */,
 				4B1DADE8295E6C450037E9FB /* Assets.xcassets in Resources */,
-				4BC6F24D2E8A069F0037DFDF /* BitDreamAppIcon.icon in Resources */,
+				4BDA6AA92E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -478,6 +515,7 @@
 				4B1DADDF295E6C440037E9FB /* BitDreamApp.swift in Sources */,
 				4B1DADE1295E6C440037E9FB /* Persistence.swift in Sources */,
 				4B1DAE10295E702B0037E9FB /* Store.swift in Sources */,
+				4B4E4C8A2E8A2B4D00418FD7 /* AppIconCatalog.swift in Sources */,
 				4BF593BB2E89C8C400A8C1FC /* iOSTorrentPeerDetail.swift in Sources */,
 				4B1DADF9295E6EBA0037E9FB /* Utilities.swift in Sources */,
 				4B6F1EB02D82D340003D8F6E /* iOSSettingsView.swift in Sources */,
@@ -485,6 +523,7 @@
 				4B6F1EBC2D86C908003D8F6E /* macOSTorrentFileDetail.swift in Sources */,
 				4B054C862E6FEB58004DDB99 /* TorrentExtensions.swift in Sources */,
 				4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */,
+				4BDE147F2F0B015C00FF6A46 /* AppIconManager.swift in Sources */,
 				4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */,
 				4B1DADFE295E6F390037E9FB /* TransmissionModels.swift in Sources */,
 				4B1DAE02295E6FA30037E9FB /* AddTorrent.swift in Sources */,
@@ -665,9 +704,9 @@
 		4B1DADF0295E6C450037E9FB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIconDefault;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = BitDream/BitDream.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -690,11 +729,11 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0.1;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -709,9 +748,9 @@
 		4B1DADF1295E6C450037E9FB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIconDefault;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = BitDream/BitDream.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -734,11 +773,11 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0.1;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -773,7 +812,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream.BitDreamWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -813,7 +852,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream.BitDreamWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;

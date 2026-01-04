@@ -2,13 +2,14 @@ import SwiftUI
 import Foundation
 
 #if os(iOS)
+import UIKit
 typealias PlatformSettingsView = iOSSettingsView
 
 struct iOSSettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var showingThemeSettings = false
     @ObservedObject var store: Store
     @ObservedObject private var themeManager = ThemeManager.shared
+    @StateObject private var appIconManager = AppIconManager.shared
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = AppDefaults.showContentTypeIcons
     @AppStorage(UserDefaultsKeys.startupConnectionBehavior) private var startupBehaviorRaw: String = AppDefaults.startupConnectionBehavior.rawValue
     
@@ -32,6 +33,14 @@ struct iOSSettingsView: View {
                                 .frame(width: 16, height: 16)
                             Text(themeManager.currentAccentColorOption.name)
                                 .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    NavigationLink(destination: AppIconPickerView(appIconManager: appIconManager)) {
+                        HStack {
+                            Text("App Icon")
+                            Spacer()
+                            CurrentAppIconPreview(appIconManager: appIconManager)
                         }
                     }
                     
@@ -135,6 +144,107 @@ struct AccentColorPicker: View {
         }
         .navigationTitle("Accent Color")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - App Icon switching (iOS-only helper + SwiftUI picker)
+
+private struct AppIconOption: Identifiable, Equatable {
+    let id: String
+    let key: String? // nil = default icon
+    let title: String
+    let previewAssetName: String // expected image asset name
+}
+
+private struct AppIconPickerView: View {
+    @ObservedObject var appIconManager: AppIconManager
+    @State private var options: [AppIconOption] = []
+    
+    var body: some View {
+        List {
+            ForEach(options) { option in
+                HStack(spacing: 12) {
+                    PreviewThumbnail(name: option.previewAssetName)
+                        .frame(width: 44, height: 44)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    Text(option.title)
+                    Spacer()
+                    if appIconManager.currentIconName == option.key { Image(systemName: "checkmark") }
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { select(option.key) }
+            }
+            
+            if let lastError = appIconManager.lastError {
+                Section {
+                    Text(lastError)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .navigationTitle("App Icon")
+        .onAppear {
+            reloadOptions()
+            appIconManager.refreshCurrentIcon()
+        }
+    }
+    
+    private func reloadOptions() {
+        let presentations = AppIconCatalog.presentations()
+        options = presentations.map { p in
+            AppIconOption(
+                id: p.key ?? "__default__",
+                key: p.key,
+                title: p.title,
+                previewAssetName: p.previewAssetName
+            )
+        }
+    }
+    
+    private func select(_ name: String?) {
+        appIconManager.selectIcon(name: name)
+    }
+}
+
+private struct PreviewThumbnail: View {
+    let name: String
+    
+    var body: some View {
+        if UIImage(named: name) != nil {
+            Image(name)
+                .resizable()
+                .scaledToFill()
+                .background(Color(.secondarySystemBackground))
+        } else {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color(.secondarySystemBackground))
+                Image(systemName: "app")
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+}
+
+private struct CurrentAppIconPreview: View {
+    @ObservedObject var appIconManager: AppIconManager
+    
+    private var previewAssetName: String {
+        if let key = appIconManager.currentIconName, let preset = AppIconCatalog.entries.first(where: { $0.key == key }) {
+            return preset.previewAssetName
+        }
+        // default
+        return AppIconCatalog.entries.first(where: { $0.key == nil })?.previewAssetName ?? "AppIconPreview-Default"
+    }
+    
+    var body: some View {
+        Image(previewAssetName)
+            .resizable()
+            .scaledToFill()
+            .frame(width: 22, height: 22)
+            .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.secondary.opacity(0.2), lineWidth: 0.5))
     }
 }
 

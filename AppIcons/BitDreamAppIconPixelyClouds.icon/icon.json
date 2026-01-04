@@ -1,20 +1,23 @@
 {
   "fill" : {
-    "automatic-gradient" : "display-p3:0.80815,0.90184,0.95295,1.00000"
+    "automatic-gradient" : "display-p3:0.45490,0.63137,0.83529,1.00000"
   },
   "groups" : [
     {
       "layers" : [
         {
-          "blend-mode" : "normal",
-          "fill" : "automatic",
+          "glass" : false,
+          "hidden" : true,
+          "image-name" : "pixely-clouds.png",
+          "name" : "pixely-clouds"
+        },
+        {
           "glass" : false,
           "hidden" : false,
-          "image-name" : "clouds-blue.png",
-          "name" : "clouds-blue",
-          "opacity" : 1,
+          "image-name" : "pixely-clouds-2.png",
+          "name" : "pixely-clouds-2",
           "position" : {
-            "scale" : 3.5,
+            "scale" : 0.8,
             "translation-in-points" : [
               0,
               0
@@ -22,11 +25,12 @@
           }
         },
         {
+          "glass" : false,
           "hidden" : true,
-          "image-name" : "clouds-pink.png",
-          "name" : "clouds-pink",
+          "image-name" : "pixely-clouds-3.png",
+          "name" : "pixely-clouds-3",
           "position" : {
-            "scale" : 3.5,
+            "scale" : 0.8,
             "translation-in-points" : [
               0,
               0

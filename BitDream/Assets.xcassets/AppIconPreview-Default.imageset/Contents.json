@@ -1,15 +1,17 @@
 {
   "images" : [
     {
+      "filename" : "BitDreamAppIconDefault-iOS-Default-60x60@1x.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "BitDreamAppIcon-iOS-Default-83.5x83.5@2x.png",
+      "filename" : "BitDreamAppIconDefault-iOS-Default-60x60@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "BitDreamAppIconDefault-iOS-Default-60x60@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
