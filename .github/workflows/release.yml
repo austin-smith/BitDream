@@ -1,0 +1,45 @@
+name: Create GitHub Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:  # Manual trigger for testing
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build macOS app
+        run: |
+          xcodebuild archive \
+            -project BitDream.xcodeproj \
+            -scheme BitDream \
+            -destination "generic/platform=macOS" \
+            -archivePath build/BitDream.xcarchive \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            MACOSX_DEPLOYMENT_TARGET=15.0
+
+      - name: Create DMG
+        run: |
+          mkdir -p dmg-contents
+          cp -R build/BitDream.xcarchive/Products/Applications/BitDream.app dmg-contents/
+          hdiutil create -volname "BitDream" -srcfolder dmg-contents -ov -format UDZO "BitDream-${{ github.ref_name }}.dmg"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            BitDream-${{ github.ref_name }}.dmg
