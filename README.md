@@ -1,10 +1,14 @@
-# BitDream
-
-<p align="center">
+<h1 align="center">
   <img src="BitDream/Assets.xcassets/AppIconPreview-Default.imageset/BitDreamAppIconDefault-iOS-Default-60x60@3x.png" width="128" height="128" alt="BitDream Icon">
-</p>
+  <br>BitDream
+</h1>
 
 BitDream is a native and feature-rich remote control client for Transmission web server. It provides a modern, seamless interface to manage your Transmission server from anywhere.
+
+<p align="center">
+  <img src="./docs/screenshots/screen-grab-light.png" alt="Light mode" width="49%" />
+  <img src="./docs/screenshots/screen-grab-dark.png" alt="Dark mode" width="49%" />
+</p>
 
 ## Features
 
