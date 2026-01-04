@@ -9,6 +9,7 @@ struct iOSSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var store: Store
     @ObservedObject private var themeManager = ThemeManager.shared
+    @StateObject private var appIconManager = AppIconManager.shared
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = AppDefaults.showContentTypeIcons
     @AppStorage(UserDefaultsKeys.startupConnectionBehavior) private var startupBehaviorRaw: String = AppDefaults.startupConnectionBehavior.rawValue
     
@@ -35,11 +36,11 @@ struct iOSSettingsView: View {
                         }
                     }
                     
-                    NavigationLink(destination: AppIconPickerView()) {
+                    NavigationLink(destination: AppIconPickerView(appIconManager: appIconManager)) {
                         HStack {
                             Text("App Icon")
                             Spacer()
-                            CurrentAppIconPreview()
+                            CurrentAppIconPreview(appIconManager: appIconManager)
                         }
                     }
                     
@@ -148,26 +149,6 @@ struct AccentColorPicker: View {
 
 // MARK: - App Icon switching (iOS-only helper + SwiftUI picker)
 
-private enum AlternateIconHelper {
-    static var supportsAlternateIcons: Bool {
-        UIApplication.shared.supportsAlternateIcons
-    }
-    
-    static var currentAlternateIconName: String? {
-        UIApplication.shared.alternateIconName
-    }
-    
-    static func setAlternateIcon(name: String?, completion: @escaping (Error?) -> Void) {
-        guard supportsAlternateIcons else {
-            completion(NSError(domain: "AlternateIcon", code: 1, userInfo: [NSLocalizedDescriptionKey: "Alternate icons not supported"]))
-            return
-        }
-        UIApplication.shared.setAlternateIconName(name) { error in
-            completion(error)
-        }
-    }
-}
-
 private struct AppIconOption: Identifiable, Equatable {
     let id: String
     let key: String? // nil = default icon
@@ -176,9 +157,8 @@ private struct AppIconOption: Identifiable, Equatable {
 }
 
 private struct AppIconPickerView: View {
+    @ObservedObject var appIconManager: AppIconManager
     @State private var options: [AppIconOption] = []
-    @State private var currentName: String? = UIApplication.shared.alternateIconName
-    @State private var lastError: String?
     
     var body: some View {
         List {
@@ -189,13 +169,13 @@ private struct AppIconPickerView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     Text(option.title)
                     Spacer()
-                    if currentName == option.key { Image(systemName: "checkmark") }
+                    if appIconManager.currentIconName == option.key { Image(systemName: "checkmark") }
                 }
                 .contentShape(Rectangle())
                 .onTapGesture { select(option.key) }
             }
             
-            if let lastError {
+            if let lastError = appIconManager.lastError {
                 Section {
                     Text(lastError)
                         .font(.caption)
@@ -206,7 +186,7 @@ private struct AppIconPickerView: View {
         .navigationTitle("App Icon")
         .onAppear {
             reloadOptions()
-            currentName = AlternateIconHelper.currentAlternateIconName
+            appIconManager.refreshCurrentIcon()
         }
     }
     
@@ -223,16 +203,7 @@ private struct AppIconPickerView: View {
     }
     
     private func select(_ name: String?) {
-        AlternateIconHelper.setAlternateIcon(name: name) { error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    lastError = "Failed to change icon: \(error.localizedDescription)"
-                } else {
-                    lastError = nil
-                    currentName = name
-                }
-            }
-        }
+        appIconManager.selectIcon(name: name)
     }
 }
 
@@ -257,10 +228,10 @@ private struct PreviewThumbnail: View {
 }
 
 private struct CurrentAppIconPreview: View {
-    @State private var currentName: String? = UIApplication.shared.alternateIconName
+    @ObservedObject var appIconManager: AppIconManager
     
     private var previewAssetName: String {
-        if let key = currentName, let preset = AppIconCatalog.entries.first(where: { $0.key == key }) {
+        if let key = appIconManager.currentIconName, let preset = AppIconCatalog.entries.first(where: { $0.key == key }) {
             return preset.previewAssetName
         }
         // default
@@ -274,10 +245,6 @@ private struct CurrentAppIconPreview: View {
             .frame(width: 22, height: 22)
             .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.secondary.opacity(0.2), lineWidth: 0.5))
-            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
-                // refresh when returning to foreground (icon may have changed)
-                currentName = UIApplication.shared.alternateIconName
-            }
     }
 }
 

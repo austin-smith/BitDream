@@ -33,12 +33,15 @@ public enum AppIconCatalog {
     // Return the icons exactly as defined in `entries`
     public static func presentations() -> [AppIconPresentation] {
         var result: [AppIconPresentation] = []
-        // Default first (use provided default if present, otherwise fallback)
+        // Default first; assert if the catalog is ever missing one, but still provide a safe fallback.
+        let defaultPresentation: AppIconPresentation
         if let def = entries.first(where: { $0.key == nil }) {
-            result.append(def)
+            defaultPresentation = def
         } else {
-            result.append(AppIconPresentation(key: nil, title: "Default", previewAssetName: "AppIconPreview-Default", order: Int.min))
+            assertionFailure("AppIconCatalog must include a default entry (key == nil)")
+            defaultPresentation = AppIconPresentation(key: nil, title: "Default", previewAssetName: "AppIconPreview-Default", order: Int.min)
         }
+        result.append(defaultPresentation)
 
         // Then all alternates exactly as defined
         result.append(contentsOf: entries.filter { $0.key != nil })
