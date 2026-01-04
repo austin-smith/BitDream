@@ -26,15 +26,6 @@ jobs:
             CODE_SIGN_IDENTITY=- \
             ARCHS=arm64
 
-      - name: Debug - Check app contents
-        run: |
-          echo "=== App bundle contents ==="
-          ls -la build/BitDream.xcarchive/Products/Applications/BitDream.app/Contents/
-          echo "=== Resources ==="
-          ls -la build/BitDream.xcarchive/Products/Applications/BitDream.app/Contents/Resources/ || echo "No Resources folder"
-          echo "=== Looking for icon files ==="
-          find build/BitDream.xcarchive/Products/Applications/BitDream.app -name "*.icns" -o -name "AppIcon*" 2>/dev/null || echo "No icons found"
-
       - name: Create DMG
         run: |
           mkdir -p dmg-contents
