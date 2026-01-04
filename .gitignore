@@ -9,11 +9,8 @@ xcuserdata/
 # Visual Studio Code
 .vscode
 
-# Claude
-CLAUDE.md
-
 # Build folder
 build/
 
 # macOS custom folder icon
-Icon?
+Icon[^a-zA-Z]
