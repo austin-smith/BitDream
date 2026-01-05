@@ -146,15 +146,21 @@ class Store: NSObject, ObservableObject {
         self.server = Server(config: config, auth: auth)
         self.host = host
         
-        // Get server version and download directory
+        // Establish connection first, then start data refresh
         getSession(config: config, auth: auth, onResponse: { sessionInfo in
             DispatchQueue.main.async {
                 self.defaultDownloadDir = sessionInfo.downloadDir
                 self.sessionConfiguration = sessionInfo
-                
+
                 // Store the version in CoreData
                 host.version = sessionInfo.version
                 try? PersistenceController.shared.container.viewContext.save()
+
+                // Refresh data immediately after setting new host
+                refreshTransmissionData(store: self)
+
+                // Begin auto-refresh of data
+                self.startTimer()
             }
         }, onError: { error in
             print("Failed to get session info: \(error)")
@@ -162,15 +168,6 @@ class Store: NSObject, ObservableObject {
                 self.sessionConfiguration = nil
             }
         })
-        
-        // Clear torrents before refreshing to ensure list resets to top
-        self.torrents = []
-        
-        // refresh data immediately after setting new host
-        refreshTransmissionData(store: self)
-        
-        // begin auto-refresh of data
-        startTimer()
     }
     
     func readPassword(name: String) -> String {
