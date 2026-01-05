@@ -146,32 +146,17 @@ class Store: NSObject, ObservableObject {
         self.server = Server(config: config, auth: auth)
         self.host = host
 
-        // Clear local state now so UI/actions can’t target stale torrents while the new host connects
+        // Clear all local state so UI/actions can't use stale data from the previous host
         self.torrents = []
         self.sessionStats = nil
         self.sessionConfiguration = nil
+        self.defaultDownloadDir = ""
 
-        // Kick off refresh loop immediately so transient session failures don’t leave the app idle
+        // Kick off refresh loop immediately; refreshTransmissionData handles torrents,
+        // session stats, and session info (including defaultDownloadDir) with retry logic
         timer.invalidate()
         refreshTransmissionData(store: self)
         startTimer()
-
-        // Establish connection first, then start data refresh
-        getSession(config: config, auth: auth, onResponse: { sessionInfo in
-            DispatchQueue.main.async {
-                self.defaultDownloadDir = sessionInfo.downloadDir
-                self.sessionConfiguration = sessionInfo
-
-                // Store the version in CoreData
-                host.version = sessionInfo.version
-                try? PersistenceController.shared.container.viewContext.save()
-            }
-        }, onError: { error in
-            print("Failed to get session info: \(error)")
-            DispatchQueue.main.async {
-                self.sessionConfiguration = nil
-            }
-        })
     }
 
     func readPassword(name: String) -> String {

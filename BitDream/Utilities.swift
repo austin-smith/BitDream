@@ -219,6 +219,37 @@ func updateSessionStats(store: Store, update: @escaping (SessionStats) -> Void, 
     })
 }
 
+/// Updates the session configuration (download directory, version, settings) with retry logic
+func updateSessionInfo(store: Store, update: @escaping (TransmissionSessionResponseArguments) -> Void, retry: Int = 0) {
+    // Skip connection attempts if user is actively editing server settings
+    if store.isEditingServerSettings {
+        return
+    }
+
+    let info = makeConfig(store: store)
+    getSession(config: info.config, auth: info.auth, onResponse: { sessionInfo in
+        // Clear connection error state on successful response
+        DispatchQueue.main.async {
+            let wasInErrorState = store.connectionError
+
+            store.connectionError = false
+            store.connectionErrorMessage = ""
+
+            if wasInErrorState {
+                store.showConnectionErrorAlert = false
+            }
+        }
+        update(sessionInfo)
+    }, onError: { err in
+        if (retry > 3) {
+            print("Session info error after retries: \(err)")
+            store.handleConnectionError(message: "Could not reach server after multiple attempts. Please check your connection.")
+        } else {
+            updateSessionInfo(store: store, update: update, retry: retry + 1)
+        }
+    })
+}
+
 // updates all Transmission data based on current host
 func refreshTransmissionData(store: Store) {
     // update the list of torrents when new host is set
@@ -231,6 +262,19 @@ func refreshTransmissionData(store: Store) {
     updateSessionStats(store: store, update: { vals in
         DispatchQueue.main.async {
             store.sessionStats = vals
+        }
+    })
+
+    updateSessionInfo(store: store, update: { sessionInfo in
+        DispatchQueue.main.async {
+            store.sessionConfiguration = sessionInfo
+            store.defaultDownloadDir = sessionInfo.downloadDir
+
+            // Update version in CoreData if host is available
+            if let host = store.host {
+                host.version = sessionInfo.version
+                try? PersistenceController.shared.container.viewContext.save()
+            }
         }
     })
 
