@@ -41,7 +41,7 @@ func statusColor(for torrent: Torrent) -> Color {
 // Shared function to fetch torrent files
 func fetchTorrentFiles(transferId: Int, store: Store, completion: @escaping ([TorrentFile], [TorrentFileStats]) -> Void) {
     let info = makeConfig(store: store)
-    
+
     getTorrentFiles(transferId: transferId, info: info, onReceived: { files, fileStats in
         completion(files, fileStats)
     })
@@ -50,7 +50,7 @@ func fetchTorrentFiles(transferId: Int, store: Store, completion: @escaping ([To
 // Shared function to fetch torrent peers
 func fetchTorrentPeers(transferId: Int, store: Store, completion: @escaping ([Peer], PeersFrom?) -> Void) {
     let info = makeConfig(store: store)
-    
+
     getTorrentPeers(transferId: transferId, info: info, onReceived: { peers, peersFrom in
         completion(peers, peersFrom)
     })
@@ -75,41 +75,41 @@ func toggleTorrentPlayPause(torrent: Torrent, store: Store, completion: @escapin
 
 // Shared function to format torrent details
 func formatTorrentDetails(torrent: Torrent) -> (percentComplete: String, percentAvailable: String, downloadedFormatted: String, sizeWhenDoneFormatted: String, uploadedFormatted: String, uploadRatio: String, activityDate: String, addedDate: String) {
-    
+
     let percentComplete = String(format: "%.1f%%", torrent.percentDone * 100)
     let percentAvailable = String(format: "%.1f%%", ((Double(torrent.haveUnchecked + torrent.haveValid + torrent.desiredAvailable) / Double(torrent.sizeWhenDone))) * 100)
     let downloadedFormatted = byteCountFormatter.string(fromByteCount: (torrent.downloadedCalc))
     let sizeWhenDoneFormatted = byteCountFormatter.string(fromByteCount: torrent.sizeWhenDone)
     let uploadedFormatted = byteCountFormatter.string(fromByteCount: torrent.uploadedEver)
     let uploadRatio = String(format: "%.2f", torrent.uploadRatio)
-    
+
     let activityDate = dateFormatter.string(from: Date(timeIntervalSince1970: Double(torrent.activityDate)))
     let addedDate = dateFormatter.string(from: Date(timeIntervalSince1970: Double(torrent.addedDate)))
-    
+
     return (percentComplete, percentAvailable, downloadedFormatted, sizeWhenDoneFormatted, uploadedFormatted, uploadRatio, activityDate, addedDate)
 }
 
 // Shared header view for both platforms
 struct TorrentDetailHeaderView: View {
     var torrent: Torrent
-    
+
     var body: some View {
         HStack {
             Spacer()
-            
+
             HStack(spacing: 8) {
                 RatioChip(
                     ratio: torrent.uploadRatio,
                     size: .compact
                 )
-                
+
                 SpeedChip(
                     speed: torrent.rateDownload,
                     direction: .download,
                     style: .chip,
                     size: .compact
                 )
-                
+
                 SpeedChip(
                     speed: torrent.rateUpload,
                     direction: .upload,
@@ -117,7 +117,7 @@ struct TorrentDetailHeaderView: View {
                     size: .compact
                 )
             }
-            
+
             Spacer()
         }
     }
@@ -158,7 +158,7 @@ struct TorrentDetailToolbar: ToolbarContent {
 // Shared status badge component for torrent status
 struct TorrentStatusBadge: View {
     let torrent: Torrent
-    
+
     var body: some View {
         Text(torrent.statusCalc.rawValue)
             .font(.caption)
@@ -179,6 +179,6 @@ struct TorrentStatusBadge: View {
 let dateFormatter: DateFormatter = {
     var formatter = DateFormatter()
     formatter.dateFormat = "MM/dd/YYYY"
-    
+
     return formatter
 }()

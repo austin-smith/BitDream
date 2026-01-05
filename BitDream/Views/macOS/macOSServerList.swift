@@ -8,17 +8,17 @@ struct macOSServerList: View {
     @Environment(\.dismiss) private var dismiss
     var viewContext: NSManagedObjectContext
     @ObservedObject var store: Store
-    
+
     @State var selected: Host? = nil
     @State private var showingAddServer = false
     @State private var confirmingDelete = false
     @State private var serverToDelete: Host? = nil
-    
+
     @FetchRequest(
         entity: Host.entity(),
         sortDescriptors: [NSSortDescriptor(key: "name", ascending: true)]
     ) var hosts: FetchedResults<Host>
-    
+
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -36,7 +36,7 @@ struct macOSServerList: View {
                 .padding()
             }
             .background(Color(NSColor.windowBackgroundColor))
-            
+
             ScrollView {
                 LazyVStack(spacing: 0, pinnedViews: []) {
                     if hosts.isEmpty {
@@ -48,15 +48,15 @@ struct macOSServerList: View {
                                     Image(systemName: "server.rack")
                                         .foregroundColor(.accentColor)
                                         .frame(width: 24, height: 24)
-                                    
+
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(host.name ?? "Unnamed Server")
                                             .font(.headline)
-                                        
+
                                         Text("\(host.server ?? "Unknown server"):\(String(host.port))")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
-                                            
+
                                         if let version = host.version {
                                             Text("\(version)")
                                                 .font(.caption)
@@ -69,9 +69,9 @@ struct macOSServerList: View {
                                                 )
                                         }
                                     }
-                                    
+
                                     Spacer()
-                                    
+
                                     // Status badges
                                     HStack(spacing: 8) {
                                         // Default server badge
@@ -86,7 +86,7 @@ struct macOSServerList: View {
                                                         .fill(Color.blue.opacity(0.1))
                                                 )
                                         }
-                                        
+
                                         // Connected server badge
                                         if host == store.host {
                                             Text("Connected")
@@ -100,7 +100,7 @@ struct macOSServerList: View {
                                                 )
                                         }
                                     }
-                                    
+
                                     Button {
                                         selected = host
                                     } label: {
@@ -108,7 +108,7 @@ struct macOSServerList: View {
                                             .foregroundColor(.accentColor)
                                     }
                                     .buttonStyle(HoverButtonStyle())
-                                
+
                                     Button {
                                         serverToDelete = host
                                         confirmingDelete = true
@@ -140,9 +140,9 @@ struct macOSServerList: View {
             } message: { host in
                 deleteConfirmationMessage(for: host, store: store)
             }
-            
+
             Divider()
-            
+
             HStack {
                 Button(action: {
                     showingAddServer = true
@@ -150,7 +150,7 @@ struct macOSServerList: View {
                     Label("Add New", systemImage: "plus")
                 })
                 .buttonStyle(.borderedProminent)
-                
+
                 Spacer()
             }
             .padding()
@@ -167,26 +167,26 @@ struct macOSServerList: View {
             ServerDetail(store: store, viewContext: viewContext, hosts: hosts, isAddNew: true)
         }
     }
-    
+
     // Empty state view for when there are no servers
     private var emptyServerListView: some View {
         VStack(spacing: 20) {
             Spacer()
-            
+
             Image(systemName: "server.rack")
                 .font(.system(size: 50))
                 .foregroundColor(.secondary.opacity(0.5))
-            
+
             Text("No Servers Added")
                 .font(.headline)
                 .foregroundColor(.primary)
-            
+
             Text("Add a server to get started with BitDream")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
-            
+
             Button(action: {
                 showingAddServer = true
             }) {
@@ -197,7 +197,7 @@ struct macOSServerList: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .padding(.top, 10)
-            
+
             Spacer()
         }
         .frame(maxWidth: .infinity)
@@ -208,14 +208,14 @@ struct macOSServerList: View {
 struct macOSServerList: View {
     var viewContext: NSManagedObjectContext
     @ObservedObject var store: Store
-    
+
     init(store: Store, viewContext: NSManagedObjectContext) {
         self.viewContext = viewContext
         self.store = store
     }
-    
+
     var body: some View {
         EmptyView()
     }
 }
-#endif 
+#endif

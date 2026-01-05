@@ -61,7 +61,7 @@ public enum TorrentStatusCalc: String, CaseIterable {
 public struct TransmissionGenericRequest<T: Codable>: Codable {
     public let method: String
     public let arguments: T
-    
+
     public init(method: String, arguments: T) {
         self.method = method
         self.arguments = arguments
@@ -118,7 +118,7 @@ public struct Torrent: Codable, Hashable, Identifiable {
         else if status == TorrentStatus.queuedToVerify.rawValue
             || status == TorrentStatus.queuedToDownload.rawValue
             || status == TorrentStatus.queuedToSeed.rawValue {
-            
+
             return TorrentStatusCalc.queued
         }
         else if status == TorrentStatus.verifying.rawValue {
@@ -140,7 +140,7 @@ public struct Torrent: Codable, Hashable, Identifiable {
             return TorrentStatusCalc.unknown
         }
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case activityDate
         case addedDate
@@ -198,7 +198,7 @@ public struct SessionStats: Codable, Hashable {
     let uploadSpeed: Int64
     let cumulativeStats: TransmissionCumulativeStats?
     let currentStats: TransmissionCumulativeStats?
-    
+
     enum CodingKeys: String, CodingKey {
         case activeTorrentCount
         case downloadSpeed
@@ -234,7 +234,7 @@ public struct EmptyArguments: Codable {
 /// Torrent ID list arguments
 public struct TorrentIDsArgument: Codable {
     public var ids: [Int]
-    
+
     public init(ids: [Int]) {
         self.ids = ids
     }
@@ -243,7 +243,7 @@ public struct TorrentIDsArgument: Codable {
 public struct TorrentFilesRequestArgs: Codable {
     public var fields: [String]
     public var ids: [Int]
-    
+
     public init(fields: [String], ids: [Int]) {
         self.fields = fields
         self.ids = ids
@@ -255,7 +255,7 @@ public struct TorrentRenameRequestArgs: Codable {
     public var ids: [Int]
     public var path: String
     public var name: String
-    
+
     public init(ids: [Int], path: String, name: String) {
         self.ids = ids
         self.path = path
@@ -268,7 +268,7 @@ public struct TorrentSetLocationRequestArgs: Codable {
     public var ids: [Int]
     public var location: String
     public var move: Bool
-    
+
     public init(ids: [Int], location: String, move: Bool) {
         self.ids = ids
         self.location = location
@@ -280,12 +280,12 @@ public struct TorrentSetLocationRequestArgs: Codable {
 public struct TransmissionRemoveRequestArgs: Codable {
     public var ids: [Int]
     public var deleteLocalData: Bool
-    
+
     public init(ids: [Int], deleteLocalData: Bool) {
         self.ids = ids
         self.deleteLocalData = deleteLocalData
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case ids
         case deleteLocalData = "delete-local-data"
@@ -315,16 +315,16 @@ public struct TorrentSetRequestArgs: Codable {
     public var priorityNormal: [Int]?
     public var filesWanted: [Int]?
     public var filesUnwanted: [Int]?
-    
+
     public init(ids: [Int]) {
         self.ids = ids
     }
-    
+
     public init(ids: [Int], labels: [String]) {
         self.ids = ids
         self.labels = labels
     }
-    
+
     public init(ids: [Int], priority: TorrentPriority) {
         self.ids = ids
         switch priority {
@@ -333,7 +333,7 @@ public struct TorrentSetRequestArgs: Codable {
         case .low: priorityLow = []
         }
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case ids
         case labels
@@ -376,7 +376,7 @@ public struct TorrentAddResponseArgs: Codable {
 /// Torrent add response wraps the added torrent info
 public struct TorrentAddResponseData: Codable {
     public var torrentAdded: TorrentAddResponseArgs
-    
+
     enum CodingKeys: String, CodingKey {
         case torrentAdded = "torrent-added"
     }
@@ -398,7 +398,7 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
     // Existing fields
     public let downloadDir: String
     public let version: String
-    
+
     // Speed & Bandwidth
     public let speedLimitDown: Int64
     public let speedLimitDownEnabled: Bool
@@ -411,14 +411,14 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
     public let altSpeedTimeEnd: Int
     public let altSpeedTimeEnabled: Bool
     public let altSpeedTimeDay: Int
-    
+
     // File Management
     public let incompleteDir: String
     public let incompleteDirEnabled: Bool
     public let startAddedTorrents: Bool
     public let trashOriginalTorrentFiles: Bool
     public let renamePartialFiles: Bool
-    
+
     // Queue Management
     public let downloadQueueEnabled: Bool
     public let downloadQueueSize: Int
@@ -430,7 +430,7 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
     public let idleSeedingLimitEnabled: Bool
     public let queueStalledEnabled: Bool
     public let queueStalledMinutes: Int
-    
+
     // Network Settings
     public let peerPort: Int
     public let peerPortRandomOnStart: Bool
@@ -442,15 +442,15 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
     public let utpEnabled: Bool
     public let peerLimitGlobal: Int
     public let peerLimitPerTorrent: Int
-    
+
     // Blocklist
     public let blocklistEnabled: Bool
     public let blocklistSize: Int
     public let blocklistUrl: String
-    
+
     // Default Trackers
     public let defaultTrackers: String
-    
+
     public init(
         downloadDir: String,
         version: String,
@@ -538,7 +538,7 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
         self.blocklistUrl = blocklistUrl
         self.defaultTrackers = defaultTrackers
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case downloadDir = "download-dir"
         case version
@@ -597,7 +597,7 @@ public struct FreeSpaceResponse: Codable {
     public let path: String
     public let sizeBytes: Int64
     public let totalSize: Int64
-    
+
     enum CodingKeys: String, CodingKey {
         case path
         case sizeBytes = "size-bytes"
@@ -622,7 +622,7 @@ public struct TransmissionSessionSetRequestArgs: Codable {
     public var altSpeedTimeEnd: Int?
     public var altSpeedTimeEnabled: Bool?
     public var altSpeedTimeDay: Int?
-    
+
     // File Management
     public var downloadDir: String?
     public var incompleteDir: String?
@@ -630,7 +630,7 @@ public struct TransmissionSessionSetRequestArgs: Codable {
     public var startAddedTorrents: Bool?
     public var trashOriginalTorrentFiles: Bool?
     public var renamePartialFiles: Bool?
-    
+
     // Queue Management
     public var downloadQueueEnabled: Bool?
     public var downloadQueueSize: Int?
@@ -642,7 +642,7 @@ public struct TransmissionSessionSetRequestArgs: Codable {
     public var idleSeedingLimitEnabled: Bool?
     public var queueStalledEnabled: Bool?
     public var queueStalledMinutes: Int?
-    
+
     // Network Settings
     public var peerPort: Int?
     public var peerPortRandomOnStart: Bool?
@@ -654,17 +654,17 @@ public struct TransmissionSessionSetRequestArgs: Codable {
     public var utpEnabled: Bool?
     public var peerLimitGlobal: Int?
     public var peerLimitPerTorrent: Int?
-    
+
     // Blocklist
     public var blocklistEnabled: Bool?
     public var blocklistUrl: String?
-    
+
     // Default Trackers
     public var defaultTrackers: String?
-    
+
     // Cache
     public var cacheSizeMb: Int?
-    
+
     // Scripts
     public var scriptTorrentDoneEnabled: Bool?
     public var scriptTorrentDoneFilename: String?
@@ -672,9 +672,9 @@ public struct TransmissionSessionSetRequestArgs: Codable {
     public var scriptTorrentAddedFilename: String?
     public var scriptTorrentDoneSeedingEnabled: Bool?
     public var scriptTorrentDoneSeedingFilename: String?
-    
+
     public init() {}
-    
+
     enum CodingKeys: String, CodingKey {
         case speedLimitDown = "speed-limit-down"
         case speedLimitDownEnabled = "speed-limit-down-enabled"
@@ -731,11 +731,11 @@ public struct TransmissionSessionSetRequestArgs: Codable {
 /// Request arguments for port-test method
 public struct PortTestRequestArgs: Codable {
     public var ipProtocol: String?
-    
+
     public init(ipProtocol: String? = nil) {
         self.ipProtocol = ipProtocol
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case ipProtocol = "ip_protocol"
     }
@@ -745,7 +745,7 @@ public struct PortTestRequestArgs: Codable {
 public struct PortTestResponse: Codable {
     public let portIsOpen: Bool?
     public let ipProtocol: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case portIsOpen = "port-is-open"
         case ipProtocol = "ip_protocol"
@@ -755,7 +755,7 @@ public struct PortTestResponse: Codable {
 /// Response for blocklist-update method
 public struct BlocklistUpdateResponse: Codable {
     public let blocklistSize: Int
-    
+
     enum CodingKeys: String, CodingKey {
         case blocklistSize = "blocklist-size"
     }

@@ -10,7 +10,7 @@ struct macOSTorrentPeerDetail: View {
     let peersFrom: PeersFrom?
     let onRefresh: () -> Void
     let onDone: () -> Void
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -43,9 +43,9 @@ struct macOSTorrentPeerDetail: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
-            
+
             Divider()
-            
+
             if peers.isEmpty {
                 VStack(spacing: 12) {
                     Text("No peers yet")

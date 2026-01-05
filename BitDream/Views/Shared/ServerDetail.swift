@@ -11,13 +11,13 @@ struct ServerDetail: View {
     var hosts: FetchedResults<Host>
     @State var host: Host?
     var isAddNew: Bool
-    
+
     static let defaultPort = 9091
-    
+
     // Validation messages
     static let hostRequiredMessage = "Hostname is required"
     static let invalidPortMessage = "Port number is required"
-    
+
     static let portFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .none
@@ -25,7 +25,7 @@ struct ServerDetail: View {
         formatter.maximum = 65535  // Maximum valid port number
         return formatter
     }()
-    
+
     var body: some View {
         #if os(iOS)
         iOSServerDetail(
@@ -66,11 +66,11 @@ func saveNewServer(
     // Validate required fields
     guard !hostInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
     guard portInput >= 1 && portInput <= 65535 else { return }
-    
+
     // If friendly name is empty, use hostname
-    let finalNameInput = nameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 
+    let finalNameInput = nameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?
         hostInput : nameInput
-    
+
     // Save host
     let newHost = Host(context: viewContext)
     newHost.name = finalNameInput
@@ -79,17 +79,17 @@ func saveNewServer(
     newHost.username = userInput
     newHost.isDefault = isDefault
     newHost.isSSL = isSSL
-    
+
     try? viewContext.save()
-    
+
     // Save password to keychain using the final name
     keychain[newHost.name!] = passInput
-    
+
     // if there is no host currently set, then set it to the one being created
     if (store.host == nil) {
         store.setHost(host: newHost)
     }
-    
+
     completion()
 }
 
@@ -115,7 +115,7 @@ func updateExistingServer(
     host.port = Int16(portInput)
     host.username = userInput
     host.isSSL = isSSL
-    
+
     // If default is being enabled then ensure to disable it on any current default server
     if (isDefault) {
         hosts.forEach { h in
@@ -124,12 +124,12 @@ func updateExistingServer(
             }
         }
     }
-    
+
     try? viewContext.save()
-    
+
     // Save password to keychain
     keychain[nameInput] = passInput
-    
+
     completion()
 }
 
@@ -146,7 +146,7 @@ func loadServerData(
     let isSSL = host.isSSL
     let userInput = host.username ?? ""
     let passInput = keychain[host.name!] ?? ""
-    
+
     onLoad(nameInput, isDefault, hostInput, portInput, isSSL, userInput, passInput)
 }
 

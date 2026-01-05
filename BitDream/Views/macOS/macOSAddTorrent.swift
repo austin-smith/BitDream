@@ -9,7 +9,7 @@ struct macOSAddTorrent: View {
     // MARK: - Properties
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var store: Store
-    
+
     @State private var inputMethod: TorrentInputMethod = .magnetLink
     @State private var alertInput: String = ""
     @State private var downloadDir: String = ""
@@ -22,14 +22,14 @@ struct macOSAddTorrent: View {
     }
     @State private var activeImporter: ActiveImporter? = nil
     @State private var isShowingImporter: Bool = false
-    
+
     enum TorrentInputMethod: String, CaseIterable, Identifiable {
         case magnetLink = "Magnet Link"
         case torrentFile = "Torrent File"
-        
+
         var id: String { self.rawValue }
     }
-    
+
     // MARK: - Body
     var body: some View {
         VStack(spacing: 0) {
@@ -46,25 +46,25 @@ struct macOSAddTorrent: View {
             }
             .padding()
             .background(Color(NSColor.windowBackgroundColor))
-            
+
             Divider()
-            
+
             // Form content
             ScrollView {
                 addTorrentForm
             }
-            
+
             Divider()
-            
+
             // Footer with buttons
             HStack {
                 Spacer()
-                
+
                 Button("Cancel") {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
-                
+
                 Button("Add") {
                     if inputMethod == .magnetLink {
                         addTorrentAction(
@@ -131,7 +131,7 @@ struct macOSAddTorrent: View {
             activeImporter = nil
         }
     }
-    
+
     // MARK: - Form View
     var addTorrentForm: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -140,7 +140,7 @@ struct macOSAddTorrent: View {
                 Text("Torrent Source")
                     .font(.headline)
                     .foregroundColor(.primary)
-                
+
                 // Card-style selection buttons
                 HStack(spacing: 16) {
                     // Magnet Link Card
@@ -162,7 +162,7 @@ struct macOSAddTorrent: View {
                                     .fontWeight(.medium)
                                 Spacer()
                             }
-                            
+
                             Text("Add torrent using a magnet link")
                                 .font(.caption)
                                 .foregroundColor(inputMethod == .magnetLink ? .secondary : .secondary.opacity(0.7))
@@ -173,8 +173,8 @@ struct macOSAddTorrent: View {
                         .frame(maxWidth: .infinity)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(inputMethod == .magnetLink ? 
-                                      Color.accentColor.opacity(0.2) : 
+                                .fill(inputMethod == .magnetLink ?
+                                      Color.accentColor.opacity(0.2) :
                                       Color(NSColor.controlBackgroundColor))
                         )
                         .overlay(
@@ -185,7 +185,7 @@ struct macOSAddTorrent: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     .frame(maxWidth: .infinity)
-                    
+
                     // Torrent File Card
                     Button(action: {
                         inputMethod = .torrentFile
@@ -205,7 +205,7 @@ struct macOSAddTorrent: View {
                                     .fontWeight(.medium)
                                 Spacer()
                             }
-                            
+
                             Text("Add torrent using a .torrent file")
                                 .font(.caption)
                                 .foregroundColor(inputMethod == .torrentFile ? .secondary : .secondary.opacity(0.7))
@@ -216,8 +216,8 @@ struct macOSAddTorrent: View {
                         .frame(maxWidth: .infinity)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(inputMethod == .torrentFile ? 
-                                      Color.accentColor.opacity(0.2) : 
+                                .fill(inputMethod == .torrentFile ?
+                                      Color.accentColor.opacity(0.2) :
                                       Color(NSColor.controlBackgroundColor))
                         )
                         .overlay(
@@ -231,7 +231,7 @@ struct macOSAddTorrent: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            
+
             // Conditional input section - only show one at a time
             Group {
                 if inputMethod == .magnetLink {
@@ -240,7 +240,7 @@ struct macOSAddTorrent: View {
                         Text("Enter magnet link:")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
-                        
+
                         TextField("magnet:?xt=urn:btih:...", text: $alertInput)
                             .textFieldStyle(.roundedBorder)
                             .frame(height: 30)
@@ -263,7 +263,7 @@ struct macOSAddTorrent: View {
                         Text("Select torrent file:")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
-                        
+
                         HStack {
                             if selectedTorrentFiles.isEmpty {
                                 Text("No files selected")
@@ -273,9 +273,9 @@ struct macOSAddTorrent: View {
                                     .lineLimit(1)
                                     .truncationMode(.middle)
                             }
-                            
+
                             Spacer()
-                            
+
                             Button("Choose Files…") {
                                 activeImporter = .torrentFiles
                                 isShowingImporter = true
@@ -289,18 +289,18 @@ struct macOSAddTorrent: View {
                     .frame(height: 80) // Fixed height for both sections
                 }
             }
-            
+
             // Download Location Section
             VStack(alignment: .leading) {
                 Text("Download Location")
                     .font(.headline)
                     .foregroundColor(.primary)
-                
+
                 HStack(spacing: 8) {
                     TextField("Download path", text: $downloadDir)
                         .textFieldStyle(.roundedBorder)
                         .frame(height: 24)
-                    
+
                     Button(action: {
                         activeImporter = .downloadFolder
                         isShowingImporter = true
@@ -335,11 +335,11 @@ struct macOSAddTorrent: View {
             #endif
         }
     }
-    
+
     // MARK: - File Pickers (SwiftUI wrappers handled by .fileImporter)
     private func addTorrentFile(fileData: Data) {
         let fileStream = fileData.base64EncodedString(options: NSData.Base64EncodingOptions(rawValue: 0))
-        
+
         let info = makeConfig(store: store)
         addTorrent(
             fileUrl: fileStream,
@@ -357,7 +357,7 @@ struct macOSAddTorrent: View {
             }
         )
     }
-    
+
     // Download folder selection handled by .fileImporter
 }
 
@@ -370,13 +370,13 @@ struct macOSAddTorrent: View {
 // Empty struct for iOS to reference - this won't be compiled on iOS but provides the type
 struct macOSAddTorrent: View {
     @ObservedObject var store: Store
-    
+
     init(store: Store) {
         self.store = store
     }
-    
+
     var body: some View {
         EmptyView()
     }
 }
-#endif 
+#endif

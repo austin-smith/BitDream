@@ -10,7 +10,7 @@ import SwiftUI
 #if os(macOS)
 struct macOSStatisticsView: View {
     @EnvironmentObject var store: Store
-    
+
     private let durationFormatter: DateComponentsFormatter = {
         let f = DateComponentsFormatter()
         f.allowedUnits = [.day, .hour, .minute, .second]
@@ -18,7 +18,7 @@ struct macOSStatisticsView: View {
         f.zeroFormattingBehavior = .dropLeading
         return f
     }()
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             if let stats = store.sessionStats {
@@ -43,7 +43,7 @@ struct macOSStatisticsView: View {
                                     .foregroundColor(.secondary)
                             }
                         }
-                        
+
                         HStack {
                             Text("Speed")
                             Spacer(minLength: 16)
@@ -53,7 +53,7 @@ struct macOSStatisticsView: View {
                             }
                         }
                     }
-                    
+
                     Section("Current Session") {
                         if let current = stats.currentStats {
                             keyValueRow("Downloaded", byteCountFormatter.string(fromByteCount: current.downloadedBytes))
@@ -65,7 +65,7 @@ struct macOSStatisticsView: View {
                             placeholderRow()
                         }
                     }
-                    
+
                     Section("Total") {
                         if let cumul = stats.cumulativeStats {
                             keyValueRow("Downloaded", byteCountFormatter.string(fromByteCount: cumul.downloadedBytes))
@@ -92,7 +92,7 @@ struct macOSStatisticsView: View {
         .padding(16)
         .frame(minWidth: 420, minHeight: 320)
     }
-    
+
     @ViewBuilder
     private func keyValueRow(_ key: String, _ value: String) -> some View {
         HStack {
@@ -103,7 +103,7 @@ struct macOSStatisticsView: View {
                 .foregroundColor(.secondary)
         }
     }
-    
+
     @ViewBuilder
     private func placeholderRow() -> some View {
         HStack {
@@ -113,7 +113,7 @@ struct macOSStatisticsView: View {
                 .foregroundColor(.secondary)
         }
     }
-    
+
     private func formatDuration(_ seconds: Int64) -> String {
         let clamped = max(0, seconds)
         return durationFormatter.string(from: TimeInterval(clamped)) ?? "0s"

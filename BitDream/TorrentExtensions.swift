@@ -14,7 +14,7 @@ extension Collection where Element == Torrent {
     var shouldDisablePause: Bool {
         return isEmpty || (count == 1 && first?.status == TorrentStatus.stopped.rawValue)
     }
-    
+
     /// Whether resume actions should be disabled for this collection of torrents
     var shouldDisableResume: Bool {
         return isEmpty || (count == 1 && first?.status != TorrentStatus.stopped.rawValue)

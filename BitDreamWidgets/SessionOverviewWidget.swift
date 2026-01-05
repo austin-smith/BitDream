@@ -7,7 +7,7 @@ struct SessionOverviewEntry: TimelineEntry {
     let snapshot: SessionOverviewSnapshot?
     let isStale: Bool
     let isPlaceholder: Bool
-    
+
     init(date: Date, snapshot: SessionOverviewSnapshot?, isStale: Bool, isPlaceholder: Bool = false) {
         self.date = date
         self.snapshot = snapshot
@@ -55,7 +55,7 @@ struct SessionOverviewProvider: AppIntentTimelineProvider {
     func snapshot(for configuration: Intent, in context: Context) async -> Entry {
         // Only show fake data for widget gallery preview, not for actual widgets
         if shouldUseGalleryPreview(configuration, context) { return makeGalleryPreviewEntry() }
-        
+
         return await loadEntry(for: configuration.server?.id)
     }
 
@@ -67,7 +67,7 @@ struct SessionOverviewProvider: AppIntentTimelineProvider {
         } else {
             entry = await loadEntry(for: configuration.server?.id)
         }
-        
+
         let next = Date().addingTimeInterval(Self.refreshInterval)
         return Timeline(entries: [entry], policy: .after(next))
     }

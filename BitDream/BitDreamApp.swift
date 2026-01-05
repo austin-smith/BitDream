@@ -8,33 +8,33 @@ import UniformTypeIdentifiers
 @main
 struct BitDreamApp: App {
     let persistenceController = PersistenceController.shared
-    
+
     // Create a shared store instance that will be used by both the main app and settings
     @StateObject private var store = Store()
     @StateObject private var themeManager = ThemeManager.shared
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppFileOpenDelegate.self) private var appFileOpenDelegate
     #endif
-    
+
     // HUD state for macOS appearance toggle feedback
     @State private var showAppearanceHUD: Bool = false
     @State private var appearanceHUDText: String = ""
     @State private var hideHUDWork: DispatchWorkItem?
-    
+
     #if os(iOS)
     @Environment(\.scenePhase) private var scenePhase
     #endif
-    
+
     init() {
         // Register default values for view state
         UserDefaults.registerViewStateDefaults()
-        
+
         // Register additional defaults
         UserDefaults.standard.register(defaults: [
             "sortBySelection": "nameAsc", // Default sort by name ascending
             "themeModeKey": ThemeMode.system.rawValue // Default theme mode
         ])
-        
+
         // Request permission to use badges on macOS
         #if os(macOS)
         UNUserNotificationCenter.current().requestAuthorization(options: [.badge]) { granted, error in
@@ -43,11 +43,11 @@ struct BitDreamApp: App {
             }
         }
         #endif
-        
+
         #if os(iOS)
         BackgroundRefreshManager.register()
         #endif
-        
+
         #if os(macOS)
         BackgroundActivityScheduler.register()
         #endif
@@ -204,7 +204,7 @@ struct BitDreamApp: App {
                 .frame(minWidth: 420, idealWidth: 460, maxWidth: 600, minHeight: 320, idealHeight: 360, maxHeight: 800)
         }
         .windowResizability(.contentSize)
-        
+
         // About window - Using WindowGroup to prevent automatic Window menu entry
         // This follows Apple's recommended pattern for auxiliary windows that shouldn't
         // appear in the Window menu, as About windows are not user-managed utility windows
@@ -217,7 +217,7 @@ struct BitDreamApp: App {
         }
         .windowResizability(.contentSize)
         .defaultPosition(.center)
-        
+
         #else
         WindowGroup {
             ContentView()
@@ -234,7 +234,7 @@ struct BitDreamApp: App {
                 }
         }
         #endif
-        
+
         #if os(macOS)
         Settings {
             SettingsView(store: store) // Use the same store instance
@@ -249,7 +249,7 @@ struct BitDreamApp: App {
 #if os(macOS)
 private struct AppearanceHUDView: View {
     let text: String
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "circle.lefthalf.filled")

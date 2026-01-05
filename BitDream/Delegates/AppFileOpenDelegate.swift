@@ -37,15 +37,15 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
     func applicationDidFinishLaunching(_ notification: Notification) {
         flushIfPossible()
     }
-    
+
     func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool {
         return false
     }
-    
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         return flag
     }
-    
+
     func applicationOpenUntitledFile(_ sender: NSApplication) -> Bool {
         return false
     }
@@ -96,7 +96,7 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
                             if didAccess { url.stopAccessingSecurityScopedResource() }
                         }
                         let data = try Data(contentsOf: url)
-                        
+
                         // Switch back to main queue for the actual add operation
                         DispatchQueue.main.async {
                             addTorrentFromFileData(data, store: store)
@@ -106,7 +106,7 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
                     failures.append((filename: url.lastPathComponent, message: error.localizedDescription))
                 }
             }
-            
+
             // Present a single aggregated error dialog if any files failed
             if !failures.isEmpty {
                 DispatchQueue.main.async {

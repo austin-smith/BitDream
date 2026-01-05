@@ -4,19 +4,19 @@ struct PiecesGridView: View {
     let pieceCount: Int
     let piecesBitfieldBase64: String
     var rows: Int = 10
-    
+
     // Visual tuning for macOS
     private let cellSize: CGFloat = 6
     private let cellSpacing: CGFloat = 2
-    
+
     var body: some View {
         let bitset = decodePiecesBitfield(base64String: piecesBitfieldBase64, pieceCount: pieceCount)
-        
+
         GeometryReader { geometry in
             let columnsCount = computeColumns(availableWidth: geometry.size.width, cellSize: cellSize, cellSpacing: cellSpacing)
             let totalCells = max(1, rows * columnsCount)
             let buckets = bucketize(bitset: bitset, totalBuckets: totalCells)
-            
+
             LazyVGrid(
                 columns: Array(repeating: GridItem(.fixed(cellSize), spacing: cellSpacing, alignment: .leading), count: columnsCount),
                 spacing: cellSpacing
@@ -44,10 +44,10 @@ func decodePiecesBitfield(base64String: String, pieceCount: Int) -> [Bool] {
     guard pieceCount > 0, let data = Data(base64Encoded: base64String) else {
         return []
     }
-    
+
     var result: [Bool] = []
     result.reserveCapacity(pieceCount)
-    
+
     for byte in data {
         // Big endian bit order: 0x80, 0x40, ..., 0x01
         for bit in stride(from: 7, through: 0, by: -1) {
@@ -57,7 +57,7 @@ func decodePiecesBitfield(base64String: String, pieceCount: Int) -> [Bool] {
         }
         if result.count >= pieceCount { break }
     }
-    
+
     return result
 }
 
@@ -66,7 +66,7 @@ func bucketize(bitset: [Bool], totalBuckets: Int) -> [Double] {
     guard totalBuckets > 0, !bitset.isEmpty else { return Array(repeating: 0, count: max(totalBuckets, 0)) }
     let totalPieces = bitset.count
     var fractions: [Double] = Array(repeating: 0, count: totalBuckets)
-    
+
     for bucket in 0..<totalBuckets {
         let start = (bucket * totalPieces) / totalBuckets
         let end = ((bucket + 1) * totalPieces) / totalBuckets

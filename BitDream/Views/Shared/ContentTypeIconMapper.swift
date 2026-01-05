@@ -13,9 +13,9 @@ import UniformTypeIdentifiers
 
 /// Unified system for mapping MIME types and file extensions to SF Symbols
 public enum ContentTypeIconMapper {
-    
+
     // MARK: - Primary Interface
-    
+
     /// Get SF Symbol for a torrent based on its primary MIME type
     /// - Parameter mimeType: The primary MIME type from Transmission API (optional)
     /// - Returns: SF Symbol name for the content type
@@ -23,37 +23,37 @@ public enum ContentTypeIconMapper {
         guard let mimeType = mimeType?.lowercased(), !mimeType.isEmpty else {
             return defaultIcon
         }
-        
+
         return symbolForMimeType(mimeType)
     }
-    
+
     /// Get SF Symbol for a file based on its path/name (existing functionality)
     /// - Parameter pathOrName: File path or filename
     /// - Returns: SF Symbol name for the file type
     public static func symbolForFile(_ pathOrName: String) -> String {
         let ext = URL(fileURLWithPath: pathOrName).pathExtension.lowercased()
-        guard let utType = UTType(filenameExtension: ext) else { 
-            return defaultIcon 
+        guard let utType = UTType(filenameExtension: ext) else {
+            return defaultIcon
         }
-        
+
         return symbolForUTType(utType)
     }
-    
+
     // MARK: - MIME Type Mapping
-    
+
     private static func symbolForMimeType(_ mimeType: String) -> String {
         // Check for exact MIME type matches first
         if let exactMatch = exactMimeTypeMap[mimeType] {
             return exactMatch
         }
-        
+
         // Check for MIME type category matches (e.g., "video/*")
         let category = mimeType.components(separatedBy: "/").first ?? ""
         return mimeTypeCategoryMap[category] ?? defaultIcon
     }
-    
+
     // MARK: - UTType Mapping (for files)
-    
+
     private static func symbolForUTType(_ utType: UTType) -> String {
         if utType.conforms(to: .image)        { return "photo" }
         if utType.conforms(to: .movie)        { return "film" }
@@ -67,51 +67,51 @@ public enum ContentTypeIconMapper {
         if utType.conforms(to: .executable)   { return "document" }
         return defaultIcon
     }
-    
+
     // MARK: - Icon Maps
-    
+
     /// Exact MIME type to icon mapping
     private static let exactMimeTypeMap: [String: String] = [
         // Torrent files
         "application/x-bittorrent": "arrow.down.circle",
-        
+
         // Archives
         "application/zip": "zipper.page",
         "application/x-rar-compressed": "zipper.page",
         "application/x-7z-compressed": "zipper.page",
         "application/gzip": "zipper.page",
         "application/x-tar": "zipper.page",
-        
+
         // Documents
         "application/pdf": "richtext.page",
         "application/msword": "text.page",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "text.page",
-        
+
         // Spreadsheets
         "application/vnd.ms-excel": "tablecells",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "tablecells",
-        
+
         // Presentations
         "application/vnd.ms-powerpoint": "rectangle.on.rectangle",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation": "rectangle.on.rectangle",
-    
+
         // Disk images
         "application/x-iso9660-image": "opticaldiscdrive",
         "application/x-apple-diskimage": "opticaldiscdrive",
     ]
-    
+
     /// MIME type category to icon mapping
     private static let mimeTypeCategoryMap: [String: String] = [
         "video": "film",
-        "audio": "waveform", 
+        "audio": "waveform",
         "image": "photo",
         "text": "doc.text",
         "application": "doc",
         "font": "textformat",
     ]
-    
+
     // MARK: - Default Icon
-    
+
     /// Default icon for unknown content types
     private static let defaultIcon = "document"
 }
@@ -131,7 +131,7 @@ public enum ContentTypeCategory: String, CaseIterable {
 
 extension ContentTypeCategory {
     var title: String { rawValue }
-    
+
     var icon: String {
         switch self {
         case .video: return "film"
@@ -148,7 +148,7 @@ extension ContentTypeCategory {
 // MARK: - Utility Extensions
 
 extension ContentTypeIconMapper {
-    
+
     /// Get content type category from MIME type
     /// - Parameter mimeType: The MIME type string
     /// - Returns: Content type category
@@ -156,9 +156,9 @@ extension ContentTypeIconMapper {
         guard let mimeType = mimeType?.lowercased(), !mimeType.isEmpty else {
             return .other
         }
-        
+
         let category = mimeType.components(separatedBy: "/").first ?? ""
-        
+
         switch category {
         case "video": return .video
         case "audio": return .audio
@@ -179,7 +179,7 @@ extension ContentTypeIconMapper {
         default: return .other
         }
     }
-    
+
     /// Get content type category from file path (existing functionality)
     /// - Parameter pathOrName: File path or filename
     /// - Returns: Content type category
@@ -190,7 +190,7 @@ extension ContentTypeIconMapper {
         if utType.conforms(to: .movie) || utType.conforms(to: .video) { return .video }
         if utType.conforms(to: .audio) { return .audio }
         if utType.conforms(to: .image) { return .image }
-        if utType.conforms(to: .pdf) || utType.conforms(to: .text) || 
+        if utType.conforms(to: .pdf) || utType.conforms(to: .text) ||
            utType.conforms(to: .spreadsheet) || utType.conforms(to: .presentation) { return .document }
         if utType.conforms(to: .archive) { return .archive }
         if utType.conforms(to: .executable) { return .executable }

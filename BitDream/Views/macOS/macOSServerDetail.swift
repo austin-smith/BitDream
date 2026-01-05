@@ -6,7 +6,7 @@ import SwiftUI
 #if os(macOS)
 struct ValidationTextFieldStyle: TextFieldStyle {
     var isInvalid: Bool
-    
+
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
             .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -25,9 +25,9 @@ struct macOSServerDetail: View {
     var hosts: FetchedResults<Host>
     @State var host: Host?
     var isAddNew: Bool
-    
+
     let keychain = Keychain(service: "crapshack.BitDream")
-    
+
     @State var nameInput: String = ""
     @State var hostInput: String = ""
     @State var portInput: Int = ServerDetail.defaultPort
@@ -37,20 +37,20 @@ struct macOSServerDetail: View {
     @State var isSSL: Bool = false
     @State private var hasAttemptedSave = false
     @State private var showingDeleteConfirmation = false
-    
+
     private var isHostValid: Bool {
         !hostInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
-    
+
     private var isPortValid: Bool {
         portInput >= 1 && portInput <= 65535
     }
-    
+
     private func validateFields() -> Bool {
         hasAttemptedSave = true
         return isHostValid && isPortValid
     }
-    
+
     var body: some View {
         // macOS version with native form styling
         VStack(spacing: 0) {
@@ -62,9 +62,9 @@ struct macOSServerDetail: View {
                 Spacer()
             }
             .background(Color(NSColor.windowBackgroundColor))
-            
+
             Divider()
-            
+
             // Form content
             ScrollView(.vertical, showsIndicators: true) {
                 VStack(alignment: .leading, spacing: 20) {
@@ -73,82 +73,82 @@ struct macOSServerDetail: View {
                         Text("Friendly Name")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
-                        
+
                         TextField("", text: $nameInput)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .frame(maxWidth: .infinity)
                     }
-                    
+
                     // Default server
                     VStack(alignment: .leading, spacing: 8) {
                         Toggle("Default", isOn: $isDefault)
                             .disabled(hosts.count == 0 || (hosts.count == 1 && (!isAddNew)))
-                        
+
                         Text("Automatically connect to this server on app startup.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                    
+
                     // Host section
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Host")
                             .font(.headline)
-                        
+
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Hostname")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            
+
                             TextField("127.0.0.1", text: $hostInput)
                                 .textFieldStyle(ValidationTextFieldStyle(isInvalid: hasAttemptedSave && !isHostValid))
                                 .autocorrectionDisabled()
                                 .frame(maxWidth: .infinity)
                         }
-                        
+
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Port")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            
+
                             HStack {
                                 TextField("", value: $portInput, formatter: ServerDetail.portFormatter)
                                     .textFieldStyle(ValidationTextFieldStyle(isInvalid: hasAttemptedSave && !isPortValid))
                                     .frame(maxWidth: .infinity)
-                                
+
                                 Stepper("", value: $portInput, in: 1...65535)
                             }
                         }
-                        
+
                         Toggle("Use SSL", isOn: $isSSL)
                     }
-                    
+
                     // Authentication section
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Authentication")
                             .font(.headline)
-                        
+
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Username")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            
+
                             TextField("", text: $userInput)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .autocorrectionDisabled()
                                 .frame(maxWidth: .infinity)
                         }
-                        
+
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Password")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            
+
                             SecureField("", text: $passInput)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(maxWidth: .infinity)
                         }
                     }
-                    
+
                     // Delete button (if editing)
                     if (!isAddNew) {
                         Button(action: {
@@ -168,18 +168,18 @@ struct macOSServerDetail: View {
                 .padding(.vertical, 15)
                 .frame(maxWidth: .infinity)
             }
-            
+
             Divider()
-            
+
             // Footer with buttons
             HStack {
                 Spacer()
-                
+
                 Button("Cancel") {
                     dismiss()
                 }
                 .keyboardShortcut(.escape)
-                
+
                 Button("Save") {
                     if (isAddNew) {
                         if validateFields() {
@@ -255,7 +255,7 @@ struct macOSServerDetail: View {
                     }
                 }
             }
-            
+
             if (store.host == nil) {
                 isDefault = true
             }
@@ -270,7 +270,7 @@ struct macOSServerDetail: View {
     var hosts: FetchedResults<Host>
     @State var host: Host?
     var isAddNew: Bool
-    
+
     init(store: Store, viewContext: NSManagedObjectContext, hosts: FetchedResults<Host>, host: Host? = nil, isAddNew: Bool) {
         self.store = store
         self.viewContext = viewContext
@@ -278,9 +278,9 @@ struct macOSServerDetail: View {
         self.host = host
         self.isAddNew = isAddNew
     }
-    
+
     var body: some View {
         EmptyView()
     }
 }
-#endif 
+#endif

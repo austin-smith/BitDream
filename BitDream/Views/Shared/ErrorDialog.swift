@@ -3,7 +3,7 @@ import SwiftUI
 
 struct ErrorDialog: View {
     var store: Store
-    
+
     var body: some View {
         VStack {
             HStack {

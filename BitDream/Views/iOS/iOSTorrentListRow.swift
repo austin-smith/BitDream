@@ -8,7 +8,7 @@ struct iOSTorrentListRow: View {
     var store: Store
     var selectedTorrents: Set<Torrent>
     var showContentTypeIcons: Bool
-    
+
     @State var deleteDialog: Bool = false
     @State var labelDialog: Bool = false
     @State var labelInput: String = ""
@@ -20,16 +20,16 @@ struct iOSTorrentListRow: View {
     @State private var showingError = false
     @State private var errorMessage = ""
     @Environment(\.colorScheme) var colorScheme
-    
+
     // MARK: - Rename validation helpers
     private var trimmedRenameInput: String {
         renameInput.trimmingCharacters(in: .whitespacesAndNewlines)
     }
-    
+
     private var isRenameValid: Bool {
         validateNewName(renameInput, current: torrent.name) == nil && trimmedRenameInput != torrent.name
     }
-    
+
     // Create reusable torrent actions view
     @ViewBuilder
     private func torrentActionsMenu() -> some View {
@@ -48,10 +48,10 @@ struct iOSTorrentListRow: View {
                 )
             })
         }) {
-            Label(torrent.status == TorrentStatus.stopped.rawValue ? "Resume" : "Pause", 
+            Label(torrent.status == TorrentStatus.stopped.rawValue ? "Resume" : "Pause",
                   systemImage: torrent.status == TorrentStatus.stopped.rawValue ? "play" : "pause")
         }
-        
+
         // Resume Now Button (only show for stopped torrents)
         if torrent.status == TorrentStatus.stopped.rawValue {
             Button(action: {
@@ -62,9 +62,9 @@ struct iOSTorrentListRow: View {
         }
 
         Divider()
-        
+
         // MARK: - Priority & Queue Section
-        
+
         // Priority Menu
         Menu {
             Button(action: {
@@ -195,16 +195,16 @@ struct iOSTorrentListRow: View {
         }) {
             Label("Edit Labels…", systemImage: "tag")
         }
-        
+
         Divider()
-        
+
         // Copy Magnet Link Button
         Button(action: {
             copyMagnetLinkToClipboard(torrent.magnetLink)
         }) {
             Label("Copy Magnet Link", systemImage: "document.on.document")
         }
-        
+
         Divider()
 
         // Re-announce Button
@@ -231,9 +231,9 @@ struct iOSTorrentListRow: View {
         }) {
             Label("Verify Local Data", systemImage: "checkmark.arrow.trianglehead.counterclockwise")
         }
-    
+
         Divider()
-        
+
         // Delete Button
         Button(role: .destructive, action: {
             deleteDialog.toggle()
@@ -241,7 +241,7 @@ struct iOSTorrentListRow: View {
             Label("Delete", systemImage: "trash")
         }
     }
-    
+
     var body: some View {
          HStack(spacing: 12) {
              // Icon column (conditional) - spans full row height
@@ -251,7 +251,7 @@ struct iOSTorrentListRow: View {
                      .foregroundColor(.secondary.opacity(0.6))
                      .frame(width: 20, height: 20)
              }
-             
+
              // Content column - all the text content
              VStack(spacing: 4) {
                  HStack(spacing: 8) {
@@ -259,21 +259,21 @@ struct iOSTorrentListRow: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .layoutPriority(1)
-                    
+
                      // Use shared label tags view
                      createLabelTagsView(for: torrent)
                  }
-                
+
                 createStatusView(for: torrent)
                     .font(.custom("sub", size: 10))
                     .frame(maxWidth: .infinity, alignment: .topLeading)
                     .foregroundColor(.secondary)
-                
+
                 // Logic here is kind of funky, but we are going to fill up the entire progress bar if the
                 // torrent is still retrieving metadata (as the bar will be colored red)
                 ProgressView(value: torrent.metadataPercentComplete < 1 ? 1 : torrent.percentDone)
                     .tint(progressColorForTorrent(torrent))
-                
+
                 Text(formatTorrentSubtext(torrent))
                     .font(.custom("sub", size: 10))
                     .fixedSize(horizontal: false, vertical: true)
@@ -302,7 +302,7 @@ struct iOSTorrentListRow: View {
                 Image(systemName: torrent.status == TorrentStatus.stopped.rawValue ? "play.fill" : "pause.fill")
             }
             .tint(torrent.status == TorrentStatus.stopped.rawValue ? .blue : .orange)
-            
+
             // Three-dot menu with all actions (leftmost when swiping)
             Menu {
                 torrentActionsMenu()
@@ -473,7 +473,7 @@ struct iOSLabelEditView: View {
     @Environment(\.dismiss) private var dismiss
     var store: Store
     var torrentId: Int
-    
+
     init(labelInput: Binding<String>, existingLabels: [String], store: Store, torrentId: Int) {
         self._labelInput = labelInput
         self.existingLabels = existingLabels
@@ -481,28 +481,28 @@ struct iOSLabelEditView: View {
         self.store = store
         self.torrentId = torrentId
     }
-    
+
     private var sortedLabels: [String] {
         Array(workingLabels).sorted { lhs, rhs in
             lhs.localizedCaseInsensitiveCompare(rhs) == .orderedAscending
         }
     }
-    
+
     private func saveAndDismiss() {
         // First add any pending tag
         if addNewTag(from: &newTagInput, to: &workingLabels) {
             labelInput = workingLabels.joined(separator: ", ")
         }
-        
+
         // Update the binding
         labelInput = workingLabels.joined(separator: ", ")
-        
+
         // Save to server and refresh
         saveTorrentLabels(torrentId: torrentId, labels: workingLabels, store: store) {
             dismiss()
         }
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
@@ -511,7 +511,7 @@ struct iOSLabelEditView: View {
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .padding(.horizontal)
-                    
+
                     FlowLayout(spacing: 4) {
                         ForEach(sortedLabels, id: \.self) { label in
                             LabelTag(label: label) {
@@ -521,7 +521,7 @@ struct iOSLabelEditView: View {
                         }
                     }
                     .padding(.horizontal)
-                    
+
                     HStack {
                         TextField("Add label", text: $newTagInput)
                             .textFieldStyle(.roundedBorder)
@@ -532,7 +532,7 @@ struct iOSLabelEditView: View {
                                     labelInput = workingLabels.joined(separator: ", ")
                                 }
                             }
-                        
+
                         if !newTagInput.isEmpty {
                             Button(action: {
                                 if addNewTag(from: &newTagInput, to: &workingLabels) {
@@ -545,7 +545,7 @@ struct iOSLabelEditView: View {
                         }
                     }
                     .padding(.horizontal)
-                    
+
                     Text("Add labels to organize your torrents.")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -578,7 +578,7 @@ struct iOSLabelEditView: View {
             }
         }
     }
-    
+
 }
 
 #else
@@ -593,4 +593,4 @@ struct iOSTorrentListRow: View {
         EmptyView()
     }
 }
-#endif 
+#endif

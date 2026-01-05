@@ -5,27 +5,27 @@ import WidgetKit
 
 struct WidgetRatioChip: View {
     let ratio: Double
-    
+
     init(ratio: Double) {
         self.ratio = ratio
     }
-    
+
     private var progressRingSize: CGFloat = 12
-    
+
     var body: some View {
         HStack(spacing: 3) {
             ZStack {
                 Circle()
                     .stroke(Color.gray.opacity(0.3), lineWidth: 1.5)
                     .frame(width: progressRingSize, height: progressRingSize)
-                
+
                 Circle()
                     .trim(from: 0, to: min(ratio, 1.0))
                     .stroke(ratio >= 1.0 ? .green : .orange, lineWidth: 1.5)
                     .frame(width: progressRingSize, height: progressRingSize)
                     .rotationEffect(.degrees(-90))
             }
-            
+
             Text(String(format: "%.2f", ratio))
                 .monospacedDigit()
                 .font(.system(size: 10, weight: .regular, design: .monospaced))
@@ -42,7 +42,7 @@ struct WidgetRatioChip: View {
 
 struct PlaceholderView: View {
     private var headerHeight: CGFloat { 32 }
-    
+
     var body: some View {
         ZStack {
             // Main content below banner (banner is drawn in container background)
@@ -59,7 +59,7 @@ struct PlaceholderView: View {
                             .frame(width: 32, height: 11)
                     }
                     .frame(maxWidth: .infinity)
-                    
+
                     // Downloading placeholder
                     VStack(spacing: 4) {
                         RoundedRectangle(cornerRadius: 4)
@@ -70,7 +70,7 @@ struct PlaceholderView: View {
                             .frame(width: 64, height: 11)
                     }
                     .frame(maxWidth: .infinity)
-                    
+
                     // Completed placeholder
                     VStack(spacing: 4) {
                         RoundedRectangle(cornerRadius: 4)
@@ -83,7 +83,7 @@ struct PlaceholderView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .padding(.horizontal, 20)
-                
+
                 Spacer(minLength: 0)
             }
             .padding(.top, headerHeight)
@@ -153,7 +153,7 @@ struct SessionOverviewSmallView: View {
 struct SessionOverviewView: View {
     let entry: SessionOverviewEntry
     @Environment(\.widgetFamily) var family
-    
+
     // Byte formatter for speeds
     private var byteCountFormatter: ByteCountFormatter {
         let formatter = ByteCountFormatter()
@@ -234,12 +234,12 @@ struct SessionOverviewView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
-    
+
     // Helper to format time ago
     private func timeAgoString(from date: Date) -> String {
         let interval = Date().timeIntervalSince(date)
         let minutes = Int(interval / 60)
-        
+
         if minutes < 1 {
             return "just now"
         } else if minutes < 60 {
@@ -257,110 +257,110 @@ struct SessionOverviewView_Previews: PreviewProvider {
         Group {
             // High activity with fast speeds
             SessionOverviewView(entry: .init(
-                date: .now, 
+                date: .now,
                 snapshot: .init(
-                    serverId: "1", 
-                    serverName: "Home NAS", 
-                    active: 8, 
-                    paused: 2, 
-                    total: 25, 
-                    totalCount: 25, 
-                    downloadingCount: 8, 
-                    completedCount: 15, 
+                    serverId: "1",
+                    serverName: "Home NAS",
+                    active: 8,
+                    paused: 2,
+                    total: 25,
+                    totalCount: 25,
+                    downloadingCount: 8,
+                    completedCount: 15,
                     downloadSpeed: 12_800_000, // 12.8 MB/s
                     uploadSpeed: 3_200_000,   // 3.2 MB/s
-                    ratio: 2.15, 
+                    ratio: 2.15,
                     timestamp: .now
-                ), 
+                ),
                 isStale: false,
                 isPlaceholder: false
             ))
             .previewContext(WidgetPreviewContext(family: .systemMedium))
             .previewDisplayName("High Activity")
-            
+
             // Idle state - all completed
             SessionOverviewView(entry: .init(
-                date: .now, 
+                date: .now,
                 snapshot: .init(
-                    serverId: "2", 
-                    serverName: "Seedbox Pro", 
-                    active: 0, 
-                    paused: 0, 
-                    total: 42, 
-                    totalCount: 42, 
-                    downloadingCount: 0, 
-                    completedCount: 42, 
-                    downloadSpeed: 0, 
+                    serverId: "2",
+                    serverName: "Seedbox Pro",
+                    active: 0,
+                    paused: 0,
+                    total: 42,
+                    totalCount: 42,
+                    downloadingCount: 0,
+                    completedCount: 42,
+                    downloadSpeed: 0,
                     uploadSpeed: 1_250_000, // Still seeding
-                    ratio: 4.73, 
+                    ratio: 4.73,
                     timestamp: .now
-                ), 
+                ),
                 isStale: false,
                 isPlaceholder: false
             ))
             .previewContext(WidgetPreviewContext(family: .systemMedium))
             .previewDisplayName("Idle/Seeding")
-            
+
             // Long server name test
             SessionOverviewView(entry: .init(
-                date: .now, 
+                date: .now,
                 snapshot: .init(
-                    serverId: "3", 
-                    serverName: "My Very Long Server Name That Should Truncate", 
-                    active: 3, 
-                    paused: 1, 
-                    total: 8, 
-                    totalCount: 8, 
-                    downloadingCount: 3, 
-                    completedCount: 4, 
-                    downloadSpeed: 5_600_000, 
-                    uploadSpeed: 850_000, 
-                    ratio: 0.67, 
+                    serverId: "3",
+                    serverName: "My Very Long Server Name That Should Truncate",
+                    active: 3,
+                    paused: 1,
+                    total: 8,
+                    totalCount: 8,
+                    downloadingCount: 3,
+                    completedCount: 4,
+                    downloadSpeed: 5_600_000,
+                    uploadSpeed: 850_000,
+                    ratio: 0.67,
                     timestamp: .now
-                ), 
+                ),
                 isStale: false,
                 isPlaceholder: false
             ))
             .previewContext(WidgetPreviewContext(family: .systemMedium))
             .previewDisplayName("Long Name")
-            
+
             // Low ratio scenario
             SessionOverviewView(entry: .init(
-                date: .now, 
+                date: .now,
                 snapshot: .init(
-                    serverId: "4", 
-                    serverName: "Remote Server", 
-                    active: 2, 
-                    paused: 6, 
-                    total: 18, 
-                    totalCount: 18, 
-                    downloadingCount: 2, 
-                    completedCount: 10, 
-                    downloadSpeed: 450_000, 
-                    uploadSpeed: 125_000, 
+                    serverId: "4",
+                    serverName: "Remote Server",
+                    active: 2,
+                    paused: 6,
+                    total: 18,
+                    totalCount: 18,
+                    downloadingCount: 2,
+                    completedCount: 10,
+                    downloadSpeed: 450_000,
+                    uploadSpeed: 125_000,
                     ratio: 0.23, // Low ratio
                     timestamp: .now
-                ), 
+                ),
                 isStale: false,
                 isPlaceholder: false
             ))
             .previewContext(WidgetPreviewContext(family: .systemMedium))
             .previewDisplayName("Low Ratio")
-            
+
             // Placeholder state
             SessionOverviewView(entry: .init(
-                date: .now, 
-                snapshot: nil, 
+                date: .now,
+                snapshot: nil,
                 isStale: false,
                 isPlaceholder: true
             ))
             .previewContext(WidgetPreviewContext(family: .systemMedium))
             .previewDisplayName("Loading Placeholder")
-            
+
             // No server selected
             SessionOverviewView(entry: .init(
-                date: .now, 
-                snapshot: nil, 
+                date: .now,
+                snapshot: nil,
                 isStale: false,
                 isPlaceholder: false
             ))

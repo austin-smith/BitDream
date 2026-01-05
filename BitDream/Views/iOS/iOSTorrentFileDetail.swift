@@ -18,11 +18,11 @@ enum FileSortProperty: String, CaseIterable {
 func sortFiles(_ files: [TorrentFileRow], by property: FileSortProperty, order: SortOrder) -> [TorrentFileRow] {
     switch property {
     case .name:
-        return order == .ascending ? 
+        return order == .ascending ?
             files.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending } :
             files.sorted { $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedDescending }
     case .size:
-        return order == .ascending ? 
+        return order == .ascending ?
             files.sorted { $0.size < $1.size } :
             files.sorted { $0.size > $1.size }
     case .progress:
@@ -45,12 +45,12 @@ struct iOSTorrentFileDetail: View {
     let fileStats: [TorrentFileStats]
     let torrentId: Int
     let store: Store
-    
+
     @State private var mutableFileStats: [TorrentFileStats] = []
     @State private var searchText = ""
     @State private var sortProperty: FileSortProperty = .name
     @State private var sortOrder: SortOrder = .ascending
-    
+
     // Filter toggles - same as macOS
     @State private var showWantedFiles = true
     @State private var showSkippedFiles = true
@@ -63,11 +63,11 @@ struct iOSTorrentFileDetail: View {
     @State private var showArchives = true
     @State private var showOther = true
     @State private var showFilterSheet = false
-    
+
     // Multi-select state
     @State private var isEditing = false
     @State private var selectedFileIds: Set<String> = []
-    
+
     private var fileRows: [TorrentFileRow] {
         let processedFiles = processFilesForDisplay(files, stats: mutableFileStats.isEmpty ? fileStats : mutableFileStats)
         return processedFiles.map { processed in
@@ -82,14 +82,14 @@ struct iOSTorrentFileDetail: View {
             )
         }
     }
-    
+
     private var hasActiveFilters: Bool {
         !showWantedFiles || !showSkippedFiles ||
         !showCompleteFiles || !showIncompleteFiles ||
         !showVideos || !showAudio || !showImages ||
         !showDocuments || !showArchives || !showOther
     }
-    
+
     private var filteredAndSortedFileRows: [TorrentFileRow] {
         let filtered = fileRows.filter { row in
             // Search filter
@@ -99,16 +99,16 @@ struct iOSTorrentFileDetail: View {
                     return false
                 }
             }
-            
+
             // Wanted/Skip filter - same logic as macOS
             if row.wanted && !showWantedFiles { return false }
             if !row.wanted && !showSkippedFiles { return false }
-            
+
             // Completion filter - same logic as macOS
             let isComplete = row.percentDone >= 1.0
             if isComplete && !showCompleteFiles { return false }
             if !isComplete && !showIncompleteFiles { return false }
-            
+
             // File type filter - same logic as macOS
             let fileType = fileTypeCategory(row.name)
             switch fileType {
@@ -120,14 +120,14 @@ struct iOSTorrentFileDetail: View {
             case .executable: if !showOther { return false }
             case .other: if !showOther { return false }
             }
-            
+
             return true
         }
         return sortFiles(filtered, by: sortProperty, order: sortOrder)
     }
-    
+
     @Environment(\.editMode) private var editMode
-    
+
     var body: some View {
         List(selection: isEditing ? $selectedFileIds : .constant(Set<String>())) {
             ForEach(filteredAndSortedFileRows, id: \.id) { row in
@@ -136,29 +136,29 @@ struct iOSTorrentFileDetail: View {
                             Text(row.displayName)
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
-                            
+
                             Spacer()
                         }
                     .padding(.bottom, 4)
-                    
+
                     ProgressView(value: row.percentDone)
                         .progressViewStyle(.linear)
                         .tint(row.percentDone >= 1.0 ? .green : .blue)
-                    
+
                     HStack {
                         Text("\(byteCountFormatter.string(fromByteCount: row.bytesCompleted)) / \(byteCountFormatter.string(fromByteCount: row.size)) (\(String(format: "%.1f%%", row.percentDone * 100)))")
                             .font(.system(.caption2, design: .monospaced))
                             .foregroundColor(.secondary)
-                        
+
                         Spacer()
-                        
+
                         if row.wanted {
                             let priority = FilePriority(rawValue: row.priority) ?? .normal
                             PriorityBadge(priority: priority)
                         } else {
                             StatusBadge(wanted: false)
                         }
-                        
+
                         FileTypeChip(filename: row.name)
                     }
                 }
@@ -170,11 +170,11 @@ struct iOSTorrentFileDetail: View {
                             Button("High Priority") {
                                 setFilePriority(row, priority: .high)
                             }
-                            
+
                             Button("Normal Priority") {
                                 setFilePriority(row, priority: .normal)
                             }
-                            
+
                             Button("Low Priority") {
                                 setFilePriority(row, priority: .low)
                             }
@@ -183,28 +183,28 @@ struct iOSTorrentFileDetail: View {
                         Image(systemName: "flag")
                     }
                     .tint(.orange)
-                    
+
                     // All actions menu (three dots) - appears on the left
                     Menu {
                         Section("Status") {
                             Button("Download") {
                                 setFileWanted(row, wanted: true)
                             }
-                            
+
                             Button("Don't Download") {
                                 setFileWanted(row, wanted: false)
                             }
                         }
-                        
+
                         Section("Priority") {
                             Button("High Priority") {
                                 setFilePriority(row, priority: .high)
                             }
-                            
+
                             Button("Normal Priority") {
                                 setFilePriority(row, priority: .normal)
                             }
-                            
+
                             Button("Low Priority") {
                                 setFilePriority(row, priority: .low)
                             }
@@ -218,28 +218,28 @@ struct iOSTorrentFileDetail: View {
                         Button("Download") {
                             setFileWanted(row, wanted: true)
                         }
-                        
+
                         Button("Don't Download") {
                             setFileWanted(row, wanted: false)
                         }
                     }
-                    
+
                     Section("Priority") {
                         Button("High Priority") {
                             setFilePriority(row, priority: .high)
                         }
-                        
+
                         Button("Normal Priority") {
                             setFilePriority(row, priority: .normal)
                         }
-                        
+
                         Button("Low Priority") {
                             setFilePriority(row, priority: .low)
                         }
                     }
                 }
             }
-            
+
             // File count footer as a List section
             Section {
                 EmptyView()
@@ -302,9 +302,9 @@ struct iOSTorrentFileDetail: View {
             mutableFileStats = fileStats
         }
     }
-    
+
     // MARK: - File Operations
-    
+
     private func setFileWanted(_ row: TorrentFileRow, wanted: Bool) {
         FileActionExecutor.setWanted(
             torrentId: torrentId,
@@ -318,7 +318,7 @@ struct iOSTorrentFileDetail: View {
             }
         )
     }
-    
+
     private func setFilePriority(_ row: TorrentFileRow, priority: FilePriority) {
         FileActionExecutor.setPriority(
             torrentId: torrentId,
@@ -332,9 +332,9 @@ struct iOSTorrentFileDetail: View {
             }
         )
     }
-    
+
     // MARK: - Optimistic Updates
-    
+
     private func updateLocalFileStatus(fileIndex: Int, wanted: Bool) {
         guard fileIndex < mutableFileStats.count else { return }
         mutableFileStats[fileIndex] = TorrentFileStats(
@@ -343,7 +343,7 @@ struct iOSTorrentFileDetail: View {
             priority: mutableFileStats[fileIndex].priority
         )
     }
-    
+
     private func updateLocalFilePriority(fileIndex: Int, priority: FilePriority) {
         guard fileIndex < mutableFileStats.count else { return }
         mutableFileStats[fileIndex] = TorrentFileStats(
@@ -352,7 +352,7 @@ struct iOSTorrentFileDetail: View {
             priority: priority.rawValue
         )
     }
-    
+
     private func revertToOriginalData() {
         mutableFileStats = fileStats
     }
@@ -369,19 +369,19 @@ struct BulkActionToolbar: View {
     let updateFileStatus: (Int, Bool) -> Void
     let updateFilePriority: (Int, FilePriority) -> Void
     let revertData: () -> Void
-    
+
     var body: some View {
         VStack(spacing: 0) {
             Divider()
-            
+
             HStack(spacing: 16) {
                 // Selection count
                 Text("\(selectedCount) selected")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
-                
+
                 Spacer()
-                
+
                 // Select All/Deselect All - selection controls, not actions
                 Button(selectedCount == allFileRows.count ? "Deselect All" : "Select All") {
                     if selectedCount == allFileRows.count {
@@ -391,28 +391,28 @@ struct BulkActionToolbar: View {
                     }
                 }
                 .font(.subheadline)
-                
+
                 // Actions menu - EXACTLY same as context menu
                 Menu {
                     Section("Status") {
                         Button("Download") {
                             setBulkWanted(true)
                         }
-                        
+
                         Button("Don't Download") {
                             setBulkWanted(false)
                         }
                     }
-                    
+
                     Section("Priority") {
                         Button("High Priority") {
                             setBulkPriority(.high)
                         }
-                        
+
                         Button("Normal Priority") {
                             setBulkPriority(.normal)
                         }
-                        
+
                         Button("Low Priority") {
                             setBulkPriority(.low)
                         }
@@ -428,16 +428,16 @@ struct BulkActionToolbar: View {
             .background(.background)
         }
     }
-    
+
     private func setBulkPriority(_ priority: FilePriority) {
         let selectedRows = allFileRows.filter { selectedFileIds.contains($0.id) }
         let fileIndices = selectedRows.map { $0.fileIndex }
-        
+
         // Optimistic updates for all selected files
         for fileIndex in fileIndices {
             updateFilePriority(fileIndex, priority)
         }
-        
+
         let info = makeConfig(store: store)
         setFilePriority(
             torrentId: torrentId,
@@ -452,16 +452,16 @@ struct BulkActionToolbar: View {
             }
         }
     }
-    
+
     private func setBulkWanted(_ wanted: Bool) {
         let selectedRows = allFileRows.filter { selectedFileIds.contains($0.id) }
         let fileIndices = selectedRows.map { $0.fileIndex }
-        
+
         // Optimistic updates for all selected files
         for fileIndex in fileIndices {
             updateFileStatus(fileIndex, wanted)
         }
-        
+
         let info = makeConfig(store: store)
         setFileWantedStatus(
             torrentId: torrentId,
@@ -487,7 +487,7 @@ struct FileActionButtonsView: View {
     @Binding var isEditing: Bool
     @Binding var selectedFileIds: Set<String>
     @Binding var showFilterSheet: Bool
-    
+
     var body: some View {
         HStack(spacing: 12) {
             // Filter button
@@ -505,7 +505,7 @@ struct FileActionButtonsView: View {
                 .background(hasActiveFilters ? Color.accentColor : Color.accentColor.opacity(0.1))
                 .cornerRadius(16)
             }
-            
+
             // Sort menu
             Menu {
                 // Sort properties
@@ -522,9 +522,9 @@ struct FileActionButtonsView: View {
                         }
                     }
                 }
-                
+
                 Divider()
-                
+
                 // Sort order
                 Button {
                     sortOrder = .ascending
@@ -537,7 +537,7 @@ struct FileActionButtonsView: View {
                         }
                     }
                 }
-                
+
                 Button {
                     sortOrder = .descending
                 } label: {
@@ -561,9 +561,9 @@ struct FileActionButtonsView: View {
                 .background(Color.accentColor.opacity(0.1))
                 .cornerRadius(16)
             }
-            
+
             Spacer()
-            
+
             // Edit button - separated on the right
             Button {
                 withAnimation {
@@ -595,7 +595,7 @@ struct FileActionButtonsView: View {
 
 struct FilterSheet: View {
     @Environment(\.dismiss) private var dismiss
-    
+
     @Binding var showWantedFiles: Bool
     @Binding var showSkippedFiles: Bool
     @Binding var showCompleteFiles: Bool
@@ -606,7 +606,7 @@ struct FilterSheet: View {
     @Binding var showDocuments: Bool
     @Binding var showArchives: Bool
     @Binding var showOther: Bool
-    
+
     var body: some View {
         NavigationView {
             List {
@@ -614,12 +614,12 @@ struct FilterSheet: View {
                     Toggle(FileStatus.wanted, isOn: $showWantedFiles)
                     Toggle(FileStatus.skip, isOn: $showSkippedFiles)
                 }
-                
+
                 Section("Progress") {
                     Toggle(FileCompletion.complete, isOn: $showCompleteFiles)
                     Toggle(FileCompletion.incomplete, isOn: $showIncompleteFiles)
                 }
-                
+
                 Section("File Types") {
                     Toggle(ContentTypeCategory.video.title, isOn: $showVideos)
                     Toggle(ContentTypeCategory.audio.title, isOn: $showAudio)
@@ -628,7 +628,7 @@ struct FilterSheet: View {
                     Toggle(ContentTypeCategory.archive.title, isOn: $showArchives)
                     Toggle(ContentTypeCategory.other.title, isOn: $showOther)
                 }
-                
+
                 Section {
                     Button("Reset All Filters") {
                         showWantedFiles = true
@@ -678,9 +678,9 @@ struct iOSTorrentFileDetail: View {
     let fileStats: [TorrentFileStats]
     let torrentId: Int
     let store: Store
-    
+
     var body: some View {
         EmptyView()
     }
 }
-#endif 
+#endif

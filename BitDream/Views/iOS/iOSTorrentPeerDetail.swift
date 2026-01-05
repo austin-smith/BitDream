@@ -10,9 +10,9 @@ struct iOSTorrentPeerDetail: View {
     let peersFrom: PeersFrom?
     let onRefresh: () -> Void
     let onDone: () -> Void
-    
+
     @State private var searchText: String = ""
-    
+
     private var filteredPeers: [Peer] {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return peers }
@@ -22,7 +22,7 @@ struct iOSTorrentPeerDetail: View {
             || peer.flagStr.localizedCaseInsensitiveContains(trimmed)
         }
     }
-    
+
     var body: some View {
         NavigationStack {
             if filteredPeers.isEmpty {
@@ -48,7 +48,7 @@ struct iOSTorrentPeerDetail: View {
                     ForEach(filteredPeers, id: \.id) { peer in
                         PeerRowCard(peer: peer)
                     }
-                    
+
                     // Peer count footer as a List section
                     Section {
                         EmptyView()
@@ -85,7 +85,7 @@ struct iOSTorrentPeerDetail: View {
 
 private struct PeerRowCard: View {
     let peer: Peer
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Primary Identity: IP + Client Name
@@ -110,7 +110,7 @@ private struct PeerRowCard: View {
                         .background(Color.gray.opacity(0.1))
                         .foregroundColor(.secondary)
                         .cornerRadius(4)
-                    
+
                     Text(peer.isEncrypted ? "Encrypted" : "Unencrypted")
                         .font(.caption)
                         .padding(.horizontal, 6)
@@ -120,11 +120,11 @@ private struct PeerRowCard: View {
                         .cornerRadius(4)
                 }
             }
-            
+
             // Performance Metrics: Progress + Speeds
             VStack(alignment: .leading, spacing: 4) {
                 FileProgressView(percentDone: peer.progress)
-                
+
                 HStack {
                     SpeedChip(
                         speed: peer.rateToClient ?? 0,
@@ -132,14 +132,14 @@ private struct PeerRowCard: View {
                         style: .plain,
                         size: .compact
                     )
-                    
+
                     SpeedChip(
                         speed: peer.rateToPeer ?? 0,
                         direction: .upload,
                         style: .plain,
                         size: .compact
                     )
-                    
+
                     Spacer()
                 }
             }

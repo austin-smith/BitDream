@@ -13,7 +13,7 @@ extension FilePriority {
         case .high: return "High"
         }
     }
-    
+
     var color: Color {
         switch self {
         case .low: return .orange
@@ -27,11 +27,11 @@ extension FilePriority {
 struct FileStatus {
     static let wanted = "Wanted"
     static let skip = "Skip"
-    
+
     static func displayText(for wanted: Bool) -> String {
         wanted ? Self.wanted : Self.skip
     }
-    
+
     static func color(for wanted: Bool) -> Color {
         wanted ? .green : .secondary
     }
@@ -41,7 +41,7 @@ struct FileStatus {
 struct FileCompletion {
     static let complete = "Complete"
     static let incomplete = "Incomplete"
-    
+
     static func color(for isComplete: Bool) -> Color {
         isComplete ? .green : .blue
     }
@@ -69,11 +69,11 @@ func fileTypeCategory(_ pathOrName: String) -> ContentTypeCategory {
 func calculateCommonPrefix(_ filenames: [String]) -> String {
     guard !filenames.isEmpty else { return "" }
     guard filenames.count > 1 else { return "" }
-    
+
     // Find the shortest path to avoid index out of bounds
     let shortestPath = filenames.min(by: { $0.count < $1.count }) ?? ""
     var commonPrefix = ""
-    
+
     for i in shortestPath.indices {
         let char = shortestPath[i]
         if filenames.allSatisfy({ $0.indices.contains(i) && $0[i] == char }) {
@@ -82,12 +82,12 @@ func calculateCommonPrefix(_ filenames: [String]) -> String {
             break
         }
     }
-    
+
     // Only return prefix if it ends with a slash (complete folder)
     if let lastSlash = commonPrefix.lastIndex(of: "/") {
         return String(commonPrefix[...lastSlash])
     }
-    
+
     return ""
 }
 
@@ -101,7 +101,7 @@ func stripCommonPrefix(_ filename: String, prefix: String) -> String {
 func processFilesForDisplay(_ files: [TorrentFile], stats: [TorrentFileStats]) -> [(file: TorrentFile, stats: TorrentFileStats, displayName: String, fileIndex: Int)] {
     let filenames = files.map { $0.name }
     let commonPrefix = calculateCommonPrefix(filenames)
-    
+
     return zip(files, stats).enumerated().map { index, pair in
         (file: pair.0, stats: pair.1, displayName: stripCommonPrefix(pair.0.name, prefix: commonPrefix), fileIndex: index)
     }
@@ -121,7 +121,7 @@ struct TorrentFileDetail: View {
     let fileStats: [TorrentFileStats]
     let torrentId: Int
     let store: Store
-    
+
     var body: some View {
         #if os(iOS)
         iOSTorrentFileDetail(files: files, fileStats: fileStats, torrentId: torrentId, store: store)
@@ -142,7 +142,7 @@ struct TorrentFilePreviewData {
         TorrentFile(bytesCompleted: 0, length: 1024 * 1024 * 10, name: "Movie.2024/poster.jpg"),
         TorrentFile(bytesCompleted: 0, length: 1024 * 1024 * 50, name: "Movie.2024/soundtrack.mp3")
     ]
-    
+
     static let sampleFileStats: [TorrentFileStats] = [
         TorrentFileStats(bytesCompleted: 1024 * 1024 * 50, wanted: true, priority: -1),  // Low priority
         TorrentFileStats(bytesCompleted: 1024 * 1024 * 25, wanted: true, priority: 0),   // Normal priority
@@ -157,7 +157,7 @@ struct TorrentFilePreviewData {
 /// Priority badge component for consistent styling across platforms
 struct PriorityBadge: View {
     let priority: FilePriority
-    
+
     var body: some View {
         Text(priority.displayText)
             .font(.caption)
@@ -176,7 +176,7 @@ struct PriorityBadge: View {
 /// Status badge component for consistent styling across platforms
 struct StatusBadge: View {
     let wanted: Bool
-    
+
     var body: some View {
         Text(FileStatus.displayText(for: wanted))
             .font(.caption)
@@ -196,14 +196,14 @@ struct StatusBadge: View {
 struct FileTypeChip: View {
     let filename: String
     var iconSize: CGFloat = 10
-    
+
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: symbolForPath(filename))
                 .frame(width: iconSize, alignment: .center)
                 .font(.system(size: iconSize))
                 .foregroundColor(.secondary)
-            
+
             Text(fileExtension(from: filename))
                 .font(.system(.caption2, design: .monospaced))
                 .foregroundColor(.secondary)
@@ -229,36 +229,36 @@ struct TorrentFileRow: Identifiable {
     let percentDone: Double
     let priority: Int
     let wanted: Bool
-    
+
     // Computed properties for display
     var sizeDisplay: String {
         byteCountFormatter.string(fromByteCount: size)
     }
-    
+
     var downloadedDisplay: String {
         byteCountFormatter.string(fromByteCount: bytesCompleted)
     }
-    
+
     var progressDisplay: String {
         "\(Int(percentDone * 100))%"
     }
-    
+
     var fileType: String {
         fileExtension(from: name)
     }
-    
+
     var fileSymbol: String {
         symbolForPath(name)
     }
-    
+
     var priorityDisplay: String {
         (FilePriority(rawValue: priority) ?? .normal).displayText
     }
-    
+
     var statusDisplay: String {
         FileStatus.displayText(for: wanted)
     }
-    
+
     init(file: TorrentFile, stats: TorrentFileStats, percentDone: Double, priority: Int, wanted: Bool, displayName: String, fileIndex: Int) {
         self.id = file.id
         self.name = file.name

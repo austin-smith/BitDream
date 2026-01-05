@@ -8,7 +8,7 @@ struct iOSContentView: View {
     let viewContext: NSManagedObjectContext
     let hosts: FetchedResults<Host>
     @ObservedObject var store: Store
-    
+
     // Add explicit initializer with internal access level
     init(viewContext: NSManagedObjectContext, hosts: FetchedResults<Host>, store: Store) {
         self.viewContext = viewContext
@@ -17,7 +17,7 @@ struct iOSContentView: View {
     }
 
     private var keychain = Keychain(service: "crapshack.BitDream")
-    
+
     // Store the selected torrent IDs
     @State private var selectedTorrentIds: Set<Int> = []
 
@@ -27,18 +27,18 @@ struct iOSContentView: View {
             store.torrents.first { $0.id == id }
         })
     }
-    
+
     @State var sortProperty: SortProperty = UserDefaults.standard.sortProperty
     @State var sortOrder: SortOrder = UserDefaults.standard.sortOrder
     @State var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = true
     @State private var searchText: String = ""
-    
+
     var body: some View {
         NavigationSplitView {
             VStack(spacing: 0) {
                 StatsHeaderView(store: store)
-                
+
                 // Show list regardless of connection status
                 List(selection: $selectedTorrentIds) {
                     torrentRows
@@ -196,7 +196,7 @@ struct iOSContentView: View {
                     Text("Filter By")
                     Image(systemName: "slider.horizontal.3")
                 }.environment(\.menuOrder, .fixed)
-                
+
                 Menu {
                     // Sort properties
                     ForEach(SortProperty.allCases, id: \.self) { property in
@@ -275,12 +275,12 @@ struct iOSContentView: View {
     }
 
     // MARK: - Bottom Toolbar
-    
+
     private var bottomToolbarItems: some ToolbarContent {
         Group {
             DefaultToolbarItem(kind: .search, placement: .bottomBar)
             ToolbarSpacer(.flexible, placement: .bottomBar)
-            
+
             ToolbarItem(placement: .bottomBar) {
                 Button(action: {
                     store.isShowingAddAlert.toggle()
@@ -298,16 +298,16 @@ struct iOSContentView: View {
     let viewContext: NSManagedObjectContext
     let hosts: FetchedResults<Host>
     @ObservedObject var store: Store
-    
+
     // Add explicit initializer with internal access level
     init(viewContext: NSManagedObjectContext, hosts: FetchedResults<Host>, store: Store) {
         self.viewContext = viewContext
         self.hosts = hosts
         self.store = store
     }
-    
+
     var body: some View {
         EmptyView()
     }
 }
-#endif 
+#endif

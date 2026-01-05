@@ -12,7 +12,7 @@ struct iOSSettingsView: View {
     @StateObject private var appIconManager = AppIconManager.shared
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = AppDefaults.showContentTypeIcons
     @AppStorage(UserDefaultsKeys.startupConnectionBehavior) private var startupBehaviorRaw: String = AppDefaults.startupConnectionBehavior.rawValue
-    
+
     var body: some View {
         // iOS version with standard styling
         NavigationView {
@@ -23,7 +23,7 @@ struct iOSSettingsView: View {
                             Text(mode.rawValue).tag(mode)
                         }
                     }
-                    
+
                     NavigationLink(destination: AccentColorPicker(selection: $themeManager.currentAccentColorOption)) {
                         HStack {
                             Text("Accent Color")
@@ -35,7 +35,7 @@ struct iOSSettingsView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
-                    
+
                     NavigationLink(destination: AppIconPickerView(appIconManager: appIconManager)) {
                         HStack {
                             Text("App Icon")
@@ -43,17 +43,17 @@ struct iOSSettingsView: View {
                             CurrentAppIconPreview(appIconManager: appIconManager)
                         }
                     }
-                    
+
                     Toggle("Show file type icons", isOn: $showContentTypeIcons)
                 }
-                
+
                 Section(header: Text("Startup")) {
                     Picker("Startup connection", selection: .fromRawValue(rawValue: $startupBehaviorRaw, defaultValue: AppDefaults.startupConnectionBehavior)) {
                         Text("Last used server").tag(StartupConnectionBehavior.lastUsed)
                         Text("Default server").tag(StartupConnectionBehavior.defaultServer)
                     }
                 }
-                
+
                 Section(header: Text("Refresh Settings")) {
                     Picker("Poll Interval", selection: Binding(
                         get: { self.store.pollInterval },
@@ -77,7 +77,7 @@ struct iOSSettingsView: View {
                         Label("Network", systemImage: "network")
                     }
                 }
-                
+
                 Section(header: Text("Reset")) {
                     Button(action: {
                         SettingsView.resetAllSettings(store: store)
@@ -86,7 +86,7 @@ struct iOSSettingsView: View {
                             .foregroundColor(.accentColor)
                     }
                 }
-                
+
                 Section(header: Text("About")) {
                     HStack {
                         Text("Version")
@@ -111,7 +111,7 @@ struct iOSSettingsView: View {
 struct AccentColorPicker: View {
     @Binding var selection: AccentColorOption
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         List {
             ForEach(AccentColorOption.allCases) { option in
@@ -119,15 +119,15 @@ struct AccentColorPicker: View {
                     Circle()
                         .fill(option.color)
                         .frame(width: 20, height: 20)
-                    
+
                     Text(option.name)
-                    
+
                     Text(option.rawValue)
                         .font(.system(.caption, design: .monospaced))
                         .foregroundColor(.secondary)
-                    
+
                     Spacer()
-                    
+
                     if selection == option {
                         Image(systemName: "checkmark")
                             .foregroundColor(.accentColor)
@@ -159,7 +159,7 @@ private struct AppIconOption: Identifiable, Equatable {
 private struct AppIconPickerView: View {
     @ObservedObject var appIconManager: AppIconManager
     @State private var options: [AppIconOption] = []
-    
+
     var body: some View {
         List {
             ForEach(options) { option in
@@ -174,7 +174,7 @@ private struct AppIconPickerView: View {
                 .contentShape(Rectangle())
                 .onTapGesture { select(option.key) }
             }
-            
+
             if let lastError = appIconManager.lastError {
                 Section {
                     Text(lastError)
@@ -189,7 +189,7 @@ private struct AppIconPickerView: View {
             appIconManager.refreshCurrentIcon()
         }
     }
-    
+
     private func reloadOptions() {
         let presentations = AppIconCatalog.presentations()
         options = presentations.map { p in
@@ -201,7 +201,7 @@ private struct AppIconPickerView: View {
             )
         }
     }
-    
+
     private func select(_ name: String?) {
         appIconManager.selectIcon(name: name)
     }
@@ -209,7 +209,7 @@ private struct AppIconPickerView: View {
 
 private struct PreviewThumbnail: View {
     let name: String
-    
+
     var body: some View {
         if UIImage(named: name) != nil {
             Image(name)
@@ -229,7 +229,7 @@ private struct PreviewThumbnail: View {
 
 private struct CurrentAppIconPreview: View {
     @ObservedObject var appIconManager: AppIconManager
-    
+
     private var previewAssetName: String {
         if let key = appIconManager.currentIconName, let preset = AppIconCatalog.entries.first(where: { $0.key == key }) {
             return preset.previewAssetName
@@ -237,7 +237,7 @@ private struct CurrentAppIconPreview: View {
         // default
         return AppIconCatalog.entries.first(where: { $0.key == nil })?.previewAssetName ?? "AppIconPreview-Default"
     }
-    
+
     var body: some View {
         Image(previewAssetName)
             .resizable()
@@ -253,7 +253,7 @@ private struct CurrentAppIconPreview: View {
 private struct iOSTorrentsSettingsPage: View {
     @ObservedObject var store: Store
     @StateObject private var editModel = SessionSettingsEditModel()
-    
+
     var body: some View {
         Group {
             if let config = store.sessionConfiguration {
@@ -267,14 +267,14 @@ private struct iOSTorrentsSettingsPage: View {
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                         }
-                        
+
                         Button("Check Free Space") {
                             checkDirectoryFreeSpace(
                                 path: editModel.getValue("downloadDir", fallback: config.downloadDir),
                                 editModel: editModel
                             )
                         }
-                        
+
                         if let freeSpaceInfo = editModel.freeSpaceInfo {
                             HStack {
                                 Text("Available Space")
@@ -288,34 +288,34 @@ private struct iOSTorrentsSettingsPage: View {
                                 }
                             }
                         }
-                        
+
                         Toggle("Use separate incomplete directory", isOn: Binding(
                             get: { editModel.getValue("incompleteDirEnabled", fallback: config.incompleteDirEnabled) },
                             set: { editModel.setValue("incompleteDirEnabled", $0, original: config.incompleteDirEnabled) }
                         ))
-                        
+
                         Toggle("Start transfers when added", isOn: Binding(
                             get: { editModel.getValue("startAddedTorrents", fallback: config.startAddedTorrents) },
                             set: { editModel.setValue("startAddedTorrents", $0, original: config.startAddedTorrents) }
                         ))
-                        
+
                         Toggle("Delete original .torrent files", isOn: Binding(
                             get: { editModel.getValue("trashOriginalTorrentFiles", fallback: config.trashOriginalTorrentFiles) },
                             set: { editModel.setValue("trashOriginalTorrentFiles", $0, original: config.trashOriginalTorrentFiles) }
                         ))
-                        
+
                         Toggle("Append .part to incomplete files", isOn: Binding(
                             get: { editModel.getValue("renamePartialFiles", fallback: config.renamePartialFiles) },
                             set: { editModel.setValue("renamePartialFiles", $0, original: config.renamePartialFiles) }
                         ))
                     }
-                    
+
                     Section(header: Text("Queue Management")) {
                         Toggle("Download queue", isOn: Binding(
                             get: { editModel.getValue("downloadQueueEnabled", fallback: config.downloadQueueEnabled) },
                             set: { editModel.setValue("downloadQueueEnabled", $0, original: config.downloadQueueEnabled) }
                         ))
-                        
+
                         HStack {
                             Text("Maximum active downloads")
                             Spacer()
@@ -328,12 +328,12 @@ private struct iOSTorrentsSettingsPage: View {
                             .disabled(!editModel.getValue("downloadQueueEnabled", fallback: config.downloadQueueEnabled))
                             .foregroundColor(editModel.getValue("downloadQueueEnabled", fallback: config.downloadQueueEnabled) ? .primary : .secondary)
                         }
-                        
+
                         Toggle("Seed queue", isOn: Binding(
                             get: { editModel.getValue("seedQueueEnabled", fallback: config.seedQueueEnabled) },
                             set: { editModel.setValue("seedQueueEnabled", $0, original: config.seedQueueEnabled) }
                         ))
-                        
+
                         HStack {
                             Text("Maximum active seeds")
                             Spacer()
@@ -346,12 +346,12 @@ private struct iOSTorrentsSettingsPage: View {
                             .disabled(!editModel.getValue("seedQueueEnabled", fallback: config.seedQueueEnabled))
                             .foregroundColor(editModel.getValue("seedQueueEnabled", fallback: config.seedQueueEnabled) ? .primary : .secondary)
                         }
-                        
+
                         Toggle("Consider idle torrents as stalled", isOn: Binding(
                             get: { editModel.getValue("queueStalledEnabled", fallback: config.queueStalledEnabled) },
                             set: { editModel.setValue("queueStalledEnabled", $0, original: config.queueStalledEnabled) }
                         ))
-                        
+
                         HStack {
                             Text("Stalled after (minutes)")
                             Spacer()
@@ -365,13 +365,13 @@ private struct iOSTorrentsSettingsPage: View {
                             .foregroundColor(editModel.getValue("queueStalledEnabled", fallback: config.queueStalledEnabled) ? .primary : .secondary)
                         }
                     }
-                    
+
                     Section(header: Text("Seeding")) {
                         Toggle("Stop seeding at ratio", isOn: Binding(
                             get: { editModel.getValue("seedRatioLimited", fallback: config.seedRatioLimited) },
                             set: { editModel.setValue("seedRatioLimited", $0, original: config.seedRatioLimited) }
                         ))
-                        
+
                         HStack {
                             Text("Seed ratio limit")
                             Spacer()
@@ -384,12 +384,12 @@ private struct iOSTorrentsSettingsPage: View {
                             .disabled(!editModel.getValue("seedRatioLimited", fallback: config.seedRatioLimited))
                             .foregroundColor(editModel.getValue("seedRatioLimited", fallback: config.seedRatioLimited) ? .primary : .secondary)
                         }
-                        
+
                         Toggle("Stop seeding when inactive", isOn: Binding(
                             get: { editModel.getValue("idleSeedingLimitEnabled", fallback: config.idleSeedingLimitEnabled) },
                             set: { editModel.setValue("idleSeedingLimitEnabled", $0, original: config.idleSeedingLimitEnabled) }
                         ))
-                        
+
                         HStack {
                             Text("Inactive for (minutes)")
                             Spacer()
@@ -420,7 +420,7 @@ private struct iOSTorrentsSettingsPage: View {
 private struct iOSSpeedLimitsSettingsPage: View {
     @ObservedObject var store: Store
     @StateObject private var editModel = SessionSettingsEditModel()
-    
+
     var body: some View {
         Group {
             if let config = store.sessionConfiguration {
@@ -430,7 +430,7 @@ private struct iOSSpeedLimitsSettingsPage: View {
                             get: { editModel.getValue("speedLimitDownEnabled", fallback: config.speedLimitDownEnabled) },
                             set: { editModel.setValue("speedLimitDownEnabled", $0, original: config.speedLimitDownEnabled) }
                         ))
-                        
+
                         HStack {
                             Text("Download speed (KB/s)")
                             Spacer()
@@ -443,12 +443,12 @@ private struct iOSSpeedLimitsSettingsPage: View {
                             .disabled(!editModel.getValue("speedLimitDownEnabled", fallback: config.speedLimitDownEnabled))
                             .foregroundColor(editModel.getValue("speedLimitDownEnabled", fallback: config.speedLimitDownEnabled) ? .primary : .secondary)
                         }
-                        
+
                         Toggle("Upload limit", isOn: Binding(
                             get: { editModel.getValue("speedLimitUpEnabled", fallback: config.speedLimitUpEnabled) },
                             set: { editModel.setValue("speedLimitUpEnabled", $0, original: config.speedLimitUpEnabled) }
                         ))
-                        
+
                         HStack {
                             Text("Upload speed (KB/s)")
                             Spacer()
@@ -462,13 +462,13 @@ private struct iOSSpeedLimitsSettingsPage: View {
                             .foregroundColor(editModel.getValue("speedLimitUpEnabled", fallback: config.speedLimitUpEnabled) ? .primary : .secondary)
                         }
                     }
-                    
+
                     Section(header: Text("Alternate Speed Limits")) {
                         Toggle("Enable alternate speeds", isOn: Binding(
                             get: { editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled) },
                             set: { editModel.setValue("altSpeedEnabled", $0, original: config.altSpeedEnabled) }
                         ))
-                        
+
                         HStack {
                             Text("Download limit (KB/s)")
                             Spacer()
@@ -481,7 +481,7 @@ private struct iOSSpeedLimitsSettingsPage: View {
                             .disabled(!editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled))
                             .foregroundColor(editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled) ? .primary : .secondary)
                         }
-                        
+
                         HStack {
                             Text("Upload limit (KB/s)")
                             Spacer()
@@ -494,13 +494,13 @@ private struct iOSSpeedLimitsSettingsPage: View {
                             .disabled(!editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled))
                             .foregroundColor(editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled) ? .primary : .secondary)
                         }
-                        
+
                         Toggle("Schedule alternate speeds", isOn: Binding(
                             get: { editModel.getValue("altSpeedTimeEnabled", fallback: config.altSpeedTimeEnabled) },
                             set: { editModel.setValue("altSpeedTimeEnabled", $0, original: config.altSpeedTimeEnabled) }
                         ))
                         .disabled(!editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled))
-                        
+
                         Picker("Days", selection: Binding(
                             get: { editModel.getValue("altSpeedTimeDay", fallback: config.altSpeedTimeDay) },
                             set: { editModel.setValue("altSpeedTimeDay", $0, original: config.altSpeedTimeDay) }
@@ -517,7 +517,7 @@ private struct iOSSpeedLimitsSettingsPage: View {
                             Text("Saturday").tag(64)
                         }
                         .disabled(!editModel.getValue("altSpeedTimeEnabled", fallback: config.altSpeedTimeEnabled))
-                        
+
                         DatePicker("Start Time", selection: Binding(
                             get: {
                                 let minutes = editModel.getValue("altSpeedTimeBegin", fallback: config.altSpeedTimeBegin)
@@ -532,7 +532,7 @@ private struct iOSSpeedLimitsSettingsPage: View {
                             }
                         ), displayedComponents: .hourAndMinute)
                         .disabled(!editModel.getValue("altSpeedTimeEnabled", fallback: config.altSpeedTimeEnabled))
-                        
+
                         DatePicker("End Time", selection: Binding(
                             get: {
                                 let minutes = editModel.getValue("altSpeedTimeEnd", fallback: config.altSpeedTimeEnd)
@@ -565,7 +565,7 @@ private struct iOSSpeedLimitsSettingsPage: View {
 private struct iOSNetworkSettingsPage: View {
     @ObservedObject var store: Store
     @StateObject private var editModel = SessionSettingsEditModel()
-    
+
     var body: some View {
         Group {
             if let config = store.sessionConfiguration {
@@ -581,12 +581,12 @@ private struct iOSNetworkSettingsPage: View {
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
                         }
-                        
+
                         Button("Check Port") {
                             checkPort(editModel: editModel, ipProtocol: nil)
                         }
                         .disabled(editModel.isTestingPort)
-                        
+
                         if editModel.isTestingPort {
                             HStack {
                                 Text("Testing port...")
@@ -602,12 +602,12 @@ private struct iOSNetworkSettingsPage: View {
                                     .foregroundColor(portTestResult.contains("open") ? .green : .orange)
                             }
                         }
-                        
+
                         Toggle("Randomize port on launch", isOn: Binding(
                             get: { editModel.getValue("peerPortRandomOnStart", fallback: config.peerPortRandomOnStart) },
                             set: { editModel.setValue("peerPortRandomOnStart", $0, original: config.peerPortRandomOnStart) }
                         ))
-                        
+
                         Picker("Encryption", selection: Binding(
                             get: { editModel.getValue("encryption", fallback: config.encryption) },
                             set: { editModel.setValue("encryption", $0, original: config.encryption) }
@@ -617,34 +617,34 @@ private struct iOSNetworkSettingsPage: View {
                             Text("Tolerated").tag("tolerated")
                         }
                     }
-                    
+
                     Section(header: Text("Peer Exchange")) {
                         Toggle("Enable port forwarding", isOn: Binding(
                             get: { editModel.getValue("portForwardingEnabled", fallback: config.portForwardingEnabled) },
                             set: { editModel.setValue("portForwardingEnabled", $0, original: config.portForwardingEnabled) }
                         ))
-                        
+
                         Toggle("Enable DHT", isOn: Binding(
                             get: { editModel.getValue("dhtEnabled", fallback: config.dhtEnabled) },
                             set: { editModel.setValue("dhtEnabled", $0, original: config.dhtEnabled) }
                         ))
-                        
+
                         Toggle("Enable PEX", isOn: Binding(
                             get: { editModel.getValue("pexEnabled", fallback: config.pexEnabled) },
                             set: { editModel.setValue("pexEnabled", $0, original: config.pexEnabled) }
                         ))
-                        
+
                         Toggle("Enable LPD", isOn: Binding(
                             get: { editModel.getValue("lpdEnabled", fallback: config.lpdEnabled) },
                             set: { editModel.setValue("lpdEnabled", $0, original: config.lpdEnabled) }
                         ))
-                        
+
                         Toggle("Enable µTP", isOn: Binding(
                             get: { editModel.getValue("utpEnabled", fallback: config.utpEnabled) },
                             set: { editModel.setValue("utpEnabled", $0, original: config.utpEnabled) }
                         ))
                     }
-                    
+
                     Section(header: Text("Peer Limits")) {
                         HStack {
                             Text("Maximum global peers")
@@ -656,7 +656,7 @@ private struct iOSNetworkSettingsPage: View {
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
                         }
-                        
+
                         HStack {
                             Text("Maximum per torrent peers")
                             Spacer()
@@ -668,13 +668,13 @@ private struct iOSNetworkSettingsPage: View {
                             .multilineTextAlignment(.trailing)
                         }
                     }
-                    
+
                     Section(header: Text("Blocklist")) {
                         Toggle("Enable blocklist", isOn: Binding(
                             get: { editModel.getValue("blocklistEnabled", fallback: config.blocklistEnabled) },
                             set: { editModel.setValue("blocklistEnabled", $0, original: config.blocklistEnabled) }
                         ))
-                        
+
                         HStack {
                             Text("Blocklist URL")
                             Spacer()
@@ -686,7 +686,7 @@ private struct iOSNetworkSettingsPage: View {
                             .disabled(!editModel.getValue("blocklistEnabled", fallback: config.blocklistEnabled))
                             .foregroundColor(editModel.getValue("blocklistEnabled", fallback: config.blocklistEnabled) ? .primary : .secondary)
                         }
-                        
+
                         HStack {
                             Text("Rules active")
                             Spacer()
@@ -698,12 +698,12 @@ private struct iOSNetworkSettingsPage: View {
                                     .foregroundColor(.secondary)
                             }
                         }
-                        
+
                         Button("Update Blocklist") {
                             updateBlocklist(editModel: editModel)
                         }
                         .disabled(editModel.isUpdatingBlocklist || !editModel.getValue("blocklistEnabled", fallback: config.blocklistEnabled))
-                        
+
                         if let blocklistUpdateResult = editModel.blocklistUpdateResult {
                             Text(blocklistUpdateResult)
                                 .font(.caption)
@@ -731,9 +731,9 @@ private struct iOSNetworkSettingsPage: View {
 // Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
 struct iOSSettingsView: View {
     @ObservedObject var store: Store
-    
+
     var body: some View {
         EmptyView()
     }
 }
-#endif 
+#endif

@@ -11,7 +11,7 @@ struct macOSTorrentDetail: View {
     @ObservedObject var store: Store
     var viewContext: NSManagedObjectContext
     var torrent: Torrent
-    
+
     @State public var files: [TorrentFile] = []
     @State private var fileStats: [TorrentFileStats] = []
     @State private var isShowingFilesSheet = false
@@ -25,30 +25,30 @@ struct macOSTorrentDetail: View {
     @State private var pieceSize: Int64 = 0
     @State private var piecesBitfield: String = ""
     @State private var piecesHaveCount: Int = 0
-    
+
     var body: some View {
         // Use shared formatting function
         let details = formatTorrentDetails(torrent: torrent)
-        
+
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 TorrentDetailHeaderView(torrent: torrent)
                     .padding(.bottom, 4)
-                
+
                 // General section
                 GroupBox {
                     VStack(alignment: .leading, spacing: 12) {
                         // Native macOS section header
                         macOSSectionHeader("General", icon: "info.circle")
-                        
+
                         DetailRow(label: "Name", value: torrent.name)
-                        
+
                         DetailRow(label: "Status") {
                             TorrentStatusBadge(torrent: torrent)
                         }
-                        
+
                         DetailRow(label: "Date Added", value: details.addedDate)
-                        
+
                         DetailRow(label: "Files") {
                             Button {
                                 isShowingFilesSheet = true
@@ -64,7 +64,7 @@ struct macOSTorrentDetail: View {
                             .buttonStyle(.bordered)
                             .help("View files in this torrent")
                         }
-                        
+
                         DetailRow(label: "Peers") {
                             Button {
                                 isShowingPeersSheet = true
@@ -85,13 +85,13 @@ struct macOSTorrentDetail: View {
                     .padding(.horizontal, 20)
                 }
                 .padding(.bottom, 8)
-                
+
                 // Stats section
                 GroupBox {
                     VStack(alignment: .leading, spacing: 10) {
                         // Native macOS section header
                         macOSSectionHeader("Stats", icon: "chart.bar")
-                        
+
                         DetailRow(label: "Size When Done", value: details.sizeWhenDoneFormatted)
                         DetailRow(label: "Progress", value: details.percentComplete)
                         DetailRow(label: "Downloaded", value: details.downloadedFormatted)
@@ -108,7 +108,7 @@ struct macOSTorrentDetail: View {
                     GroupBox {
                         VStack(alignment: .leading, spacing: 10) {
                             macOSSectionHeader("Pieces", icon: "square.grid.2x2")
-                            
+
                             VStack(alignment: .leading, spacing: 8) {
                                 PiecesGridView(pieceCount: pieceCount, piecesBitfieldBase64: piecesBitfield)
                                     .frame(maxWidth: .infinity)
@@ -122,13 +122,13 @@ struct macOSTorrentDetail: View {
                     }
                     .padding(.bottom, 8)
                 }
-                
+
                 // Additional Info section
                 GroupBox {
                     VStack(alignment: .leading, spacing: 10) {
                         // Native macOS section header
                         macOSSectionHeader("Additional Info", icon: "doc.text")
-                        
+
                         DetailRow(label: "Availability", value: details.percentAvailable)
                         DetailRow(label: "Last Activity", value: details.activityDate)
                     }
@@ -136,14 +136,14 @@ struct macOSTorrentDetail: View {
                     .padding(.horizontal, 20)
                 }
                 .padding(.bottom, 8)
-                
+
                 // Beautiful Dedicated Labels Section (Display Only)
                 if !torrent.labels.isEmpty {
                     GroupBox {
                         VStack(alignment: .leading, spacing: 16) {
                             // Native macOS section header
                             macOSSectionHeader("Labels", icon: "tag")
-                            
+
                             // Labels display
                             FlowLayout(spacing: 6) {
                                 ForEach(torrent.labels.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }, id: \.self) { label in
@@ -157,7 +157,7 @@ struct macOSTorrentDetail: View {
                     }
                     .padding(.bottom, 8)
                 }
-                
+
                 // Actions
                 HStack {
                     Spacer()
@@ -173,7 +173,7 @@ struct macOSTorrentDetail: View {
         }
         .sheet(isPresented: $isShowingFilesSheet) {
             let totalSizeFormatted = byteCountFormatter.string(fromByteCount: files.reduce(0) { $0 + $1.length })
-            
+
             VStack(spacing: 0) {
                 // Header with proper hierarchy
                 VStack(alignment: .leading, spacing: 4) {
@@ -182,16 +182,16 @@ struct macOSTorrentDetail: View {
                             Text("Files")
                                 .font(.title2)
                                 .fontWeight(.semibold)
-                            
+
                             Text("\(torrent.name) • \(files.count) files • \(totalSizeFormatted)")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                         }
-                        
+
                         Spacer()
-                        
+
                         Button("Done") {
                             isShowingFilesSheet = false
                         }
@@ -199,9 +199,9 @@ struct macOSTorrentDetail: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
-                
+
                 Divider()
-                
+
                 macOSTorrentFileDetail(files: files, fileStats: fileStats, torrentId: torrent.id, store: store)
             }
             .frame(minWidth: 1000, minHeight: 800)
@@ -292,7 +292,7 @@ struct macOSTorrentDetail: View {
 struct DetailViewLabelTag: View {
     let label: String
     var isLarge: Bool = false
-    
+
     var body: some View {
         Text(label)
             .font(isLarge ? .subheadline : .caption)
@@ -315,25 +315,25 @@ struct DetailViewLabelTag: View {
 struct DetailRow<Content: View>: View {
     var label: String
     var content: Content
-    
+
     init(label: String, value: String) where Content == Text {
         self.label = label
         self.content = Text(value).foregroundColor(.secondary)
     }
-    
+
     init(label: String, @ViewBuilder content: () -> Content) {
         self.label = label
         self.content = content()
     }
-    
+
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(label)
                 .frame(width: 120, alignment: .leading)
                 .foregroundColor(.primary)
-            
+
             content
-            
+
             Spacer()
         }
         .padding(.vertical, 2)
@@ -344,24 +344,24 @@ struct DetailRow<Content: View>: View {
 struct macOSSectionHeader: View {
     let title: String
     let icon: String
-    
+
     init(_ title: String, icon: String) {
         self.title = title
         self.icon = icon
     }
-    
+
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.secondary)
-            
+
             Text(title)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.secondary)
                 .textCase(.uppercase)
                 .tracking(0.5)
-            
+
             Spacer()
         }
         .padding(.bottom, 8)

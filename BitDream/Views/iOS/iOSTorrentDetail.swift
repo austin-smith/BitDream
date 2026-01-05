@@ -10,7 +10,7 @@ struct iOSTorrentDetail: View {
     @ObservedObject var store: Store
     var viewContext: NSManagedObjectContext
     var torrent: Torrent
-    
+
     @State public var files: [TorrentFile] = []
     @State public var fileStats: [TorrentFileStats] = []
     @State private var isShowingFilesSheet = false
@@ -21,16 +21,16 @@ struct iOSTorrentDetail: View {
     @State private var pieceSize: Int64 = 0
     @State private var piecesBitfield: String = ""
     @State private var piecesHaveCount: Int = 0
-    
+
     var body: some View {
         // Use shared formatting function
         let details = formatTorrentDetails(torrent: torrent)
-        
+
         NavigationStack {
             VStack {
                 // Use shared header view
                 TorrentDetailHeaderView(torrent: torrent)
-                
+
                 Form {
                     Section(header: Text("General")) {
                         HStack(alignment: .top) {
@@ -52,14 +52,14 @@ struct iOSTorrentDetail: View {
                             Text(details.addedDate)
                                 .foregroundColor(.gray)
                         }
-                        
+
                         NavigationLink {
                             iOSTorrentFileDetail(files: files, fileStats: fileStats, torrentId: torrent.id, store: store)
                                 .navigationBarTitleDisplayMode(.inline)
                         } label: {
                             LabeledContent("Files", value: NumberFormatter.localizedString(from: NSNumber(value: files.count), number: .decimal))
                         }
-                        
+
                         NavigationLink {
                             iOSTorrentPeerDetail(
                                 torrentName: torrent.name,
@@ -80,7 +80,7 @@ struct iOSTorrentDetail: View {
                             LabeledContent("Peers", value: "\(peers.count)")
                         }
                     }
-                    
+
                     Section(header: Text("Stats")) {
                         HStack {
                             Text("Size When Done")
@@ -113,7 +113,7 @@ struct iOSTorrentDetail: View {
                                 .foregroundColor(.gray)
                         }
                     }
-                    
+
                     // Pieces section
                     if pieceCount > 0 && !piecesBitfield.isEmpty {
                         Section(header: Text("Pieces")) {
@@ -127,7 +127,7 @@ struct iOSTorrentDetail: View {
                             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                         }
                     }
-                    
+
                     Section(header: Text("Additional Info")) {
                         HStack {
                             Text("Availability")
@@ -142,7 +142,7 @@ struct iOSTorrentDetail: View {
                                 .foregroundColor(.gray)
                         }
                     }
-                    
+
                     // Beautiful Dedicated Labels Section (Display Only)
                     if !torrent.labels.isEmpty {
                         Section(header: Text("Labels")) {
@@ -155,7 +155,7 @@ struct iOSTorrentDetail: View {
                             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                         }
                     }
-                    
+
                     Button(role: .destructive, action: {
                         //viewContext.delete(torrent.self)
                         //try? viewContext.save()
@@ -197,8 +197,8 @@ struct iOSTorrentDetail: View {
                 TorrentDetailToolbar(torrent: torrent, store: store)
             }
         }
-        
-        
+
+
     }
 }
 
@@ -206,7 +206,7 @@ struct iOSTorrentDetail: View {
 struct DetailViewLabelTag: View {
     let label: String
     var isLarge: Bool = false
-    
+
     var body: some View {
         Text(label)
             .font(isLarge ? .subheadline : .caption)

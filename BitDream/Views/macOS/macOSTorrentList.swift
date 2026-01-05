@@ -60,7 +60,7 @@ struct TorrentRowModifier: ViewModifier {
         }
         return selectedTorrents.contains(torrent) ? selectedTorrents : Set([torrent])
     }
-    
+
     func body(content: Content) -> some View {
         content
         .contextMenu {
@@ -148,7 +148,7 @@ func createTorrentContextMenu(
     errorMessage: Binding<String>
 ) -> some View {
     let firstTorrent = torrents.first!
-    
+
     // Pause Button (always shown; disabled for single stopped)
     Button(action: {
         let info = makeConfig(store: store)
@@ -190,7 +190,7 @@ func createTorrentContextMenu(
         }
     }
     .disabled(torrents.shouldDisableResume)
-    
+
     // Resume Now Button (always shown; disabled for single non-stopped)
     Button(action: {
         for t in torrents {
@@ -206,9 +206,9 @@ func createTorrentContextMenu(
     .disabled(torrents.shouldDisableResume)
 
     Divider()
-    
+
     // MARK: - Priority & Queue Section
-    
+
     // Priority Menu
     Menu {
         Button(action: {
@@ -353,7 +353,7 @@ func createTorrentContextMenu(
     }
 
     Divider()
-    
+
     // Set Location… (supports multi-select)
     Button(action: {
         // Prefill with server default download dir if available
@@ -400,7 +400,7 @@ func createTorrentContextMenu(
     }
 
     Divider()
-    
+
     // Copy Magnet Link Button (disabled for multi-select)
     Button(action: {
         copyMagnetLinkToClipboard(firstTorrent.magnetLink)
@@ -412,7 +412,7 @@ func createTorrentContextMenu(
         }
     }
     .disabled(torrents.count != 1)
-    
+
     Divider()
 
     // Re-announce Button (supports multi-select)
@@ -453,7 +453,7 @@ func createTorrentContextMenu(
     }
 
     Divider()
-    
+
     // Delete Button
     Button(role: .destructive, action: {
         deleteDialog.wrappedValue.toggle()
@@ -474,7 +474,7 @@ struct RenameSheetView: View {
     var onCancel: () -> Void
     var onSave: (String) -> Void
     @FocusState private var isNameFocused: Bool
-    
+
     private var validationMessage: String? {
         validateNewName(name, current: currentName)
     }
@@ -482,7 +482,7 @@ struct RenameSheetView: View {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         return validationMessage != nil || trimmed == currentName
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
@@ -527,7 +527,7 @@ struct LabelEditView: View {
     var torrentIds: [Int]
     let selectedTorrents: Set<Torrent>
     @Binding var shouldSave: Bool
-    
+
     init(labelInput: Binding<String>, existingLabels: [String], store: Store, torrentIds: [Int], selectedTorrents: Set<Torrent>, shouldSave: Binding<Bool>) {
         self._labelInput = labelInput
         self.existingLabels = existingLabels
@@ -537,7 +537,7 @@ struct LabelEditView: View {
         self.selectedTorrents = selectedTorrents
         self._shouldSave = shouldSave
     }
-    
+
     /// Saves labels with different behavior for single vs multiple torrents:
     /// - Single torrent: Replace labels (allows removal)
     /// - Multiple torrents: Append labels (bulk add operation)
@@ -546,10 +546,10 @@ struct LabelEditView: View {
         if addNewTag(from: &newTagInput, to: &workingLabels) {
             labelInput = workingLabels.joined(separator: ", ")
         }
-        
+
         // Update the binding
         labelInput = workingLabels.joined(separator: ", ")
-        
+
         if selectedTorrents.count == 1 {
             // Single torrent: REPLACE labels (allows removal like iOS)
             let torrent = selectedTorrents.first!
@@ -562,7 +562,7 @@ struct LabelEditView: View {
                 let existingLabels = Set(torrent.labels)
                 let mergedLabels = existingLabels.union(workingLabels)
                 let sortedLabels = Array(mergedLabels).sorted()
-                
+
                 let info = makeConfig(store: store)
                 updateTorrent(
                     args: TorrentSetRequestArgs(ids: [torrent.id], labels: sortedLabels),
@@ -572,13 +572,13 @@ struct LabelEditView: View {
                     }
                 )
             }
-            
+
             // Trigger refresh and dismiss
             refreshTransmissionData(store: store)
             dismiss()
         }
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             ScrollView(.vertical, showsIndicators: false) {
@@ -589,7 +589,7 @@ struct LabelEditView: View {
                             labelInput = workingLabels.joined(separator: ", ")
                         }
                     }
-                    
+
                     tagInputField
                 }
                 .padding(.leading, 8)
@@ -614,7 +614,7 @@ struct LabelEditView: View {
             }
         }
     }
-    
+
     private var tagInputField: some View {
         TextField("Add label", text: $newTagInput)
             .textFieldStyle(.plain)
@@ -647,12 +647,12 @@ struct MoveSheetContent: View {
     @Binding var isPresented: Bool
     @Binding var showingError: Bool
     @Binding var errorMessage: String
-    
-    
+
+
     private var isMoveEnabled: Bool {
         !movePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Set Files Location\(selectedTorrents.count > 1 ? " (\(selectedTorrents.count) torrents)" : "")")

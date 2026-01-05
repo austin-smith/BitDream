@@ -9,12 +9,12 @@ struct iOSAddTorrent: View {
     // MARK: - Properties
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var store: Store
-    
+
     @State private var alertInput: String = ""
     @State private var downloadDir: String = ""
     @State private var errorMessage: String? = nil
     @State private var showingError = false
-    
+
     // MARK: - Body
     var body: some View {
         NavigationView {
@@ -50,7 +50,7 @@ struct iOSAddTorrent: View {
             Text(errorMessage ?? "An unknown error occurred")
         })
     }
-    
+
     // MARK: - Form View
     var addTorrentForm: some View {
         Form {
@@ -72,7 +72,7 @@ struct iOSAddTorrent: View {
                         )
                     }
             }
-            
+
             // Download Location Section
             Section(header: Text("Download Location")) {
                 TextField("Download path", text: $downloadDir)
@@ -85,7 +85,7 @@ struct iOSAddTorrent: View {
             downloadDir = store.defaultDownloadDir
         }
     }
-    
+
     // MARK: - Actions
     // Using shared implementations from AddTorrent.swift
 }
@@ -93,13 +93,13 @@ struct iOSAddTorrent: View {
 // Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
 struct iOSAddTorrent: View {
     @ObservedObject var store: Store
-    
+
     init(store: Store) {
         self.store = store
     }
-    
+
     var body: some View {
         EmptyView()
     }
 }
-#endif 
+#endif

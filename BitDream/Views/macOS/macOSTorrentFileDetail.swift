@@ -9,7 +9,7 @@ class FileTableViewModel: ObservableObject {
     @Published var searchText = ""
     @Published var sortOrder = [KeyPathComparator(\TorrentFileRow.displayName)]
     @Published var selection = Set<TorrentFileRow.ID>()
-    
+
     // Filter toggles
     @Published var showLowPriority = true
     @Published var showNormalPriority = true
@@ -18,7 +18,7 @@ class FileTableViewModel: ObservableObject {
     @Published var showSkippedFiles = true
     @Published var showCompleteFiles = true
     @Published var showIncompleteFiles = true
-    
+
     // File type filters
     @Published var showVideos = true
     @Published var showAudio = true
@@ -36,12 +36,12 @@ struct macOSTorrentFileDetail: View {
     let fileStats: [TorrentFileStats]
     let torrentId: Int
     let store: Store
-    
+
     @StateObject private var viewModel = FileTableViewModel()
     @State private var columnVisibility = Set<String>(["name", "size", "progress", "downloaded", "priority", "status"])
     @State private var mutableFileStats: [TorrentFileStats] = []
     @State private var cachedRows: [TorrentFileRow] = []
-    
+
     private func recomputeRows() {
         let statsToUse = mutableFileStats.isEmpty ? fileStats : mutableFileStats
         let processed = processFilesForDisplay(files, stats: statsToUse)
@@ -57,7 +57,7 @@ struct macOSTorrentFileDetail: View {
             )
         }
     }
-    
+
     private var filteredRows: [TorrentFileRow] {
         cachedRows.filter { row in
             // Search filter
@@ -65,7 +65,7 @@ struct macOSTorrentFileDetail: View {
                 let searchLower = viewModel.searchText.lowercased()
                 if !row.name.lowercased().contains(searchLower) { return false }
             }
-            
+
             // Priority filters
             let priority = FilePriority(rawValue: row.priority) ?? .normal
             switch priority {
@@ -76,16 +76,16 @@ struct macOSTorrentFileDetail: View {
             case .high:
                 if !viewModel.showHighPriority { return false }
             }
-            
+
             // Wanted/Skip filter
             if row.wanted && !viewModel.showWantedFiles { return false }
             if !row.wanted && !viewModel.showSkippedFiles { return false }
-            
+
             // Completion filter
             let isComplete = row.percentDone >= 1.0
             if isComplete && !viewModel.showCompleteFiles { return false }
             if !isComplete && !viewModel.showIncompleteFiles { return false }
-            
+
             // File type filter
             let fileType = fileTypeCategory(row.name)
             switch fileType {
@@ -97,12 +97,12 @@ struct macOSTorrentFileDetail: View {
             case .executable: if !viewModel.showOther { return false }
             case .other: if !viewModel.showOther { return false }
             }
-            
+
             return true
         }
         .sorted(using: viewModel.sortOrder)
     }
-    
+
     private var filesTable: some View {
         Table(filteredRows, selection: $viewModel.selection, sortOrder: $viewModel.sortOrder) {
             TableColumn("") { row in
@@ -116,13 +116,13 @@ struct macOSTorrentFileDetail: View {
                 .help(row.wanted ? "Don't download this file" : "Download this file")
             }
             .width(20)
-            
+
             TableColumn("Name", value: \.displayName) { row in
                 Text(row.displayName)
                     .opacity(row.wanted ? 1.0 : 0.6)
             }
             .width(min: 160, ideal: 230)
-            
+
             TableColumn("Type", value: \.fileType) { row in
                 HStack {
                     FileTypeChip(filename: row.name, iconSize: 12)
@@ -131,27 +131,27 @@ struct macOSTorrentFileDetail: View {
                 .opacity(row.wanted ? 1.0 : 0.6)
             }
             .width(min: 70, ideal: 80)
-            
+
             TableColumn("Size", value: \.size) { row in
                 Text(row.sizeDisplay)
                     .font(.system(.caption, design: .monospaced))
                     .opacity(row.wanted ? 1.0 : 0.6)
             }
             .width(min: 80, ideal: 100)
-            
+
             TableColumn("Downloaded", value: \.bytesCompleted) { row in
                 Text(row.downloadedDisplay)
                     .font(.system(.caption, design: .monospaced))
                     .opacity(row.wanted ? 1.0 : 0.6)
             }
             .width(min: 80, ideal: 100)
-            
+
             TableColumn("Progress", value: \.percentDone) { row in
                 FileProgressView(percentDone: row.percentDone)
                     .opacity(row.wanted ? 1.0 : 0.6)
             }
             .width(min: 90, ideal: 110)
-            
+
             TableColumn("Priority", value: \.priority) { row in
                 HStack {
                     let priority = FilePriority(rawValue: row.priority) ?? .normal
@@ -171,30 +171,30 @@ struct macOSTorrentFileDetail: View {
                 }
             } else {
                 let selectedRows = filteredRows.filter { selection.contains($0.id) }
-                
+
                 Section("Status") {
                     Toggle("Download", isOn: Binding(
                         get: { selectedRows.allSatisfy({ $0.wanted }) },
                         set: { _ in setFilesWanted(selectedRows, wanted: true) }
                     ))
-                    
+
                     Toggle("Don't Download", isOn: Binding(
                         get: { selectedRows.allSatisfy({ !$0.wanted }) },
                         set: { _ in setFilesWanted(selectedRows, wanted: false) }
                     ))
                 }
-                
+
                 Section("Priority") {
                     Toggle("High", isOn: Binding(
                         get: { selectedRows.allSatisfy({ $0.priority == FilePriority.high.rawValue }) },
                         set: { _ in setFilesPriority(selectedRows, priority: .high) }
                     ))
-                    
+
                     Toggle("Normal", isOn: Binding(
                         get: { selectedRows.allSatisfy({ $0.priority == FilePriority.normal.rawValue }) },
                         set: { _ in setFilesPriority(selectedRows, priority: .normal) }
                     ))
-                    
+
                     Toggle("Low", isOn: Binding(
                         get: { selectedRows.allSatisfy({ $0.priority == FilePriority.low.rawValue }) },
                         set: { _ in setFilesPriority(selectedRows, priority: .low) }
@@ -203,19 +203,19 @@ struct macOSTorrentFileDetail: View {
             }
         }
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Header with search and filters
             HeaderView(viewModel: viewModel)
                 .padding(.horizontal)
                 .padding(.vertical, 12)
-            
+
             Divider()
-            
+
             // Table
             filesTable
-            
+
             // Footer with file count
             FooterView(totalCount: cachedRows.count, filteredCount: filteredRows.count)
                 .padding(.horizontal)
@@ -227,12 +227,12 @@ struct macOSTorrentFileDetail: View {
             recomputeRows()
         }
     }
-    
+
     // MARK: - File Operations
-    
+
     private func setFilesWanted(_ selectedRows: [TorrentFileRow], wanted: Bool) {
         let fileIndices = selectedRows.map { $0.fileIndex }
-        
+
         // Snapshot previous stats for revert-on-failure
         let previousStats: [(index: Int, stats: TorrentFileStats)] = fileIndices.compactMap { idx in
             guard idx < (mutableFileStats.isEmpty ? fileStats.count : mutableFileStats.count) else { return nil }
@@ -257,10 +257,10 @@ struct macOSTorrentFileDetail: View {
             }
         )
     }
-    
+
     private func setFilesPriority(_ selectedRows: [TorrentFileRow], priority: FilePriority) {
         let fileIndices = selectedRows.map { $0.fileIndex }
-        
+
         // Snapshot previous stats for revert-on-failure
         let previousStats: [(index: Int, stats: TorrentFileStats)] = fileIndices.compactMap { idx in
             guard idx < (mutableFileStats.isEmpty ? fileStats.count : mutableFileStats.count) else { return nil }
@@ -285,7 +285,7 @@ struct macOSTorrentFileDetail: View {
             }
         )
     }
-    
+
     private func updateLocalFileStatus(_ selectedRows: [TorrentFileRow], wanted: Bool) {
         // Update local data optimistically by mutating stats
         for row in selectedRows {
@@ -300,7 +300,7 @@ struct macOSTorrentFileDetail: View {
         }
         recomputeRows()
     }
-    
+
     private func updateLocalFilePriority(_ selectedRows: [TorrentFileRow], priority: FilePriority) {
         // Update local data optimistically by mutating stats
         for row in selectedRows {
@@ -321,7 +321,7 @@ struct macOSTorrentFileDetail: View {
 
 struct HeaderView: View {
     @ObservedObject var viewModel: FileTableViewModel
-    
+
     var body: some View {
         HStack {
             // Clean search field
@@ -336,7 +336,7 @@ struct HeaderView: View {
             .background(.background)
             .cornerRadius(6)
             .frame(maxWidth: 300)
-            
+
             // Filter menu button
             Menu {
                 Section("Priority") {
@@ -344,17 +344,17 @@ struct HeaderView: View {
                     Toggle(FilePriority.normal.displayText, isOn: $viewModel.showNormalPriority)
                     Toggle(FilePriority.high.displayText, isOn: $viewModel.showHighPriority)
                 }
-                
+
                 Section("Status") {
                     Toggle(FileStatus.wanted, isOn: $viewModel.showWantedFiles)
                     Toggle(FileStatus.skip, isOn: $viewModel.showSkippedFiles)
                 }
-                
+
                 Section("Progress") {
                     Toggle(FileCompletion.complete, isOn: $viewModel.showCompleteFiles)
                     Toggle(FileCompletion.incomplete, isOn: $viewModel.showIncompleteFiles)
                 }
-                
+
                     Section("File Types") {
                         Toggle(ContentTypeCategory.video.title, isOn: $viewModel.showVideos)
                         Toggle(ContentTypeCategory.audio.title, isOn: $viewModel.showAudio)
@@ -363,7 +363,7 @@ struct HeaderView: View {
                         Toggle(ContentTypeCategory.archive.title, isOn: $viewModel.showArchives)
                         Toggle(ContentTypeCategory.other.title, isOn: $viewModel.showOther)
                     }
-                    
+
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "line.3.horizontal.decrease.circle")
@@ -379,11 +379,11 @@ struct HeaderView: View {
             }
             .buttonStyle(.borderless)
             .menuStyle(.borderlessButton)
-            
+
             Spacer()
         }
     }
-    
+
     private var hasActiveFilters: Bool {
         !viewModel.showLowPriority || !viewModel.showNormalPriority || !viewModel.showHighPriority ||
         !viewModel.showWantedFiles || !viewModel.showSkippedFiles ||
@@ -391,23 +391,23 @@ struct HeaderView: View {
         !viewModel.showVideos || !viewModel.showAudio || !viewModel.showImages ||
         !viewModel.showDocuments || !viewModel.showArchives || !viewModel.showOther
     }
-    
+
     private var activeFilterCount: Int {
         var count = 0
-        
+
         // Priority filters
         if !viewModel.showLowPriority { count += 1 }
         if !viewModel.showNormalPriority { count += 1 }
         if !viewModel.showHighPriority { count += 1 }
-        
+
         // Status filters
         if !viewModel.showWantedFiles { count += 1 }
         if !viewModel.showSkippedFiles { count += 1 }
-        
+
         // Progress filters
         if !viewModel.showCompleteFiles { count += 1 }
         if !viewModel.showIncompleteFiles { count += 1 }
-        
+
         // File type filters
         if !viewModel.showVideos { count += 1 }
         if !viewModel.showAudio { count += 1 }
@@ -415,7 +415,7 @@ struct HeaderView: View {
         if !viewModel.showDocuments { count += 1 }
         if !viewModel.showArchives { count += 1 }
         if !viewModel.showOther { count += 1 }
-        
+
         return count
     }
 }
@@ -425,7 +425,7 @@ struct HeaderView: View {
 struct FooterView: View {
     let totalCount: Int
     let filteredCount: Int
-    
+
     var body: some View {
         HStack {
             if filteredCount < totalCount {
@@ -437,7 +437,7 @@ struct FooterView: View {
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
+
             Spacer()
         }
     }
@@ -462,9 +462,9 @@ struct macOSTorrentFileDetail: View {
     let fileStats: [TorrentFileStats]
     let torrentId: Int
     let store: Store
-    
+
     var body: some View {
         EmptyView()
     }
 }
-#endif 
+#endif

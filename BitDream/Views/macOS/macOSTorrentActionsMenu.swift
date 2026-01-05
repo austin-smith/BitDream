@@ -6,7 +6,7 @@ import SwiftUI
 struct TorrentActionsToolbarMenu: View {
     let store: Store
     let selectedTorrents: Set<Torrent>
-    
+
     // Shared state used by the context menu builder
     @State private var deleteDialog: Bool = false
     @State private var labelDialog: Bool = false
@@ -20,7 +20,7 @@ struct TorrentActionsToolbarMenu: View {
     @State private var moveDialog: Bool = false
     @State private var movePath: String = ""
     @State private var moveShouldMove: Bool = true
-    
+
     var body: some View {
         Menu {
             if selectedTorrents.isEmpty {
@@ -53,7 +53,7 @@ struct TorrentActionsToolbarMenu: View {
             VStack(spacing: 16) {
                 Text("Edit Labels\(titleSuffix)")
                     .font(.headline)
-                
+
                 LabelEditView(
                     labelInput: $labelInput,
                     existingLabels: torrents.count == 1 ? Array(torrents.first!.labels) : [],
@@ -62,13 +62,13 @@ struct TorrentActionsToolbarMenu: View {
                     selectedTorrents: torrents,
                     shouldSave: $shouldSave
                 )
-                
+
                 HStack {
                     Button("Cancel") {
                         labelDialog = false
                     }
                     .keyboardShortcut(.escape)
-                    
+
                     Button("Save") {
                         shouldSave = true
                     }
@@ -182,12 +182,12 @@ struct LabelEditSheetContent: View {
     @Binding var labelInput: String
     @Binding var shouldSave: Bool
     @Binding var isPresented: Bool
-    
+
     var body: some View {
         VStack(spacing: 16) {
             Text("Edit Labels\(selectedTorrents.count > 1 ? " (\(selectedTorrents.count) torrents)" : "")")
                 .font(.headline)
-            
+
             LabelEditView(
                 labelInput: $labelInput,
                 existingLabels: selectedTorrents.count == 1 ? Array(selectedTorrents.first!.labels) : [],
@@ -196,13 +196,13 @@ struct LabelEditSheetContent: View {
                 selectedTorrents: selectedTorrents,
                 shouldSave: $shouldSave
             )
-            
+
             HStack {
                 Button("Cancel") {
                     isPresented = false
                 }
                 .keyboardShortcut(.escape)
-                
+
                 Button("Save") {
                     shouldSave = true
                 }
@@ -222,7 +222,7 @@ struct RenameSheetContent: View {
     @Binding var isPresented: Bool
     @Binding var showingError: Bool
     @Binding var errorMessage: String
-    
+
     var body: some View {
         let targetTorrent: Torrent? = {
             if let id = renameTargetId {

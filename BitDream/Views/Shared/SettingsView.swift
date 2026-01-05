@@ -6,10 +6,10 @@ import KeychainAccess
 /// This view simply delegates to the appropriate platform-specific implementation
 struct SettingsView: View {
     @ObservedObject var store: Store
-    
+
     // Shared poll interval options
     static let pollIntervalOptions: [Double] = [1.0, 2.0, 5.0, 10.0, 30.0, 60.0]
-    
+
     // Helper to format the interval options
     static func formatInterval(_ interval: Double) -> String {
         if interval == 1.0 {
@@ -20,21 +20,21 @@ struct SettingsView: View {
             return "\(Int(interval / 60)) minute\(interval == 60.0 ? "" : "s")"
         }
     }
-    
+
     // Shared reset for both platforms
     static func resetAllSettings(store: Store) {
         let theme = ThemeManager.shared
         theme.setAccentColor(AppDefaults.accentColor)
         theme.setThemeMode(AppDefaults.themeMode)
-        
+
         // Persist AppStorage-backed flags
         UserDefaults.standard.set(AppDefaults.showContentTypeIcons, forKey: UserDefaultsKeys.showContentTypeIcons)
         UserDefaults.standard.set(AppDefaults.startupConnectionBehavior.rawValue, forKey: UserDefaultsKeys.startupConnectionBehavior)
-        
+
         // Poll interval via Store API
         store.updatePollInterval(AppDefaults.pollInterval)
     }
-    
+
     var body: some View {
         PlatformSettingsView(store: store)
     }
@@ -53,7 +53,7 @@ class SessionSettingsEditModel: ObservableObject {
     @Published var isUpdatingBlocklist = false
     private var saveTimer: Timer?
     var store: Store?
-    
+
     func setup(store: Store) {
         self.store = store
         // Clear info when switching servers
@@ -64,7 +64,7 @@ class SessionSettingsEditModel: ObservableObject {
         blocklistUpdateResult = nil
         isUpdatingBlocklist = false
     }
-    
+
     func setValue<T>(_ key: String, _ value: T, original: T) where T: Equatable {
         if value != original {
             values[key] = value
@@ -76,11 +76,11 @@ class SessionSettingsEditModel: ObservableObject {
             }
         }
     }
-    
+
     func getValue<T>(_ key: String, fallback: T) -> T {
         return values[key] as? T ?? fallback
     }
-    
+
     private func scheduleAutoSave() {
         saveTimer?.invalidate()
         saveTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
@@ -90,14 +90,14 @@ class SessionSettingsEditModel: ObservableObject {
             }
         }
     }
-    
+
     private func saveChanges() {
-        guard !values.isEmpty, 
+        guard !values.isEmpty,
               let store = store,
               let serverInfo = store.currentServerInfo else { return }
-        
+
         let args = buildSessionSetArgs()
-        
+
         setSession(
             args: args,
             config: serverInfo.config,
@@ -114,10 +114,10 @@ class SessionSettingsEditModel: ObservableObject {
             }
         }
     }
-    
+
     private func buildSessionSetArgs() -> TransmissionSessionSetRequestArgs {
         var args = TransmissionSessionSetRequestArgs()
-        
+
         // Speed & Bandwidth
         args.speedLimitDown = values["speedLimitDown"] as? Int64
         args.speedLimitDownEnabled = values["speedLimitDownEnabled"] as? Bool
@@ -130,7 +130,7 @@ class SessionSettingsEditModel: ObservableObject {
         args.altSpeedTimeEnd = values["altSpeedTimeEnd"] as? Int
         args.altSpeedTimeEnabled = values["altSpeedTimeEnabled"] as? Bool
         args.altSpeedTimeDay = values["altSpeedTimeDay"] as? Int
-        
+
         // File Management
         args.downloadDir = values["downloadDir"] as? String
         args.incompleteDir = values["incompleteDir"] as? String
@@ -138,7 +138,7 @@ class SessionSettingsEditModel: ObservableObject {
         args.startAddedTorrents = values["startAddedTorrents"] as? Bool
         args.trashOriginalTorrentFiles = values["trashOriginalTorrentFiles"] as? Bool
         args.renamePartialFiles = values["renamePartialFiles"] as? Bool
-        
+
         // Queue Management
         args.downloadQueueEnabled = values["downloadQueueEnabled"] as? Bool
         args.downloadQueueSize = values["downloadQueueSize"] as? Int
@@ -150,7 +150,7 @@ class SessionSettingsEditModel: ObservableObject {
         args.idleSeedingLimitEnabled = values["idleSeedingLimitEnabled"] as? Bool
         args.queueStalledEnabled = values["queueStalledEnabled"] as? Bool
         args.queueStalledMinutes = values["queueStalledMinutes"] as? Int
-        
+
         // Network Settings
         args.peerPort = values["peerPort"] as? Int
         args.peerPortRandomOnStart = values["peerPortRandomOnStart"] as? Bool
@@ -162,17 +162,17 @@ class SessionSettingsEditModel: ObservableObject {
         args.utpEnabled = values["utpEnabled"] as? Bool
         args.peerLimitGlobal = values["peerLimitGlobal"] as? Int
         args.peerLimitPerTorrent = values["peerLimitPerTorrent"] as? Int
-        
+
         // Blocklist
         args.blocklistEnabled = values["blocklistEnabled"] as? Bool
         args.blocklistUrl = values["blocklistUrl"] as? String
-        
+
         // Default Trackers
         args.defaultTrackers = values["defaultTrackers"] as? String
-        
+
         // Cache
         args.cacheSizeMb = values["cacheSizeMb"] as? Int
-        
+
         // Scripts
         args.scriptTorrentDoneEnabled = values["scriptTorrentDoneEnabled"] as? Bool
         args.scriptTorrentDoneFilename = values["scriptTorrentDoneFilename"] as? String
@@ -180,7 +180,7 @@ class SessionSettingsEditModel: ObservableObject {
         args.scriptTorrentAddedFilename = values["scriptTorrentAddedFilename"] as? String
         args.scriptTorrentDoneSeedingEnabled = values["scriptTorrentDoneSeedingEnabled"] as? Bool
         args.scriptTorrentDoneSeedingFilename = values["scriptTorrentDoneSeedingFilename"] as? String
-        
+
         return args
     }
 }
@@ -191,7 +191,7 @@ struct SpeedLimitsContent: View {
     let config: TransmissionSessionResponseArguments
     @ObservedObject var editModel: SessionSettingsEditModel
     var showHeadings: Bool = true
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 12) {
@@ -201,12 +201,12 @@ struct SpeedLimitsContent: View {
                         .foregroundColor(.secondary)
                         .padding(.bottom, 4)
                 }
-                
+
                 Toggle("Download limit", isOn: Binding(
                     get: { editModel.getValue("speedLimitDownEnabled", fallback: config.speedLimitDownEnabled) },
                     set: { editModel.setValue("speedLimitDownEnabled", $0, original: config.speedLimitDownEnabled) }
                 ))
-                
+
                 if editModel.getValue("speedLimitDownEnabled", fallback: config.speedLimitDownEnabled) {
                     HStack {
                         Text("Download speed")
@@ -219,12 +219,12 @@ struct SpeedLimitsContent: View {
                             .foregroundColor(.secondary)
                     }
                 }
-                
+
                 Toggle("Upload limit", isOn: Binding(
                     get: { editModel.getValue("speedLimitUpEnabled", fallback: config.speedLimitUpEnabled) },
                     set: { editModel.setValue("speedLimitUpEnabled", $0, original: config.speedLimitUpEnabled) }
                 ))
-                
+
                 if editModel.getValue("speedLimitUpEnabled", fallback: config.speedLimitUpEnabled) {
                     HStack {
                         Text("Upload speed")
@@ -238,12 +238,12 @@ struct SpeedLimitsContent: View {
                     }
                 }
             }
-            
+
             if showHeadings {
                 Divider()
                     .padding(.vertical, 4)
             }
-            
+
             VStack(alignment: .leading, spacing: 12) {
                 if showHeadings {
                     Label("Alternate Speed Limits", systemImage: "tortoise")
@@ -251,12 +251,12 @@ struct SpeedLimitsContent: View {
                         .foregroundColor(.secondary)
                         .padding(.bottom, 4)
                 }
-                
+
                 Toggle("Enable alternate speeds", isOn: Binding(
                     get: { editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled) },
                     set: { editModel.setValue("altSpeedEnabled", $0, original: config.altSpeedEnabled) }
                 ))
-                
+
                 if editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled) {
                     HStack {
                         Text("Download limit")
@@ -268,7 +268,7 @@ struct SpeedLimitsContent: View {
                         Text("KB/s")
                             .foregroundColor(.secondary)
                     }
-                    
+
                     HStack {
                         Text("Upload limit")
                         Spacer()
@@ -280,13 +280,13 @@ struct SpeedLimitsContent: View {
                             .foregroundColor(.secondary)
                     }
                 }
-                
+
                 Toggle("Schedule alternate speeds", isOn: Binding(
                     get: { editModel.getValue("altSpeedTimeEnabled", fallback: config.altSpeedTimeEnabled) },
                     set: { editModel.setValue("altSpeedTimeEnabled", $0, original: config.altSpeedTimeEnabled) }
                 ))
                 .padding(.top, 8)
-                
+
                 if editModel.getValue("altSpeedTimeEnabled", fallback: config.altSpeedTimeEnabled) {
                     HStack(spacing: 12) {
                         Picker("", selection: Binding(
@@ -306,10 +306,10 @@ struct SpeedLimitsContent: View {
                             Text("Saturday").tag(64)
                         }
                         .pickerStyle(.menu)
-                        
+
                         Text("from")
                             .foregroundColor(.secondary)
-                        
+
                         DatePicker("", selection: Binding(
                             get: {
                                 let minutes = editModel.getValue("altSpeedTimeBegin", fallback: config.altSpeedTimeBegin)
@@ -325,10 +325,10 @@ struct SpeedLimitsContent: View {
                         ), displayedComponents: .hourAndMinute)
                         .datePickerStyle(.compact)
                         .labelsHidden()
-                        
+
                         Text("to")
                             .foregroundColor(.secondary)
-                        
+
                         DatePicker("", selection: Binding(
                             get: {
                                 let minutes = editModel.getValue("altSpeedTimeEnd", fallback: config.altSpeedTimeEnd)
@@ -344,7 +344,7 @@ struct SpeedLimitsContent: View {
                         ), displayedComponents: .hourAndMinute)
                         .datePickerStyle(.compact)
                         .labelsHidden()
-                        
+
                         Spacer()
                     }
                 }
@@ -357,7 +357,7 @@ struct NetworkContent: View {
     let config: TransmissionSessionResponseArguments
     @ObservedObject var editModel: SessionSettingsEditModel
     var showHeadings: Bool = true
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 16) {
@@ -367,7 +367,7 @@ struct NetworkContent: View {
                         .foregroundColor(.secondary)
                         .padding(.bottom, 4)
                 }
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text("Peer listening port")
@@ -376,18 +376,18 @@ struct NetworkContent: View {
                             get: { editModel.getValue("peerPort", fallback: config.peerPort) },
                             set: { editModel.setValue("peerPort", $0, original: config.peerPort) }
                         ), format: .number.grouping(.never))
-                        
+
                     }
-                    
+
                     Button("Check Port") {
                         checkPort(editModel: editModel, ipProtocol: nil)
                     }
                     .disabled(editModel.isTestingPort)
-                    
+
                     Text("Port number for incoming peer connections")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    
+
                     if editModel.isTestingPort {
                         HStack(spacing: 6) {
                             ProgressView()
@@ -403,12 +403,12 @@ struct NetworkContent: View {
                             .foregroundColor(portTestResult.contains("open") ? .green : .orange)
                     }
                 }
-                
+
                 Toggle("Randomize port on launch", isOn: Binding(
                     get: { editModel.getValue("peerPortRandomOnStart", fallback: config.peerPortRandomOnStart) },
                     set: { editModel.setValue("peerPortRandomOnStart", $0, original: config.peerPortRandomOnStart) }
                 ))
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text("Encryption")
@@ -428,12 +428,12 @@ struct NetworkContent: View {
                         .foregroundColor(.secondary)
                 }
             }
-            
+
             if showHeadings {
                 Divider()
                     .padding(.vertical, 4)
             }
-            
+
             VStack(alignment: .leading, spacing: 12) {
                 if showHeadings {
                     Text("Peer Exchange")
@@ -441,38 +441,38 @@ struct NetworkContent: View {
                         .foregroundColor(.secondary)
                         .padding(.bottom, 4)
                 }
-                
+
                 Toggle("Enable port forwarding", isOn: Binding(
                     get: { editModel.getValue("portForwardingEnabled", fallback: config.portForwardingEnabled) },
                     set: { editModel.setValue("portForwardingEnabled", $0, original: config.portForwardingEnabled) }
                 ))
-                
+
                 Toggle("Enable DHT (Distributed Hash Table)", isOn: Binding(
                     get: { editModel.getValue("dhtEnabled", fallback: config.dhtEnabled) },
                     set: { editModel.setValue("dhtEnabled", $0, original: config.dhtEnabled) }
                 ))
-                
+
                 Toggle("Enable PEX (Peer Exchange)", isOn: Binding(
                     get: { editModel.getValue("pexEnabled", fallback: config.pexEnabled) },
                     set: { editModel.setValue("pexEnabled", $0, original: config.pexEnabled) }
                 ))
-                
+
                 Toggle("Enable LPD (Local Peer Discovery)", isOn: Binding(
                     get: { editModel.getValue("lpdEnabled", fallback: config.lpdEnabled) },
                     set: { editModel.setValue("lpdEnabled", $0, original: config.lpdEnabled) }
                 ))
-                
+
                 Toggle("Enable µTP (Micro Transport Protocol)", isOn: Binding(
                     get: { editModel.getValue("utpEnabled", fallback: config.utpEnabled) },
                     set: { editModel.setValue("utpEnabled", $0, original: config.utpEnabled) }
                 ))
             }
-            
+
             if showHeadings {
                 Divider()
                     .padding(.vertical, 4)
             }
-            
+
             VStack(alignment: .leading, spacing: 12) {
                 if showHeadings {
                     Text("Peer Limits")
@@ -480,7 +480,7 @@ struct NetworkContent: View {
                         .foregroundColor(.secondary)
                         .padding(.bottom, 4)
                 }
-                
+
                 HStack {
                     Text("Maximum global peers")
                     Spacer()
@@ -488,9 +488,9 @@ struct NetworkContent: View {
                         get: { editModel.getValue("peerLimitGlobal", fallback: config.peerLimitGlobal) },
                         set: { editModel.setValue("peerLimitGlobal", $0, original: config.peerLimitGlobal) }
                     ), format: .number.grouping(.never))
-                    
+
                 }
-                
+
                 HStack {
                     Text("Maximum per torrent peers")
                     Spacer()
@@ -498,15 +498,15 @@ struct NetworkContent: View {
                         get: { editModel.getValue("peerLimitPerTorrent", fallback: config.peerLimitPerTorrent) },
                         set: { editModel.setValue("peerLimitPerTorrent", $0, original: config.peerLimitPerTorrent) }
                     ), format: .number.grouping(.never))
-                    
+
                 }
             }
-            
+
             if showHeadings {
                 Divider()
                     .padding(.vertical, 4)
             }
-            
+
             VStack(alignment: .leading, spacing: 12) {
                 if showHeadings {
                     Text("Blocklist")
@@ -514,12 +514,12 @@ struct NetworkContent: View {
                         .foregroundColor(.secondary)
                         .padding(.bottom, 4)
                 }
-                
+
                 Toggle("Enable blocklist", isOn: Binding(
                     get: { editModel.getValue("blocklistEnabled", fallback: config.blocklistEnabled) },
                     set: { editModel.setValue("blocklistEnabled", $0, original: config.blocklistEnabled) }
                 ))
-                
+
                 if editModel.getValue("blocklistEnabled", fallback: config.blocklistEnabled) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Blocklist URL")
@@ -529,9 +529,9 @@ struct NetworkContent: View {
                             get: { editModel.getValue("blocklistUrl", fallback: config.blocklistUrl) },
                             set: { editModel.setValue("blocklistUrl", $0, original: config.blocklistUrl) }
                         ))
-                        
+
                     }
-                    
+
                     HStack {
                         Text("Blocklist rules active")
                         Spacer()
@@ -548,7 +548,7 @@ struct NetworkContent: View {
                                 .font(.system(.body, design: .monospaced))
                         }
                     }
-                    
+
                     Button("Update Blocklist") {
                         updateBlocklist(editModel: editModel)
                     }
@@ -570,14 +570,14 @@ struct QueueManagementContent: View {
     let config: TransmissionSessionResponseArguments
     @ObservedObject var editModel: SessionSettingsEditModel
     var showHeadings: Bool = true
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Toggle("Download queue size", isOn: Binding(
                 get: { editModel.getValue("downloadQueueEnabled", fallback: config.downloadQueueEnabled) },
                 set: { editModel.setValue("downloadQueueEnabled", $0, original: config.downloadQueueEnabled) }
             ))
-            
+
             if editModel.getValue("downloadQueueEnabled", fallback: config.downloadQueueEnabled) {
                 HStack {
                     Text("Maximum active downloads")
@@ -586,15 +586,15 @@ struct QueueManagementContent: View {
                         get: { editModel.getValue("downloadQueueSize", fallback: config.downloadQueueSize) },
                         set: { editModel.setValue("downloadQueueSize", $0, original: config.downloadQueueSize) }
                     ), format: .number)
-                    
+
                 }
             }
-            
+
             Toggle("Seed queue size", isOn: Binding(
                 get: { editModel.getValue("seedQueueEnabled", fallback: config.seedQueueEnabled) },
                 set: { editModel.setValue("seedQueueEnabled", $0, original: config.seedQueueEnabled) }
             ))
-            
+
             if editModel.getValue("seedQueueEnabled", fallback: config.seedQueueEnabled) {
                 HStack {
                     Text("Maximum active seeds")
@@ -603,15 +603,15 @@ struct QueueManagementContent: View {
                         get: { editModel.getValue("seedQueueSize", fallback: config.seedQueueSize) },
                         set: { editModel.setValue("seedQueueSize", $0, original: config.seedQueueSize) }
                     ), format: .number)
-                    
+
                 }
             }
-            
+
             Toggle("Consider idle torrents as stalled after", isOn: Binding(
                 get: { editModel.getValue("queueStalledEnabled", fallback: config.queueStalledEnabled) },
                 set: { editModel.setValue("queueStalledEnabled", $0, original: config.queueStalledEnabled) }
             ))
-            
+
             if editModel.getValue("queueStalledEnabled", fallback: config.queueStalledEnabled) {
                 HStack {
                     Text("Stalled after")
@@ -620,7 +620,7 @@ struct QueueManagementContent: View {
                         get: { editModel.getValue("queueStalledMinutes", fallback: config.queueStalledMinutes) },
                         set: { editModel.setValue("queueStalledMinutes", $0, original: config.queueStalledMinutes) }
                     ), format: .number)
-                    
+
                     Text("minutes")
                         .foregroundColor(.secondary)
                 }
@@ -633,7 +633,7 @@ struct FileManagementContent: View {
     let config: TransmissionSessionResponseArguments
     @ObservedObject var editModel: SessionSettingsEditModel
     var showHeadings: Bool = true
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 8) {
@@ -642,27 +642,27 @@ struct FileManagementContent: View {
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
-                
+
                 TextField("Path", text: Binding(
                     get: { editModel.getValue("downloadDir", fallback: config.downloadDir) },
                     set: { editModel.setValue("downloadDir", $0, original: config.downloadDir) }
                 ))
-                
-                
+
+
                 Button("Check Space") {
                     checkDirectoryFreeSpace(
                         path: editModel.getValue("downloadDir", fallback: config.downloadDir),
                         editModel: editModel
                     )
                 }
-                
-                
+
+
                 if let freeSpaceInfo = editModel.freeSpaceInfo {
                     HStack(spacing: 6) {
                         Text(freeSpaceInfo)
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        
+
                         if editModel.isCheckingSpace {
                             ProgressView()
                                 .scaleEffect(0.3)
@@ -671,27 +671,27 @@ struct FileManagementContent: View {
                     }
                 }
             }
-            
+
             VStack(alignment: .leading, spacing: 12) {
                 Toggle("Use separate incomplete directory", isOn: Binding(
                     get: { editModel.getValue("incompleteDirEnabled", fallback: config.incompleteDirEnabled) },
                     set: { editModel.setValue("incompleteDirEnabled", $0, original: config.incompleteDirEnabled) }
             ))
-                
+
                 if editModel.getValue("incompleteDirEnabled", fallback: config.incompleteDirEnabled) {
                     TextField("Incomplete directory path", text: Binding(
                         get: { editModel.getValue("incompleteDir", fallback: config.incompleteDir) },
                         set: { editModel.setValue("incompleteDir", $0, original: config.incompleteDir) }
                     ))
-                    
+
                 }
             }
-            
+
             Toggle("Start transfers when added", isOn: Binding(
                 get: { editModel.getValue("startAddedTorrents", fallback: config.startAddedTorrents) },
                 set: { editModel.setValue("startAddedTorrents", $0, original: config.startAddedTorrents) }
             ))
-            
+
             Toggle(isOn: Binding(
                 get: { editModel.getValue("trashOriginalTorrentFiles", fallback: config.trashOriginalTorrentFiles) },
                 set: { editModel.setValue("trashOriginalTorrentFiles", $0, original: config.trashOriginalTorrentFiles) }
@@ -708,7 +708,7 @@ struct FileManagementContent: View {
                     Text(" files")
                 }
             }
-            
+
             Toggle(isOn: Binding(
                 get: { editModel.getValue("renamePartialFiles", fallback: config.renamePartialFiles) },
                 set: { editModel.setValue("renamePartialFiles", $0, original: config.renamePartialFiles) }
@@ -733,14 +733,14 @@ struct SeedingContent: View {
     let config: TransmissionSessionResponseArguments
     @ObservedObject var editModel: SessionSettingsEditModel
     var showHeadings: Bool = true
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Toggle("Stop seeding at ratio", isOn: Binding(
                 get: { editModel.getValue("seedRatioLimited", fallback: config.seedRatioLimited) },
                 set: { editModel.setValue("seedRatioLimited", $0, original: config.seedRatioLimited) }
             ))
-            
+
             if editModel.getValue("seedRatioLimited", fallback: config.seedRatioLimited) {
                 HStack {
                     Text("Seed ratio limit")
@@ -749,15 +749,15 @@ struct SeedingContent: View {
                         get: { editModel.getValue("seedRatioLimit", fallback: config.seedRatioLimit) },
                         set: { editModel.setValue("seedRatioLimit", $0, original: config.seedRatioLimit) }
                     ), format: .number.precision(.fractionLength(2)))
-                    
+
                 }
             }
-            
+
             Toggle("Stop seeding when inactive for", isOn: Binding(
                 get: { editModel.getValue("idleSeedingLimitEnabled", fallback: config.idleSeedingLimitEnabled) },
                 set: { editModel.setValue("idleSeedingLimitEnabled", $0, original: config.idleSeedingLimitEnabled) }
             ))
-            
+
             if editModel.getValue("idleSeedingLimitEnabled", fallback: config.idleSeedingLimitEnabled) {
                 HStack {
                     Text("Inactive for")
@@ -766,7 +766,7 @@ struct SeedingContent: View {
                         get: { editModel.getValue("idleSeedingLimit", fallback: config.idleSeedingLimit) },
                         set: { editModel.setValue("idleSeedingLimit", $0, original: config.idleSeedingLimit) }
                     ), format: .number)
-                    
+
                     Text("minutes")
                         .foregroundColor(.secondary)
                 }
@@ -793,14 +793,14 @@ extension Binding where Value == StartupConnectionBehavior {
 func checkDirectoryFreeSpace(path: String, editModel: SessionSettingsEditModel) {
     guard let store = editModel.store,
           let serverInfo = store.currentServerInfo else { return }
-    
+
     editModel.isCheckingSpace = true
-    
+
     // Only show "Checking..." if we don't have previous results
     if editModel.freeSpaceInfo == nil {
         editModel.freeSpaceInfo = "Checking..."
     }
-    
+
     checkFreeSpace(
         path: path,
         config: serverInfo.config,
@@ -827,10 +827,10 @@ func checkDirectoryFreeSpace(path: String, editModel: SessionSettingsEditModel) 
 func checkPort(editModel: SessionSettingsEditModel, ipProtocol: String? = nil) {
     guard let store = editModel.store,
           let serverInfo = store.currentServerInfo else { return }
-    
+
     editModel.isTestingPort = true
     editModel.portTestResult = nil
-    
+
     testPort(
         ipProtocol: ipProtocol,
         config: serverInfo.config,
@@ -860,10 +860,10 @@ func checkPort(editModel: SessionSettingsEditModel, ipProtocol: String? = nil) {
 func updateBlocklist(editModel: SessionSettingsEditModel) {
     guard let store = editModel.store,
           let serverInfo = store.currentServerInfo else { return }
-    
+
     editModel.isUpdatingBlocklist = true
     editModel.blocklistUpdateResult = nil
-    
+
     updateBlocklist(
         config: serverInfo.config,
         auth: serverInfo.auth

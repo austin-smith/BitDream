@@ -50,9 +50,9 @@ func formatTorrentSubtext(_ torrent: Torrent) -> String {
     let percentComplete = String(format: "%.1f%%", torrent.percentDone * 100)
     let downloadedSizeFormatted = byteCountFormatter.string(fromByteCount: torrent.downloadedCalc)
     let sizeWhenDoneFormatted = byteCountFormatter.string(fromByteCount: torrent.sizeWhenDone)
-    
+
     let progressText = "\(downloadedSizeFormatted) of \(sizeWhenDoneFormatted) (\(percentComplete))"
-    
+
     // Only add ETA for downloading torrents
     if torrent.statusCalc == .downloading {
         let formatter = DateComponentsFormatter()
@@ -60,13 +60,13 @@ func formatTorrentSubtext(_ torrent: Torrent) -> String {
         formatter.unitsStyle = .full
         formatter.includesTimeRemainingPhrase = true
         formatter.maximumUnitCount = 2
-        
-        let etaText = torrent.eta < 0 ? "remaining time unknown" : 
+
+        let etaText = torrent.eta < 0 ? "remaining time unknown" :
             formatter.string(from: TimeInterval(torrent.eta))!
-        
+
         return "\(progressText) - \(etaText)"
     }
-    
+
     return progressText
 }
 
@@ -74,7 +74,7 @@ func formatTorrentSubtext(_ torrent: Torrent) -> String {
 func createStatusView(for torrent: Torrent) -> some View {
     let rateDownloadFormatted = byteCountFormatter.string(fromByteCount: torrent.rateDownload)
     let rateUploadFormatted = byteCountFormatter.string(fromByteCount: torrent.rateUpload)
-    
+
     return Group {
         if (torrent.error != TorrentError.ok.rawValue) {
             Text("Tracker returned error: \(torrent.errorString)")
@@ -129,7 +129,7 @@ func copyMagnetLinkToClipboard(_ magnetLink: String) {
 func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: Store, onComplete: @escaping () -> Void = {}) {
     let info = makeConfig(store: store)
     let sortedLabels = Array(labels).sorted()
-    
+
     // First update the labels
     updateTorrent(
         args: TorrentSetRequestArgs(ids: [torrentId], labels: sortedLabels),
@@ -159,19 +159,19 @@ func addNewTag(from input: inout String, to workingLabels: inout Set<String>) ->
 struct LabelTag: View {
     let label: String
     var onRemove: (() -> Void)?
-    
+
     // Static helper for case-insensitive label comparison
     static func containsLabel(_ labels: Set<String>, _ newLabel: String) -> Bool {
         labels.contains { $0.localizedCaseInsensitiveCompare(newLabel) == .orderedSame }
     }
-    
+
     var body: some View {
         HStack(spacing: 4) {
             Text(label)
                 .font(.caption)
                 .lineLimit(1)
                 .truncationMode(.tail)
-            
+
             if let onRemove = onRemove {
                 Button(action: onRemove) {
                     Image(systemName: "xmark.circle.fill")
@@ -207,7 +207,7 @@ func createLabelTagsView(for torrent: Torrent) -> some View {
 
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8
-    
+
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
         var height: CGFloat = 0
@@ -215,46 +215,46 @@ struct FlowLayout: Layout {
         var x: CGFloat = 0
         var y: CGFloat = 0
         var maxHeight: CGFloat = 0
-        
+
         for size in sizes {
             if x + size.width > (proposal.width ?? .infinity) {
                 y += maxHeight + spacing
                 x = 0
                 maxHeight = 0
             }
-            
+
             x += size.width + spacing
             width = max(width, x)
             maxHeight = max(maxHeight, size.height)
             height = y + maxHeight
         }
-        
+
         return CGSize(width: width, height: height)
     }
-    
+
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
         var x = bounds.minX
         var y = bounds.minY
         var maxHeight: CGFloat = 0
-        
+
         for (index, size) in sizes.enumerated() {
             if x + size.width > bounds.maxX {
                 y += maxHeight + spacing
                 x = bounds.minX
                 maxHeight = 0
             }
-            
+
             subviews[index].place(
                 at: CGPoint(x: x, y: y),
                 proposal: ProposedViewSize(size)
             )
-            
+
             x += size.width + spacing
             maxHeight = max(maxHeight, size.height)
         }
     }
-} 
+}
 
 // MARK: - Shared Rename Helpers
 

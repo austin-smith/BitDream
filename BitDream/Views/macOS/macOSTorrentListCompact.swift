@@ -55,7 +55,7 @@ struct macOSTorrentListCompact: View {
     @State private var sortOrder = [KeyPathComparator(\TorrentTableRow.name)]
     let store: Store
     let showContentTypeIcons: Bool
-    
+
     @State private var deleteDialog: Bool = false
     @State private var labelDialog: Bool = false
     @State private var labelInput: String = ""
@@ -71,8 +71,8 @@ struct macOSTorrentListCompact: View {
     @State private var columnCustomization = TableColumnCustomization<TorrentTableRow>()
     private static let columnCustomizationKey = "mac.compact.columns.v1"
     @AppStorage(Self.columnCustomizationKey) private var columnCustomizationData: Data?
-    
-    
+
+
     private var rows: [TorrentTableRow] {
         torrents.map { TorrentTableRow(torrent: $0) }
     }
@@ -86,7 +86,7 @@ struct macOSTorrentListCompact: View {
             store.torrents.first { $0.id == id }
         })
     }
-    
+
     var body: some View {
         Table(sortedRows, selection: $selection, sortOrder: $sortOrder, columnCustomization: $columnCustomization, columns: {
             // Status icon column
@@ -98,7 +98,7 @@ struct macOSTorrentListCompact: View {
             }
             .width(20)
             .customizationID("statusIcon")
-            
+
             // Content type icon column (feature-gated)
             if showContentTypeIcons {
                 TableColumn("") { row in
@@ -110,7 +110,7 @@ struct macOSTorrentListCompact: View {
                 .width(20)
                 .customizationID("contentType")
             }
-            
+
             // Name column
             TableColumn("Name", value: \.name) { row in
                 Text(row.name)
@@ -119,14 +119,14 @@ struct macOSTorrentListCompact: View {
             }
             .width(min: 150, ideal: 250, max: 600)
             .customizationID("name")
-            
+
             // Progress column
             TableColumn("Progress", value: \.progress) { row in
                 HStack(spacing: 4) {
                     ProgressView(value: row.torrent.metadataPercentComplete < 1 ? 1 : row.progress)
                         .progressViewStyle(LinearTorrentProgressStyle(color: progressColorForTorrent(row.torrent)))
                         .frame(height: 6)
-                    
+
                     Text(String(format: "%.1f%%", row.progress * 100))
                         .font(.system(size: 10, design: .monospaced))
                         .foregroundColor(.secondary)
@@ -134,7 +134,7 @@ struct macOSTorrentListCompact: View {
             }
             .width(min: 100, ideal: 120)
             .customizationID("progress")
-            
+
             // Status text column
             TableColumn("Status", value: \.status) { row in
                 if row.torrent.error != TorrentError.ok.rawValue {
@@ -149,7 +149,7 @@ struct macOSTorrentListCompact: View {
             }
             .width(min: 80, ideal: 120)
             .customizationID("status")
-            
+
             // Total size column
             TableColumn("Size", value: \.totalBytes) { row in
                 Text(byteCountFormatter.string(fromByteCount: row.totalBytes))
@@ -157,7 +157,7 @@ struct macOSTorrentListCompact: View {
             }
             .width(min: 70, ideal: 90)
             .customizationID("size")
-            
+
             // Downloaded column
             TableColumn("Downloaded", value: \.downloadedBytes) { row in
                 Text(byteCountFormatter.string(fromByteCount: row.downloadedBytes))
@@ -166,7 +166,7 @@ struct macOSTorrentListCompact: View {
             }
             .width(min: 80, ideal: 100)
             .customizationID("downloaded")
-            
+
             // Speed column
             TableColumn("Speed") { row in
                 HStack(spacing: 4) {
@@ -179,7 +179,7 @@ struct macOSTorrentListCompact: View {
                         }
                         .foregroundColor(.blue)
                     }
-                    
+
                     if row.uploadSpeed > 0 {
                         HStack(spacing: 2) {
                             Image(systemName: "arrow.up")
@@ -193,7 +193,7 @@ struct macOSTorrentListCompact: View {
             }
             .width(min: 100, ideal: 140, max: 200)
             .customizationID("speed")
-            
+
             // ETA column
             TableColumn("ETA") { row in
                 Text(etaText(for: row))
@@ -202,7 +202,7 @@ struct macOSTorrentListCompact: View {
             }
             .width(min: 60, ideal: 80)
             .customizationID("eta")
-            
+
             // Labels column
             TableColumn("Labels") { row in
                 if !row.labels.isEmpty {
@@ -309,12 +309,12 @@ struct macOSTorrentListCompact: View {
             }
         }
     }
-    
+
     private func statusIcon(for torrent: Torrent) -> Image {
         if torrent.error != TorrentError.ok.rawValue {
             return Image(systemName: "exclamationmark.triangle.fill")
         }
-        
+
         switch torrent.statusCalc {
         case .downloading, .retrievingMetadata:
             return Image(systemName: "arrow.down.circle.fill")
@@ -334,12 +334,12 @@ struct macOSTorrentListCompact: View {
             return Image(systemName: "questionmark.circle.fill")
         }
     }
-    
+
     private func statusColor(for torrent: Torrent) -> Color {
         if torrent.error != TorrentError.ok.rawValue {
             return .red
         }
-        
+
         switch torrent.statusCalc {
         case .downloading, .retrievingMetadata:
             return .blue
@@ -359,25 +359,25 @@ struct macOSTorrentListCompact: View {
             return .gray
         }
     }
-    
+
     private func etaText(for row: TorrentTableRow) -> String {
         guard row.torrent.statusCalc == .downloading && row.eta >= 0 else {
             return "—"
         }
-        
+
         let formatter = DateComponentsFormatter()
         formatter.allowedUnits = [.day, .hour, .minute]
         formatter.unitsStyle = .abbreviated
         formatter.maximumUnitCount = 2
-        
+
         return formatter.string(from: TimeInterval(row.eta)) ?? "—"
     }
-    
+
     @ViewBuilder
     private func torrentContextMenu(for selection: Set<TorrentTableRow.ID>) -> some View {
         let selectedRows = rows.filter { selection.contains($0.id) }
         let selectedTorrents = selectedRows.map { $0.torrent }
-        
+
         if selection.isEmpty {
             Button("Select All") {
                 self.selection = Set(rows.map { $0.id })
@@ -400,7 +400,7 @@ struct macOSTorrentListCompact: View {
             )
         }
     }
-    
+
 }
 
 #else
@@ -410,7 +410,7 @@ struct macOSTorrentListCompact: View {
     @Binding var selection: Set<Int>
     let store: Store
     let showContentTypeIcons: Bool
-    
+
     var body: some View {
         EmptyView()
     }
