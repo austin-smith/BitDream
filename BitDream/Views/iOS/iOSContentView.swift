@@ -274,15 +274,12 @@ struct iOSContentView: View {
         }
     }
     
-    // MARK: - Bottom Toolbar (Native iOS 26)
+    // MARK: - Bottom Toolbar
     
     private var bottomToolbarItems: some ToolbarContent {
         Group {
-            // iOS 26 native search placement in bottom toolbar
-            if #available(iOS 26.0, *) {
-                DefaultToolbarItem(kind: .search, placement: .bottomBar)
-                ToolbarSpacer(.flexible, placement: .bottomBar)
-            }
+            DefaultToolbarItem(kind: .search, placement: .bottomBar)
+            ToolbarSpacer(.flexible, placement: .bottomBar)
             
             ToolbarItem(placement: .bottomBar) {
                 Button(action: {
