@@ -19,6 +19,10 @@ struct TorrentTableRow: Identifiable, Hashable {
     var uploadSpeed: Int64 { torrent.rateUpload }
     var eta: Int { torrent.eta }
     var labels: [String] { torrent.labels }
+    var addedDate: Date { Date(timeIntervalSince1970: TimeInterval(torrent.addedDate)) }
+    var etaSortKey: EtaSortKey {
+        makeEtaSortKey(for: torrent)
+    }
 
     init(torrent: Torrent) {
         self.id = torrent.id
@@ -46,13 +50,16 @@ struct TorrentTableRow: Identifiable, Hashable {
         lhs.torrent.rateUpload == rhs.torrent.rateUpload &&
         lhs.torrent.eta == rhs.torrent.eta
     }
+
 }
 
 // MARK: - Torrent Table View
 struct macOSTorrentListCompact: View {
     let torrents: [Torrent]  // Keep this to match how it's called from parent
     @Binding var selection: Set<Int>
-    @State private var sortOrder = [KeyPathComparator(\TorrentTableRow.name)]
+    @Binding var sortProperty: SortProperty
+    @Binding var sortOrder: SortOrder
+    @State private var tableSortOrder = [KeyPathComparator(\TorrentTableRow.name)]
     let store: Store
     let showContentTypeIcons: Bool
 
@@ -78,7 +85,11 @@ struct macOSTorrentListCompact: View {
     }
 
     private var sortedRows: [TorrentTableRow] {
-        rows.sorted(using: sortOrder)
+        rows.sorted(using: tableSortOrder)
+    }
+
+    private var desiredTableSortOrder: [KeyPathComparator<TorrentTableRow>] {
+        [tableSortComparator(for: sortProperty, order: sortOrder)]
     }
 
     private var selectedTorrentsSet: Set<Torrent> {
@@ -88,7 +99,7 @@ struct macOSTorrentListCompact: View {
     }
 
     var body: some View {
-        Table(sortedRows, selection: $selection, sortOrder: $sortOrder, columnCustomization: $columnCustomization, columns: {
+        Table(sortedRows, selection: $selection, sortOrder: $tableSortOrder, columnCustomization: $columnCustomization, columns: {
             // Status icon column
             TableColumn("") { row in
                 statusIcon(for: row.torrent)
@@ -225,7 +236,7 @@ struct macOSTorrentListCompact: View {
             .customizationID("labels")
         })
         .tableStyle(.inset(alternatesRowBackgrounds: true))
-        .animation(.default, value: sortOrder)
+        .animation(.default, value: tableSortOrder)
         .contextMenu(forSelectionType: TorrentTableRow.ID.self) { selection in
             torrentContextMenu(for: selection)
         }
@@ -288,6 +299,7 @@ struct macOSTorrentListCompact: View {
             .interactiveDismissDisabled(false)
         .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
         .onAppear {
+            syncTableSortOrder()
             if let data = columnCustomizationData {
                 do {
                     let decoded = try JSONDecoder().decode(TableColumnCustomization<TorrentTableRow>.self, from: data)
@@ -299,6 +311,15 @@ struct macOSTorrentListCompact: View {
                 }
             }
         }
+        .onChange(of: sortProperty) { _, _ in
+            syncTableSortOrder()
+        }
+        .onChange(of: sortOrder) { _, _ in
+            syncTableSortOrder()
+        }
+        .onChange(of: tableSortOrder) { _, newValue in
+            syncMenuSortState(from: newValue)
+        }
         .onChange(of: columnCustomization) { oldValue, newValue in
             do {
                 let encoded = try JSONEncoder().encode(newValue)
@@ -308,6 +329,73 @@ struct macOSTorrentListCompact: View {
                 print("Failed to encode columnCustomization (TableColumnCustomization<TorrentTableRow>): \(error.localizedDescription)")
             }
         }
+    }
+
+    private func syncTableSortOrder() {
+        let desired = desiredTableSortOrder
+        if !isSameSortOrder(tableSortOrder, desired) {
+            tableSortOrder = desired
+        }
+    }
+
+    private func syncMenuSortState(from newValue: [KeyPathComparator<TorrentTableRow>]) {
+        guard let comparator = newValue.first,
+              let property = sortProperty(from: comparator) else {
+            return
+        }
+        let mappedOrder = appSortOrder(from: comparator.order)
+        if sortProperty != property {
+            sortProperty = property
+        }
+        if sortOrder != mappedOrder {
+            sortOrder = mappedOrder
+        }
+    }
+
+    private func tableSortComparator(for property: SortProperty, order: SortOrder) -> KeyPathComparator<TorrentTableRow> {
+        let comparatorOrder: SwiftUI.SortOrder = order == .ascending ? .forward : .reverse
+        switch property {
+        case .name:
+            return KeyPathComparator(\.name, order: comparatorOrder)
+        case .size:
+            return KeyPathComparator(\.totalBytes, order: comparatorOrder)
+        case .status:
+            return KeyPathComparator(\.status, order: comparatorOrder)
+        case .dateAdded:
+            return KeyPathComparator(\.addedDate, order: comparatorOrder)
+        case .eta:
+            return KeyPathComparator(\.etaSortKey, order: comparatorOrder)
+        }
+    }
+
+    private func sortProperty(from comparator: KeyPathComparator<TorrentTableRow>) -> SortProperty? {
+        if comparator.keyPath == \TorrentTableRow.name {
+            return .name
+        }
+        if comparator.keyPath == \TorrentTableRow.totalBytes {
+            return .size
+        }
+        if comparator.keyPath == \TorrentTableRow.status {
+            return .status
+        }
+        if comparator.keyPath == \TorrentTableRow.addedDate {
+            return .dateAdded
+        }
+        if comparator.keyPath == \TorrentTableRow.etaSortKey {
+            return .eta
+        }
+        return nil
+    }
+
+    private func appSortOrder(from order: SwiftUI.SortOrder) -> SortOrder {
+        order == .forward ? .ascending : .descending
+    }
+
+    private func isSameSortOrder(_ lhs: [KeyPathComparator<TorrentTableRow>], _ rhs: [KeyPathComparator<TorrentTableRow>]) -> Bool {
+        guard let left = lhs.first, let right = rhs.first else {
+            return lhs.isEmpty && rhs.isEmpty
+        }
+        return left.keyPath == right.keyPath && left.order == right.order
     }
 
     private func statusIcon(for torrent: Torrent) -> Image {
@@ -408,6 +496,8 @@ struct macOSTorrentListCompact: View {
 struct macOSTorrentListCompact: View {
     let torrents: [Torrent]
     @Binding var selection: Set<Int>
+    @Binding var sortProperty: SortProperty
+    @Binding var sortOrder: SortOrder
     let store: Store
     let showContentTypeIcons: Bool
 

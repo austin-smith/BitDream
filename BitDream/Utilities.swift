@@ -92,22 +92,13 @@ func sortTorrents(_ torrents: [Torrent], by property: SortProperty, order: SortO
     case .status:
         return order == .ascending ? sortedList.sortedAscending(using: .keyPath(\.statusCalc.rawValue)) : sortedList.sortedDescending(using: .keyPath(\.statusCalc.rawValue))
     case .eta:
-        let ascending = (order == .ascending)
         return sortedList.sorted { a, b in
-            func getPriority(_ torrent: Torrent) -> Int {
-                if torrent.statusCalc == .complete { return 5 }
-                if torrent.statusCalc == .seeding { return 4 }
-                if torrent.statusCalc == .paused { return 3 }
-                if torrent.statusCalc == .stalled { return 2 }
-                if torrent.eta <= 0 { return 1 }
-                return 0
+            let keyA = makeEtaSortKey(for: a)
+            let keyB = makeEtaSortKey(for: b)
+            if order == .ascending {
+                return keyA < keyB
             }
-            let priorityA = getPriority(a)
-            let priorityB = getPriority(b)
-            if priorityA != priorityB {
-                return ascending ? (priorityA < priorityB) : (priorityA > priorityB)
-            }
-            return ascending ? (a.eta < b.eta) : (a.eta > b.eta)
+            return keyA > keyB
         }
     case .size:
         return order == .ascending ? sortedList.sortedAscending(using: .keyPath(\.sizeWhenDone)) : sortedList.sortedDescending(using: .keyPath(\.sizeWhenDone))

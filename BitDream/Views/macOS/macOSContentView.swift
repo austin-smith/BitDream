@@ -662,6 +662,8 @@ struct macOSContentView: View {
                         macOSTorrentListCompact(
                             torrents: sortedTorrents,
                             selection: $selectedTorrentIds,
+                            sortProperty: $sortProperty,
+                            sortOrder: $sortOrder,
                             store: store,
                             showContentTypeIcons: showContentTypeIcons
                         )

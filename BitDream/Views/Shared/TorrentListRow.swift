@@ -19,6 +19,29 @@ struct TorrentListRow: View {
 
 // MARK: - Shared Helpers
 
+struct EtaSortKey: Comparable {
+    let priority: Int
+    let eta: Int
+
+    static func < (lhs: EtaSortKey, rhs: EtaSortKey) -> Bool {
+        if lhs.priority != rhs.priority {
+            return lhs.priority < rhs.priority
+        }
+        return lhs.eta < rhs.eta
+    }
+}
+
+func makeEtaSortKey(for torrent: Torrent) -> EtaSortKey {
+    let priority: Int
+    if torrent.statusCalc == .complete { priority = 5 }
+    else if torrent.statusCalc == .seeding { priority = 4 }
+    else if torrent.statusCalc == .paused { priority = 3 }
+    else if torrent.statusCalc == .stalled { priority = 2 }
+    else if torrent.eta <= 0 { priority = 1 }
+    else { priority = 0 }
+    return EtaSortKey(priority: priority, eta: torrent.eta)
+}
+
 // Shared function to handle re-announce action
 func reAnnounceToTrackers(torrent: Torrent, store: Store, onResponse: @escaping (TransmissionResponse) -> Void = { _ in }) {
     let info = makeConfig(store: store)
