@@ -21,6 +21,9 @@ struct iOSTorrentDetail: View {
     @State private var pieceSize: Int64 = 0
     @State private var piecesBitfield: String = ""
     @State private var piecesHaveCount: Int = 0
+    @State private var showingDeleteConfirmation = false
+    @State private var showingDeleteError = false
+    @State private var deleteErrorMessage = ""
 
     var body: some View {
         // Use shared formatting function
@@ -157,9 +160,7 @@ struct iOSTorrentDetail: View {
                     }
 
                     Button(role: .destructive, action: {
-                        //viewContext.delete(torrent.self)
-                        //try? viewContext.save()
-                        //dismiss()
+                        showingDeleteConfirmation = true
                     }, label: {
                         HStack {
                             HStack{
@@ -196,6 +197,42 @@ struct iOSTorrentDetail: View {
                 // Use shared toolbar
                 TorrentDetailToolbar(torrent: torrent, store: store)
             }
+            .alert("Delete Torrent", isPresented: $showingDeleteConfirmation) {
+                Button(role: .destructive) {
+                    let info = makeConfig(store: store)
+                    deleteTorrent(torrent: torrent, erase: true, config: info.config, auth: info.auth, onDel: { response in
+                        handleTransmissionResponse(response,
+                            onSuccess: {
+                                dismiss()
+                            },
+                            onError: { errorMessage in
+                                deleteErrorMessage = errorMessage
+                                showingDeleteError = true
+                            }
+                        )
+                    })
+                } label: {
+                    Text("Delete file(s)")
+                }
+                Button("Remove from list only") {
+                    let info = makeConfig(store: store)
+                    deleteTorrent(torrent: torrent, erase: false, config: info.config, auth: info.auth, onDel: { response in
+                        handleTransmissionResponse(response,
+                            onSuccess: {
+                                dismiss()
+                            },
+                            onError: { errorMessage in
+                                deleteErrorMessage = errorMessage
+                                showingDeleteError = true
+                            }
+                        )
+                    })
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Do you want to delete the file(s) from the disk?")
+            }
+            .transmissionErrorAlert(isPresented: $showingDeleteError, message: deleteErrorMessage)
         }
 
 
