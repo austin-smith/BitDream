@@ -24,7 +24,3 @@ BitDream is a native and feature-rich remote control client for Transmission web
 [Transmission](https://transmissionbt.com/) is a fast, easy, and free BitTorrent client for macOS, Windows, and Linux.
 
 BitDream connects to Transmission's RPC (Remote Procedure Call) interface, allowing you to control your Transmission server from anywhere. For more information about Transmission's RPC specification, see the [official documentation](https://github.com/transmission/transmission/blob/main/docs/rpc-spec.md).
-
-## Support
-
-For support, please [create an issue](https://github.com/austin-smith/BitDream/issues) in this repository. 

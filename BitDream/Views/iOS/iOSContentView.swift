@@ -48,7 +48,7 @@ struct iOSContentView: View {
             .navigationTitle("Dreams")
             .navigationBarTitleDisplayMode(.inline)
             .refreshable {
-                updateList(store: store, update: {_ in})
+                refreshTransmissionData(store: store)
             }
             .searchable(text: $searchText, prompt: "Search torrents")
             .toolbar {
@@ -76,7 +76,7 @@ struct iOSContentView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text(store.connectionErrorMessage)
+                Text(store.lastErrorMessage)
             }
         } detail: {
             if let selectedTorrent = selectedTorrentsSet.first {
@@ -247,7 +247,7 @@ struct iOSContentView: View {
 
                 Button(action: {
                     playPauseAllTorrents(start: false, info: makeConfig(store: store), onResponse: { response in
-                        updateList(store: store, update: {_ in})
+                        refreshTransmissionData(store: store)
                     })
                 }) {
                     Label("Pause All", systemImage: "pause")
@@ -255,7 +255,7 @@ struct iOSContentView: View {
 
                 Button(action: {
                     playPauseAllTorrents(start: true, info: makeConfig(store: store), onResponse: { response in
-                        updateList(store: store, update: {_ in})
+                        refreshTransmissionData(store: store)
                     })
                 }) {
                     Label("Resume All", systemImage: "play")

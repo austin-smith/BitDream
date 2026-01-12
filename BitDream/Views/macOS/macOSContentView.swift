@@ -570,7 +570,7 @@ struct macOSContentView: View {
                         // Clear selection when changing host
                         selectedTorrentIds.removeAll()
                         // Force refresh data when changing host
-                        updateList(store: store, update: { _ in })
+                        refreshTransmissionData(store: store)
                     } label: {
                         HStack {
                             Label(host.name ?? "Unnamed Server", systemImage: "server.rack")
@@ -615,6 +615,10 @@ struct macOSContentView: View {
     private var detailView: some View {
         VStack(spacing: 0) {
             StatsHeaderView(store: store)
+
+            if store.isReconnecting {
+                ConnectionBannerView(message: store.lastErrorMessage)
+            }
 
             VStack {
                 // Torrent list
@@ -720,18 +724,7 @@ struct macOSContentView: View {
         .navigationSubtitle(navigationSubtitle)
 
         .refreshable {
-            updateList(store: store, update: {_ in})
-        }
-        .alert("Connection Error", isPresented: $store.showConnectionErrorAlert) {
-            Button("Edit Server", role: .none) {
-                store.editServers.toggle()
-            }
-            Button("Retry", role: .none) {
-                store.reconnect()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text(store.connectionErrorMessage)
+            refreshTransmissionData(store: store)
         }
         .alert(
             "Remove \(selectedTorrents.count > 1 ? "\(selectedTorrents.count) Torrents" : "Torrent")",
@@ -774,6 +767,34 @@ struct macOSContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+    }
+}
+
+private struct ConnectionBannerView: View {
+    let message: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "wifi.exclamationmark")
+                .foregroundColor(.orange)
+                .font(.system(size: 16, weight: .semibold))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Reconnecting…")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                if !message.isEmpty {
+                    Text(message)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial)
+        .overlay(Divider(), alignment: .bottom)
     }
 }
 

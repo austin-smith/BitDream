@@ -205,6 +205,17 @@ struct BitDreamApp: App {
         }
         .windowResizability(.contentSize)
 
+        Window("Connection Debug", id: "connection-debug") {
+            macOSConnectionDebugView()
+                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environmentObject(store)
+                .accentColor(themeManager.accentColor)
+                .environmentObject(themeManager)
+                .immediateTheme(manager: themeManager)
+                .frame(minWidth: 420, idealWidth: 460, maxWidth: 600, minHeight: 320, idealHeight: 360, maxHeight: 800)
+        }
+        .windowResizability(.contentSize)
+
         // About window - Using WindowGroup to prevent automatic Window menu entry
         // This follows Apple's recommended pattern for auxiliary windows that shouldn't
         // appear in the Window menu, as About windows are not user-managed utility windows

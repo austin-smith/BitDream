@@ -147,33 +147,18 @@ func updateList(store: Store, update: @escaping ([Torrent]) -> Void, retry: Int 
 
     let info = makeConfig(store: store)
     getTorrents(config: info.config, auth: info.auth, onReceived: { torrents, err in
-        if (err != nil) {
+        if let err = err {
             print("Connection error…")
-            store.handleConnectionError(message: err!)
-        } else if (torrents == nil) {
-            if (retry > 3) {
-                print("Connection error after retries…")
-                store.handleConnectionError(message: "Could not reach server after multiple attempts. Please check your connection.")
-            } else {
-                updateList(store: store, update: update, retry: retry + 1)
-            }
-        } else {
-            // Clear connection error state on successful response
-            DispatchQueue.main.async {
-                // If we were in an error state before, this means we've successfully reconnected
-                let wasInErrorState = store.connectionError
-
-                // Batch all state changes together
-                store.connectionError = false
-                store.connectionErrorMessage = ""
-
-                // Auto-dismiss the alert when connection is restored
-                if wasInErrorState {
-                    store.showConnectionErrorAlert = false
-                }
-            }
-            update(torrents!)
+            store.handleConnectionError(message: err)
+            return
         }
+
+        guard let torrents = torrents else {
+            store.handleConnectionError(message: "No data returned from server.")
+            return
+        }
+
+        update(torrents)
     })
 }
 
@@ -186,36 +171,20 @@ func updateSessionStats(store: Store, update: @escaping (SessionStats) -> Void, 
 
     let info = makeConfig(store: store)
     getSessionStats(config: info.config, auth: info.auth, onReceived: { sessions, err in
-        if (err != nil) {
+        if let err = err {
             print("Connection error…")
-            store.handleConnectionError(message: err!)
-        } else if (sessions == nil) {
-            if (retry > 3) {
-                print("Connection error after retries…")
-                store.handleConnectionError(message: "Could not reach server after multiple attempts. Please check your connection.")
-            } else {
-                updateSessionStats(store: store, update: update, retry: retry + 1)
-            }
-        } else {
-            // Clear connection error state on successful response
-            DispatchQueue.main.async {
-                // If we were in an error state before, this means we've successfully reconnected
-                let wasInErrorState = store.connectionError
-
-                // Batch all state changes together
-                store.connectionError = false
-                store.connectionErrorMessage = ""
-
-                // Auto-dismiss the alert when connection is restored
-                if wasInErrorState {
-                    store.showConnectionErrorAlert = false
-                }
-            }
-            let stats = sessions!
-            update(stats)
-            // Write widget snapshot; non-blocking and non-fatal on failure
-            writeSessionSnapshot(store: store, stats: stats)
+            store.handleConnectionError(message: err)
+            return
         }
+
+        guard let stats = sessions else {
+            store.handleConnectionError(message: "No data returned from server.")
+            return
+        }
+
+        update(stats)
+        // Write widget snapshot; non-blocking and non-fatal on failure
+        writeSessionSnapshot(store: store, stats: stats)
     })
 }
 
@@ -228,55 +197,65 @@ func updateSessionInfo(store: Store, update: @escaping (TransmissionSessionRespo
 
     let info = makeConfig(store: store)
     getSession(config: info.config, auth: info.auth, onResponse: { sessionInfo in
-        // Clear connection error state on successful response
-        DispatchQueue.main.async {
-            let wasInErrorState = store.connectionError
-
-            store.connectionError = false
-            store.connectionErrorMessage = ""
-
-            if wasInErrorState {
-                store.showConnectionErrorAlert = false
-            }
-        }
         update(sessionInfo)
     }, onError: { err in
-        if (retry > 3) {
-            print("Session info error after retries: \(err)")
-            store.handleConnectionError(message: "Could not reach server after multiple attempts. Please check your connection.")
-        } else {
-            updateSessionInfo(store: store, update: update, retry: retry + 1)
+        print("Session info error: \(err)")
+        store.handleConnectionError(message: err)
+    })
+}
+
+func pollTransmissionData(store: Store) {
+    if store.isEditingServerSettings {
+        return
+    }
+
+    if !store.canAttemptReconnect {
+        return
+    }
+
+    let info = makeConfig(store: store)
+    getSessionStats(config: info.config, auth: info.auth, onReceived: { sessions, err in
+        if let err = err {
+            print("Connection error…")
+            store.handleConnectionError(message: err)
+            return
         }
+
+        guard let stats = sessions else {
+            store.handleConnectionError(message: "No data returned from server.")
+            return
+        }
+
+        store.markConnected()
+        DispatchQueue.main.async {
+            store.sessionStats = stats
+        }
+        writeSessionSnapshot(store: store, stats: stats)
+
+        updateList(store: store, update: { vals in
+            DispatchQueue.main.async {
+                store.torrents = vals
+            }
+        })
+
+        updateSessionInfo(store: store, update: { sessionInfo in
+            DispatchQueue.main.async {
+                store.sessionConfiguration = sessionInfo
+                store.defaultDownloadDir = sessionInfo.downloadDir
+
+                // Update version in CoreData if host is available
+                if let host = store.host {
+                    host.version = sessionInfo.version
+                    try? PersistenceController.shared.container.viewContext.save()
+                }
+            }
+        })
     })
 }
 
 // updates all Transmission data based on current host
 func refreshTransmissionData(store: Store) {
-    // update the list of torrents when new host is set
-    updateList(store: store, update: { vals in
-        DispatchQueue.main.async {
-            store.torrents = vals
-        }
-    })
-
-    updateSessionStats(store: store, update: { vals in
-        DispatchQueue.main.async {
-            store.sessionStats = vals
-        }
-    })
-
-    updateSessionInfo(store: store, update: { sessionInfo in
-        DispatchQueue.main.async {
-            store.sessionConfiguration = sessionInfo
-            store.defaultDownloadDir = sessionInfo.downloadDir
-
-            // Update version in CoreData if host is available
-            if let host = store.host {
-                host.version = sessionInfo.version
-                try? PersistenceController.shared.container.viewContext.save()
-            }
-        }
-    })
+    pollTransmissionData(store: store)
 
     // Also refresh servers index for widgets
     writeServersIndex(store: store)

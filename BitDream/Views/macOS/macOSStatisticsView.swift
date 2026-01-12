@@ -19,6 +19,7 @@ struct macOSStatisticsView: View {
         return f
     }()
 
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             if let stats = store.sessionStats {
@@ -78,6 +79,7 @@ struct macOSStatisticsView: View {
                             placeholderRow()
                         }
                     }
+
                 }
                 .formStyle(.grouped)
             } else {
@@ -118,5 +120,6 @@ struct macOSStatisticsView: View {
         let clamped = max(0, seconds)
         return durationFormatter.string(from: TimeInterval(clamped)) ?? "0s"
     }
+
 }
 #endif

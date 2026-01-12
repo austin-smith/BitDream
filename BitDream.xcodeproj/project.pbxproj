@@ -43,6 +43,7 @@
 		4B73985C2E70097C00D06E5D /* AppFileOpenDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B73985A2E70097C00D06E5D /* AppFileOpenDelegate.swift */; };
 		4B73985E2E70181D00D06E5D /* macOSStatisticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B73985D2E70181D00D06E5D /* macOSStatisticsView.swift */; };
 		4B7398602E7029BD00D06E5D /* macOSAboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B73985F2E7029BD00D06E5D /* macOSAboutView.swift */; };
+		4B73986C2F1A112200D06E5D /* macOSConnectionDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B73986B2F1A112200D06E5D /* macOSConnectionDebugView.swift */; };
 		4B7EF5712E6E9F0C00C1C281 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B7EF5702E6E9F0C00C1C281 /* AppConfig.swift */; };
 		4B8670062E73DE6E0004ECBA /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BDACD502E73DBBE0074F714 /* AppGroup.swift */; };
 		4B9CAC542D7E833A0094CD03 /* macOSAddTorrent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */; };
@@ -137,6 +138,7 @@
 		4B73985A2E70097C00D06E5D /* AppFileOpenDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFileOpenDelegate.swift; sourceTree = "<group>"; };
 		4B73985D2E70181D00D06E5D /* macOSStatisticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSStatisticsView.swift; sourceTree = "<group>"; };
 		4B73985F2E7029BD00D06E5D /* macOSAboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSAboutView.swift; sourceTree = "<group>"; };
+		4B73986B2F1A112200D06E5D /* macOSConnectionDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSConnectionDebugView.swift; sourceTree = "<group>"; };
 		4B7EF5702E6E9F0C00C1C281 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		4B908AED2E6EBAC700C2DA5C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSAddTorrent.swift; sourceTree = "<group>"; };
@@ -319,6 +321,7 @@
 			children = (
 				4B73985F2E7029BD00D06E5D /* macOSAboutView.swift */,
 				4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */,
+				4B73986B2F1A112200D06E5D /* macOSConnectionDebugView.swift */,
 				4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */,
 				4BC4A4B92E7248A300578D08 /* macOSMenuCommands.swift */,
 				4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */,
@@ -543,6 +546,7 @@
 				4BD8554B2E77424B00606224 /* WidgetKitBridge.swift in Sources */,
 				4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */,
 				4B73985E2E70181D00D06E5D /* macOSStatisticsView.swift in Sources */,
+				4B73986C2F1A112200D06E5D /* macOSConnectionDebugView.swift in Sources */,
 				4B642D6C2D7E151A003CEADC /* macOSServerDetail.swift in Sources */,
 				4B642D792D7E1EED003CEADC /* macOSServerList.swift in Sources */,
 				4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */,
