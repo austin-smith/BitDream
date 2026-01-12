@@ -34,7 +34,7 @@ struct macOSAboutView: View {
                 // App Name and Tagline
                 VStack(spacing: 4) {
                     Text("BitDream")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(.system(size: 22, weight: .bold, design: .monospaced))
                         .foregroundStyle(.primary)
 
                     Text("Remote Control for Transmission")
