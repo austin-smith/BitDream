@@ -108,11 +108,13 @@ func setupHost(hosts: FetchedResults<Host>, store: Store) {
     switch behavior {
     case .lastUsed:
         if let savedHostURI = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedHost),
-           !savedHostURI.isEmpty,
-           let savedHostURL = URL(string: savedHostURI),
-           let savedHost = hosts.first(where: { $0.objectID.uriRepresentation() == savedHostURL }) {
-            store.setHost(host: savedHost)
-            return
+           !savedHostURI.isEmpty {
+            if let savedHostURL = URL(string: savedHostURI),
+               let savedHost = hosts.first(where: { $0.objectID.uriRepresentation() == savedHostURL }) {
+                store.setHost(host: savedHost)
+                return
+            }
+            UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedHost)
         }
         if connectToDefaultOrFirst() { return }
         store.setup = true

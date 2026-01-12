@@ -157,6 +157,7 @@ class Store: NSObject, ObservableObject {
         let auth = TransmissionAuth(username: host.username!, password: readPassword(name: host.name!))
         self.server = Server(config: config, auth: auth)
         self.host = host
+        UserDefaults.standard.set(host.objectID.uriRepresentation().absoluteString, forKey: UserDefaultsKeys.selectedHost)
         resetReconnectState()
 
         // Clear all local state so UI/actions can't use stale data from the previous host
