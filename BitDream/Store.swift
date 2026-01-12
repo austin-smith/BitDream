@@ -32,12 +32,7 @@ class Store: NSObject, ObservableObject {
     @Published var magnetQueueDisplayIndex: Int = 0
     @Published var magnetQueueTotal: Int = 0
     @Published var isShowingServerAlert: Bool = false
-    @Published var editServers: Bool = false {
-        didSet {
-            // Set the editing flag when server settings are being edited
-            isEditingServerSettings = editServers
-        }
-    }
+    @Published var editServers: Bool = false
     @Published var showSettings: Bool = false
 
     @Published var isError: Bool = false
@@ -56,7 +51,6 @@ class Store: NSObject, ObservableObject {
     @Published var nextRetryAt: Date?
 
     @Published var showConnectionErrorAlert: Bool = false
-    @Published var isEditingServerSettings: Bool = false  // Flag to pause reconnection attempts
 
     @Published var sessionConfiguration: TransmissionSessionResponseArguments?
 
@@ -190,11 +184,6 @@ class Store: NSObject, ObservableObject {
 
     func startTimer() {
         self.timer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true, block: { _ in
-            // Skip updates if user is actively editing server settings
-            if self.isEditingServerSettings {
-                return
-            }
-
             pollTransmissionData(store: self)
         })
     }
@@ -249,9 +238,6 @@ class Store: NSObject, ObservableObject {
         let delay = max(0, nextRetryAt.timeIntervalSinceNow)
         retryTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             guard let self else { return }
-            if self.isEditingServerSettings {
-                return
-            }
             refreshTransmissionData(store: self)
         }
     }

@@ -425,6 +425,7 @@ struct TorrentCommands: Commands {
 
 struct ViewCommands: Commands {
     @ObservedObject var store: Store
+    @Environment(\.openWindow) private var openWindow
     @AppStorage(UserDefaultsKeys.torrentListCompactMode) private var isCompactMode: Bool = false
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = true
 
@@ -437,6 +438,20 @@ struct ViewCommands: Commands {
 
             Toggle(isOn: $showContentTypeIcons) {
                 Label("Show File Type Icons", systemImage: "doc.richtext")
+            }
+
+            Divider()
+
+            Button(action: {
+                openWindow(id: "connection-info")
+            }) {
+                Label("Connection Info", systemImage: "network")
+            }
+
+            Button(action: {
+                openWindow(id: "statistics")
+            }) {
+                Label("Statistics", systemImage: "chart.bar")
             }
         }
     }

@@ -191,11 +191,8 @@ struct BitDreamApp: App {
                 hideHUDWork: $hideHUDWork
             )
         }
-        // Statistics window - Intentionally using Window (not WindowGroup) to appear in Window menu
-        // This follows Apple's pattern for utility/tool windows that users should be able to manage
-        // Statistics is a user-manageable utility window, unlike About which is informational-only
-        Window("Statistics", id: "statistics") {
-            macOSStatisticsView()
+        WindowGroup("Connection Info", id: "connection-info") {
+            macOSConnectionInfoView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(store)
                 .accentColor(themeManager.accentColor)
@@ -205,8 +202,8 @@ struct BitDreamApp: App {
         }
         .windowResizability(.contentSize)
 
-        Window("Connection Info", id: "connection-info") {
-            macOSConnectionInfoView()
+        WindowGroup("Statistics", id: "statistics") {
+            macOSStatisticsView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(store)
                 .accentColor(themeManager.accentColor)

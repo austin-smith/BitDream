@@ -140,11 +140,6 @@ func formatSpeed(_ bytesPerSecond: Int64) -> String {
 
 /// Updates the list of torrents when called
 func updateList(store: Store, update: @escaping ([Torrent]) -> Void, retry: Int = 0) {
-    // Skip connection attempts if user is actively editing server settings
-    if store.isEditingServerSettings {
-        return
-    }
-
     let info = makeConfig(store: store)
     getTorrents(config: info.config, auth: info.auth, onReceived: { torrents, err in
         if let err = err {
@@ -164,11 +159,6 @@ func updateList(store: Store, update: @escaping ([Torrent]) -> Void, retry: Int 
 
 /// Updates the list of torrents when called
 func updateSessionStats(store: Store, update: @escaping (SessionStats) -> Void, retry: Int = 0) {
-    // Skip connection attempts if user is actively editing server settings
-    if store.isEditingServerSettings {
-        return
-    }
-
     let info = makeConfig(store: store)
     getSessionStats(config: info.config, auth: info.auth, onReceived: { sessions, err in
         if let err = err {
@@ -190,11 +180,6 @@ func updateSessionStats(store: Store, update: @escaping (SessionStats) -> Void, 
 
 /// Updates the session configuration (download directory, version, settings) with retry logic
 func updateSessionInfo(store: Store, update: @escaping (TransmissionSessionResponseArguments) -> Void, retry: Int = 0) {
-    // Skip connection attempts if user is actively editing server settings
-    if store.isEditingServerSettings {
-        return
-    }
-
     let info = makeConfig(store: store)
     getSession(config: info.config, auth: info.auth, onResponse: { sessionInfo in
         update(sessionInfo)
@@ -205,11 +190,6 @@ func updateSessionInfo(store: Store, update: @escaping (TransmissionSessionRespo
 }
 
 func pollTransmissionData(store: Store) {
-    if store.isEditingServerSettings {
-        return
-    }
-
-
     let info = makeConfig(store: store)
     getSessionStats(config: info.config, auth: info.auth, onReceived: { sessions, err in
         if let err = err {
