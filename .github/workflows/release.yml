@@ -140,8 +140,18 @@ jobs:
       - name: Staple notarization ticket
         run: |
           DMG_PATH="BitDream-${{ github.ref_name }}-arm64.dmg"
-          xcrun stapler staple "$DMG_PATH"
-          xcrun stapler validate "$DMG_PATH"
+          for attempt in 1 2 3 4 5 6; do
+            if xcrun stapler staple "$DMG_PATH"; then
+              xcrun stapler validate "$DMG_PATH"
+              exit 0
+            fi
+
+            echo "Staple attempt $attempt failed; waiting 30s before retry..."
+            sleep 30
+          done
+
+          echo "Stapling failed after retries."
+          exit 1
 
       - name: Verify signed artifact
         run: |
