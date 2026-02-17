@@ -133,17 +133,12 @@ jobs:
           DMG_PATH="BitDream-${{ github.ref_name }}-arm64.dmg"
           NOTARY_RESULT_PATH="$RUNNER_TEMP/notary-result.json"
 
-          DMG_SHA256="$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')"
-          echo "NOTARY_DMG_SHA256=$DMG_SHA256" >> "$GITHUB_ENV"
-
           xcrun notarytool submit "$DMG_PATH" \
             --key "$NOTARY_API_KEY_PATH" \
             --key-id "$APPLE_API_KEY_ID" \
             --issuer "$APPLE_API_ISSUER_ID" \
             --wait \
             --output-format json > "$NOTARY_RESULT_PATH"
-
-          cat "$NOTARY_RESULT_PATH"
 
           NOTARY_STATUS="$(/usr/bin/python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("status",""))' "$NOTARY_RESULT_PATH")"
           NOTARY_ID="$(/usr/bin/python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("id",""))' "$NOTARY_RESULT_PATH")"
@@ -152,8 +147,6 @@ jobs:
             echo "Notary submission id missing from notarytool response."
             exit 1
           fi
-
-          echo "NOTARY_SUBMISSION_ID=$NOTARY_ID" >> "$GITHUB_ENV"
 
           if [[ "$NOTARY_STATUS" != "Accepted" ]]; then
             echo "Notary status is '$NOTARY_STATUS' (expected 'Accepted')."
@@ -167,26 +160,8 @@ jobs:
       - name: Staple notarization ticket
         run: |
           DMG_PATH="BitDream-${{ github.ref_name }}-arm64.dmg"
-          CURRENT_DMG_SHA256="$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')"
-          if [[ "${NOTARY_DMG_SHA256:-}" != "$CURRENT_DMG_SHA256" ]]; then
-            echo "DMG hash changed after notarization submit."
-            echo "Submitted hash: ${NOTARY_DMG_SHA256:-missing}"
-            echo "Current hash:   $CURRENT_DMG_SHA256"
-            exit 1
-          fi
-
-          for attempt in 1 2 3 4 5 6; do
-            if xcrun stapler staple "$DMG_PATH"; then
-              xcrun stapler validate "$DMG_PATH"
-              exit 0
-            fi
-
-            echo "Staple attempt $attempt failed; waiting 30s before retry..."
-            sleep 30
-          done
-
-          echo "Stapling failed after retries."
-          exit 1
+          xcrun stapler staple "$DMG_PATH"
+          xcrun stapler validate "$DMG_PATH"
 
       - name: Verify signed artifact
         run: |
