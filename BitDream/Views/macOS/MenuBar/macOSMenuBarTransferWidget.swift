@@ -17,7 +17,7 @@ struct macOSMenuBarTransferWidget: View {
     }
 
     private var summary: MenuBarTransferSummary {
-        menuBarSummary(from: store)
+        menuBarSummary(from: store, activeTransfers: activeTransfers)
     }
 
     var body: some View {
@@ -45,9 +45,9 @@ struct macOSMenuBarTransferWidget: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Image(systemName: connectionStatusSymbol(store.connectionStatus))
+                Image(systemName: connectionStatusSymbol(for: store.connectionStatus))
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(connectionStatusColor(store.connectionStatus))
+                    .foregroundStyle(connectionStatusColor(for: store.connectionStatus))
 
                 Text(summary.serverName)
                     .font(.system(size: 13, weight: .semibold))
@@ -73,10 +73,10 @@ struct macOSMenuBarTransferWidget: View {
         Group {
             if store.connectionStatus != .connected {
                 HStack(spacing: 8) {
-                    Image(systemName: connectionStatusSymbol(store.connectionStatus))
-                        .foregroundStyle(connectionStatusColor(store.connectionStatus))
+                    Image(systemName: connectionStatusSymbol(for: store.connectionStatus))
+                        .foregroundStyle(connectionStatusColor(for: store.connectionStatus))
                     TimelineView(.periodic(from: .now, by: 1)) { context in
-                        Text(connectionBannerText(at: context.date))
+                        Text(connectionRetryText(status: store.connectionStatus, retryAt: store.nextRetryAt, at: context.date))
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                     }
@@ -174,44 +174,10 @@ struct macOSMenuBarTransferWidget: View {
         .font(.system(size: 11))
     }
 
-    private func connectionBannerText(at date: Date) -> String {
-        if store.connectionStatus == .connecting {
-            return "Connecting..."
-        }
-        guard let retryAt = store.nextRetryAt else { return "Retrying now..." }
-        let remaining = max(0, Int(retryAt.timeIntervalSince(date)))
-        if remaining > 0 {
-            return "Next retry in \(remaining)s"
-        }
-        return "Retrying now..."
-    }
-
     private func openAppWindow(id: String) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         openWindow(id: id)
-    }
-
-    private func connectionStatusColor(_ status: Store.ConnectionStatus) -> Color {
-        switch status {
-        case .connecting:
-            return .blue
-        case .connected:
-            return .green
-        case .reconnecting:
-            return .orange
-        }
-    }
-
-    private func connectionStatusSymbol(_ status: Store.ConnectionStatus) -> String {
-        switch status {
-        case .connecting:
-            return "arrow.trianglehead.2.clockwise"
-        case .connected:
-            return "checkmark.circle.fill"
-        case .reconnecting:
-            return "wifi.exclamationmark"
-        }
     }
 }
 

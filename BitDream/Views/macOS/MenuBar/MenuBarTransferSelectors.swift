@@ -11,7 +11,10 @@ struct MenuBarTransferSummary {
 }
 
 func menuBarSummary(from store: Store) -> MenuBarTransferSummary {
-    let activeTransfers = store.torrents.sortedActiveTransfersByActivity()
+    menuBarSummary(from: store, activeTransfers: store.torrents.sortedActiveTransfersByActivity())
+}
+
+func menuBarSummary(from store: Store, activeTransfers: [Torrent]) -> MenuBarTransferSummary {
     let stats = store.sessionStats
 
     let uploaded = stats?.currentStats?.uploadedBytes ?? 0

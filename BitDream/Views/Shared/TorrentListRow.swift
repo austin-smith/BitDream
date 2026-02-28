@@ -54,6 +54,72 @@ func resumeTorrentNow(torrent: Torrent, store: Store, onResponse: @escaping (Tra
     startTorrentNow(torrent: torrent, config: info.config, auth: info.auth, onResponse: onResponse)
 }
 
+enum TorrentStatusPresentationStyle {
+    case standard
+    case menuBar
+}
+
+func torrentStatusSymbol(for torrent: Torrent, style: TorrentStatusPresentationStyle = .standard) -> String {
+    switch style {
+    case .standard:
+        if torrent.error != TorrentError.ok.rawValue {
+            return "exclamationmark.triangle.fill"
+        }
+
+        switch torrent.statusCalc {
+        case .downloading, .retrievingMetadata:
+            return "arrow.down.circle.fill"
+        case .seeding:
+            return "arrow.up.circle.fill"
+        case .paused:
+            return "pause.circle.fill"
+        case .complete:
+            return "checkmark.circle.fill"
+        case .queued:
+            return "clock.fill"
+        case .verifyingLocalData:
+            return "checkmark.arrow.trianglehead.counterclockwise"
+        case .stalled:
+            return "exclamationmark.circle.fill"
+        case .unknown:
+            return "questionmark.circle.fill"
+        }
+
+    case .menuBar:
+        switch torrent.statusCalc {
+        case .downloading:
+            return "arrow.down.circle.fill"
+        case .retrievingMetadata:
+            return "arrow.clockwise.circle.fill"
+        case .seeding:
+            return "arrow.up.circle.fill"
+        case .verifyingLocalData:
+            return "checkmark.arrow.trianglehead.counterclockwise"
+        default:
+            return "circle.fill"
+        }
+    }
+}
+
+func torrentStatusTint(for torrent: Torrent) -> Color {
+    if torrent.error != TorrentError.ok.rawValue {
+        return .red
+    }
+
+    switch torrent.statusCalc {
+    case .downloading, .retrievingMetadata:
+        return .blue
+    case .seeding, .complete:
+        return .green
+    case .paused, .unknown:
+        return .gray
+    case .queued, .stalled:
+        return .orange
+    case .verifyingLocalData:
+        return .purple
+    }
+}
+
 // Shared function to determine progress color
 func progressColorForTorrent(_ torrent: Torrent) -> Color {
     switch torrent.statusCalc {

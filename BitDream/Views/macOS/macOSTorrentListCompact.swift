@@ -102,9 +102,9 @@ struct macOSTorrentListCompact: View {
         Table(sortedRows, selection: $selection, sortOrder: $tableSortOrder, columnCustomization: $columnCustomization, columns: {
             // Status icon column
             TableColumn("") { row in
-                statusIcon(for: row.torrent)
+                Image(systemName: torrentStatusSymbol(for: row.torrent))
                     .font(.system(size: 12))
-                    .foregroundColor(statusColor(for: row.torrent))
+                    .foregroundColor(torrentStatusTint(for: row.torrent))
                     .frame(width: 16)
             }
             .width(20)
@@ -396,56 +396,6 @@ struct macOSTorrentListCompact: View {
             return lhs.isEmpty && rhs.isEmpty
         }
         return left.keyPath == right.keyPath && left.order == right.order
-    }
-
-    private func statusIcon(for torrent: Torrent) -> Image {
-        if torrent.error != TorrentError.ok.rawValue {
-            return Image(systemName: "exclamationmark.triangle.fill")
-        }
-
-        switch torrent.statusCalc {
-        case .downloading, .retrievingMetadata:
-            return Image(systemName: "arrow.down.circle.fill")
-        case .seeding:
-            return Image(systemName: "arrow.up.circle.fill")
-        case .paused:
-            return Image(systemName: "pause.circle.fill")
-        case .complete:
-            return Image(systemName: "checkmark.circle.fill")
-        case .queued:
-            return Image(systemName: "clock.fill")
-        case .verifyingLocalData:
-            return Image(systemName: "checkmark.arrow.trianglehead.counterclockwise")
-        case .stalled:
-            return Image(systemName: "exclamationmark.circle.fill")
-        case .unknown:
-            return Image(systemName: "questionmark.circle.fill")
-        }
-    }
-
-    private func statusColor(for torrent: Torrent) -> Color {
-        if torrent.error != TorrentError.ok.rawValue {
-            return .red
-        }
-
-        switch torrent.statusCalc {
-        case .downloading, .retrievingMetadata:
-            return .blue
-        case .seeding:
-            return .green
-        case .paused:
-            return .gray
-        case .complete:
-            return .green
-        case .queued:
-            return .orange
-        case .verifyingLocalData:
-            return .purple
-        case .stalled:
-            return .orange
-        case .unknown:
-            return .gray
-        }
     }
 
     private func etaText(for row: TorrentTableRow) -> String {

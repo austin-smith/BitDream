@@ -23,28 +23,6 @@ struct macOSConnectionInfoView: View {
         .frame(minWidth: 420, minHeight: 320)
     }
 
-    private var statusText: String {
-        switch store.connectionStatus {
-        case .connecting:
-            return "Connecting..."
-        case .connected:
-            return "Connected"
-        case .reconnecting:
-            return "Disconnected"
-        }
-    }
-
-    private var statusColor: Color {
-        switch store.connectionStatus {
-        case .connecting:
-            return .blue
-        case .connected:
-            return .green
-        case .reconnecting:
-            return .orange
-        }
-    }
-
     private var connectionRow: some View {
         HStack(spacing: 12) {
             Text("Connection")
@@ -61,9 +39,9 @@ struct macOSConnectionInfoView: View {
                 .help("Retry now")
                 .accessibilityLabel("Retry now")
             }
-            Text(statusText)
+            Text(connectionStatusTitle(for: store.connectionStatus))
                 .font(.system(.body, design: .monospaced))
-                .foregroundColor(statusColor)
+                .foregroundColor(connectionStatusColor(for: store.connectionStatus))
         }
     }
 
@@ -72,20 +50,11 @@ struct macOSConnectionInfoView: View {
             Text("Next Retry")
             Spacer(minLength: 16)
             TimelineView(.periodic(from: .now, by: 1)) { context in
-                Text(nextRetryText(at: context.date))
+                Text(connectionRetryText(status: store.connectionStatus, retryAt: store.nextRetryAt, at: context.date, style: .compact))
                     .font(.system(.body, design: .monospaced))
                     .foregroundColor(.secondary)
             }
         }
-    }
-
-    private func nextRetryText(at date: Date) -> String {
-        guard let retryAt = store.nextRetryAt else { return "-" }
-        let remaining = max(0, Int(retryAt.timeIntervalSince(date)))
-        if remaining > 0 {
-            return "\(remaining)s"
-        }
-        return store.connectionStatus == Store.ConnectionStatus.reconnecting ? "Retrying now…" : "-"
     }
 
     private var lastErrorText: String {

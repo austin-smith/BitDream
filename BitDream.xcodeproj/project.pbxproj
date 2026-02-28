@@ -79,6 +79,7 @@
 		4C1000113A00000000A1B2C3 /* MenuBarTransferSelectors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000013A00000000A1B2C3 /* MenuBarTransferSelectors.swift */; };
 		4C1000123A00000000A1B2C3 /* macOSMenuBarTransferRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000023A00000000A1B2C3 /* macOSMenuBarTransferRow.swift */; };
 		4C1000133A00000000A1B2C3 /* macOSMenuBarTransferWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000033A00000000A1B2C3 /* macOSMenuBarTransferWidget.swift */; };
+		4C1000143A00000000A1B2C3 /* ConnectionStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000043A00000000A1B2C3 /* ConnectionStatus.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -176,6 +177,7 @@
 		4C1000013A00000000A1B2C3 /* MenuBarTransferSelectors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarTransferSelectors.swift; sourceTree = "<group>"; };
 		4C1000023A00000000A1B2C3 /* macOSMenuBarTransferRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSMenuBarTransferRow.swift; sourceTree = "<group>"; };
 		4C1000033A00000000A1B2C3 /* macOSMenuBarTransferWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSMenuBarTransferWidget.swift; sourceTree = "<group>"; };
+		4C1000043A00000000A1B2C3 /* ConnectionStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStatus.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -350,6 +352,7 @@
 			isa = PBXGroup;
 			children = (
 				4B1DAE01295E6FA30037E9FB /* AddTorrent.swift */,
+				4C1000043A00000000A1B2C3 /* ConnectionStatus.swift */,
 				4BEFEE7B2E6E5E69005815FA /* ContentTypeIconMapper.swift */,
 				4B1DADE5295E6C440037E9FB /* ContentView.swift */,
 				4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */,
@@ -532,6 +535,7 @@
 				4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */,
 				4B1DADFE295E6F390037E9FB /* TransmissionModels.swift in Sources */,
 				4B1DAE02295E6FA30037E9FB /* AddTorrent.swift in Sources */,
+				4C1000143A00000000A1B2C3 /* ConnectionStatus.swift in Sources */,
 				4B1DADE6295E6C440037E9FB /* ContentView.swift in Sources */,
 				4B1DAE0E295E6FFB0037E9FB /* ErrorDialog.swift in Sources */,
 				4B1DAE0A295E6FE10037E9FB /* ServerDetail.swift in Sources */,

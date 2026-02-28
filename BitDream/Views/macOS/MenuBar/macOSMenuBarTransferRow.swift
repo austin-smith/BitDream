@@ -18,9 +18,9 @@ struct macOSMenuBarTransferRow: View {
         Button(action: onOpen) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
-                    Image(systemName: statusIcon)
+                    Image(systemName: torrentStatusSymbol(for: torrent, style: .menuBar))
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(statusTint)
+                        .foregroundStyle(torrentStatusTint(for: torrent))
 
                     Text(torrent.name)
                         .font(.system(size: 12, weight: .semibold))
@@ -68,34 +68,6 @@ struct macOSMenuBarTransferRow: View {
             )
         }
         .buttonStyle(.plain)
-    }
-
-    private var statusIcon: String {
-        switch torrent.statusCalc {
-        case .downloading:
-            return "arrow.down.circle.fill"
-        case .retrievingMetadata:
-            return "arrow.clockwise.circle.fill"
-        case .seeding:
-            return "arrow.up.circle.fill"
-        case .verifyingLocalData:
-            return "checkmark.arrow.trianglehead.counterclockwise"
-        default:
-            return "circle.fill"
-        }
-    }
-
-    private var statusTint: Color {
-        switch torrent.statusCalc {
-        case .downloading, .retrievingMetadata:
-            return .blue
-        case .seeding:
-            return .green
-        case .verifyingLocalData:
-            return .orange
-        default:
-            return .secondary
-        }
     }
 }
 
