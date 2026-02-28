@@ -14,6 +14,7 @@ struct BitDreamApp: App {
     @StateObject private var themeManager = ThemeManager.shared
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppFileOpenDelegate.self) private var appFileOpenDelegate
+    @StateObject private var menuBarStatusItemController = MenuBarStatusItemBridge()
     #endif
 
     // HUD state for macOS appearance toggle feedback
@@ -54,6 +55,15 @@ struct BitDreamApp: App {
         #endif
     }
 
+    #if os(macOS)
+    private func syncMenuBarStatusItem(isEnabled: Bool? = nil) {
+        menuBarStatusItemController.configure(
+            isEnabled: isEnabled ?? menuBarTransferWidgetEnabled,
+            store: store
+        )
+    }
+    #endif
+
     var body: some Scene {
         #if os(macOS)
         Window("BitDream", id: "main") {
@@ -78,12 +88,13 @@ struct BitDreamApp: App {
                 .task {
                     appFileOpenDelegate.configure(with: store)
                     ensureStartupConnectionBehaviorApplied(store: store, viewContext: persistenceController.container.viewContext)
+                    syncMenuBarStatusItem()
+                }
+                .onChange(of: menuBarTransferWidgetEnabled) { _, isEnabled in
+                    syncMenuBarStatusItem(isEnabled: isEnabled)
                 }
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                     BackgroundActivityScheduler.unregister()
-                }
-                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didHideNotification)) { _ in
-                    NSApp.setActivationPolicy(.accessory)
                 }
                 .overlay(alignment: .center) {
                     if showAppearanceHUD {
@@ -229,18 +240,6 @@ struct BitDreamApp: App {
         }
         .windowResizability(.contentSize)
         .defaultPosition(.center)
-
-        MenuBarExtra(isInserted: $menuBarTransferWidgetEnabled) {
-            macOSMenuBarTransferWidget()
-                .environmentObject(store)
-                .task {
-                    appFileOpenDelegate.configure(with: store)
-                    ensureStartupConnectionBehaviorApplied(store: store, viewContext: persistenceController.container.viewContext)
-                }
-        } label: {
-            macOSMenuBarExtraLabel()
-        }
-        .menuBarExtraStyle(.window)
 
         #else
         WindowGroup {

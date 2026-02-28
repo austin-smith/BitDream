@@ -1,16 +1,21 @@
 import SwiftUI
-#if os(macOS)
-import AppKit
-#endif
 
 #if os(macOS)
 struct macOSMenuBarTransferWidget: View {
     @EnvironmentObject private var store: Store
-    @Environment(\.openWindow) private var openWindow
-    @Environment(\.openSettings) private var openSettings
+    let onOpenMainWindow: () -> Void
+    let onOpenSettingsWindow: () -> Void
 
     private let panelWidth: CGFloat = 380
     private let maxListHeight: CGFloat = 320
+
+    init(
+        onOpenMainWindow: @escaping () -> Void = {},
+        onOpenSettingsWindow: @escaping () -> Void = {}
+    ) {
+        self.onOpenMainWindow = onOpenMainWindow
+        self.onOpenSettingsWindow = onOpenSettingsWindow
+    }
 
     private var activeTransfers: [Torrent] {
         store.torrents.sortedActiveTransfersByActivity()
@@ -97,7 +102,7 @@ struct macOSMenuBarTransferWidget: View {
             LazyVStack(spacing: 8) {
                 ForEach(activeTransfers, id: \.id) { torrent in
                     macOSMenuBarTransferRow(torrent: torrent) {
-                        openAppWindow(id: "main")
+                        openMainWindow()
                     }
                 }
             }
@@ -136,12 +141,12 @@ struct macOSMenuBarTransferWidget: View {
 
             HStack(spacing: 8) {
                 Button("Open BitDream") {
-                    openAppWindow(id: "main")
+                    openMainWindow()
                 }
                 .buttonStyle(.borderedProminent)
 
                 Button("Settings") {
-                    openSettings()
+                    onOpenSettingsWindow()
                 }
                 .buttonStyle(.bordered)
             }
@@ -158,7 +163,7 @@ struct macOSMenuBarTransferWidget: View {
     private var footer: some View {
         HStack(spacing: 8) {
             Button {
-                openAppWindow(id: "main")
+                openMainWindow()
             } label: {
                 Label("Open BitDream", systemImage: "arrow.up.forward.app")
             }
@@ -174,18 +179,8 @@ struct macOSMenuBarTransferWidget: View {
         .font(.system(size: 11))
     }
 
-    private func openAppWindow(id: String) {
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
-        openWindow(id: id)
-    }
-}
-
-struct macOSMenuBarExtraLabel: View {
-    var body: some View {
-        Image("MenuBarIcon")
-            .renderingMode(.template)
-        .help("BitDream Transfers")
+    private func openMainWindow() {
+        onOpenMainWindow()
     }
 }
 

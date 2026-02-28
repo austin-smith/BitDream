@@ -80,6 +80,7 @@
 		4C1000123A00000000A1B2C3 /* macOSMenuBarTransferRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000023A00000000A1B2C3 /* macOSMenuBarTransferRow.swift */; };
 		4C1000133A00000000A1B2C3 /* macOSMenuBarTransferWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000033A00000000A1B2C3 /* macOSMenuBarTransferWidget.swift */; };
 		4C1000143A00000000A1B2C3 /* ConnectionStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000043A00000000A1B2C3 /* ConnectionStatus.swift */; };
+		4C1000153A00000000A1B2C3 /* MenuBarStatusItemBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000053A00000000A1B2C3 /* MenuBarStatusItemBridge.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -178,6 +179,7 @@
 		4C1000023A00000000A1B2C3 /* macOSMenuBarTransferRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSMenuBarTransferRow.swift; sourceTree = "<group>"; };
 		4C1000033A00000000A1B2C3 /* macOSMenuBarTransferWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSMenuBarTransferWidget.swift; sourceTree = "<group>"; };
 		4C1000043A00000000A1B2C3 /* ConnectionStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStatus.swift; sourceTree = "<group>"; };
+		4C1000053A00000000A1B2C3 /* MenuBarStatusItemBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarStatusItemBridge.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -404,6 +406,7 @@
 				4C1000013A00000000A1B2C3 /* MenuBarTransferSelectors.swift */,
 				4C1000023A00000000A1B2C3 /* macOSMenuBarTransferRow.swift */,
 				4C1000033A00000000A1B2C3 /* macOSMenuBarTransferWidget.swift */,
+				4C1000053A00000000A1B2C3 /* MenuBarStatusItemBridge.swift */,
 			);
 			path = MenuBar;
 			sourceTree = "<group>";
@@ -574,6 +577,7 @@
 				4C1000113A00000000A1B2C3 /* MenuBarTransferSelectors.swift in Sources */,
 				4C1000123A00000000A1B2C3 /* macOSMenuBarTransferRow.swift in Sources */,
 				4C1000133A00000000A1B2C3 /* macOSMenuBarTransferWidget.swift in Sources */,
+				4C1000153A00000000A1B2C3 /* MenuBarStatusItemBridge.swift in Sources */,
 				4B6F1EB42D82DB2D003D8F6E /* iOSTorrentListRow.swift in Sources */,
 				4BEFEE7C2E6E5E69005815FA /* ContentTypeIconMapper.swift in Sources */,
 				4BFFAA012E7F000000000001 /* macOSTorrentActionsMenu.swift in Sources */,
