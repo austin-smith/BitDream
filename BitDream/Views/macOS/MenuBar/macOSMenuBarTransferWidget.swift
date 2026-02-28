@@ -157,12 +157,16 @@ struct macOSMenuBarTransferWidget: View {
 
     private var footer: some View {
         HStack(spacing: 8) {
-            Button("Open BitDream") {
+            Button {
                 openAppWindow(id: "main")
+            } label: {
+                Label("Open BitDream", systemImage: "arrow.up.forward.app")
             }
 
-            Button("Refresh Now") {
+            Button {
                 refreshTransmissionData(store: store)
+            } label: {
+                Label("Refresh Now", systemImage: "arrow.clockwise")
             }
 
             Spacer(minLength: 0)
