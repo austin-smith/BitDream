@@ -14,6 +14,22 @@ struct macOSMenuBarTransferRow: View {
         String(format: "%.1f%%", torrent.percentDone * 100)
     }
 
+    private var etaText: String? {
+        guard torrent.eta >= 0 else {
+            return nil
+        }
+
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.day, .hour, .minute, .second]
+        formatter.unitsStyle = .abbreviated
+        formatter.maximumUnitCount = 2
+
+        guard let formatted = formatter.string(from: TimeInterval(torrent.eta)) else {
+            return nil
+        }
+        return "ETA \(formatted)"
+    }
+
     var body: some View {
         Button(action: onOpen) {
             VStack(alignment: .leading, spacing: 6) {
@@ -28,11 +44,6 @@ struct macOSMenuBarTransferRow: View {
                         .truncationMode(.tail)
 
                     Spacer(minLength: 0)
-
-                    Text(torrent.statusCalc.rawValue)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
                 }
 
                 ProgressView(value: progressValue)
@@ -57,6 +68,11 @@ struct macOSMenuBarTransferRow: View {
                     .foregroundStyle(.green)
 
                     Spacer(minLength: 0)
+
+                    if let etaText {
+                        Text(etaText)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .font(.system(size: 10, design: .monospaced))
             }

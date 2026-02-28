@@ -3,6 +3,7 @@ import SwiftUI
 #if os(macOS)
 struct macOSMenuBarTransferWidget: View {
     @EnvironmentObject private var store: Store
+    @State private var transferRowsHeight: CGFloat = 0
     let onOpenMainWindow: () -> Void
     let onOpenSettingsWindow: () -> Void
 
@@ -23,6 +24,10 @@ struct macOSMenuBarTransferWidget: View {
 
     private var summary: MenuBarTransferSummary {
         menuBarSummary(from: store, activeTransfers: activeTransfers)
+    }
+
+    private var clampedTransferListHeight: CGFloat {
+        min(max(transferRowsHeight, 1), maxListHeight)
     }
 
     var body: some View {
@@ -99,16 +104,26 @@ struct macOSMenuBarTransferWidget: View {
 
     private var transfersList: some View {
         ScrollView {
-            LazyVStack(spacing: 8) {
-                ForEach(activeTransfers, id: \.id) { torrent in
-                    macOSMenuBarTransferRow(torrent: torrent) {
-                        openMainWindow()
-                    }
+            transferRows
+        }
+        .frame(height: clampedTransferListHeight)
+        .onPreferenceChange(TransferRowsHeightPreferenceKey.self) { transferRowsHeight = $0 }
+    }
+
+    private var transferRows: some View {
+        LazyVStack(spacing: 8) {
+            ForEach(activeTransfers, id: \.id) { torrent in
+                macOSMenuBarTransferRow(torrent: torrent) {
+                    openMainWindow()
                 }
             }
-            .padding(.vertical, 2)
         }
-        .frame(maxHeight: maxListHeight)
+        .padding(.vertical, 2)
+        .background {
+            GeometryReader { proxy in
+                Color.clear.preference(key: TransferRowsHeightPreferenceKey.self, value: proxy.size.height)
+            }
+        }
     }
 
     private var emptyState: some View {
@@ -181,6 +196,14 @@ struct macOSMenuBarTransferWidget: View {
 
     private func openMainWindow() {
         onOpenMainWindow()
+    }
+}
+
+private struct TransferRowsHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 
