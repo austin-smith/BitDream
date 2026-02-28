@@ -13,6 +13,7 @@ struct macOSSettingsView: View {
     // Use ThemeManager instead of direct AppStorage
     @ObservedObject private var themeManager = ThemeManager.shared
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = AppDefaults.showContentTypeIcons
+    @AppStorage(UserDefaultsKeys.menuBarTransferWidgetEnabled) private var menuBarTransferWidgetEnabled: Bool = AppDefaults.menuBarTransferWidgetEnabled
     @AppStorage(UserDefaultsKeys.startupConnectionBehavior) private var startupBehaviorRaw: String = AppDefaults.startupConnectionBehavior.rawValue
 
     private var startupBehavior: Binding<StartupConnectionBehavior> {
@@ -89,6 +90,8 @@ struct macOSSettingsView: View {
 
                             // Content Type Icons toggle
                             Toggle("Show file type icons", isOn: $showContentTypeIcons)
+
+                            Toggle("Show BitDream in menu bar", isOn: $menuBarTransferWidgetEnabled)
                         }
 
                         Divider()

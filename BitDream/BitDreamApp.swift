@@ -20,6 +20,7 @@ struct BitDreamApp: App {
     @State private var showAppearanceHUD: Bool = false
     @State private var appearanceHUDText: String = ""
     @State private var hideHUDWork: DispatchWorkItem?
+    @AppStorage(UserDefaultsKeys.menuBarTransferWidgetEnabled) private var menuBarTransferWidgetEnabled: Bool = AppDefaults.menuBarTransferWidgetEnabled
 
     #if os(iOS)
     @Environment(\.scenePhase) private var scenePhase
@@ -74,12 +75,15 @@ struct BitDreamApp: App {
                         store.setHost(host: host)
                     }
                 }
-                .onAppear {
-                    // Bind delegate to Store and auto-flush when host becomes available
+                .task {
                     appFileOpenDelegate.configure(with: store)
+                    ensureStartupConnectionBehaviorApplied(store: store, viewContext: persistenceController.container.viewContext)
                 }
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
                     BackgroundActivityScheduler.unregister()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didHideNotification)) { _ in
+                    NSApp.setActivationPolicy(.accessory)
                 }
                 .overlay(alignment: .center) {
                     if showAppearanceHUD {
@@ -225,6 +229,18 @@ struct BitDreamApp: App {
         }
         .windowResizability(.contentSize)
         .defaultPosition(.center)
+
+        MenuBarExtra(isInserted: $menuBarTransferWidgetEnabled) {
+            macOSMenuBarTransferWidget()
+                .environmentObject(store)
+                .task {
+                    appFileOpenDelegate.configure(with: store)
+                    ensureStartupConnectionBehaviorApplied(store: store, viewContext: persistenceController.container.viewContext)
+                }
+        } label: {
+            macOSMenuBarExtraLabel()
+        }
+        .menuBarExtraStyle(.window)
 
         #else
         WindowGroup {
