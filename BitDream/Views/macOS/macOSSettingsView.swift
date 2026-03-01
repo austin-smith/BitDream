@@ -236,8 +236,9 @@ struct macOSSettingsView: View {
                                 .padding(.bottom, 4)
 
                             Button("Reset All Settings") {
-                                SettingsView.resetAllSettings(store: store)
-                                appUpdater.automaticallyChecksForUpdates = true
+                                SettingsView.resetAllSettings(store: store) {
+                                    appUpdater.resetToDefaults()
+                                }
                             }
                         }
                     }

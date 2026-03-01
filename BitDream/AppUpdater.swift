@@ -4,6 +4,8 @@ import Sparkle
 
 @MainActor
 final class AppUpdater: NSObject, ObservableObject {
+    static let defaultAutomaticallyChecksForUpdates = true
+
     @Published private(set) var canCheckForUpdates: Bool = false
     @Published private(set) var lastUpdateCheckDate: Date?
 
@@ -37,6 +39,10 @@ final class AppUpdater: NSObject, ObservableObject {
     func checkForUpdates() {
         guard canCheckForUpdates else { return }
         updaterController.checkForUpdates(nil)
+    }
+
+    func resetToDefaults() {
+        automaticallyChecksForUpdates = Self.defaultAutomaticallyChecksForUpdates
     }
 
     private func refreshState() {
