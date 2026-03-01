@@ -3,18 +3,21 @@ import SwiftUI
 
 #if os(macOS)
 // AppKit bridge is intentional here.
-// SwiftUI MenuBarExtra could not satisfy the macOS menu bar requirements.
-final class MenuBarStatusItemBridge: NSObject, ObservableObject {
+// A status-item-attached NSMenu matches standard macOS menu bar behavior.
+final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate {
     private var statusItem: NSStatusItem?
-    private let popover = NSPopover()
+    private var statusMenu: NSMenu?
+    private var contentMenuItem: NSMenuItem?
+    private var contentHostingView: NSHostingView<AnyView>?
     private weak var store: Store?
+    private let panelWidth: CGFloat = 380
 
     func configure(isEnabled: Bool, store: Store) {
         self.store = store
 
         if isEnabled {
             installStatusItemIfNeeded()
-            updatePopoverContent()
+            updateMenuContent()
         } else {
             tearDownStatusItem()
         }
@@ -29,26 +32,40 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject {
         button.image = NSImage(named: "MenuBarIcon")
         button.image?.isTemplate = true
         button.toolTip = "BitDream Transfers"
-        button.target = self
-        button.action = #selector(togglePopover(_:))
-        button.sendAction(on: [.leftMouseUp])
 
-        popover.behavior = .transient
-        popover.animates = true
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        menu.delegate = self
 
+        item.menu = menu
         statusItem = item
+        statusMenu = menu
+        installMenuStructureIfNeeded()
     }
 
     private func tearDownStatusItem() {
-        popover.performClose(nil)
         if let statusItem {
             NSStatusBar.system.removeStatusItem(statusItem)
         }
         statusItem = nil
+        statusMenu = nil
+        contentMenuItem = nil
+        contentHostingView = nil
     }
 
-    private func updatePopoverContent() {
+    private func installMenuStructureIfNeeded() {
+        guard let statusMenu, contentMenuItem == nil else { return }
+
+        let item = NSMenuItem()
+        item.isEnabled = true
+        statusMenu.addItem(item)
+        contentMenuItem = item
+    }
+
+    private func updateMenuContent() {
         guard let store else { return }
+        installMenuStructureIfNeeded()
+        guard let contentMenuItem else { return }
 
         let rootView = macOSMenuBarTransferWidget(
             onOpenMainWindow: { [weak self] in
@@ -60,24 +77,34 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject {
         )
         .environmentObject(store)
 
-        popover.contentViewController = NSHostingController(rootView: rootView)
+        let anyView = AnyView(rootView)
+        if let contentHostingView {
+            contentHostingView.rootView = anyView
+        } else {
+            let hostingView = NSHostingView(rootView: anyView)
+            contentHostingView = hostingView
+            contentMenuItem.view = hostingView
+        }
+        sizeContentView()
+        statusMenu?.update()
     }
 
-    @objc private func togglePopover(_ sender: Any?) {
-        guard let button = statusItem?.button else { return }
+    private func sizeContentView() {
+        guard let contentHostingView else { return }
+        let measuredHeight = max(1, ceil(contentHostingView.fittingSize.height))
+        contentHostingView.frame = NSRect(x: 0, y: 0, width: panelWidth, height: measuredHeight)
+    }
 
-        if popover.isShown {
-            popover.performClose(sender)
-            return
-        }
+    func menuWillOpen(_ menu: NSMenu) {
+        updateMenuContent()
+    }
 
-        updatePopoverContent()
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        popover.contentViewController?.view.window?.becomeKey()
+    private func dismissMenu() {
+        statusMenu?.cancelTracking()
     }
 
     private func openMainWindow() {
-        popover.performClose(nil)
+        dismissMenu()
         revealApplication()
 
         if let window = NSApp.windows.first(where: { $0.title == "BitDream" }) {
@@ -88,7 +115,7 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject {
     }
 
     private func openSettingsWindow() {
-        popover.performClose(nil)
+        dismissMenu()
         revealApplication()
 
         if NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) == false {
