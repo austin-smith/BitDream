@@ -164,6 +164,8 @@ jobs:
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
             MARKETING_VERSION="$RELEASE_VERSION" \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            SPARKLE_APPCAST_URL="$SPARKLE_APPCAST_URL" \
+            SPARKLE_PUBLIC_KEY="$SPARKLE_PUBLIC_KEY" \
             ARCHS=arm64
 
       - name: Export archived app
@@ -207,9 +209,9 @@ jobs:
 
       - name: Verify embedded Sparkle settings
         run: |
-          APP_PATH="$(find build/export -maxdepth 2 -name '*.app' -print -quit)"
+          APP_PATH="$(find build/export -maxdepth 2 -type d -name 'BitDream.app' -print -quit)"
           if [[ -z "${APP_PATH}" ]]; then
-            echo "No .app bundle found in export output."
+            echo "BitDream.app not found in export output."
             exit 1
           fi
 
@@ -249,9 +251,9 @@ jobs:
         run: |
           mkdir -p dmg-contents
 
-          APP_PATH="$(find build/export -maxdepth 2 -name '*.app' -print -quit)"
+          APP_PATH="$(find build/export -maxdepth 2 -type d -name 'BitDream.app' -print -quit)"
           if [[ -z "${APP_PATH}" ]]; then
-            echo "No .app bundle found in export output."
+            echo "BitDream.app not found in export output."
             exit 1
           fi
 
@@ -328,9 +330,9 @@ jobs:
 
       - name: Verify signed artifact
         run: |
-          APP_PATH="$(find build/export -maxdepth 2 -name '*.app' -print -quit)"
+          APP_PATH="$(find build/export -maxdepth 2 -type d -name 'BitDream.app' -print -quit)"
           if [[ -z "${APP_PATH}" ]]; then
-            echo "No .app bundle found in export output."
+            echo "BitDream.app not found in export output."
             exit 1
           fi
 
