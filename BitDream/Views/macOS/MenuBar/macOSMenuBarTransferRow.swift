@@ -46,15 +46,17 @@ struct macOSMenuBarTransferRow: View {
                     Spacer(minLength: 0)
                 }
 
-                ProgressView(value: progressValue)
-                    .progressViewStyle(.linear)
-                    .tint(progressColorForTorrent(torrent))
+                HStack(spacing: 8) {
+                    ProgressView(value: progressValue)
+                        .progressViewStyle(.linear)
+                        .tint(progressColorForTorrent(torrent))
 
-                HStack(spacing: 10) {
                     Text(progressPercentText)
                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                         .foregroundStyle(.secondary)
+                }
 
+                HStack(spacing: 10) {
                     HStack(spacing: 3) {
                         Image(systemName: "arrow.down")
                         Text(formatSpeed(torrent.rateDownload))

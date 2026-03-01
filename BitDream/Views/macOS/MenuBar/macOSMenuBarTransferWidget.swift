@@ -76,9 +76,11 @@ struct macOSMenuBarTransferWidget: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Image(systemName: connectionStatusSymbol(for: store.connectionStatus))
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(connectionStatusColor(for: store.connectionStatus))
+                if store.connectionStatus != .connected {
+                    Image(systemName: connectionStatusSymbol(for: store.connectionStatus))
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(connectionStatusColor(for: store.connectionStatus))
+                }
 
                 Text(summary.serverName)
                     .font(.system(size: 13, weight: .semibold))
@@ -222,12 +224,6 @@ struct macOSMenuBarTransferWidget: View {
                 openMainWindow()
             } label: {
                 Label("Open BitDream", systemImage: "arrow.up.forward.app")
-            }
-
-            Button {
-                refreshTransmissionData(store: store)
-            } label: {
-                Label("Refresh Now", systemImage: "arrow.clockwise")
             }
 
             Spacer(minLength: 0)
