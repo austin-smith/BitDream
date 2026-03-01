@@ -31,6 +31,37 @@ jobs:
           echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "BUILD_NUMBER=$VERSION" >> "$GITHUB_ENV"
 
+      - name: Load Sparkle build settings
+        env:
+          SPARKLE_APPCAST_URL: ${{ vars.SPARKLE_APPCAST_URL }}
+          SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+        run: |
+          if [[ -z "${SPARKLE_APPCAST_URL:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_APPCAST_URL"
+            exit 1
+          fi
+
+          if [[ -z "${SPARKLE_PUBLIC_KEY:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_PUBLIC_KEY"
+            exit 1
+          fi
+
+          if [[ ! "${SPARKLE_APPCAST_URL}" =~ ^https://.+/appcast\.xml$ ]]; then
+            echo "SPARKLE_APPCAST_URL must be an HTTPS URL ending in /appcast.xml"
+            echo "Current value: ${SPARKLE_APPCAST_URL}"
+            exit 1
+          fi
+
+          echo "SPARKLE_APPCAST_URL=$SPARKLE_APPCAST_URL" >> "$GITHUB_ENV"
+          echo "SPARKLE_PUBLIC_KEY=$SPARKLE_PUBLIC_KEY" >> "$GITHUB_ENV"
+
+      - name: Write CI build settings override
+        run: |
+          cat > Config/BuildSettings.local.xcconfig <<EOF
+          SPARKLE_APPCAST_URL = $SPARKLE_APPCAST_URL
+          SPARKLE_PUBLIC_KEY = $SPARKLE_PUBLIC_KEY
+          EOF
+
       - name: Import Apple signing certificate
         env:
           P12_BASE64: ${{ secrets.APPLE_CERT_P12_BASE64 }}
@@ -123,6 +154,46 @@ jobs:
             -archivePath build/BitDream.xcarchive \
             -exportPath build/export \
             -exportOptionsPlist "$EXPORT_OPTIONS_PATH"
+
+      - name: Verify embedded Sparkle settings
+        run: |
+          APP_PATH="$(find build/export -maxdepth 2 -name '*.app' -print -quit)"
+          if [[ -z "${APP_PATH}" ]]; then
+            echo "No .app bundle found in export output."
+            exit 1
+          fi
+
+          APP_INFO_PLIST="$APP_PATH/Contents/Info.plist"
+          if [[ ! -f "$APP_INFO_PLIST" ]]; then
+            echo "Missing app Info.plist at $APP_INFO_PLIST"
+            exit 1
+          fi
+
+          EMBEDDED_FEED_URL="$(/usr/libexec/PlistBuddy -c 'Print :SUFeedURL' "$APP_INFO_PLIST" 2>/dev/null || true)"
+          if [[ -z "${EMBEDDED_FEED_URL:-}" ]]; then
+            echo "Embedded SUFeedURL is missing from app Info.plist"
+            exit 1
+          fi
+
+          if [[ "$EMBEDDED_FEED_URL" != "$SPARKLE_APPCAST_URL" ]]; then
+            echo "Embedded SUFeedURL does not match SPARKLE_APPCAST_URL"
+            echo "Embedded: $EMBEDDED_FEED_URL"
+            echo "Expected: $SPARKLE_APPCAST_URL"
+            exit 1
+          fi
+
+          EMBEDDED_PUBLIC_KEY="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$APP_INFO_PLIST" 2>/dev/null || true)"
+          if [[ -z "${EMBEDDED_PUBLIC_KEY:-}" ]]; then
+            echo "Embedded SUPublicEDKey is missing from app Info.plist"
+            exit 1
+          fi
+
+          if [[ "$EMBEDDED_PUBLIC_KEY" != "$SPARKLE_PUBLIC_KEY" ]]; then
+            echo "Embedded SUPublicEDKey does not match SPARKLE_PUBLIC_KEY"
+            echo "Embedded: $EMBEDDED_PUBLIC_KEY"
+            echo "Expected: $SPARKLE_PUBLIC_KEY"
+            exit 1
+          fi
 
       - name: Create DMG
         run: |
@@ -249,7 +320,6 @@ jobs:
 
       - name: Generate Sparkle appcast
         env:
-          APPCAST_URL: ${{ vars.APPCAST_URL }}
           REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
         run: |
           APPCAST_WORK_DIR="appcast-work"
@@ -258,8 +328,8 @@ jobs:
           DOWNLOAD_PREFIX="${REPOSITORY_URL}/releases/download/${RELEASE_TAG}"
           RELEASE_LINK="${REPOSITORY_URL}/releases/tag/${RELEASE_TAG}"
 
-          if [[ -z "${APPCAST_URL:-}" ]]; then
-            echo "Missing required repository variable: APPCAST_URL"
+          if [[ -z "${SPARKLE_APPCAST_URL:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_APPCAST_URL"
             exit 1
           fi
 
@@ -275,7 +345,7 @@ jobs:
           rm -rf "$APPCAST_WORK_DIR" "$PAGES_DIR"
           mkdir -p "$APPCAST_WORK_DIR" "$PAGES_DIR"
 
-          if curl -fsSL "$APPCAST_URL" -o "$APPCAST_WORK_DIR/appcast.xml"; then
+          if curl -fsSL "$SPARKLE_APPCAST_URL" -o "$APPCAST_WORK_DIR/appcast.xml"; then
             echo "Using existing appcast.xml from GitHub Pages"
           else
             echo "No existing appcast.xml found; generating a new feed"

@@ -183,6 +183,8 @@
 			4C1000043A00000000A1B2C3 /* ConnectionStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStatus.swift; sourceTree = "<group>"; };
 			4C1000053A00000000A1B2C3 /* MenuBarStatusItemBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarStatusItemBridge.swift; sourceTree = "<group>"; };
 			4D1000033B00000000B1C2D3 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
+			4D2000013B10000000C3D4E5 /* BuildSettings.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildSettings.xcconfig; sourceTree = "<group>"; };
+			4D2000023B10000000C3D4E5 /* BuildSettings.example.local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildSettings.example.local.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -229,14 +231,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		4B1DADD2295E6C440037E9FB = {
-			isa = PBXGroup;
-			children = (
-				4B4E4C1A2E8A1F6E00418FD7 /* AppIcons */,
-				4BDACD382E73DB520074F714 /* BitDreamWidgetsExtension.entitlements */,
-				4B1DADDD295E6C440037E9FB /* BitDream */,
-				4BDACD1A2E73DB220074F714 /* BitDreamWidgets */,
-				4BDACD152E73DB220074F714 /* Frameworks */,
+			4B1DADD2295E6C440037E9FB = {
+				isa = PBXGroup;
+				children = (
+					4B4E4C1A2E8A1F6E00418FD7 /* AppIcons */,
+					4D2000033B10000000C3D4E5 /* Config */,
+					4BDACD382E73DB520074F714 /* BitDreamWidgetsExtension.entitlements */,
+					4B1DADDD295E6C440037E9FB /* BitDream */,
+					4BDACD1A2E73DB220074F714 /* BitDreamWidgets */,
+					4BDACD152E73DB220074F714 /* Frameworks */,
 				4B1DADDC295E6C440037E9FB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -405,29 +408,38 @@
 			path = Widgets;
 			sourceTree = "<group>";
 		};
-		4C1000003A00000000A1B2C3 /* MenuBar */ = {
-			isa = PBXGroup;
-			children = (
-				4C1000013A00000000A1B2C3 /* MenuBarTorrentSelectors.swift */,
-				4C1000023A00000000A1B2C3 /* macOSMenuBarTorrentRow.swift */,
-				4C1000033A00000000A1B2C3 /* macOSMenuBarTorrentWidget.swift */,
-				4C1000053A00000000A1B2C3 /* MenuBarStatusItemBridge.swift */,
-			);
-			path = MenuBar;
-			sourceTree = "<group>";
-		};
+			4C1000003A00000000A1B2C3 /* MenuBar */ = {
+				isa = PBXGroup;
+				children = (
+					4C1000013A00000000A1B2C3 /* MenuBarTorrentSelectors.swift */,
+					4C1000023A00000000A1B2C3 /* macOSMenuBarTorrentRow.swift */,
+					4C1000033A00000000A1B2C3 /* macOSMenuBarTorrentWidget.swift */,
+					4C1000053A00000000A1B2C3 /* MenuBarStatusItemBridge.swift */,
+				);
+				path = MenuBar;
+				sourceTree = "<group>";
+			};
+			4D2000033B10000000C3D4E5 /* Config */ = {
+				isa = PBXGroup;
+				children = (
+					4D2000013B10000000C3D4E5 /* BuildSettings.xcconfig */,
+					4D2000023B10000000C3D4E5 /* BuildSettings.example.local.xcconfig */,
+				);
+				path = Config;
+				sourceTree = "<group>";
+			};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4B1DADDA295E6C440037E9FB /* BitDream */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 4B1DADEF295E6C450037E9FB /* Build configuration list for PBXNativeTarget "BitDream" */;
-			buildPhases = (
-				4B1DADD7295E6C440037E9FB /* Sources */,
-				4B1DADD8295E6C440037E9FB /* Frameworks */,
-				4B1DADD9295E6C440037E9FB /* Resources */,
-				4BDACD2F2E73DB230074F714 /* Embed Foundation Extensions */,
-			);
+			4B1DADDA295E6C440037E9FB /* BitDream */ = {
+				isa = PBXNativeTarget;
+				buildConfigurationList = 4B1DADEF295E6C450037E9FB /* Build configuration list for PBXNativeTarget "BitDream" */;
+				buildPhases = (
+					4B1DADD7295E6C440037E9FB /* Sources */,
+					4B1DADD8295E6C440037E9FB /* Frameworks */,
+					4B1DADD9295E6C440037E9FB /* Resources */,
+					4BDACD2F2E73DB230074F714 /* Embed Foundation Extensions */,
+				);
 			buildRules = (
 			);
 			dependencies = (
@@ -524,8 +536,8 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		4B1DADD7295E6C440037E9FB /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
+			4B1DADD7295E6C440037E9FB /* Sources */ = {
+				isa = PBXSourcesBuildPhase;
 			files = (
 				4BC4A4BA2E7248A300578D08 /* macOSMenuCommands.swift in Sources */,
 				4B1DADE4295E6C440037E9FB /* BitDream.xcdatamodeld in Sources */,
@@ -731,6 +743,7 @@
 		};
 			4B1DADF0295E6C450037E9FB /* Debug configuration for PBXNativeTarget "BitDream" */ = {
 				isa = XCBuildConfiguration;
+				baseConfigurationReference = 4D2000013B10000000C3D4E5 /* BuildSettings.xcconfig */;
 				buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIconDefault;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -754,8 +767,8 @@
 				"INFOPLIST_KEY_SUAutomaticallyUpdate[sdk=macosx*]" = NO;
 				"INFOPLIST_KEY_SUEnableAutomaticChecks[sdk=macosx*]" = YES;
 				"INFOPLIST_KEY_SUEnableInstallerLauncherService[sdk=macosx*]" = YES;
-				"INFOPLIST_KEY_SUFeedURL[sdk=macosx*]" = "https://austin-smith.github.io/BitDream/appcast.xml";
-				"INFOPLIST_KEY_SUPublicEDKey[sdk=macosx*]" = "+KG79p7oudH/MKhpfJ33550iZtqjQFKptFttQf1sGyI=";
+					"INFOPLIST_KEY_SUFeedURL[sdk=macosx*]" = "$(SPARKLE_APPCAST_URL)";
+				"INFOPLIST_KEY_SUPublicEDKey[sdk=macosx*]" = "$(SPARKLE_PUBLIC_KEY)";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -784,6 +797,7 @@
 		};
 			4B1DADF1295E6C450037E9FB /* Release configuration for PBXNativeTarget "BitDream" */ = {
 				isa = XCBuildConfiguration;
+				baseConfigurationReference = 4D2000013B10000000C3D4E5 /* BuildSettings.xcconfig */;
 				buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIconDefault;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -810,8 +824,8 @@
 				"INFOPLIST_KEY_SUAutomaticallyUpdate[sdk=macosx*]" = NO;
 				"INFOPLIST_KEY_SUEnableAutomaticChecks[sdk=macosx*]" = YES;
 				"INFOPLIST_KEY_SUEnableInstallerLauncherService[sdk=macosx*]" = YES;
-					"INFOPLIST_KEY_SUFeedURL[sdk=macosx*]" = "https://austin-smith.github.io/BitDream/appcast.xml";
-				"INFOPLIST_KEY_SUPublicEDKey[sdk=macosx*]" = "+KG79p7oudH/MKhpfJ33550iZtqjQFKptFttQf1sGyI=";
+					"INFOPLIST_KEY_SUFeedURL[sdk=macosx*]" = "$(SPARKLE_APPCAST_URL)";
+				"INFOPLIST_KEY_SUPublicEDKey[sdk=macosx*]" = "$(SPARKLE_PUBLIC_KEY)";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

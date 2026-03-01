@@ -1,0 +1,3 @@
+// Copy this file to Config/BuildSettings.local.xcconfig and customize locally.
+SPARKLE_APPCAST_URL = https://example.github.io/BitDream/appcast.xml
+SPARKLE_PUBLIC_KEY = REPLACE_WITH_YOUR_SPARKLE_PUBLIC_KEY
