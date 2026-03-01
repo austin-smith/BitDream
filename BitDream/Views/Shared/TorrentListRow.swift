@@ -56,7 +56,6 @@ func resumeTorrentNow(torrent: Torrent, store: Store, onResponse: @escaping (Tra
 
 enum TorrentStatusPresentationStyle {
     case standard
-    case menuBar
 }
 
 func torrentStatusSymbol(for torrent: Torrent, style: TorrentStatusPresentationStyle = .standard) -> String {
@@ -83,20 +82,6 @@ func torrentStatusSymbol(for torrent: Torrent, style: TorrentStatusPresentationS
             return "exclamationmark.circle.fill"
         case .unknown:
             return "questionmark.circle.fill"
-        }
-
-    case .menuBar:
-        switch torrent.statusCalc {
-        case .downloading:
-            return "arrow.down.circle.fill"
-        case .retrievingMetadata:
-            return "arrow.clockwise.circle.fill"
-        case .seeding:
-            return "arrow.up.circle.fill"
-        case .verifyingLocalData:
-            return "checkmark.arrow.trianglehead.counterclockwise"
-        default:
-            return "circle.fill"
         }
     }
 }

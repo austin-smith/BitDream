@@ -34,7 +34,7 @@ struct macOSMenuBarTransferRow: View {
         Button(action: onOpen) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
-                    Image(systemName: torrentStatusSymbol(for: torrent, style: .menuBar))
+                    Image(systemName: torrentStatusSymbol(for: torrent))
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(torrentStatusTint(for: torrent))
 
