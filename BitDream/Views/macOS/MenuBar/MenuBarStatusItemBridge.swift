@@ -1,8 +1,8 @@
+#if os(macOS)
 import AppKit
 import Combine
 import SwiftUI
 
-#if os(macOS)
 // AppKit bridge is intentional here.
 // A status-item-attached NSMenu matches standard macOS menu bar behavior.
 final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate {
