@@ -180,6 +180,27 @@ func updateSessionInfo(store: Store, update: @escaping (TransmissionSessionRespo
     })
 }
 
+private func persistHostVersionIfNeeded(_ version: String, hostID: NSManagedObjectID) {
+    guard !hostID.isTemporaryID else { return }
+
+    let container = PersistenceController.shared.container
+    container.performBackgroundTask { context in
+        context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+
+        do {
+            guard let host = try context.existingObject(with: hostID) as? Host else { return }
+            guard host.version != version else { return }
+
+            host.version = version
+            if context.hasChanges {
+                try context.save()
+            }
+        } catch {
+            print("Failed to persist host version: \(error)")
+        }
+    }
+}
+
 func pollTransmissionData(store: Store) {
     let info = makeConfig(store: store)
     getSessionStats(config: info.config, auth: info.auth, onReceived: { sessions, err in
@@ -211,10 +232,9 @@ func pollTransmissionData(store: Store) {
                 store.sessionConfiguration = sessionInfo
                 store.defaultDownloadDir = sessionInfo.downloadDir
 
-                // Update version in CoreData if host is available
+                // Persist host version off the main context to avoid blocking UI updates.
                 if let host = store.host {
-                    host.version = sessionInfo.version
-                    try? PersistenceController.shared.container.viewContext.save()
+                    persistHostVersionIfNeeded(sessionInfo.version, hostID: host.objectID)
                 }
             }
         })
