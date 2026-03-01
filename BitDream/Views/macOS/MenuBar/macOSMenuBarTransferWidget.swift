@@ -9,6 +9,7 @@ struct macOSMenuBarTransferWidget: View {
 
     private let panelWidth: CGFloat = 380
     private let maxListHeight: CGFloat = 320
+    private let estimatedRowHeight: CGFloat = 74
 
     init(
         onOpenMainWindow: @escaping () -> Void = {},
@@ -26,8 +27,16 @@ struct macOSMenuBarTransferWidget: View {
         menuBarSummary(from: store, activeTransfers: activeTransfers)
     }
 
+    private var estimatedTransferListHeight: CGFloat {
+        let estimatedRowsHeight = CGFloat(activeTransfers.count) * estimatedRowHeight + 4
+        return min(max(estimatedRowsHeight, 1), maxListHeight)
+    }
+
     private var clampedTransferListHeight: CGFloat {
-        min(max(transferRowsHeight, 1), maxListHeight)
+        let measured = transferRowsHeight
+        let fallback = estimatedTransferListHeight
+        let resolvedHeight = measured > 1 ? measured : fallback
+        return min(max(resolvedHeight, 1), maxListHeight)
     }
 
     var body: some View {

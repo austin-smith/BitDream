@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 #if os(macOS)
@@ -10,10 +11,20 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
     private var contentMenuItem: NSMenuItem?
     private var contentHostingView: NSHostingView<AnyView>?
     private weak var store: Store?
+    private var storeChangeCancellable: AnyCancellable?
+    private var isMenuOpen = false
     private let panelWidth: CGFloat = 380
 
     func configure(isEnabled: Bool, store: Store) {
-        self.store = store
+        if self.store !== store {
+            self.store = store
+            observeStoreChanges(store)
+        } else {
+            self.store = store
+            if storeChangeCancellable == nil {
+                observeStoreChanges(store)
+            }
+        }
 
         if isEnabled {
             installStatusItemIfNeeded()
@@ -51,6 +62,8 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
         statusMenu = nil
         contentMenuItem = nil
         contentHostingView = nil
+        storeChangeCancellable = nil
+        isMenuOpen = false
     }
 
     private func installMenuStructureIfNeeded() {
@@ -85,8 +98,7 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
             contentHostingView = hostingView
             contentMenuItem.view = hostingView
         }
-        sizeContentView()
-        statusMenu?.update()
+        scheduleMenuRelayout()
     }
 
     private func sizeContentView() {
@@ -96,11 +108,36 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
     }
 
     func menuWillOpen(_ menu: NSMenu) {
+        isMenuOpen = true
         updateMenuContent()
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        isMenuOpen = false
     }
 
     private func dismissMenu() {
         statusMenu?.cancelTracking()
+    }
+
+    private func observeStoreChanges(_ store: Store) {
+        storeChangeCancellable = store.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self, self.isMenuOpen else { return }
+                self.scheduleMenuRelayout()
+            }
+    }
+
+    private func scheduleMenuRelayout() {
+        sizeContentView()
+        statusMenu?.update()
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isMenuOpen else { return }
+            self.sizeContentView()
+            self.statusMenu?.update()
+        }
     }
 
     private func openMainWindow() {
