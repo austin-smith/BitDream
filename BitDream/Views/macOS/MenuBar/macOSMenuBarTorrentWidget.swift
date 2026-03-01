@@ -6,18 +6,15 @@ struct macOSMenuBarTorrentWidget: View {
     @State private var torrentRowsHeight: CGFloat = 0
     @AppStorage(UserDefaultsKeys.menuBarSortMode) private var menuBarSortModeRaw: String = AppDefaults.menuBarSortMode.rawValue
     let onOpenMainWindow: () -> Void
-    let onOpenSettingsWindow: () -> Void
 
     private let panelWidth: CGFloat = 380
     private let maxListHeight: CGFloat = 320
     private let estimatedRowHeight: CGFloat = 74
 
     init(
-        onOpenMainWindow: @escaping () -> Void = {},
-        onOpenSettingsWindow: @escaping () -> Void = {}
+        onOpenMainWindow: @escaping () -> Void = {}
     ) {
         self.onOpenMainWindow = onOpenMainWindow
-        self.onOpenSettingsWindow = onOpenSettingsWindow
     }
 
     private var menuBarSortMode: MenuBarSortMode {
@@ -181,18 +178,6 @@ struct macOSMenuBarTorrentWidget: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: 8) {
-                Button("Open BitDream") {
-                    openMainWindow()
-                }
-                .buttonStyle(.borderedProminent)
-
-                Button("Settings") {
-                    onOpenSettingsWindow()
-                }
-                .buttonStyle(.bordered)
-            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 10)

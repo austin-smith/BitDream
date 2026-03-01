@@ -83,9 +83,6 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
         let rootView = macOSMenuBarTorrentWidget(
             onOpenMainWindow: { [weak self] in
                 self?.openMainWindow()
-            },
-            onOpenSettingsWindow: { [weak self] in
-                self?.openSettingsWindow()
             }
         )
         .environmentObject(store)
@@ -148,15 +145,6 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
             window.makeKeyAndOrderFront(nil)
         } else {
             _ = NSApp.sendAction(Selector(("showAllWindows:")), to: nil, from: nil)
-        }
-    }
-
-    private func openSettingsWindow() {
-        dismissMenu()
-        revealApplication()
-
-        if NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil) == false {
-            _ = NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
         }
     }
 
