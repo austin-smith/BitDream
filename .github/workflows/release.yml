@@ -122,6 +122,34 @@ jobs:
           cp "$APP_PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/"
           cp "$WIDGET_PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/"
 
+          APP_PROFILE_PLIST="$RUNNER_TEMP/BitDream-App.plist"
+          WIDGET_PROFILE_PLIST="$RUNNER_TEMP/BitDream-Widget.plist"
+          REQUIRED_APP_GROUP="group.crapshack.BitDream"
+
+          security cms -D -i "$APP_PROFILE_PATH" > "$APP_PROFILE_PLIST"
+          security cms -D -i "$WIDGET_PROFILE_PATH" > "$WIDGET_PROFILE_PLIST"
+
+          APP_PROFILE_UUID="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$APP_PROFILE_PLIST" 2>/dev/null || true)"
+          WIDGET_PROFILE_UUID="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$WIDGET_PROFILE_PLIST" 2>/dev/null || true)"
+
+          if [[ -z "${APP_PROFILE_UUID:-}" || -z "${WIDGET_PROFILE_UUID:-}" ]]; then
+            echo "Failed to read UUID from provisioning profiles."
+            exit 1
+          fi
+
+          if ! /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups' "$APP_PROFILE_PLIST" 2>/dev/null | grep -q "$REQUIRED_APP_GROUP"; then
+            echo "App profile is missing required App Group entitlement: $REQUIRED_APP_GROUP"
+            exit 1
+          fi
+
+          if ! /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups' "$WIDGET_PROFILE_PLIST" 2>/dev/null | grep -q "$REQUIRED_APP_GROUP"; then
+            echo "Widget profile is missing required App Group entitlement: $REQUIRED_APP_GROUP"
+            exit 1
+          fi
+
+          echo "APP_PROFILE_UUID=$APP_PROFILE_UUID" >> "$GITHUB_ENV"
+          echo "WIDGET_PROFILE_UUID=$WIDGET_PROFILE_UUID" >> "$GITHUB_ENV"
+
       - name: Build macOS app archive
         run: |
           xcodebuild archive \
@@ -140,6 +168,11 @@ jobs:
 
       - name: Export archived app
         run: |
+          if [[ -z "${APP_PROFILE_UUID:-}" || -z "${WIDGET_PROFILE_UUID:-}" ]]; then
+            echo "Missing profile UUID env vars from provisioning profile install step."
+            exit 1
+          fi
+
           EXPORT_OPTIONS_PATH="$RUNNER_TEMP/ExportOptions.plist"
           cat > "$EXPORT_OPTIONS_PATH" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
@@ -152,6 +185,15 @@ jobs:
             <string>manual</string>
             <key>teamID</key>
             <string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingCertificate</key>
+            <string>Developer ID Application</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>crapshack.BitDream</key>
+              <string>$APP_PROFILE_UUID</string>
+              <key>crapshack.BitDream.BitDreamWidgets</key>
+              <string>$WIDGET_PROFILE_UUID</string>
+            </dict>
           </dict>
           </plist>
           PLIST
