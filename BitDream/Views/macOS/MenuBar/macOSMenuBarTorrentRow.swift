@@ -2,7 +2,7 @@ import SwiftUI
 
 #if os(macOS)
 
-struct macOSMenuBarTransferRow: View {
+struct macOSMenuBarTorrentRow: View {
     let torrent: Torrent
     let onOpen: () -> Void
 

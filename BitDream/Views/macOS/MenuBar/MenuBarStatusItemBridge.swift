@@ -42,7 +42,7 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
 
         button.image = NSImage(named: "MenuBarIcon")
         button.image?.isTemplate = true
-        button.toolTip = "BitDream Transfers"
+        button.toolTip = "BitDream Torrents"
 
         let menu = NSMenu()
         menu.autoenablesItems = false
@@ -80,7 +80,7 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
         installMenuStructureIfNeeded()
         guard let contentMenuItem else { return }
 
-        let rootView = macOSMenuBarTransferWidget(
+        let rootView = macOSMenuBarTorrentWidget(
             onOpenMainWindow: { [weak self] in
                 self?.openMainWindow()
             },

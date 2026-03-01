@@ -1,9 +1,10 @@
 import SwiftUI
 
 #if os(macOS)
-struct macOSMenuBarTransferWidget: View {
+struct macOSMenuBarTorrentWidget: View {
     @EnvironmentObject private var store: Store
-    @State private var transferRowsHeight: CGFloat = 0
+    @State private var torrentRowsHeight: CGFloat = 0
+    @AppStorage(UserDefaultsKeys.menuBarSortMode) private var menuBarSortModeRaw: String = AppDefaults.menuBarSortMode.rawValue
     let onOpenMainWindow: () -> Void
     let onOpenSettingsWindow: () -> Void
 
@@ -19,12 +20,16 @@ struct macOSMenuBarTransferWidget: View {
         self.onOpenSettingsWindow = onOpenSettingsWindow
     }
 
-    private var activeTransfers: [Torrent] {
-        store.torrents.sortedActiveTransfersByActivity()
+    private var menuBarSortMode: MenuBarSortMode {
+        MenuBarSortMode(rawValue: menuBarSortModeRaw) ?? AppDefaults.menuBarSortMode
     }
 
-    private var summary: MenuBarTransferSummary {
-        menuBarSummary(from: store, activeTransfers: activeTransfers)
+    private var activeTorrents: [Torrent] {
+        menuBarActiveTorrents(from: store, sortMode: menuBarSortMode)
+    }
+
+    private var summary: MenuBarTorrentSummary {
+        menuBarSummary(from: store, activeTorrents: activeTorrents)
     }
 
     private var isConnected: Bool {
@@ -36,12 +41,12 @@ struct macOSMenuBarTransferWidget: View {
     }
 
     private var estimatedTransferListHeight: CGFloat {
-        let estimatedRowsHeight = CGFloat(activeTransfers.count) * estimatedRowHeight + 4
+        let estimatedRowsHeight = CGFloat(activeTorrents.count) * estimatedRowHeight + 4
         return min(max(estimatedRowsHeight, 1), maxListHeight)
     }
 
     private var clampedTransferListHeight: CGFloat {
-        let measured = transferRowsHeight
+        let measured = torrentRowsHeight
         let fallback = estimatedTransferListHeight
         let resolvedHeight = measured > 1 ? measured : fallback
         return min(max(resolvedHeight, 1), maxListHeight)
@@ -57,7 +62,7 @@ struct macOSMenuBarTransferWidget: View {
                 connectionState
 
                 if isConnected {
-                    if activeTransfers.isEmpty {
+                    if activeTorrents.isEmpty {
                         emptyState
                     } else {
                         transfersList
@@ -130,13 +135,13 @@ struct macOSMenuBarTransferWidget: View {
             transferRows
         }
         .frame(height: clampedTransferListHeight)
-        .onPreferenceChange(TransferRowsHeightPreferenceKey.self) { transferRowsHeight = $0 }
+        .onPreferenceChange(TorrentRowsHeightPreferenceKey.self) { torrentRowsHeight = $0 }
     }
 
     private var transferRows: some View {
         LazyVStack(spacing: 8) {
-            ForEach(activeTransfers, id: \.id) { torrent in
-                macOSMenuBarTransferRow(torrent: torrent) {
+            ForEach(activeTorrents, id: \.id) { torrent in
+                macOSMenuBarTorrentRow(torrent: torrent) {
                     openMainWindow()
                 }
             }
@@ -144,16 +149,16 @@ struct macOSMenuBarTransferWidget: View {
         .padding(.vertical, 2)
         .background {
             GeometryReader { proxy in
-                Color.clear.preference(key: TransferRowsHeightPreferenceKey.self, value: proxy.size.height)
+                Color.clear.preference(key: TorrentRowsHeightPreferenceKey.self, value: proxy.size.height)
             }
         }
     }
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("No active transfers")
+            Text("No active torrents")
                 .font(.system(size: 12, weight: .semibold))
-            Text("Downloads, metadata retrieval, seeding, and verification appear here.")
+            Text("Downloading, metadata retrieval, seeding, and verification appear here.")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -172,7 +177,7 @@ struct macOSMenuBarTransferWidget: View {
             Text("No server selected")
                 .font(.system(size: 12, weight: .semibold))
 
-            Text("Open BitDream and add or select a server to view active transfers.")
+            Text("Open BitDream and add or select a server to view active torrents.")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -236,7 +241,7 @@ struct macOSMenuBarTransferWidget: View {
     }
 }
 
-private struct TransferRowsHeightPreferenceKey: PreferenceKey {
+private struct TorrentRowsHeightPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {

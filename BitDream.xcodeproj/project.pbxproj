@@ -76,9 +76,9 @@
 		4BF593B92E89BF6300A8C1FC /* TorrentPeerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF593B82E89BF6300A8C1FC /* TorrentPeerDetail.swift */; };
 		4BF593BB2E89C8C400A8C1FC /* iOSTorrentPeerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF593BA2E89C8C400A8C1FC /* iOSTorrentPeerDetail.swift */; };
 		4BFFAA012E7F000000000001 /* macOSTorrentActionsMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BFFAA002E7F000000000001 /* macOSTorrentActionsMenu.swift */; };
-		4C1000113A00000000A1B2C3 /* MenuBarTransferSelectors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000013A00000000A1B2C3 /* MenuBarTransferSelectors.swift */; };
-		4C1000123A00000000A1B2C3 /* macOSMenuBarTransferRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000023A00000000A1B2C3 /* macOSMenuBarTransferRow.swift */; };
-		4C1000133A00000000A1B2C3 /* macOSMenuBarTransferWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000033A00000000A1B2C3 /* macOSMenuBarTransferWidget.swift */; };
+		4C1000113A00000000A1B2C3 /* MenuBarTorrentSelectors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000013A00000000A1B2C3 /* MenuBarTorrentSelectors.swift */; };
+		4C1000123A00000000A1B2C3 /* macOSMenuBarTorrentRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000023A00000000A1B2C3 /* macOSMenuBarTorrentRow.swift */; };
+		4C1000133A00000000A1B2C3 /* macOSMenuBarTorrentWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000033A00000000A1B2C3 /* macOSMenuBarTorrentWidget.swift */; };
 		4C1000143A00000000A1B2C3 /* ConnectionStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000043A00000000A1B2C3 /* ConnectionStatus.swift */; };
 		4C1000153A00000000A1B2C3 /* MenuBarStatusItemBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000053A00000000A1B2C3 /* MenuBarStatusItemBridge.swift */; };
 /* End PBXBuildFile section */
@@ -175,9 +175,9 @@
 		4BF593B82E89BF6300A8C1FC /* TorrentPeerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentPeerDetail.swift; sourceTree = "<group>"; };
 		4BF593BA2E89C8C400A8C1FC /* iOSTorrentPeerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentPeerDetail.swift; sourceTree = "<group>"; };
 		4BFFAA002E7F000000000001 /* macOSTorrentActionsMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentActionsMenu.swift; sourceTree = "<group>"; };
-		4C1000013A00000000A1B2C3 /* MenuBarTransferSelectors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarTransferSelectors.swift; sourceTree = "<group>"; };
-		4C1000023A00000000A1B2C3 /* macOSMenuBarTransferRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSMenuBarTransferRow.swift; sourceTree = "<group>"; };
-		4C1000033A00000000A1B2C3 /* macOSMenuBarTransferWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSMenuBarTransferWidget.swift; sourceTree = "<group>"; };
+		4C1000013A00000000A1B2C3 /* MenuBarTorrentSelectors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarTorrentSelectors.swift; sourceTree = "<group>"; };
+		4C1000023A00000000A1B2C3 /* macOSMenuBarTorrentRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSMenuBarTorrentRow.swift; sourceTree = "<group>"; };
+		4C1000033A00000000A1B2C3 /* macOSMenuBarTorrentWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSMenuBarTorrentWidget.swift; sourceTree = "<group>"; };
 		4C1000043A00000000A1B2C3 /* ConnectionStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStatus.swift; sourceTree = "<group>"; };
 		4C1000053A00000000A1B2C3 /* MenuBarStatusItemBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarStatusItemBridge.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -403,9 +403,9 @@
 		4C1000003A00000000A1B2C3 /* MenuBar */ = {
 			isa = PBXGroup;
 			children = (
-				4C1000013A00000000A1B2C3 /* MenuBarTransferSelectors.swift */,
-				4C1000023A00000000A1B2C3 /* macOSMenuBarTransferRow.swift */,
-				4C1000033A00000000A1B2C3 /* macOSMenuBarTransferWidget.swift */,
+				4C1000013A00000000A1B2C3 /* MenuBarTorrentSelectors.swift */,
+				4C1000023A00000000A1B2C3 /* macOSMenuBarTorrentRow.swift */,
+				4C1000033A00000000A1B2C3 /* macOSMenuBarTorrentWidget.swift */,
 				4C1000053A00000000A1B2C3 /* MenuBarStatusItemBridge.swift */,
 			);
 			path = MenuBar;
@@ -574,9 +574,9 @@
 				4B642D6C2D7E151A003CEADC /* macOSServerDetail.swift in Sources */,
 				4B642D792D7E1EED003CEADC /* macOSServerList.swift in Sources */,
 				4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */,
-				4C1000113A00000000A1B2C3 /* MenuBarTransferSelectors.swift in Sources */,
-				4C1000123A00000000A1B2C3 /* macOSMenuBarTransferRow.swift in Sources */,
-				4C1000133A00000000A1B2C3 /* macOSMenuBarTransferWidget.swift in Sources */,
+				4C1000113A00000000A1B2C3 /* MenuBarTorrentSelectors.swift in Sources */,
+				4C1000123A00000000A1B2C3 /* macOSMenuBarTorrentRow.swift in Sources */,
+				4C1000133A00000000A1B2C3 /* macOSMenuBarTorrentWidget.swift in Sources */,
 				4C1000153A00000000A1B2C3 /* MenuBarStatusItemBridge.swift in Sources */,
 				4B6F1EB42D82DB2D003D8F6E /* iOSTorrentListRow.swift in Sources */,
 				4BEFEE7C2E6E5E69005815FA /* ContentTypeIconMapper.swift in Sources */,
