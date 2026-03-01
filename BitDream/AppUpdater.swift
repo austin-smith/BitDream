@@ -16,6 +16,7 @@ final class AppUpdater: NSObject, ObservableObject {
     )
 
     private var hasStartedUpdater = false
+    private var canCheckObservation: NSKeyValueObservation?
 
     var automaticallyChecksForUpdates: Bool {
         get { updaterController.updater.automaticallyChecksForUpdates }
@@ -26,6 +27,7 @@ final class AppUpdater: NSObject, ObservableObject {
         super.init()
         // Force initialization after self is fully initialized.
         _ = updaterController
+        observeUpdaterState()
         refreshState()
     }
 
@@ -48,6 +50,15 @@ final class AppUpdater: NSObject, ObservableObject {
     private func refreshState() {
         canCheckForUpdates = updaterController.updater.canCheckForUpdates
         lastUpdateCheckDate = updaterController.updater.lastUpdateCheckDate
+    }
+
+    private func observeUpdaterState() {
+        canCheckObservation = updaterController.updater.observe(\.canCheckForUpdates, options: [.initial, .new]) { [weak self] _, change in
+            guard let value = change.newValue else { return }
+            Task { @MainActor [weak self] in
+                self?.canCheckForUpdates = value
+            }
+        }
     }
 }
 

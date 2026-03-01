@@ -37,9 +37,26 @@ jobs:
             IS_PRERELEASE=true
           fi
 
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          BASE_BUILD_NUMBER=$((MAJOR * 1000000 + MINOR * 10000 + PATCH * 100))
+          PRERELEASE_BUILD=99
+          if [[ "${IS_PRERELEASE}" == "true" ]]; then
+            PRERELEASE_NUM=1
+            if [[ "${PRERELEASE_SUFFIX}" =~ ([0-9]+)$ ]]; then
+              PRERELEASE_NUM="${BASH_REMATCH[1]}"
+            fi
+            if (( 10#$PRERELEASE_NUM < 1 || 10#$PRERELEASE_NUM > 98 )); then
+              echo "Prerelease numeric suffix must be between 1 and 98 (or omitted)."
+              echo "Tag received: $TAG"
+              exit 1
+            fi
+            PRERELEASE_BUILD=$((10#$PRERELEASE_NUM))
+          fi
+          BUILD_NUMBER=$((BASE_BUILD_NUMBER + PRERELEASE_BUILD))
+
           echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
           echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "BUILD_NUMBER=$VERSION" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
           echo "IS_PRERELEASE=$IS_PRERELEASE" >> "$GITHUB_ENV"
 
       - name: Load Sparkle build settings
