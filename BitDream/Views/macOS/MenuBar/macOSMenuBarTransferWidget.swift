@@ -27,6 +27,14 @@ struct macOSMenuBarTransferWidget: View {
         menuBarSummary(from: store, activeTransfers: activeTransfers)
     }
 
+    private var isConnected: Bool {
+        store.connectionStatus == .connected
+    }
+
+    private var activeCountText: String {
+        isConnected ? "\(summary.activeCount) active" : "-"
+    }
+
     private var estimatedTransferListHeight: CGFloat {
         let estimatedRowsHeight = CGFloat(activeTransfers.count) * estimatedRowHeight + 4
         return min(max(estimatedRowsHeight, 1), maxListHeight)
@@ -48,10 +56,14 @@ struct macOSMenuBarTransferWidget: View {
             } else {
                 connectionState
 
-                if activeTransfers.isEmpty {
-                    emptyState
+                if isConnected {
+                    if activeTransfers.isEmpty {
+                        emptyState
+                    } else {
+                        transfersList
+                    }
                 } else {
-                    transfersList
+                    unavailableState
                 }
             }
 
@@ -74,7 +86,7 @@ struct macOSMenuBarTransferWidget: View {
 
                 Spacer(minLength: 0)
 
-                Text("\(summary.activeCount) active")
+                Text(activeCountText)
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundStyle(.secondary)
             }
@@ -173,6 +185,26 @@ struct macOSMenuBarTransferWidget: View {
                     onOpenSettingsWindow()
                 }
                 .buttonStyle(.bordered)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color.secondary.opacity(0.08))
+        )
+    }
+
+    private var unavailableState: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(connectionStatusTitle(for: store.connectionStatus))
+                .font(.system(size: 12, weight: .semibold))
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                Text(connectionRetryText(status: store.connectionStatus, retryAt: store.nextRetryAt, at: context.date))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.horizontal, 10)
