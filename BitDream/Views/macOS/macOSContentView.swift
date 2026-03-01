@@ -283,7 +283,7 @@ struct macOSContentView: View {
         }
         .onAppear {
             if store.host == nil {
-                setupHost(hosts: hosts, store: store)
+                ensureStartupConnectionBehaviorApplied(store: store, viewContext: viewContext)
             }
             updateAppBadge()
         }
@@ -617,7 +617,7 @@ struct macOSContentView: View {
             StatsHeaderView(store: store)
 
             if store.connectionStatus == Store.ConnectionStatus.reconnecting {
-                ConnectionBannerView(retryAt: store.nextRetryAt)
+                ConnectionBannerView(status: store.connectionStatus, retryAt: store.nextRetryAt)
             }
 
             VStack {
@@ -775,19 +775,20 @@ struct macOSContentView: View {
 private struct ConnectionBannerView: View {
     @Environment(\.openWindow) private var openWindow
 
+    let status: Store.ConnectionStatus
     let retryAt: Date?
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "wifi.exclamationmark")
-                .foregroundColor(.orange)
+            Image(systemName: connectionStatusSymbol(for: status))
+                .foregroundColor(connectionStatusColor(for: status))
                 .font(.system(size: 16, weight: .semibold))
             VStack(alignment: .leading, spacing: 2) {
-                Text("Disconnected")
+                Text(connectionStatusTitle(for: status))
                     .font(.subheadline)
                     .fontWeight(.semibold)
                 TimelineView(.periodic(from: .now, by: 1)) { context in
-                    Text(nextRetryText(at: context.date))
+                    Text(connectionRetryText(status: status, retryAt: retryAt, at: context.date))
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .lineLimit(1)
@@ -805,15 +806,6 @@ private struct ConnectionBannerView: View {
         .padding(.vertical, 8)
         .background(.ultraThinMaterial)
         .overlay(Divider(), alignment: .bottom)
-    }
-
-    private func nextRetryText(at date: Date) -> String {
-        guard let retryAt else { return "Retrying now..." }
-        let remaining = max(0, Int(retryAt.timeIntervalSince(date)))
-        if remaining > 0 {
-            return "Next retry in \(remaining)s"
-        }
-        return "Retrying now..."
     }
 }
 

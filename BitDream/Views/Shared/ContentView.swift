@@ -88,7 +88,7 @@ struct ContentView: View {
 
 
 // Helper function to set up the host
-func setupHost(hosts: FetchedResults<Host>, store: Store) {
+func applyStartupConnectionBehavior(hosts: [Host], store: Store) {
     // Read behavior from UserDefaults (fallback to default)
     let behaviorRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.startupConnectionBehavior) ?? AppDefaults.startupConnectionBehavior.rawValue
     let behavior = StartupConnectionBehavior(rawValue: behaviorRaw) ?? AppDefaults.startupConnectionBehavior
@@ -123,6 +123,22 @@ func setupHost(hosts: FetchedResults<Host>, store: Store) {
         if connectToDefaultOrFirst() { return }
         store.setup = true
     }
+}
+
+func ensureStartupConnectionBehaviorApplied(store: Store, viewContext: NSManagedObjectContext) {
+    guard store.host == nil else { return }
+
+    let request = NSFetchRequest<Host>(entityName: "Host")
+    request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
+
+    let hosts: [Host]
+    do {
+        hosts = try viewContext.fetch(request)
+    } catch {
+        hosts = []
+    }
+
+    applyStartupConnectionBehavior(hosts: hosts, store: store)
 }
 
 // MARK: - Shared Views

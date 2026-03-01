@@ -58,7 +58,7 @@ struct iOSContentView: View {
             }
             .onAppear {
                 if store.host == nil {
-                    setupHost(hosts: hosts, store: store)
+                    ensureStartupConnectionBehaviorApplied(store: store, viewContext: viewContext)
                 }
             }
             .onChange(of: sortProperty) { oldValue, newValue in

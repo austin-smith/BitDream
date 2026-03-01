@@ -13,12 +13,21 @@ struct macOSSettingsView: View {
     // Use ThemeManager instead of direct AppStorage
     @ObservedObject private var themeManager = ThemeManager.shared
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = AppDefaults.showContentTypeIcons
+    @AppStorage(UserDefaultsKeys.menuBarTransferWidgetEnabled) private var menuBarTransferWidgetEnabled: Bool = AppDefaults.menuBarTransferWidgetEnabled
+    @AppStorage(UserDefaultsKeys.menuBarSortMode) private var menuBarSortModeRaw: String = AppDefaults.menuBarSortMode.rawValue
     @AppStorage(UserDefaultsKeys.startupConnectionBehavior) private var startupBehaviorRaw: String = AppDefaults.startupConnectionBehavior.rawValue
 
     private var startupBehavior: Binding<StartupConnectionBehavior> {
         Binding<StartupConnectionBehavior>(
             get: { StartupConnectionBehavior(rawValue: startupBehaviorRaw) ?? AppDefaults.startupConnectionBehavior },
             set: { startupBehaviorRaw = $0.rawValue }
+        )
+    }
+
+    private var menuBarSortMode: Binding<MenuBarSortMode> {
+        Binding<MenuBarSortMode>(
+            get: { MenuBarSortMode(rawValue: menuBarSortModeRaw) ?? AppDefaults.menuBarSortMode },
+            set: { menuBarSortModeRaw = $0.rawValue }
         )
     }
 
@@ -89,6 +98,29 @@ struct macOSSettingsView: View {
 
                             // Content Type Icons toggle
                             Toggle("Show file type icons", isOn: $showContentTypeIcons)
+                        }
+
+                        Divider()
+                            .padding(.vertical, 4)
+
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Menu Bar")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .padding(.bottom, 4)
+
+                            Toggle("Show BitDream in menu bar", isOn: $menuBarTransferWidgetEnabled)
+
+                            HStack {
+                                Text("Sort torrents by")
+                                Spacer()
+                                Picker("", selection: menuBarSortMode) {
+                                    ForEach(MenuBarSortMode.allCases, id: \.self) { mode in
+                                        Text(mode.label).tag(mode)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                            }
                         }
 
                         Divider()
