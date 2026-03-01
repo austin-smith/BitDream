@@ -21,15 +21,23 @@ jobs:
       - name: Derive release metadata
         run: |
           TAG="$GITHUB_REF_NAME"
-          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Tag must be in vX.Y.Z format, received: $TAG"
+
+          if [[ ! "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Tag must be in vX.Y.Z or vX.Y.Z-suffix format, received: $TAG"
             exit 1
           fi
 
-          VERSION="${TAG#v}"
+          VERSION="${BASH_REMATCH[1]}"
+          PRERELEASE_SUFFIX="${BASH_REMATCH[2]:-}"
+          IS_PRERELEASE=false
+          if [[ -n "${PRERELEASE_SUFFIX}" ]]; then
+            IS_PRERELEASE=true
+          fi
+
           echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
           echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "BUILD_NUMBER=$VERSION" >> "$GITHUB_ENV"
+          echo "IS_PRERELEASE=$IS_PRERELEASE" >> "$GITHUB_ENV"
 
       - name: Load Sparkle build settings
         env:
@@ -298,10 +306,18 @@ jobs:
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release upload "$RELEASE_TAG" "$DMG_PATH" --clobber
           else
-            gh release create "$RELEASE_TAG" \
-              --title "$RELEASE_TAG" \
-              --generate-notes \
-              "$DMG_PATH"
+            if [[ "${IS_PRERELEASE}" == "true" ]]; then
+              gh release create "$RELEASE_TAG" \
+                --title "$RELEASE_TAG" \
+                --generate-notes \
+                --prerelease \
+                "$DMG_PATH"
+            else
+              gh release create "$RELEASE_TAG" \
+                --title "$RELEASE_TAG" \
+                --generate-notes \
+                "$DMG_PATH"
+            fi
           fi
 
       - name: Prepare Sparkle private key
