@@ -278,8 +278,10 @@ jobs:
           fi
 
           cp -R "$APP_PATH" dmg-contents/
+          DMG_PATH="BitDream-${RELEASE_TAG}-arm64.dmg"
+          rm -f "$DMG_PATH"
+
           create-dmg \
-            --overwrite \
             --volname "BitDream" \
             --window-size 660 460 \
             --background "$DMG_BACKGROUND_PATH" \
@@ -288,7 +290,7 @@ jobs:
             --icon "BitDream.app" 180 230 \
             --hide-extension "BitDream.app" \
             --app-drop-link 480 230 \
-            "BitDream-${RELEASE_TAG}-arm64.dmg" \
+            "$DMG_PATH" \
             "dmg-contents/"
 
       - name: Sign DMG
