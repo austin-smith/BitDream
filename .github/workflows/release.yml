@@ -25,34 +25,19 @@ jobs:
         run: |
           TAG="$GITHUB_REF_NAME"
 
-          if [[ ! "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)(-[0-9A-Za-z.-]+)?$ ]]; then
+          if [[ ! "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?)$ ]]; then
             echo "Tag must be in vX.Y.Z or vX.Y.Z-suffix format, received: $TAG"
             exit 1
           fi
 
           VERSION="${BASH_REMATCH[1]}"
-          PRERELEASE_SUFFIX="${BASH_REMATCH[2]:-}"
           IS_PRERELEASE=false
-          if [[ -n "${PRERELEASE_SUFFIX}" ]]; then
+          # Stable is exactly X.Y.Z; anything else is treated as prerelease metadata.
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             IS_PRERELEASE=true
           fi
 
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          BASE_BUILD_NUMBER=$((MAJOR * 1000000 + MINOR * 10000 + PATCH * 100))
-          PRERELEASE_BUILD=99
-          if [[ "${IS_PRERELEASE}" == "true" ]]; then
-            PRERELEASE_NUM=1
-            if [[ "${PRERELEASE_SUFFIX}" =~ ([0-9]+)$ ]]; then
-              PRERELEASE_NUM="${BASH_REMATCH[1]}"
-            fi
-            if (( 10#$PRERELEASE_NUM < 1 || 10#$PRERELEASE_NUM > 98 )); then
-              echo "Prerelease numeric suffix must be between 1 and 98 (or omitted)."
-              echo "Tag received: $TAG"
-              exit 1
-            fi
-            PRERELEASE_BUILD=$((10#$PRERELEASE_NUM))
-          fi
-          BUILD_NUMBER=$((BASE_BUILD_NUMBER + PRERELEASE_BUILD))
+          BUILD_NUMBER="$GITHUB_RUN_NUMBER"
 
           echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
           echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
