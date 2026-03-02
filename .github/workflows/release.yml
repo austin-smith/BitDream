@@ -405,7 +405,7 @@ jobs:
           APPCAST_WORK_DIR="appcast-work"
           PAGES_DIR="pages"
           DMG_PATH="BitDream-${RELEASE_TAG}-arm64.dmg"
-          DOWNLOAD_PREFIX="${REPOSITORY_URL}/releases/download/${RELEASE_TAG}"
+          DOWNLOAD_PREFIX="${REPOSITORY_URL}/releases/download/${RELEASE_TAG}/"
           RELEASE_LINK="${REPOSITORY_URL}/releases/tag/${RELEASE_TAG}"
 
           if [[ -z "${SPARKLE_APPCAST_URL:-}" ]]; then
