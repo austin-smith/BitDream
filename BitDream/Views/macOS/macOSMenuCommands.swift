@@ -522,6 +522,7 @@ struct AppearanceCommands: Commands {
 
 struct AppCommands: Commands {
     @Environment(\.openWindow) private var openWindow
+    @ObservedObject var appUpdater: AppUpdater
 
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
@@ -530,6 +531,13 @@ struct AppCommands: Commands {
             }) {
                 Label("About BitDream", systemImage: "info.circle")
             }
+
+            Button(action: {
+                appUpdater.checkForUpdates()
+            }) {
+                Label("Check for Updates…", systemImage: "square.and.arrow.down")
+            }
+            .disabled(!appUpdater.canCheckForUpdates)
         }
     }
 }

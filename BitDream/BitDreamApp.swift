@@ -15,6 +15,7 @@ struct BitDreamApp: App {
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppFileOpenDelegate.self) private var appFileOpenDelegate
     @StateObject private var menuBarStatusItemController = MenuBarStatusItemBridge()
+    @StateObject private var appUpdater = AppUpdater()
     #endif
 
     // HUD state for macOS appearance toggle feedback
@@ -89,6 +90,7 @@ struct BitDreamApp: App {
                     appFileOpenDelegate.configure(with: store)
                     ensureStartupConnectionBehaviorApplied(store: store, viewContext: persistenceController.container.viewContext)
                     syncMenuBarStatusItem()
+                    appUpdater.start()
                 }
                 .onChange(of: menuBarTransferWidgetEnabled) { _, isEnabled in
                     syncMenuBarStatusItem(isEnabled: isEnabled)
@@ -191,7 +193,7 @@ struct BitDreamApp: App {
         }
         .windowResizability(.contentSize)
         .commands {
-            AppCommands()
+            AppCommands(appUpdater: appUpdater)
             CommandGroup(replacing: .newItem) { }
             FileCommands(store: store)
             SearchCommands(store: store)
@@ -262,6 +264,7 @@ struct BitDreamApp: App {
         Settings {
             SettingsView(store: store) // Use the same store instance
                 .frame(minWidth: 500, idealWidth: 550, maxWidth: 650)
+                .environmentObject(appUpdater)
                 .environmentObject(themeManager) // Pass the ThemeManager to the Settings view
                 .immediateTheme(manager: themeManager)
         }

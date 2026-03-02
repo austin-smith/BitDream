@@ -40,11 +40,21 @@
 			</array>
 		</dict>
 	</array>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
-	<key>UTExportedTypeDeclarations</key>
-	<array>
-	<dict>
+		<key>LSSupportsOpeningDocumentsInPlace</key>
+		<true/>
+		<key>SUAllowsAutomaticUpdates</key>
+		<false/>
+		<key>SUAutomaticallyUpdate</key>
+		<false/>
+		<key>SUEnableAutomaticChecks</key>
+		<true/>
+		<key>SUFeedURL</key>
+		<string>$(SPARKLE_APPCAST_URL)</string>
+		<key>SUPublicEDKey</key>
+		<string>$(SPARKLE_PUBLIC_KEY)</string>
+		<key>UTExportedTypeDeclarations</key>
+		<array>
+		<dict>
 		<key>UTTypeIdentifier</key>
 		<string>org.bittorrent.torrent</string>
 		<key>UTTypeDescription</key>

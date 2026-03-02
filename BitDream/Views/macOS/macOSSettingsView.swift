@@ -6,6 +6,7 @@ typealias PlatformSettingsView = macOSSettingsView
 
 struct macOSSettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appUpdater: AppUpdater
     @State private var showingThemeSettings = false
     @ObservedObject var store: Store
     @StateObject private var editModel = SessionSettingsEditModel()
@@ -30,6 +31,25 @@ struct macOSSettingsView: View {
             set: { menuBarSortModeRaw = $0.rawValue }
         )
     }
+
+    private var automaticallyChecksForUpdatesBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { appUpdater.automaticallyChecksForUpdates },
+            set: { appUpdater.automaticallyChecksForUpdates = $0 }
+        )
+    }
+
+    private var lastUpdateCheckText: String {
+        guard let date = appUpdater.lastUpdateCheckDate else { return "Never" }
+        return Self.lastUpdateCheckFormatter.string(from: date)
+    }
+
+    private static let lastUpdateCheckFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
 
     var body: some View {
         // macOS version adapted for the Settings scene
@@ -159,6 +179,33 @@ struct macOSSettingsView: View {
                             .padding(.vertical, 4)
 
                         VStack(alignment: .leading, spacing: 12) {
+                            Text("Updates")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .padding(.bottom, 4)
+
+                            Toggle("Automatically check for updates", isOn: automaticallyChecksForUpdatesBinding)
+
+                            HStack(alignment: .firstTextBaseline) {
+                                Button(action: {
+                                    appUpdater.checkForUpdates()
+                                }) {
+                                    Text("Check for Updates…")
+                                }
+                                .disabled(!appUpdater.canCheckForUpdates)
+
+                                Spacer()
+
+                                Text("Last checked: \(lastUpdateCheckText)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+
+                        Divider()
+                            .padding(.vertical, 4)
+
+                        VStack(alignment: .leading, spacing: 12) {
                             Text("Notifications")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
@@ -189,7 +236,9 @@ struct macOSSettingsView: View {
                                 .padding(.bottom, 4)
 
                             Button("Reset All Settings") {
-                                SettingsView.resetAllSettings(store: store)
+                                SettingsView.resetAllSettings(store: store) {
+                                    appUpdater.resetToDefaults()
+                                }
                             }
                         }
                     }
@@ -361,6 +410,7 @@ func seedingSection(config: TransmissionSessionResponseArguments, editModel: Ses
 
 #Preview {
     macOSSettingsView(store: Store())
+        .environmentObject(AppUpdater())
 }
 #else
 // Empty struct for iOS to reference - this won't be compiled on macOS but provides the type

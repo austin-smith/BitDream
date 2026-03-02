@@ -22,7 +22,7 @@ struct SettingsView: View {
     }
 
     // Shared reset for both platforms
-    static func resetAllSettings(store: Store) {
+    static func resetAllSettings(store: Store, afterReset: () -> Void = {}) {
         let theme = ThemeManager.shared
         theme.setAccentColor(AppDefaults.accentColor)
         theme.setThemeMode(AppDefaults.themeMode)
@@ -35,6 +35,7 @@ struct SettingsView: View {
 
         // Poll interval via Store API
         store.updatePollInterval(AppDefaults.pollInterval)
+        afterReset()
     }
 
     var body: some View {

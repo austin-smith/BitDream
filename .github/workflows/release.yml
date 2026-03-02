@@ -7,14 +7,78 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   release:
     runs-on: macos-26
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Derive release metadata
+        run: |
+          TAG="$GITHUB_REF_NAME"
+
+          if [[ ! "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?)$ ]]; then
+            echo "Tag must be in vX.Y.Z or vX.Y.Z-suffix format, received: $TAG"
+            exit 1
+          fi
+
+          VERSION="${BASH_REMATCH[1]}"
+          MARKETING_VERSION="$VERSION"
+          if [[ "$VERSION" =~ ^([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            MARKETING_VERSION="${BASH_REMATCH[1]}"
+          fi
+          IS_PRERELEASE=false
+          # Stable is exactly X.Y.Z; anything else is treated as prerelease metadata.
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            IS_PRERELEASE=true
+          fi
+
+          BUILD_NUMBER="$GITHUB_RUN_NUMBER"
+
+          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
+          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "MARKETING_VERSION=$MARKETING_VERSION" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "IS_PRERELEASE=$IS_PRERELEASE" >> "$GITHUB_ENV"
+
+      - name: Load Sparkle build settings
+        env:
+          SPARKLE_APPCAST_URL: ${{ vars.SPARKLE_APPCAST_URL }}
+          SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+        run: |
+          if [[ -z "${SPARKLE_APPCAST_URL:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_APPCAST_URL"
+            exit 1
+          fi
+
+          if [[ -z "${SPARKLE_PUBLIC_KEY:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_PUBLIC_KEY"
+            exit 1
+          fi
+
+          if [[ ! "${SPARKLE_APPCAST_URL}" =~ ^https://.+/appcast\.xml$ ]]; then
+            echo "SPARKLE_APPCAST_URL must be an HTTPS URL ending in /appcast.xml"
+            echo "Current value: ${SPARKLE_APPCAST_URL}"
+            exit 1
+          fi
+
+          echo "SPARKLE_APPCAST_URL=$SPARKLE_APPCAST_URL" >> "$GITHUB_ENV"
+          echo "SPARKLE_PUBLIC_KEY=$SPARKLE_PUBLIC_KEY" >> "$GITHUB_ENV"
+
+      - name: Write CI build settings override
+        run: |
+          cat > Config/BuildSettings.local.xcconfig <<EOF
+          SPARKLE_APPCAST_URL = $SPARKLE_APPCAST_URL
+          SPARKLE_PUBLIC_KEY = $SPARKLE_PUBLIC_KEY
+          EOF
 
       - name: Import Apple signing certificate
         env:
@@ -68,6 +132,34 @@ jobs:
           cp "$APP_PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/"
           cp "$WIDGET_PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/"
 
+          APP_PROFILE_PLIST="$RUNNER_TEMP/BitDream-App.plist"
+          WIDGET_PROFILE_PLIST="$RUNNER_TEMP/BitDream-Widget.plist"
+          REQUIRED_APP_GROUP="group.crapshack.BitDream"
+
+          security cms -D -i "$APP_PROFILE_PATH" > "$APP_PROFILE_PLIST"
+          security cms -D -i "$WIDGET_PROFILE_PATH" > "$WIDGET_PROFILE_PLIST"
+
+          APP_PROFILE_UUID="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$APP_PROFILE_PLIST" 2>/dev/null || true)"
+          WIDGET_PROFILE_UUID="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$WIDGET_PROFILE_PLIST" 2>/dev/null || true)"
+
+          if [[ -z "${APP_PROFILE_UUID:-}" || -z "${WIDGET_PROFILE_UUID:-}" ]]; then
+            echo "Failed to read UUID from provisioning profiles."
+            exit 1
+          fi
+
+          if ! /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups' "$APP_PROFILE_PLIST" 2>/dev/null | grep -q "$REQUIRED_APP_GROUP"; then
+            echo "App profile is missing required App Group entitlement: $REQUIRED_APP_GROUP"
+            exit 1
+          fi
+
+          if ! /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups' "$WIDGET_PROFILE_PLIST" 2>/dev/null | grep -q "$REQUIRED_APP_GROUP"; then
+            echo "Widget profile is missing required App Group entitlement: $REQUIRED_APP_GROUP"
+            exit 1
+          fi
+
+          echo "APP_PROFILE_UUID=$APP_PROFILE_UUID" >> "$GITHUB_ENV"
+          echo "WIDGET_PROFILE_UUID=$WIDGET_PROFILE_UUID" >> "$GITHUB_ENV"
+
       - name: Build macOS app archive
         run: |
           xcodebuild archive \
@@ -80,29 +172,112 @@ jobs:
             CODE_SIGN_IDENTITY="Developer ID Application" \
             DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
+            MARKETING_VERSION="$MARKETING_VERSION" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            SPARKLE_APPCAST_URL="$SPARKLE_APPCAST_URL" \
+            SPARKLE_PUBLIC_KEY="$SPARKLE_PUBLIC_KEY" \
             ARCHS=arm64
+
+      - name: Export archived app
+        run: |
+          if [[ -z "${APP_PROFILE_UUID:-}" || -z "${WIDGET_PROFILE_UUID:-}" ]]; then
+            echo "Missing profile UUID env vars from provisioning profile install step."
+            exit 1
+          fi
+
+          EXPORT_OPTIONS_PATH="$RUNNER_TEMP/ExportOptions.plist"
+          cat > "$EXPORT_OPTIONS_PATH" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>developer-id</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>teamID</key>
+            <string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingCertificate</key>
+            <string>Developer ID Application</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>crapshack.BitDream</key>
+              <string>$APP_PROFILE_UUID</string>
+              <key>crapshack.BitDream.BitDreamWidgets</key>
+              <string>$WIDGET_PROFILE_UUID</string>
+            </dict>
+          </dict>
+          </plist>
+          PLIST
+
+          echo "EXPORT_OPTIONS_PATH=$EXPORT_OPTIONS_PATH" >> "$GITHUB_ENV"
+
+          xcodebuild -exportArchive \
+            -archivePath build/BitDream.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist "$EXPORT_OPTIONS_PATH"
+
+      - name: Verify embedded Sparkle settings
+        run: |
+          APP_PATH="$(find build/export -maxdepth 2 -type d -name 'BitDream.app' -print -quit)"
+          if [[ -z "${APP_PATH}" ]]; then
+            echo "BitDream.app not found in export output."
+            exit 1
+          fi
+
+          APP_INFO_PLIST="$APP_PATH/Contents/Info.plist"
+          if [[ ! -f "$APP_INFO_PLIST" ]]; then
+            echo "Missing app Info.plist at $APP_INFO_PLIST"
+            exit 1
+          fi
+
+          EMBEDDED_FEED_URL="$(/usr/libexec/PlistBuddy -c 'Print :SUFeedURL' "$APP_INFO_PLIST" 2>/dev/null || true)"
+          if [[ -z "${EMBEDDED_FEED_URL:-}" ]]; then
+            echo "Embedded SUFeedURL is missing from app Info.plist"
+            exit 1
+          fi
+
+          if [[ "$EMBEDDED_FEED_URL" != "$SPARKLE_APPCAST_URL" ]]; then
+            echo "Embedded SUFeedURL does not match SPARKLE_APPCAST_URL"
+            echo "Embedded: $EMBEDDED_FEED_URL"
+            echo "Expected: $SPARKLE_APPCAST_URL"
+            exit 1
+          fi
+
+          EMBEDDED_PUBLIC_KEY="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$APP_INFO_PLIST" 2>/dev/null || true)"
+          if [[ -z "${EMBEDDED_PUBLIC_KEY:-}" ]]; then
+            echo "Embedded SUPublicEDKey is missing from app Info.plist"
+            exit 1
+          fi
+
+          if [[ "$EMBEDDED_PUBLIC_KEY" != "$SPARKLE_PUBLIC_KEY" ]]; then
+            echo "Embedded SUPublicEDKey does not match SPARKLE_PUBLIC_KEY"
+            echo "Embedded: $EMBEDDED_PUBLIC_KEY"
+            echo "Expected: $SPARKLE_PUBLIC_KEY"
+            exit 1
+          fi
 
       - name: Create DMG
         run: |
           mkdir -p dmg-contents
 
-          APP_PATH="$(find build/BitDream.xcarchive/Products/Applications -maxdepth 1 -name '*.app' -print -quit)"
+          APP_PATH="$(find build/export -maxdepth 2 -type d -name 'BitDream.app' -print -quit)"
           if [[ -z "${APP_PATH}" ]]; then
-            echo "No .app bundle found in archive output."
+            echo "BitDream.app not found in export output."
             exit 1
           fi
 
-          cp -R "${APP_PATH}" dmg-contents/
+          cp -R "$APP_PATH" dmg-contents/
           hdiutil create \
             -volname "BitDream" \
             -srcfolder dmg-contents \
             -ov \
             -format UDZO \
-            "BitDream-${{ github.ref_name }}-arm64.dmg"
+            "BitDream-${RELEASE_TAG}-arm64.dmg"
 
       - name: Sign DMG
         run: |
-          DMG_PATH="BitDream-${{ github.ref_name }}-arm64.dmg"
+          DMG_PATH="BitDream-${RELEASE_TAG}-arm64.dmg"
           codesign --force \
             --sign "Developer ID Application" \
             --keychain "$KEYCHAIN_PATH" \
@@ -130,7 +305,7 @@ jobs:
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
         run: |
-          DMG_PATH="BitDream-${{ github.ref_name }}-arm64.dmg"
+          DMG_PATH="BitDream-${RELEASE_TAG}-arm64.dmg"
           NOTARY_RESULT_PATH="$RUNNER_TEMP/notary-result.json"
 
           xcrun notarytool submit "$DMG_PATH" \
@@ -159,19 +334,19 @@ jobs:
 
       - name: Staple notarization ticket
         run: |
-          DMG_PATH="BitDream-${{ github.ref_name }}-arm64.dmg"
+          DMG_PATH="BitDream-${RELEASE_TAG}-arm64.dmg"
           xcrun stapler staple "$DMG_PATH"
           xcrun stapler validate "$DMG_PATH"
 
       - name: Verify signed artifact
         run: |
-          APP_PATH="$(find build/BitDream.xcarchive/Products/Applications -maxdepth 1 -name '*.app' -print -quit)"
+          APP_PATH="$(find build/export -maxdepth 2 -type d -name 'BitDream.app' -print -quit)"
           if [[ -z "${APP_PATH}" ]]; then
-            echo "No .app bundle found in archive output."
+            echo "BitDream.app not found in export output."
             exit 1
           fi
 
-          DMG_PATH="BitDream-${{ github.ref_name }}-arm64.dmg"
+          DMG_PATH="BitDream-${RELEASE_TAG}-arm64.dmg"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
           spctl --assess --type execute --verbose=4 "$APP_PATH"
           codesign --verify --verbose=2 "$DMG_PATH"
@@ -181,15 +356,124 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          DMG_PATH="BitDream-${{ github.ref_name }}-arm64.dmg"
-          if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
-            gh release upload "${{ github.ref_name }}" "$DMG_PATH" --clobber
+          DMG_PATH="BitDream-${RELEASE_TAG}-arm64.dmg"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "$DMG_PATH" --clobber
           else
-            gh release create "${{ github.ref_name }}" \
-              --title "${{ github.ref_name }}" \
-              --generate-notes \
-              "$DMG_PATH"
+            if [[ "${IS_PRERELEASE}" == "true" ]]; then
+              gh release create "$RELEASE_TAG" \
+                --title "$RELEASE_TAG" \
+                --generate-notes \
+                --prerelease \
+                "$DMG_PATH"
+            else
+              gh release create "$RELEASE_TAG" \
+                --title "$RELEASE_TAG" \
+                --generate-notes \
+                "$DMG_PATH"
+            fi
           fi
+
+      - name: Prepare Sparkle private key
+        env:
+          SPARKLE_PRIVATE_KEY_BASE64: ${{ secrets.SPARKLE_PRIVATE_KEY_BASE64 }}
+        run: |
+          if [[ -z "${SPARKLE_PRIVATE_KEY_BASE64:-}" ]]; then
+            echo "Missing required Sparkle secret: SPARKLE_PRIVATE_KEY_BASE64"
+            exit 1
+          fi
+
+          SPARKLE_KEY_PATH="$RUNNER_TEMP/sparkle-ed25519-private-key"
+          printf '%s' "$SPARKLE_PRIVATE_KEY_BASE64" | base64 -D -o "$SPARKLE_KEY_PATH"
+          chmod 600 "$SPARKLE_KEY_PATH"
+          echo "SPARKLE_KEY_PATH=$SPARKLE_KEY_PATH" >> "$GITHUB_ENV"
+
+      - name: Generate Sparkle appcast
+        env:
+          REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          APPCAST_WORK_DIR="appcast-work"
+          PAGES_DIR="pages"
+          DMG_PATH="BitDream-${RELEASE_TAG}-arm64.dmg"
+          DOWNLOAD_PREFIX="${REPOSITORY_URL}/releases/download/${RELEASE_TAG}/"
+          RELEASE_LINK="${REPOSITORY_URL}/releases/tag/${RELEASE_TAG}"
+
+          if [[ -z "${SPARKLE_APPCAST_URL:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_APPCAST_URL"
+            exit 1
+          fi
+
+          GENERATE_APPCAST="$(find "$HOME/Library/Developer/Xcode/DerivedData" -path '*/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast' -print -quit)"
+          if [[ -z "${GENERATE_APPCAST}" ]]; then
+            GENERATE_APPCAST="$(find "$HOME/Library/Developer/Xcode/DerivedData" -path '*/SourcePackages/checkouts/Sparkle/bin/generate_appcast' -print -quit)"
+          fi
+          if [[ -z "${GENERATE_APPCAST}" ]]; then
+            echo "Could not locate Sparkle's generate_appcast tool."
+            exit 1
+          fi
+
+          rm -rf "$APPCAST_WORK_DIR" "$PAGES_DIR"
+          mkdir -p "$APPCAST_WORK_DIR" "$PAGES_DIR"
+
+          if curl -fsSL "$SPARKLE_APPCAST_URL" -o "$APPCAST_WORK_DIR/appcast.xml"; then
+            echo "Using existing appcast.xml from GitHub Pages"
+          else
+            echo "No existing appcast.xml found; generating a new feed"
+          fi
+
+          cp "$DMG_PATH" "$APPCAST_WORK_DIR/"
+
+          "$GENERATE_APPCAST" \
+            --ed-key-file "$SPARKLE_KEY_PATH" \
+            --download-url-prefix "$DOWNLOAD_PREFIX" \
+            --link "$RELEASE_LINK" \
+            --maximum-deltas 0 \
+            --maximum-versions 0 \
+            "$APPCAST_WORK_DIR" | tee "$RUNNER_TEMP/generate-appcast.log"
+
+          cp "$APPCAST_WORK_DIR/appcast.xml" "$PAGES_DIR/appcast.xml"
+
+      - name: Validate appcast
+        run: |
+          APPCAST_PATH="pages/appcast.xml"
+          DMG_FILE="BitDream-${RELEASE_TAG}-arm64.dmg"
+
+          if [[ ! -f "$APPCAST_PATH" ]]; then
+            echo "Generated appcast.xml is missing"
+            exit 1
+          fi
+
+          xmllint --noout "$APPCAST_PATH"
+
+          if ! grep -q 'sparkle:edSignature=' "$APPCAST_PATH"; then
+            echo "Generated appcast is missing sparkle:edSignature"
+            exit 1
+          fi
+
+          if ! grep -q "${DMG_FILE}" "$APPCAST_PATH"; then
+            echo "Generated appcast is missing the current DMG enclosure"
+            exit 1
+          fi
+
+      - name: Upload appcast build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sparkle-appcast-${{ github.ref_name }}
+          path: |
+            pages/appcast.xml
+            ${{ runner.temp }}/generate-appcast.log
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
       - name: Cleanup signing keychain
         if: always()
@@ -199,4 +483,10 @@ jobs:
           fi
           if [[ -n "${NOTARY_API_KEY_PATH:-}" ]]; then
             rm -f "$NOTARY_API_KEY_PATH"
+          fi
+          if [[ -n "${SPARKLE_KEY_PATH:-}" ]]; then
+            rm -f "$SPARKLE_KEY_PATH"
+          fi
+          if [[ -n "${EXPORT_OPTIONS_PATH:-}" ]]; then
+            rm -f "$EXPORT_OPTIONS_PATH"
           fi

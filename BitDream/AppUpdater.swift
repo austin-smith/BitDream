@@ -1,0 +1,71 @@
+#if os(macOS)
+import Foundation
+import Sparkle
+
+@MainActor
+final class AppUpdater: NSObject, ObservableObject {
+    static let defaultAutomaticallyChecksForUpdates = true
+
+    @Published private(set) var canCheckForUpdates: Bool = false
+    @Published private(set) var lastUpdateCheckDate: Date?
+
+    private lazy var updaterController = SPUStandardUpdaterController(
+        startingUpdater: false,
+        updaterDelegate: self,
+        userDriverDelegate: nil
+    )
+
+    private var hasStartedUpdater = false
+    private var canCheckObservation: NSKeyValueObservation?
+
+    var automaticallyChecksForUpdates: Bool {
+        get { updaterController.updater.automaticallyChecksForUpdates }
+        set { updaterController.updater.automaticallyChecksForUpdates = newValue }
+    }
+
+    override init() {
+        super.init()
+        // Force initialization after self is fully initialized.
+        _ = updaterController
+        observeUpdaterState()
+        refreshState()
+    }
+
+    func start() {
+        guard !hasStartedUpdater else { return }
+        updaterController.startUpdater()
+        hasStartedUpdater = true
+        refreshState()
+    }
+
+    func checkForUpdates() {
+        guard canCheckForUpdates else { return }
+        updaterController.checkForUpdates(nil)
+    }
+
+    func resetToDefaults() {
+        automaticallyChecksForUpdates = Self.defaultAutomaticallyChecksForUpdates
+    }
+
+    private func refreshState() {
+        canCheckForUpdates = updaterController.updater.canCheckForUpdates
+        lastUpdateCheckDate = updaterController.updater.lastUpdateCheckDate
+    }
+
+    private func observeUpdaterState() {
+        canCheckObservation = updaterController.updater.observe(\.canCheckForUpdates, options: [.initial, .new]) { [weak self] _, change in
+            guard let value = change.newValue else { return }
+            Task { @MainActor [weak self] in
+                self?.canCheckForUpdates = value
+            }
+        }
+    }
+}
+
+extension AppUpdater: SPUUpdaterDelegate {
+    func updater(_ updater: SPUUpdater, didFinishUpdateCycleFor updateCheck: SPUUpdateCheck, error: (any Error)?) {
+        refreshState()
+    }
+}
+
+#endif
