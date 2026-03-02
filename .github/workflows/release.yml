@@ -287,9 +287,9 @@ jobs:
             --background "$DMG_BACKGROUND_PATH" \
             --icon-size 128 \
             --text-size 14 \
-            --icon "BitDream.app" 116 166 \
+            --icon "BitDream.app" 180 230 \
             --hide-extension "BitDream.app" \
-            --app-drop-link 416 166 \
+            --app-drop-link 480 230 \
             "$DMG_PATH" \
             "dmg-contents/"
 
