@@ -31,6 +31,10 @@ jobs:
           fi
 
           VERSION="${BASH_REMATCH[1]}"
+          MARKETING_VERSION="$VERSION"
+          if [[ "$VERSION" =~ ^([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            MARKETING_VERSION="${BASH_REMATCH[1]}"
+          fi
           IS_PRERELEASE=false
           # Stable is exactly X.Y.Z; anything else is treated as prerelease metadata.
           if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -41,6 +45,7 @@ jobs:
 
           echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
           echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "MARKETING_VERSION=$MARKETING_VERSION" >> "$GITHUB_ENV"
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
           echo "IS_PRERELEASE=$IS_PRERELEASE" >> "$GITHUB_ENV"
 
@@ -167,7 +172,7 @@ jobs:
             CODE_SIGN_IDENTITY="Developer ID Application" \
             DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
-            MARKETING_VERSION="$RELEASE_VERSION" \
+            MARKETING_VERSION="$MARKETING_VERSION" \
             CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             SPARKLE_APPCAST_URL="$SPARKLE_APPCAST_URL" \
             SPARKLE_PUBLIC_KEY="$SPARKLE_PUBLIC_KEY" \
