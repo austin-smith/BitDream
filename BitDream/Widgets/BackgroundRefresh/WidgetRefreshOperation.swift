@@ -2,7 +2,6 @@
 
 import Foundation
 import CoreData
-import KeychainAccess
 import WidgetKit
 
 private let widgetRefreshQueue: OperationQueue = {
@@ -18,7 +17,6 @@ private let widgetRefreshQueue: OperationQueue = {
 /// execution context, and uses a private Core Data background context.
 final class WidgetRefreshOperation: Operation, @unchecked Sendable {
     private let context: NSManagedObjectContext
-    private let keychain = Keychain(service: "crapshack.BitDream")
     private static let backgroundWaitTimeout: DispatchTimeInterval = .seconds(15)
 
     override init() {
@@ -56,10 +54,7 @@ final class WidgetRefreshOperation: Operation, @unchecked Sendable {
         config.scheme = host.isSSL ? "https" : "http"
 
         let username = host.username ?? ""
-        let password: String = {
-            if let name = host.name, let stored = keychain[name] { return stored }
-            return ""
-        }()
+        let password = KeychainPasswordStore.readPassword(for: host)
         let auth = TransmissionAuth(username: username, password: password)
 
         let group = DispatchGroup()

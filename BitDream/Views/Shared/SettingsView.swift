@@ -1,6 +1,5 @@
 import SwiftUI
 import Foundation
-import KeychainAccess
 
 /// Platform-agnostic wrapper for SettingsView
 /// This view simply delegates to the appropriate platform-specific implementation

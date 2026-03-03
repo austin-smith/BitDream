@@ -251,7 +251,9 @@ struct BitDreamApp: App {
                 .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
                 .immediateTheme(manager: themeManager)
-                .task { BackgroundRefreshManager.schedule() }
+                .task {
+                    BackgroundRefreshManager.schedule()
+                }
                 .onChange(of: scenePhase) { oldPhase, newPhase in
                     if newPhase == .background {
                         BackgroundRefreshManager.schedule()

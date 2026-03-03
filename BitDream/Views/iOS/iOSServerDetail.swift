@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import KeychainAccess
 import CoreData
 
 #if os(iOS)
@@ -11,8 +10,6 @@ struct iOSServerDetail: View {
     var hosts: FetchedResults<Host>
     @State var host: Host?
     var isAddNew: Bool
-
-    let keychain = Keychain(service: "crapshack.BitDream")
 
     @State var nameInput: String = ""
     @State var hostInput: String = ""
@@ -117,7 +114,7 @@ struct iOSServerDetail: View {
             .onAppear {
                 if (!isAddNew) {
                     if let host = host {
-                        loadServerData(host: host, keychain: keychain) { name, def, hostIn, port, ssl, user, pass in
+                        loadServerData(host: host) { name, def, hostIn, port, ssl, user, pass in
                             nameInput = name
                             isDefault = def
                             hostInput = hostIn
@@ -161,8 +158,7 @@ struct iOSServerDetail: View {
                                     isDefault: isDefault,
                                     isSSL: isSSL,
                                     viewContext: viewContext,
-                                    store: store,
-                                    keychain: keychain
+                                    store: store
                                 ) {
                                     dismiss()
                                 }
@@ -185,8 +181,7 @@ struct iOSServerDetail: View {
                                         isDefault: isDefault,
                                         isSSL: isSSL,
                                         viewContext: viewContext,
-                                        hosts: hosts,
-                                        keychain: keychain
+                                        hosts: hosts
                                     ) {
                                         dismiss()
                                     }

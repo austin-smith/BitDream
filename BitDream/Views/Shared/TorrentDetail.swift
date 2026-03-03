@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import KeychainAccess
 import CoreData
 
 struct TorrentDetail: View {

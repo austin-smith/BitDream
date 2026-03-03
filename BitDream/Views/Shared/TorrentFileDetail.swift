@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import KeychainAccess
 import UniformTypeIdentifiers
 
 // MARK: - UI Extensions for Domain Models

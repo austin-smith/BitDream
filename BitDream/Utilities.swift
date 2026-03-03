@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import CoreData
-import KeychainAccess
 import WidgetKit
 import UniformTypeIdentifiers
 
@@ -266,14 +265,8 @@ func makeConfig(store: Store) -> (config: TransmissionConfig, auth: Transmission
     config.port = Int(host.port)
     config.scheme = host.isSSL ? "https" : "http"
 
-    let keychain = Keychain(service: "crapshack.BitDream")
     let username = host.username ?? ""
-    let password: String = {
-        if let hostName = host.name, let stored = keychain[hostName] {
-            return stored
-        }
-        return ""
-    }()
+    let password = KeychainPasswordStore.readPassword(for: host)
     let auth = TransmissionAuth(username: username, password: password)
 
     return (config: config, auth: auth)

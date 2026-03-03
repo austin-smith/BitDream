@@ -1,6 +1,5 @@
 import SwiftUI
 import CoreData
-import KeychainAccess
 
 /// Platform-agnostic wrapper for ServerList view
 /// This view simply delegates to the appropriate platform-specific implementation
@@ -66,6 +65,7 @@ func deleteServer(
     }
 
     // Delete the server
+    KeychainPasswordStore.deletePassword(for: host)
     viewContext.delete(host)
     try? viewContext.save()
     completion()

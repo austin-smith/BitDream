@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import KeychainAccess
 import CoreData
 
 /// Platform-agnostic wrapper for ServerDetail view
@@ -60,7 +59,6 @@ func saveNewServer(
     isSSL: Bool,
     viewContext: NSManagedObjectContext,
     store: Store,
-    keychain: Keychain,
     completion: @escaping () -> Void
 ) {
     // Validate required fields
@@ -79,11 +77,12 @@ func saveNewServer(
     newHost.username = userInput
     newHost.isDefault = isDefault
     newHost.isSSL = isSSL
+    _ = ensureCredentialKey(for: newHost)
 
     try? viewContext.save()
 
-    // Save password to keychain using the final name
-    keychain[newHost.name!] = passInput
+    // Save password to keychain
+    KeychainPasswordStore.savePassword(passInput, for: newHost)
 
     // if there is no host currently set, then set it to the one being created
     if (store.host == nil) {
@@ -105,7 +104,6 @@ func updateExistingServer(
     isSSL: Bool,
     viewContext: NSManagedObjectContext,
     hosts: FetchedResults<Host>,
-    keychain: Keychain,
     completion: @escaping () -> Void
 ) {
     // Save host
@@ -115,6 +113,7 @@ func updateExistingServer(
     host.port = Int16(portInput)
     host.username = userInput
     host.isSSL = isSSL
+    _ = ensureCredentialKey(for: host)
 
     // If default is being enabled then ensure to disable it on any current default server
     if (isDefault) {
@@ -128,7 +127,7 @@ func updateExistingServer(
     try? viewContext.save()
 
     // Save password to keychain
-    keychain[nameInput] = passInput
+    KeychainPasswordStore.savePassword(passInput, for: host)
 
     completion()
 }
@@ -136,7 +135,6 @@ func updateExistingServer(
 /// Loads server data into state variables
 func loadServerData(
     host: Host,
-    keychain: Keychain,
     onLoad: @escaping (String, Bool, String, Int, Bool, String, String) -> Void
 ) {
     let nameInput = host.name ?? ""
@@ -145,7 +143,7 @@ func loadServerData(
     let portInput = Int(host.port)
     let isSSL = host.isSSL
     let userInput = host.username ?? ""
-    let passInput = keychain[host.name!] ?? ""
+    let passInput = KeychainPasswordStore.readPassword(for: host)
 
     onLoad(nameInput, isDefault, hostInput, portInput, isSSL, userInput, passInput)
 }
@@ -156,6 +154,7 @@ func deleteServer(
     viewContext: NSManagedObjectContext,
     completion: @escaping () -> Void
 ) {
+    KeychainPasswordStore.deletePassword(for: host)
     viewContext.delete(host)
     try? viewContext.save()
     completion()

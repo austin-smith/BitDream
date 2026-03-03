@@ -2,7 +2,6 @@
 import Foundation
 import BackgroundTasks
 import CoreData
-import KeychainAccess
 import WidgetKit
 
 enum BackgroundRefreshManager {
