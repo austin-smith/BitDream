@@ -12,78 +12,21 @@ enum KeychainPasswordStore {
             return password
         }
 
-        // TODO(remove-legacy-keychain): Delete this fallback after the legacy name/server-based
-        // credential migration window has passed and all supported installs are on credentialKey.
-        let legacyAccounts = legacyAccounts(for: host)
-        for legacyAccount in legacyAccounts {
-            guard let legacyPassword = readPassword(account: legacyAccount) else { continue }
-
-            if upsertPassword(legacyPassword, account: primaryAccount) {
-                _ = deletePassword(account: legacyAccount)
-            }
-
-            return legacyPassword
-        }
-
         return ""
     }
 
-    static func savePassword(_ password: String, for host: Host, previousLegacyName: String? = nil) {
+    static func savePassword(_ password: String, for host: Host) {
         let primaryAccount = accountForPrimaryCredential(for: host)
         _ = upsertPassword(password, account: primaryAccount)
-
-        // TODO(remove-legacy-keychain): Remove legacy-account cleanup once all users are migrated.
-        var accountsToDelete = Set(legacyAccounts(for: host))
-        if let previousLegacyName {
-            let trimmed = previousLegacyName.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmed.isEmpty {
-                accountsToDelete.insert(trimmed)
-            }
-        }
-
-        for account in accountsToDelete {
-            _ = deletePassword(account: account)
-        }
     }
 
-    static func deletePassword(for host: Host, legacyNames: [String] = []) {
+    static func deletePassword(for host: Host) {
         let primaryAccount = accountForPrimaryCredential(for: host)
         _ = deletePassword(account: primaryAccount)
-
-        // TODO(remove-legacy-keychain): Remove legacy-name deletes after migration cleanup sunset.
-        var accountsToDelete = Set(legacyAccounts(for: host))
-        for legacyName in legacyNames {
-            let trimmed = legacyName.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !trimmed.isEmpty {
-                accountsToDelete.insert(trimmed)
-            }
-        }
-
-        for account in accountsToDelete {
-            _ = deletePassword(account: account)
-        }
     }
 
     private static func accountForPrimaryCredential(for host: Host) -> String {
         "host:\(ensureCredentialKey(for: host))"
-    }
-
-    private static func legacyAccounts(for host: Host) -> [String] {
-        var accounts: [String] = []
-        appendUniqueAccount(host.name, to: &accounts)
-        appendUniqueAccount(host.server, to: &accounts)
-        return accounts
-    }
-
-    private static func appendUniqueAccount(_ candidate: String?, to accounts: inout [String]) {
-        guard let candidate else { return }
-
-        let trimmed = candidate.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-
-        if !accounts.contains(trimmed) {
-            accounts.append(trimmed)
-        }
     }
 
     private static func baseQuery(account: String) -> [CFString: Any] {

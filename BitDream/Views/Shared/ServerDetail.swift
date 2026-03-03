@@ -106,8 +106,6 @@ func updateExistingServer(
     hosts: FetchedResults<Host>,
     completion: @escaping () -> Void
 ) {
-    let previousLegacyName = host.name
-
     // Save host
     host.name = nameInput
     host.isDefault = isDefault
@@ -129,11 +127,7 @@ func updateExistingServer(
     try? viewContext.save()
 
     // Save password to keychain
-    KeychainPasswordStore.savePassword(
-        passInput,
-        for: host,
-        previousLegacyName: previousLegacyName
-    )
+    KeychainPasswordStore.savePassword(passInput, for: host)
 
     completion()
 }
