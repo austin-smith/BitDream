@@ -277,12 +277,19 @@ jobs:
             exit 1
           fi
 
+          VOLUME_ICON_PATH="$(find "$APP_PATH/Contents/Resources" -maxdepth 1 -type f -name '*.icns' -print -quit)"
+          if [[ -z "${VOLUME_ICON_PATH:-}" ]]; then
+            echo "No .icns volume icon found in app bundle resources."
+            exit 1
+          fi
+
           cp -R "$APP_PATH" dmg-contents/
           DMG_PATH="BitDream-${RELEASE_TAG}-arm64.dmg"
           rm -f "$DMG_PATH"
 
           create-dmg \
-            --volname "BitDream" \
+            --volname "BitDream ${MARKETING_VERSION}" \
+            --volicon "$VOLUME_ICON_PATH" \
             --window-size 660 420 \
             --background "$DMG_BACKGROUND_PATH" \
             --icon-size 128 \
