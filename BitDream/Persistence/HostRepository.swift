@@ -241,7 +241,7 @@ final class HostRepository: HostPersisting {
 
         let records = hosts.map { host in
             let name = (host.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            HostRefreshRecord(
+            return HostRefreshRecord(
                 serverID: host.serverID,
                 name: name,
                 server: host.server ?? "",
