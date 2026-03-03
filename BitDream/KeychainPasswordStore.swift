@@ -1,6 +1,5 @@
 import Foundation
 import Security
-import CoreData
 
 enum KeychainPasswordStore {
     private static let service = "crapshack.BitDream"
