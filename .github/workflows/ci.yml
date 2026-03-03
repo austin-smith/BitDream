@@ -22,6 +22,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Write CI build settings override
+        env:
+          SPARKLE_APPCAST_URL: ${{ vars.SPARKLE_APPCAST_URL }}
+          SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+        run: |
+          if [[ -z "${SPARKLE_APPCAST_URL:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_APPCAST_URL"
+            exit 1
+          fi
+
+          if [[ -z "${SPARKLE_PUBLIC_KEY:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_PUBLIC_KEY"
+            exit 1
+          fi
+
+          cat > Config/BuildSettings.local.xcconfig <<EOF
+          SPARKLE_APPCAST_URL = $SPARKLE_APPCAST_URL
+          SPARKLE_PUBLIC_KEY = $SPARKLE_PUBLIC_KEY
+          EOF
+
       - name: Build app (macOS)
         run: |
           xcodebuild build \
@@ -40,6 +60,26 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Write CI build settings override
+        env:
+          SPARKLE_APPCAST_URL: ${{ vars.SPARKLE_APPCAST_URL }}
+          SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+        run: |
+          if [[ -z "${SPARKLE_APPCAST_URL:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_APPCAST_URL"
+            exit 1
+          fi
+
+          if [[ -z "${SPARKLE_PUBLIC_KEY:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_PUBLIC_KEY"
+            exit 1
+          fi
+
+          cat > Config/BuildSettings.local.xcconfig <<EOF
+          SPARKLE_APPCAST_URL = $SPARKLE_APPCAST_URL
+          SPARKLE_PUBLIC_KEY = $SPARKLE_PUBLIC_KEY
+          EOF
 
       - name: Build app (iOS)
         run: |
