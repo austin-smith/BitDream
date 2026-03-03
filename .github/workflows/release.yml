@@ -293,7 +293,7 @@ jobs:
             --window-size 660 420 \
             --background "$DMG_BACKGROUND_PATH" \
             --icon-size 128 \
-            --text-size 14 \
+            --text-size 13 \
             --icon "BitDream.app" 180 165 \
             --hide-extension "BitDream.app" \
             --app-drop-link 480 165 \
