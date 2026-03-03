@@ -83,6 +83,7 @@
 		4D1000023B00000000B1C2D3 /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D1000033B00000000B1C2D3 /* AppUpdater.swift */; };
 		4D3A00023C00000000E1F1A1 /* KeychainPasswordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3A00043C00000000E1F1A1 /* KeychainPasswordStore.swift */; };
 		4D3A00053C00000000E1F1A1 /* Host.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3A00063C00000000E1F1A1 /* Host.swift */; };
+		4D4A00123D00000000E2F2A2 /* HostRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D4A00113D00000000E2F2A2 /* HostRepository.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -185,6 +186,7 @@
 		4D2000023B10000000C3D4E5 /* BuildSettings.example.local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildSettings.example.local.xcconfig; sourceTree = "<group>"; };
 		4D3A00043C00000000E1F1A1 /* KeychainPasswordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainPasswordStore.swift; sourceTree = "<group>"; };
 		4D3A00063C00000000E1F1A1 /* Host.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Host.swift; sourceTree = "<group>"; };
+		4D4A00113D00000000E2F2A2 /* HostRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostRepository.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -270,6 +272,7 @@
 				4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */,
 				4D3A00043C00000000E1F1A1 /* KeychainPasswordStore.swift */,
 				4B1DADE0295E6C440037E9FB /* Persistence.swift */,
+				4D4A00103D00000000E2F2A2 /* Persistence */,
 				4B1DAE0F295E702B0037E9FB /* Store.swift */,
 				4BD938E92D82AF6F006CE97C /* ThemeManager.swift */,
 				4B054C852E6FEB58004DDB99 /* TorrentExtensions.swift */,
@@ -443,6 +446,14 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		4D4A00103D00000000E2F2A2 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				4D4A00113D00000000E2F2A2 /* HostRepository.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -558,6 +569,7 @@
 				4D1000023B00000000B1C2D3 /* AppUpdater.swift in Sources */,
 				4D3A00053C00000000E1F1A1 /* Host.swift in Sources */,
 				4B1DADE1295E6C440037E9FB /* Persistence.swift in Sources */,
+				4D4A00123D00000000E2F2A2 /* HostRepository.swift in Sources */,
 				4B1DAE10295E702B0037E9FB /* Store.swift in Sources */,
 				4B4E4C8A2E8A2B4D00418FD7 /* AppIconCatalog.swift in Sources */,
 				4BF593BB2E89C8C400A8C1FC /* iOSTorrentPeerDetail.swift in Sources */,
@@ -797,7 +809,7 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -848,7 +860,7 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -889,7 +901,7 @@
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -934,7 +946,7 @@
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};

@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import SwiftData
 import WidgetKit
 import UniformTypeIdentifiers
 
@@ -181,30 +180,6 @@ func updateSessionInfo(store: Store, update: @escaping (TransmissionSessionRespo
     })
 }
 
-private func persistHostVersionIfNeeded(_ version: String, serverID: String) {
-    let targetServerID = serverID
-    Task.detached(priority: .utility) {
-        do {
-            let context = ModelContext(PersistenceController.shared.container)
-            let descriptor = FetchDescriptor<Host>(
-                predicate: #Predicate<Host> { host in
-                    host.serverID == targetServerID
-                }
-            )
-
-            guard let host = try context.fetch(descriptor).first else { return }
-            guard host.version != version else { return }
-
-            host.version = version
-            if context.hasChanges {
-                try context.save()
-            }
-        } catch {
-            print("Failed to persist host version: \(error)")
-        }
-    }
-}
-
 func pollTransmissionData(store: Store) {
     let info = makeConfig(store: store)
     getSessionStats(config: info.config, auth: info.auth, onReceived: { sessions, err in
@@ -244,9 +219,10 @@ func pollTransmissionData(store: Store) {
                 store.sessionConfiguration = sessionInfo
                 store.defaultDownloadDir = sessionInfo.downloadDir
 
-                // Persist host version off the main context to avoid blocking UI updates.
                 if let host = store.host {
-                    persistHostVersionIfNeeded(sessionInfo.version, serverID: host.serverID)
+                    Task { @MainActor in
+                        await HostRepository.shared.persistVersionIfNeeded(serverID: host.serverID, version: sessionInfo.version)
+                    }
                 }
             }
         })
@@ -256,12 +232,6 @@ func pollTransmissionData(store: Store) {
 // updates all Transmission data based on current host
 func refreshTransmissionData(store: Store) {
     pollTransmissionData(store: store)
-
-    // Also refresh servers index for widgets
-    if let host = store.host {
-        let serverName = host.name ?? host.server ?? "Server"
-        writeServersIndex(serverID: host.serverID, serverName: serverName)
-    }
 }
 
 // MARK: - Helpers
@@ -280,7 +250,12 @@ func makeConfig(store: Store) -> (config: TransmissionConfig, auth: Transmission
     config.scheme = host.isSSL ? "https" : "http"
 
     let username = host.username ?? ""
-    let password = KeychainPasswordStore.readPassword(for: host)
+    let password: String
+    if let credentialKey = KeychainPasswordStore.credentialKeyIfPresent(for: host) {
+        password = KeychainPasswordStore.readPassword(credentialKey: credentialKey)
+    } else {
+        password = ""
+    }
     let auth = TransmissionAuth(username: username, password: password)
 
     return (config: config, auth: auth)

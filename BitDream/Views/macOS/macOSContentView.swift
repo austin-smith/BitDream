@@ -281,9 +281,6 @@ struct macOSContentView: View {
             updateAppBadge()
         }
         .onAppear {
-            if store.host == nil {
-                ensureStartupConnectionBehaviorApplied(store: store, modelContext: modelContext)
-            }
             updateAppBadge()
         }
     }

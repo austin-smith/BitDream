@@ -3,14 +3,18 @@
 import Foundation
 import WidgetKit
 
-func writeServersIndex(serverID: String, serverName: String) {
+func writeServersIndex(servers: [ServerSummary]) {
     guard let url = AppGroup.Files.serversIndexURL() else { return }
 
-    let existing: ServerIndex = AppGroupJSON.read(ServerIndex.self, from: url) ?? ServerIndex(servers: [])
-    let summary = ServerSummary(id: serverID, name: serverName)
-    var dict = Dictionary(uniqueKeysWithValues: existing.servers.map { ($0.id, $0) })
-    dict[serverID] = summary
-    let updated = ServerIndex(servers: Array(dict.values).sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending })
+    let deduplicated = Dictionary(uniqueKeysWithValues: servers.map { ($0.id, $0) })
+    let sortedServers = Array(deduplicated.values).sorted { lhs, rhs in
+        let compare = lhs.name.localizedCaseInsensitiveCompare(rhs.name)
+        if compare == .orderedSame {
+            return lhs.id < rhs.id
+        }
+        return compare == .orderedAscending
+    }
+    let updated = ServerIndex(servers: sortedServers)
     _ = AppGroupJSON.write(updated, to: url)
 }
 

@@ -147,10 +147,6 @@ class Store: NSObject, ObservableObject {
         if let current = self.host, current.serverID == host.serverID {
             return
         }
-        _ = host.ensureCredentialKey()
-        if let context = host.modelContext, context.hasChanges {
-            try? context.save()
-        }
         cancelRetryTimer()
         markConnecting()
         var config = TransmissionConfig()
@@ -178,7 +174,10 @@ class Store: NSObject, ObservableObject {
     }
 
     func readPassword(for host: Host) -> String {
-        KeychainPasswordStore.readPassword(for: host)
+        guard let credentialKey = KeychainPasswordStore.credentialKeyIfPresent(for: host) else {
+            return ""
+        }
+        return KeychainPasswordStore.readPassword(credentialKey: credentialKey)
     }
 
     func startTimer() {

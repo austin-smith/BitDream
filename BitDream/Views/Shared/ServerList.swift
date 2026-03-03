@@ -33,45 +33,46 @@ struct ServerList: View {
 
 // MARK: - Shared Helper Functions
 
-/// Deletes a server from Core Data and handles disconnection if needed
+private func userFacingServerListPersistenceMessage(_ error: Error) -> String {
+    if let persistenceError = error as? HostPersistenceError {
+        return persistenceError.userMessage
+    }
+    return error.localizedDescription
+}
+
+/// Deletes a server through the host repository and handles disconnection if needed
 func deleteServer(
     host: Host,
     store: Store,
     hosts: [Host],
-    modelContext: ModelContext,
-    completion: @escaping () -> Void
+    modelContext _: ModelContext,
+    completion: @escaping () -> Void,
+    onError: @escaping (String) -> Void = { _ in }
 ) {
-    // If deleting the connected server, disconnect first
-    let currentStore = store // Create a local reference to avoid wrapper issues
-    if host.serverID == currentStore.host?.serverID {
-        // Find another server to connect to
-        let otherServers = hosts.filter { $0.serverID != host.serverID }
-        if let newServer = otherServers.first {
-            // Set the new server as the current host
-            currentStore.setHost(host: newServer)
-            // Save the change to UserDefaults
-            UserDefaults.standard.set(newServer.serverID, forKey: UserDefaultsKeys.selectedHost)
-        } else {
-            // If no other servers, set host to nil
-            // Clear the current host
-            currentStore.host = nil
-            // Remove from UserDefaults
-            UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedHost)
+    let currentStore = store
+    Task { @MainActor in
+        do {
+            try await HostRepository.shared.delete(serverID: host.serverID)
 
-            // Reset any state that might cause crashes when no server is connected
-            currentStore.torrents = []
-            currentStore.sessionStats = nil
+            if host.serverID == currentStore.host?.serverID {
+                let otherServers = hosts.filter { $0.serverID != host.serverID }
+                if let newServer = otherServers.first {
+                    currentStore.setHost(host: newServer)
+                    UserDefaults.standard.set(newServer.serverID, forKey: UserDefaultsKeys.selectedHost)
+                } else {
+                    currentStore.host = nil
+                    UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedHost)
+                    currentStore.torrents = []
+                    currentStore.sessionStats = nil
+                    currentStore.timer.invalidate()
+                }
+            }
 
-            // Stop any background refresh operations that might try to access the host
-            currentStore.timer.invalidate()
+            completion()
+        } catch {
+            onError(userFacingServerListPersistenceMessage(error))
         }
     }
-
-    // Delete the server
-    KeychainPasswordStore.deletePassword(for: host)
-    modelContext.delete(host)
-    try? modelContext.save()
-    completion()
 }
 
 /// Creates a confirmation message for server deletion

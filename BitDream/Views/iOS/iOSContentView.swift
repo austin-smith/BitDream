@@ -53,11 +53,6 @@ struct iOSContentView: View {
                 actionToolbarItems
                 bottomToolbarItems
             }
-            .onAppear {
-                if store.host == nil {
-                    ensureStartupConnectionBehaviorApplied(store: store, modelContext: modelContext)
-                }
-            }
             .onChange(of: sortProperty) { oldValue, newValue in
                 UserDefaults.standard.sortProperty = newValue
             }

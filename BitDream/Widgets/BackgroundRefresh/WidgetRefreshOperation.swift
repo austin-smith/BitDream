@@ -1,7 +1,6 @@
 //  Shared refresh logic for both iOS and macOS widget background updates.
 
 import Foundation
-import SwiftData
 import WidgetKit
 
 private let widgetRefreshQueue: OperationQueue = {
@@ -14,19 +13,19 @@ private let widgetRefreshQueue: OperationQueue = {
 
 /// Shared operation that fetches data for all servers and writes widget snapshots.
 /// Concurrency: Runs on an `OperationQueue`, confines mutable state to the operation's
-/// execution context, and fetches hosts from a local SwiftData context.
+/// execution context, and fetches hosts from an app-private refresh catalog.
 final class WidgetRefreshOperation: Operation, @unchecked Sendable {
     private static let backgroundWaitTimeout: DispatchTimeInterval = .seconds(15)
 }
 
 private struct HostSnapshot: Sendable {
     let serverID: String
-    let name: String?
-    let server: String?
-    let port: Int16
-    let username: String?
+    let name: String
+    let server: String
+    let port: Int
+    let username: String
     let isSSL: Bool
-    let credentialKey: String?
+    let credentialKey: String
 }
 
 extension WidgetRefreshOperation {
@@ -35,6 +34,9 @@ extension WidgetRefreshOperation {
 
         let hosts: [HostSnapshot] = fetchHosts()
         guard !hosts.isEmpty else { return }
+
+        let summaries = hosts.map { ServerSummary(id: $0.serverID, name: $0.name) }
+        writeServersIndex(servers: summaries)
 
         for host in hosts {
             if isCancelled { break }
@@ -46,19 +48,23 @@ extension WidgetRefreshOperation {
     }
 
     private func fetchHosts() -> [HostSnapshot] {
-        let context = ModelContext(PersistenceController.shared.container)
-        let descriptor = FetchDescriptor<Host>()
-        let hosts = (try? context.fetch(descriptor)) ?? []
+        let hosts = HostRefreshCatalogStore.loadRecordsSnapshot()
 
-        return hosts.map { host in
-            HostSnapshot(
+        return hosts.compactMap { host in
+            let server = host.server.trimmingCharacters(in: .whitespacesAndNewlines)
+            let credentialKey = host.credentialKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !server.isEmpty, !credentialKey.isEmpty else {
+                return nil
+            }
+
+            return HostSnapshot(
                 serverID: host.serverID,
                 name: host.name,
-                server: host.server,
+                server: server,
                 port: host.port,
                 username: host.username,
                 isSSL: host.isSSL,
-                credentialKey: host.credentialKey
+                credentialKey: credentialKey
             )
         }
     }
@@ -70,14 +76,8 @@ extension WidgetRefreshOperation {
         config.port = Int(host.port)
         config.scheme = host.isSSL ? "https" : "http"
 
-        let username = host.username ?? ""
-        let password: String
-        if let credentialKey = host.credentialKey?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !credentialKey.isEmpty {
-            password = KeychainPasswordStore.readPassword(credentialKey: credentialKey)
-        } else {
-            password = ""
-        }
+        let username = host.username
+        let password = KeychainPasswordStore.readPassword(credentialKey: host.credentialKey)
         let auth = TransmissionAuth(username: username, password: password)
 
         let group = DispatchGroup()
@@ -101,15 +101,14 @@ extension WidgetRefreshOperation {
         // Wait with timeout to respect background limits
         let waitResult = group.wait(timeout: .now() + Self.backgroundWaitTimeout)
         if waitResult == .timedOut {
-            let hostIdentifier: String = host.name ?? host.server ?? "Server"
+            let hostIdentifier: String = host.name.isEmpty ? host.server : host.name
             print("WidgetRefreshOperation: timed out waiting for background fetches for host \(hostIdentifier)")
             return
         }
 
         guard let stats = stats, !isCancelled else { return }
 
-        let serverName = host.name ?? host.server ?? "Server"
-        writeServersIndex(serverID: host.serverID, serverName: serverName)
+        let serverName = host.name
         writeSessionSnapshot(
             serverID: host.serverID,
             serverName: serverName,

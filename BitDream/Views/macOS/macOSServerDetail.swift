@@ -193,6 +193,10 @@ struct macOSServerDetail: View {
                                 store: store
                             ) {
                                 dismiss()
+                            } onError: { message in
+                                store.globalAlertTitle = "Error"
+                                store.globalAlertMessage = message
+                                store.showGlobalAlert = true
                             }
                         }
                     } else {
@@ -211,6 +215,10 @@ struct macOSServerDetail: View {
                                     hosts: hosts
                                 ) {
                                     dismiss()
+                                } onError: { message in
+                                    store.globalAlertTitle = "Error"
+                                    store.globalAlertMessage = message
+                                    store.showGlobalAlert = true
                                 }
                             }
                         }
@@ -228,8 +236,12 @@ struct macOSServerDetail: View {
         .alert("Delete Server", isPresented: $showingDeleteConfirmation) {
             Button("Delete", role: .destructive) {
                 if let host = host {
-                    deleteServer(host: host, modelContext: modelContext) {
+                    deleteServerFromDetail(host: host, store: store, hosts: hosts, modelContext: modelContext) {
                         dismiss()
+                    } onError: { message in
+                        store.globalAlertTitle = "Error"
+                        store.globalAlertMessage = message
+                        store.showGlobalAlert = true
                     }
                 }
             }
