@@ -65,6 +65,7 @@ func deleteServer(
     }
 
     // Delete the server
+    KeychainPasswordStore.deletePassword(for: host)
     viewContext.delete(host)
     try? viewContext.save()
     completion()

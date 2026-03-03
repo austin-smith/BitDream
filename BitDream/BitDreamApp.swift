@@ -87,6 +87,8 @@ struct BitDreamApp: App {
                     }
                 }
                 .task {
+                    // TODO(remove-credentialkey-backfill): Remove startup backfill call when migration sunset ends.
+                    backfillMissingCredentialKeys(in: persistenceController.container.viewContext)
                     appFileOpenDelegate.configure(with: store)
                     ensureStartupConnectionBehaviorApplied(store: store, viewContext: persistenceController.container.viewContext)
                     syncMenuBarStatusItem()
@@ -251,7 +253,11 @@ struct BitDreamApp: App {
                 .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
                 .immediateTheme(manager: themeManager)
-                .task { BackgroundRefreshManager.schedule() }
+                .task {
+                    // TODO(remove-credentialkey-backfill): Remove startup backfill call when migration sunset ends.
+                    backfillMissingCredentialKeys(in: persistenceController.container.viewContext)
+                    BackgroundRefreshManager.schedule()
+                }
                 .onChange(of: scenePhase) { oldPhase, newPhase in
                     if newPhase == .background {
                         BackgroundRefreshManager.schedule()

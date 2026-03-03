@@ -126,6 +126,8 @@ func applyStartupConnectionBehavior(hosts: [Host], store: Store) {
 
 func ensureStartupConnectionBehaviorApplied(store: Store, viewContext: NSManagedObjectContext) {
     guard store.host == nil else { return }
+    // TODO(remove-credentialkey-backfill): Remove this call once credentialKey migration has aged out.
+    backfillMissingCredentialKeys(in: viewContext)
 
     let request = NSFetchRequest<Host>(entityName: "Host")
     request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]

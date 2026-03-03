@@ -1,6 +1,5 @@
 import SwiftUI
 import Foundation
-import KeychainAccess
 
 #if os(macOS)
 enum AddTorrentInitialMode {
@@ -147,6 +146,10 @@ class Store: NSObject, ObservableObject {
         if let current = self.host, current.objectID == host.objectID {
             return
         }
+        _ = ensureCredentialKey(for: host)
+        if let context = host.managedObjectContext, context.hasChanges {
+            try? context.save()
+        }
         cancelRetryTimer()
         markConnecting()
         var config = TransmissionConfig()
@@ -154,7 +157,7 @@ class Store: NSObject, ObservableObject {
         config.port = Int(host.port)
         config.scheme = host.isSSL ? "https" : "http"
 
-        let auth = TransmissionAuth(username: host.username!, password: readPassword(name: host.name!))
+        let auth = TransmissionAuth(username: host.username ?? "", password: readPassword(for: host))
         self.server = Server(config: config, auth: auth)
         self.host = host
         UserDefaults.standard.set(host.objectID.uriRepresentation().absoluteString, forKey: UserDefaultsKeys.selectedHost)
@@ -173,14 +176,8 @@ class Store: NSObject, ObservableObject {
         startTimer()
     }
 
-    func readPassword(name: String) -> String {
-        let keychain = Keychain(service: "crapshack.BitDream")
-        if let password = keychain[name] {
-            return password
-        }
-        else {
-            return "Whoopsie!"
-        }
+    func readPassword(for host: Host) -> String {
+        KeychainPasswordStore.readPassword(for: host)
     }
 
     func startTimer() {

@@ -1,19 +1,10 @@
 {
-  "originHash" : "ed64ad672db0a803cffc1f6c5ad34b3c55bd40260e49e472670f64d35d098c2d",
+  "originHash" : "5751fcbe53b64441ed73aceb16987d6b3fc3ebc666cb9ec2de1f6a2d441f2515",
   "pins" : [
-    {
-      "identity" : "keychainaccess",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/kishikawakatsumi/KeychainAccess.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "e0c7eebc5a4465a3c4680764f26b7a61f567cdaf"
-      }
-    },
     {
       "identity" : "sparkle",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/sparkle-project/Sparkle.git",
+      "location" : "https://github.com/sparkle-project/Sparkle",
       "state" : {
         "revision" : "21d8df80440b1ca3b65fa82e40782f1e5a9e6ba2",
         "version" : "2.9.0"

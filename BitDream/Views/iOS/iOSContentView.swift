@@ -1,6 +1,5 @@
 import SwiftUI
 import Foundation
-import KeychainAccess
 import CoreData
 
 #if os(iOS)
@@ -15,8 +14,6 @@ struct iOSContentView: View {
         self.hosts = hosts
         self.store = store
     }
-
-    private var keychain = Keychain(service: "crapshack.BitDream")
 
     // Store the selected torrent IDs
     @State private var selectedTorrentIds: Set<Int> = []
