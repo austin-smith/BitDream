@@ -81,7 +81,6 @@
 		4C1000153A00000000A1B2C3 /* MenuBarStatusItemBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000053A00000000A1B2C3 /* MenuBarStatusItemBridge.swift */; };
 		4D1000013B00000000B1C2D3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 4D1000073B00000000B1C2D3 /* Sparkle */; };
 		4D1000023B00000000B1C2D3 /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D1000033B00000000B1C2D3 /* AppUpdater.swift */; };
-		4D3A00013C00000000E1F1A1 /* HostCredentialKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3A00033C00000000E1F1A1 /* HostCredentialKey.swift */; };
 		4D3A00023C00000000E1F1A1 /* KeychainPasswordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3A00043C00000000E1F1A1 /* KeychainPasswordStore.swift */; };
 		4D3A00053C00000000E1F1A1 /* Host.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3A00063C00000000E1F1A1 /* Host.swift */; };
 /* End PBXBuildFile section */
@@ -185,7 +184,6 @@
 		4D1000033B00000000B1C2D3 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
 		4D2000013B10000000C3D4E5 /* BuildSettings.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildSettings.xcconfig; sourceTree = "<group>"; };
 		4D2000023B10000000C3D4E5 /* BuildSettings.example.local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildSettings.example.local.xcconfig; sourceTree = "<group>"; };
-		4D3A00033C00000000E1F1A1 /* HostCredentialKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostCredentialKey.swift; sourceTree = "<group>"; };
 		4D3A00043C00000000E1F1A1 /* KeychainPasswordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainPasswordStore.swift; sourceTree = "<group>"; };
 		4D3A00063C00000000E1F1A1 /* Host.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Host.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -233,6 +231,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4B0349D52F56EB81008ED58D /* AppIcon */ = {
+			isa = PBXGroup;
+			children = (
+				4B4E4C892E8A2B4D00418FD7 /* AppIconCatalog.swift */,
+				4BDE147E2F0B015C00FF6A46 /* AppIconManager.swift */,
+			);
+			path = AppIcon;
+			sourceTree = "<group>";
+		};
 		4B1DADD2295E6C440037E9FB = {
 			isa = PBXGroup;
 			children = (
@@ -261,17 +268,15 @@
 				4B908AED2E6EBAC700C2DA5C /* Info.plist */,
 				4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */,
 				4B7EF5702E6E9F0C00C1C281 /* AppConfig.swift */,
-				4B4E4C892E8A2B4D00418FD7 /* AppIconCatalog.swift */,
-				4BDE147E2F0B015C00FF6A46 /* AppIconManager.swift */,
 				4D1000033B00000000B1C2D3 /* AppUpdater.swift */,
 				4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */,
-				4D3A00033C00000000E1F1A1 /* HostCredentialKey.swift */,
 				4D3A00043C00000000E1F1A1 /* KeychainPasswordStore.swift */,
 				4B1DADE0295E6C440037E9FB /* Persistence.swift */,
 				4B1DAE0F295E702B0037E9FB /* Store.swift */,
 				4BD938E92D82AF6F006CE97C /* ThemeManager.swift */,
 				4B054C852E6FEB58004DDB99 /* TorrentExtensions.swift */,
 				4B1DADF8295E6EBA0037E9FB /* Utilities.swift */,
+				4B0349D52F56EB81008ED58D /* AppIcon */,
 				4B73985B2E70097C00D06E5D /* Delegates */,
 				4D3A00073C00000000E1F1A1 /* Models */,
 				4B1DADFC295E6F0F0037E9FB /* Transmission */,
@@ -559,7 +564,6 @@
 				4B4E4C8A2E8A2B4D00418FD7 /* AppIconCatalog.swift in Sources */,
 				4BF593BB2E89C8C400A8C1FC /* iOSTorrentPeerDetail.swift in Sources */,
 				4B1DADF9295E6EBA0037E9FB /* Utilities.swift in Sources */,
-				4D3A00013C00000000E1F1A1 /* HostCredentialKey.swift in Sources */,
 				4D3A00023C00000000E1F1A1 /* KeychainPasswordStore.swift in Sources */,
 				4B6F1EB02D82D340003D8F6E /* iOSSettingsView.swift in Sources */,
 				4BC6F24B2E89F8510037DFDF /* PiecesGridView.swift in Sources */,

@@ -147,7 +147,7 @@ class Store: NSObject, ObservableObject {
         if let current = self.host, current.serverID == host.serverID {
             return
         }
-        _ = ensureCredentialKey(for: host)
+        _ = host.ensureCredentialKey()
         if let context = host.modelContext, context.hasChanges {
             try? context.save()
         }

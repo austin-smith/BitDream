@@ -1,15 +1,10 @@
 #if os(iOS)
 import Foundation
 
-/// Presentation model for an app icon choice.
 public struct AppIconPresentation {
-    /// CFBundleAlternateIcons key; nil means primary/default icon
     public let key: String?
-    /// Friendly title you control
     public let title: String
-    /// Name of preview image in the main app asset catalog
     public let previewAssetName: String
-    /// Ordering hint (lower first)
     public let order: Int
 
     public init(key: String?, title: String, previewAssetName: String, order: Int) {
@@ -20,7 +15,6 @@ public struct AppIconPresentation {
     }
 }
 
-/// Single source of truth for app icon names and preview assets (iOS-only).
 public enum AppIconCatalog {
     public static let entries: [AppIconPresentation] = [
         AppIconPresentation(key: nil, title: "Byte-sized Dreams", previewAssetName: "AppIconPreview-Default", order: 0),

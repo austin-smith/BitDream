@@ -34,4 +34,18 @@ final class Host {
         self.username = username
         self.version = version
     }
+
+    @discardableResult
+    func ensureCredentialKey() -> String {
+        if let existing = credentialKey?.trimmingCharacters(in: .whitespacesAndNewlines), !existing.isEmpty {
+            if credentialKey != existing {
+                credentialKey = existing
+            }
+            return existing
+        }
+
+        let generated = UUID().uuidString
+        credentialKey = generated
+        return generated
+    }
 }

@@ -2,8 +2,6 @@
 import SwiftUI
 import UIKit
 
-/// Shared manager for reading and updating the current app icon on iOS.
-/// Centralizes state so multiple views stay in sync and refreshes on foreground.
 @MainActor
 final class AppIconManager: ObservableObject {
     static let shared = AppIconManager()
@@ -37,12 +35,10 @@ final class AppIconManager: ObservableObject {
         }
     }
 
-    /// Refresh the in-memory state from the system.
     func refreshCurrentIcon() {
         currentIconName = UIApplication.shared.alternateIconName
     }
 
-    /// Attempt to switch to a specific icon name (nil = primary).
     func selectIcon(name: String?) {
         lastError = nil
 
@@ -71,4 +67,3 @@ final class AppIconManager: ObservableObject {
     }
 }
 #endif
-

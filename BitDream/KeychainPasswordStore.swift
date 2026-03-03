@@ -5,15 +5,15 @@ enum KeychainPasswordStore {
     private static let service = "crapshack.BitDream"
 
     static func readPassword(for host: Host) -> String {
-        readPassword(credentialKey: ensureCredentialKey(for: host))
+        readPassword(credentialKey: host.ensureCredentialKey())
     }
 
     static func savePassword(_ password: String, for host: Host) {
-        savePassword(password, credentialKey: ensureCredentialKey(for: host))
+        savePassword(password, credentialKey: host.ensureCredentialKey())
     }
 
     static func deletePassword(for host: Host) {
-        deletePassword(credentialKey: ensureCredentialKey(for: host))
+        deletePassword(credentialKey: host.ensureCredentialKey())
     }
 
     static func readPassword(credentialKey: String) -> String {

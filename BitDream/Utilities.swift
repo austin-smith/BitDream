@@ -4,9 +4,7 @@ import SwiftData
 import WidgetKit
 import UniformTypeIdentifiers
 
-/*--------------------------------------------------------------------------------------------
- Sorting stuff
- -------------------------------------------------------------------------------------------*/
+// MARK: - Sorting
 
 struct SortDescriptor<Value> {
     var comparator: (Value, Value) -> ComparisonResult
@@ -104,9 +102,7 @@ func sortTorrents(_ torrents: [Torrent], by property: SortProperty, order: SortO
     }
 }
 
-/*--------------------------------------------------------------------------------------------
- Formatting stuff
- -------------------------------------------------------------------------------------------*/
+// MARK: - Formatting
 
 public let byteCountFormatter: ByteCountFormatter = {
     var formatter = ByteCountFormatter()
@@ -124,9 +120,7 @@ func formatSpeed(_ bytesPerSecond: Int64) -> String {
     return "\(base)/s"
 }
 
-/*--------------------------------------------------------------------------------------------
- Refresh transmission data functions
- -------------------------------------------------------------------------------------------*/
+// MARK: - Transmission Refresh
 
 /// Updates the list of torrents when called
 func updateList(store: Store, update: @escaping ([Torrent]) -> Void, retry: Int = 0) {
@@ -164,7 +158,15 @@ func updateSessionStats(store: Store, update: @escaping (SessionStats) -> Void, 
 
         update(stats)
         // Write widget snapshot; non-blocking and non-fatal on failure
-        writeSessionSnapshot(store: store, stats: stats)
+        if let host = store.host {
+            let serverName = host.name ?? host.server ?? "Server"
+            writeSessionSnapshot(
+                serverID: host.serverID,
+                serverName: serverName,
+                stats: stats,
+                torrents: store.torrents
+            )
+        }
     })
 }
 
@@ -221,7 +223,15 @@ func pollTransmissionData(store: Store) {
         DispatchQueue.main.async {
             store.sessionStats = stats
         }
-        writeSessionSnapshot(store: store, stats: stats)
+        if let host = store.host {
+            let serverName = host.name ?? host.server ?? "Server"
+            writeSessionSnapshot(
+                serverID: host.serverID,
+                serverName: serverName,
+                stats: stats,
+                torrents: store.torrents
+            )
+        }
 
         updateList(store: store, update: { vals in
             DispatchQueue.main.async {
@@ -248,12 +258,13 @@ func refreshTransmissionData(store: Store) {
     pollTransmissionData(store: store)
 
     // Also refresh servers index for widgets
-    writeServersIndex(store: store)
+    if let host = store.host {
+        let serverName = host.name ?? host.server ?? "Server"
+        writeServersIndex(serverID: host.serverID, serverName: serverName)
+    }
 }
 
-/*--------------------------------------------------------------------------------------------
- More functions
- -------------------------------------------------------------------------------------------*/
+// MARK: - Helpers
 
 /// Function for generating config and auth for API calls
 /// - Parameter store: The current `Store` containing session information needed for creating the config.
@@ -275,9 +286,7 @@ func makeConfig(store: Store) -> (config: TransmissionConfig, auth: Transmission
     return (config: config, auth: auth)
 }
 
-/*--------------------------------------------------------------------------------------------
-| Transmission Response Handling
-| -------------------------------------------------------------------------------------------*/
+// MARK: - Transmission Response Handling
 
 /// Handles TransmissionResponse with proper error handling and user feedback
 /// - Parameters:
@@ -327,9 +336,7 @@ extension View {
     }
 }
 
-/*--------------------------------------------------------------------------------------------
-| Bencode Parser for Torrent Files
-| -------------------------------------------------------------------------------------------*/
+// MARK: - Torrent Parsing
 
 /// Torrent metadata structure
 struct TorrentInfo {

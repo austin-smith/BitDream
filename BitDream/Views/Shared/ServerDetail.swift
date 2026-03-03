@@ -87,7 +87,7 @@ func saveNewServer(
         server: hostInput,
         username: userInput
     )
-    _ = ensureCredentialKey(for: newHost)
+    _ = newHost.ensureCredentialKey()
     modelContext.insert(newHost)
 
     try? modelContext.save()
@@ -124,7 +124,7 @@ func updateExistingServer(
     host.port = Int16(portInput)
     host.username = userInput
     host.isSSL = isSSL
-    _ = ensureCredentialKey(for: host)
+    _ = host.ensureCredentialKey()
 
     // If default is being enabled then ensure to disable it on any current default server
     if (isDefault) {

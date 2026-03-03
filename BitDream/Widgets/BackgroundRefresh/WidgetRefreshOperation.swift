@@ -108,22 +108,14 @@ extension WidgetRefreshOperation {
 
         guard let stats = stats, !isCancelled else { return }
 
-        // Write snapshots using temporary store
-        let tmpStore = Store()
-        tmpStore.host = Host(
+        let serverName = host.name ?? host.server ?? "Server"
+        writeServersIndex(serverID: host.serverID, serverName: serverName)
+        writeSessionSnapshot(
             serverID: host.serverID,
-            isDefault: false,
-            isSSL: host.isSSL,
-            credentialKey: host.credentialKey,
-            name: host.name,
-            port: host.port,
-            server: host.server,
-            username: host.username,
-            version: nil
+            serverName: serverName,
+            stats: stats,
+            torrents: torrents
         )
-        tmpStore.torrents = torrents
-        writeServersIndex(store: tmpStore)
-        writeSessionSnapshot(store: tmpStore, stats: stats)
     }
 }
 
