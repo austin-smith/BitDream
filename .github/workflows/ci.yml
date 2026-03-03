@@ -1,0 +1,93 @@
+name: Build Verification
+
+on:
+  pull_request:
+    branches:
+      - main
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos-build:
+    name: macOS Build
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write CI build settings override
+        env:
+          SPARKLE_APPCAST_URL: ${{ vars.SPARKLE_APPCAST_URL }}
+          SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+        run: |
+          if [[ -z "${SPARKLE_APPCAST_URL:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_APPCAST_URL"
+            exit 1
+          fi
+
+          if [[ -z "${SPARKLE_PUBLIC_KEY:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_PUBLIC_KEY"
+            exit 1
+          fi
+
+          cat > Config/BuildSettings.local.xcconfig <<EOF
+          SPARKLE_APPCAST_URL = $SPARKLE_APPCAST_URL
+          SPARKLE_PUBLIC_KEY = $SPARKLE_PUBLIC_KEY
+          EOF
+
+      - name: Build app (macOS)
+        run: |
+          xcodebuild build \
+            -project BitDream.xcodeproj \
+            -scheme BitDream \
+            -configuration Debug \
+            -destination "generic/platform=macOS" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+
+  ios-build:
+    name: iOS Build
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write CI build settings override
+        env:
+          SPARKLE_APPCAST_URL: ${{ vars.SPARKLE_APPCAST_URL }}
+          SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+        run: |
+          if [[ -z "${SPARKLE_APPCAST_URL:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_APPCAST_URL"
+            exit 1
+          fi
+
+          if [[ -z "${SPARKLE_PUBLIC_KEY:-}" ]]; then
+            echo "Missing required repository variable: SPARKLE_PUBLIC_KEY"
+            exit 1
+          fi
+
+          cat > Config/BuildSettings.local.xcconfig <<EOF
+          SPARKLE_APPCAST_URL = $SPARKLE_APPCAST_URL
+          SPARKLE_PUBLIC_KEY = $SPARKLE_PUBLIC_KEY
+          EOF
+
+      - name: Build app (iOS)
+        run: |
+          xcodebuild build \
+            -project BitDream.xcodeproj \
+            -scheme BitDream \
+            -configuration Debug \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
