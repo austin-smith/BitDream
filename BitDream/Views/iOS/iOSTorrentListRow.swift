@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import KeychainAccess
 
 #if os(iOS)
 struct iOSTorrentListRow: View {

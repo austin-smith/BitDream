@@ -9,8 +9,10 @@ xcuserdata/
 # Visual Studio Code
 .vscode
 
-# Build folder
+## Build artifacts
 build/
+.build/
+.derivedData/
 
 # macOS custom folder icon
 Icon[^a-zA-Z]

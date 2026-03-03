@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import KeychainAccess
 
 struct TorrentListRow: View {
     var torrent: Torrent
