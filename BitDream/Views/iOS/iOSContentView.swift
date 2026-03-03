@@ -1,16 +1,16 @@
 import SwiftUI
 import Foundation
-import CoreData
+import SwiftData
 
 #if os(iOS)
 struct iOSContentView: View {
-    let viewContext: NSManagedObjectContext
-    let hosts: FetchedResults<Host>
+    let modelContext: ModelContext
+    let hosts: [Host]
     @ObservedObject var store: Store
 
     // Add explicit initializer with internal access level
-    init(viewContext: NSManagedObjectContext, hosts: FetchedResults<Host>, store: Store) {
-        self.viewContext = viewContext
+    init(modelContext: ModelContext, hosts: [Host], store: Store) {
+        self.modelContext = modelContext
         self.hosts = hosts
         self.store = store
     }
@@ -55,7 +55,7 @@ struct iOSContentView: View {
             }
             .onAppear {
                 if store.host == nil {
-                    ensureStartupConnectionBehaviorApplied(store: store, viewContext: viewContext)
+                    ensureStartupConnectionBehaviorApplied(store: store, modelContext: modelContext)
                 }
             }
             .onChange(of: sortProperty) { oldValue, newValue in
@@ -77,16 +77,16 @@ struct iOSContentView: View {
             }
         } detail: {
             if let selectedTorrent = selectedTorrentsSet.first {
-                TorrentDetail(store: store, viewContext: viewContext, torrent: selectedTorrent)
+                TorrentDetail(store: store, torrent: selectedTorrent)
             } else {
                 Text("Select a Dream")
             }
         }
         .sheet(isPresented: $store.setup) {
-            ServerDetail(store: store, viewContext: viewContext, hosts: hosts, isAddNew: true)
+            ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)
         }
         .sheet(isPresented: $store.editServers) {
-            ServerList(store: store, viewContext: viewContext)
+            ServerList(store: store, modelContext: modelContext, hosts: hosts)
                 .toolbar {}
         }
         .sheet(isPresented: $store.isShowingAddAlert) {
@@ -145,8 +145,8 @@ struct iOSContentView: View {
                             }
                         }
                     )) {
-                        ForEach(hosts, id: \.self) { host in
-                            Text(host.name!)
+                        ForEach(hosts, id: \.serverID) { host in
+                            Text(host.name ?? "Unnamed Server")
                                 .tag(host as Host?)
                         }
                     }
@@ -292,13 +292,13 @@ struct iOSContentView: View {
 #else
 // Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
 struct iOSContentView: View {
-    let viewContext: NSManagedObjectContext
-    let hosts: FetchedResults<Host>
+    let modelContext: ModelContext
+    let hosts: [Host]
     @ObservedObject var store: Store
 
     // Add explicit initializer with internal access level
-    init(viewContext: NSManagedObjectContext, hosts: FetchedResults<Host>, store: Store) {
-        self.viewContext = viewContext
+    init(modelContext: ModelContext, hosts: [Host], store: Store) {
+        self.modelContext = modelContext
         self.hosts = hosts
         self.store = store
     }

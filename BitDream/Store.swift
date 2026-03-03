@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import SwiftData
 
 #if os(macOS)
 enum AddTorrentInitialMode {
@@ -143,11 +144,11 @@ class Store: NSObject, ObservableObject {
 
     public func setHost(host: Host) {
         // Avoid redundant resets if host is unchanged (prevents list flash)
-        if let current = self.host, current.objectID == host.objectID {
+        if let current = self.host, current.serverID == host.serverID {
             return
         }
         _ = ensureCredentialKey(for: host)
-        if let context = host.managedObjectContext, context.hasChanges {
+        if let context = host.modelContext, context.hasChanges {
             try? context.save()
         }
         cancelRetryTimer()
@@ -160,7 +161,7 @@ class Store: NSObject, ObservableObject {
         let auth = TransmissionAuth(username: host.username ?? "", password: readPassword(for: host))
         self.server = Server(config: config, auth: auth)
         self.host = host
-        UserDefaults.standard.set(host.objectID.uriRepresentation().absoluteString, forKey: UserDefaultsKeys.selectedHost)
+        UserDefaults.standard.set(host.serverID, forKey: UserDefaultsKeys.selectedHost)
         resetReconnectState()
 
         // Clear all local state so UI/actions can't use stale data from the previous host

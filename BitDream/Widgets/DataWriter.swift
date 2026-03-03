@@ -5,7 +5,7 @@ import WidgetKit
 
 func writeServersIndex(store: Store) {
     guard let host = store.host else { return }
-    let id = host.objectID.uriRepresentation().absoluteString
+    let id = host.serverID
     let name = host.name ?? host.server ?? "Server"
     guard let url = AppGroup.Files.serversIndexURL() else { return }
 
@@ -19,7 +19,7 @@ func writeServersIndex(store: Store) {
 
 func writeSessionSnapshot(store: Store, stats: SessionStats) {
     guard let host = store.host else { return }
-    let id = host.objectID.uriRepresentation().absoluteString
+    let id = host.serverID
     let name = host.name ?? host.server ?? "Server"
 
     let active = stats.activeTorrentCount

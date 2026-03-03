@@ -1,13 +1,11 @@
 import Foundation
 import SwiftUI
-import CoreData
 
 #if os(iOS)
 struct iOSTorrentDetail: View {
     @Environment(\.dismiss) private var dismiss
 
     @ObservedObject var store: Store
-    var viewContext: NSManagedObjectContext
     var torrent: Torrent
 
     @State public var files: [TorrentFile] = []
@@ -264,7 +262,6 @@ struct DetailViewLabelTag: View {
 // Empty struct for macOS to reference - this won't be compiled on iOS but provides the type
 struct iOSTorrentDetail: View {
     @ObservedObject var store: Store
-    var viewContext: NSManagedObjectContext
     var torrent: Torrent
 
     var body: some View {

@@ -1,22 +1,18 @@
 import Foundation
-import CoreData
 import SwiftUI
+import SwiftData
 
 #if os(macOS)
 struct macOSServerList: View {
     @Environment(\.dismiss) private var dismiss
-    var viewContext: NSManagedObjectContext
+    let modelContext: ModelContext
+    let hosts: [Host]
     @ObservedObject var store: Store
 
     @State var selected: Host? = nil
     @State private var showingAddServer = false
     @State private var confirmingDelete = false
     @State private var serverToDelete: Host? = nil
-
-    @FetchRequest(
-        entity: Host.entity(),
-        sortDescriptors: [NSSortDescriptor(key: "name", ascending: true)]
-    ) var hosts: FetchedResults<Host>
 
     var body: some View {
         VStack(spacing: 0) {
@@ -87,7 +83,7 @@ struct macOSServerList: View {
                                         }
 
                                         // Connected server badge
-                                        if host == store.host {
+                                        if host.serverID == store.host?.serverID {
                                             Text("Connected")
                                                 .font(.caption)
                                                 .foregroundColor(.green)
@@ -132,7 +128,7 @@ struct macOSServerList: View {
                 presenting: serverToDelete
             ) { host in
                 Button("Delete \(host.name ?? "Unnamed Server")", role: .destructive) {
-                    deleteServer(host: host, store: store, hosts: hosts, viewContext: viewContext) {
+                    deleteServer(host: host, store: store, hosts: hosts, modelContext: modelContext) {
                         serverToDelete = nil
                     }
                 }
@@ -159,11 +155,11 @@ struct macOSServerList: View {
         .background(Color(NSColor.windowBackgroundColor))
         // Sheet for editing an existing server
         .sheet(item: $selected) { host in
-            ServerDetail(store: store, viewContext: viewContext, hosts: hosts, host: host, isAddNew: false)
+            ServerDetail(store: store, modelContext: modelContext, hosts: hosts, host: host, isAddNew: false)
         }
         // Sheet for adding a new server
         .sheet(isPresented: $showingAddServer) {
-            ServerDetail(store: store, viewContext: viewContext, hosts: hosts, isAddNew: true)
+            ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)
         }
     }
 
@@ -205,11 +201,13 @@ struct macOSServerList: View {
 #else
 // Empty struct for iOS to reference - this won't be compiled on macOS but provides the type
 struct macOSServerList: View {
-    var viewContext: NSManagedObjectContext
+    let modelContext: ModelContext
+    let hosts: [Host]
     @ObservedObject var store: Store
 
-    init(store: Store, viewContext: NSManagedObjectContext) {
-        self.viewContext = viewContext
+    init(store: Store, modelContext: ModelContext, hosts: [Host]) {
+        self.modelContext = modelContext
+        self.hosts = hosts
         self.store = store
     }
 

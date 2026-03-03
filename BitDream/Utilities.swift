@@ -1,6 +1,6 @@
 import Foundation
 import SwiftUI
-import CoreData
+import SwiftData
 import WidgetKit
 import UniformTypeIdentifiers
 
@@ -179,15 +179,18 @@ func updateSessionInfo(store: Store, update: @escaping (TransmissionSessionRespo
     })
 }
 
-private func persistHostVersionIfNeeded(_ version: String, hostID: NSManagedObjectID) {
-    guard !hostID.isTemporaryID else { return }
-
-    let container = PersistenceController.shared.container
-    container.performBackgroundTask { context in
-        context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-
+private func persistHostVersionIfNeeded(_ version: String, serverID: String) {
+    let targetServerID = serverID
+    Task.detached(priority: .utility) {
         do {
-            guard let host = try context.existingObject(with: hostID) as? Host else { return }
+            let context = ModelContext(PersistenceController.shared.container)
+            let descriptor = FetchDescriptor<Host>(
+                predicate: #Predicate<Host> { host in
+                    host.serverID == targetServerID
+                }
+            )
+
+            guard let host = try context.fetch(descriptor).first else { return }
             guard host.version != version else { return }
 
             host.version = version
@@ -233,7 +236,7 @@ func pollTransmissionData(store: Store) {
 
                 // Persist host version off the main context to avoid blocking UI updates.
                 if let host = store.host {
-                    persistHostVersionIfNeeded(sessionInfo.version, hostID: host.objectID)
+                    persistHostVersionIfNeeded(sessionInfo.version, serverID: host.serverID)
                 }
             }
         })

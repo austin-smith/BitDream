@@ -1,17 +1,13 @@
 import Foundation
 import SwiftUI
-import CoreData
+import SwiftData
 
 #if os(iOS)
 struct iOSServerList: View {
     @Environment(\.dismiss) private var dismiss
-    var viewContext: NSManagedObjectContext
+    let modelContext: ModelContext
+    let hosts: [Host]
     @ObservedObject var store: Store
-
-    @FetchRequest(
-        entity: Host.entity(),
-        sortDescriptors: [NSSortDescriptor(key: "name", ascending: true)]
-    ) var hosts: FetchedResults<Host>
 
     @State private var showingAddServer = false
 
@@ -39,14 +35,14 @@ struct iOSServerList: View {
                     emptyServerListView
                 } else {
                     ForEach(hosts) { host in
-                        NavigationLink(host.name ?? "Unnamed Server", destination: ServerDetail(store: store, viewContext: viewContext, hosts: hosts, host: host, isAddNew: false))
+                        NavigationLink(host.name ?? "Unnamed Server", destination: ServerDetail(store: store, modelContext: modelContext, hosts: hosts, host: host, isAddNew: false))
                     }
                 }
             }
 
             // Footer
             HStack {
-                NavigationLink(destination: ServerDetail(store: store, viewContext: viewContext, hosts: hosts, isAddNew: true)) {
+                NavigationLink(destination: ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)) {
                     Label("Add New", systemImage: "plus")
                 }
                 .buttonStyle(.borderedProminent)
@@ -78,7 +74,7 @@ struct iOSServerList: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
-            NavigationLink(destination: ServerDetail(store: store, viewContext: viewContext, hosts: hosts, isAddNew: true)) {
+            NavigationLink(destination: ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)) {
                 Label("Add Your First Server", systemImage: "plus")
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
@@ -95,11 +91,13 @@ struct iOSServerList: View {
 #else
 // Empty struct for macOS to reference - this won't be compiled on iOS but provides the type
 struct iOSServerList: View {
-    var viewContext: NSManagedObjectContext
+    let modelContext: ModelContext
+    let hosts: [Host]
     @ObservedObject var store: Store
 
-    init(store: Store, viewContext: NSManagedObjectContext) {
-        self.viewContext = viewContext
+    init(store: Store, modelContext: ModelContext, hosts: [Host]) {
+        self.modelContext = modelContext
+        self.hosts = hosts
         self.store = store
     }
 

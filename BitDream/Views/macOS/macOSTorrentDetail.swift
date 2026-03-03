@@ -1,5 +1,4 @@
 import Foundation
-import CoreData
 import SwiftUI
 
 #if os(macOS)
@@ -8,7 +7,6 @@ struct macOSTorrentDetail: View {
     @Environment(\.colorScheme) var colorScheme
 
     @ObservedObject var store: Store
-    var viewContext: NSManagedObjectContext
     var torrent: Torrent
 
     @State public var files: [TorrentFile] = []
@@ -370,7 +368,6 @@ struct macOSSectionHeader: View {
 // Empty struct for iOS to reference - this won't be compiled on iOS but provides the type
 struct macOSTorrentDetail: View {
     @ObservedObject var store: Store
-    var viewContext: NSManagedObjectContext
     var torrent: Torrent
 
     var body: some View {

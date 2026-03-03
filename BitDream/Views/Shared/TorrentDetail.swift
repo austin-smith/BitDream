@@ -1,17 +1,15 @@
 import Foundation
 import SwiftUI
-import CoreData
 
 struct TorrentDetail: View {
     @ObservedObject var store: Store
-    var viewContext: NSManagedObjectContext
     var torrent: Torrent
 
     var body: some View {
         #if os(iOS)
-        iOSTorrentDetail(store: store, viewContext: viewContext, torrent: torrent)
+        iOSTorrentDetail(store: store, torrent: torrent)
         #elseif os(macOS)
-        macOSTorrentDetail(store: store, viewContext: viewContext, torrent: torrent)
+        macOSTorrentDetail(store: store, torrent: torrent)
         #endif
     }
 }

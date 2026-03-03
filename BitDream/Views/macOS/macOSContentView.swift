@@ -1,6 +1,6 @@
 import SwiftUI
 import Foundation
-import CoreData
+import SwiftData
 import UniformTypeIdentifiers
 
 #if os(macOS)
@@ -11,8 +11,8 @@ struct macOSContentView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openSettings) private var openSettings
     @State private var showingThemeSettings = false
-    let viewContext: NSManagedObjectContext
-    let hosts: FetchedResults<Host>
+    let modelContext: ModelContext
+    let hosts: [Host]
     @ObservedObject var store: Store
 
     // Add ThemeManager to access accent color
@@ -240,10 +240,10 @@ struct macOSContentView: View {
     private var viewWithSheets: some View {
         baseView
         .sheet(isPresented: $store.setup) {
-            ServerDetail(store: store, viewContext: viewContext, hosts: hosts, isAddNew: true)
+            ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)
         }
         .sheet(isPresented: $store.editServers) {
-            ServerList(store: store, viewContext: viewContext)
+            ServerList(store: store, modelContext: modelContext, hosts: hosts)
         }
         .sheet(isPresented: $store.isShowingAddAlert, onDismiss: {
             // Advance queued magnet links when the sheet closes
@@ -282,7 +282,7 @@ struct macOSContentView: View {
         }
         .onAppear {
             if store.host == nil {
-                ensureStartupConnectionBehaviorApplied(store: store, viewContext: viewContext)
+                ensureStartupConnectionBehaviorApplied(store: store, modelContext: modelContext)
             }
             updateAppBadge()
         }
@@ -563,7 +563,7 @@ struct macOSContentView: View {
             }
 
             Section("Servers") {
-                ForEach(hosts, id: \.self) { host in
+                ForEach(hosts, id: \.serverID) { host in
                     Button {
                         store.setHost(host: host)
                         // Clear selection when changing host
@@ -574,7 +574,7 @@ struct macOSContentView: View {
                         HStack {
                             Label(host.name ?? "Unnamed Server", systemImage: "server.rack")
                             Spacer()
-                            if host == store.host {
+                            if host.serverID == store.host?.serverID {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.blue)
                             }
@@ -752,7 +752,7 @@ struct macOSContentView: View {
         Group {
             if let selectedId = selectedTorrentIds.first,
                let selectedTorrent = store.torrents.first(where: { $0.id == selectedId }) {
-                TorrentDetail(store: store, viewContext: viewContext, torrent: selectedTorrent)
+                TorrentDetail(store: store, torrent: selectedTorrent)
                     .id(selectedTorrent.id)
             } else {
                 VStack {
@@ -988,8 +988,8 @@ struct LabelFilterChip: View {
 #else
 // Empty struct for iOS to reference - this won't be compiled on iOS but provides the type
 struct macOSContentView: View {
-    let viewContext: NSManagedObjectContext
-    let hosts: FetchedResults<Host>
+    let modelContext: ModelContext
+    let hosts: [Host]
     @ObservedObject var store: Store
 
     var body: some View {
