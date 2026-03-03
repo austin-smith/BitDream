@@ -1,13 +1,13 @@
 import Foundation
 import SwiftUI
-import CoreData
+import SwiftData
 
 /// Platform-agnostic wrapper for ServerDetail view
 /// This view simply delegates to the appropriate platform-specific implementation
 struct ServerDetail: View {
     @ObservedObject var store: Store
-    var viewContext: NSManagedObjectContext
-    var hosts: FetchedResults<Host>
+    let modelContext: ModelContext
+    let hosts: [Host]
     @State var host: Host?
     var isAddNew: Bool
 
@@ -29,7 +29,7 @@ struct ServerDetail: View {
         #if os(iOS)
         iOSServerDetail(
             store: store,
-            viewContext: viewContext,
+            modelContext: modelContext,
             hosts: hosts,
             host: host,
             isAddNew: isAddNew
@@ -37,7 +37,7 @@ struct ServerDetail: View {
         #elseif os(macOS)
         macOSServerDetail(
             store: store,
-            viewContext: viewContext,
+            modelContext: modelContext,
             hosts: hosts,
             host: host,
             isAddNew: isAddNew
@@ -57,7 +57,8 @@ func saveNewServer(
     passInput: String,
     isDefault: Bool,
     isSSL: Bool,
-    viewContext: NSManagedObjectContext,
+    modelContext: ModelContext,
+    hosts: [Host],
     store: Store,
     completion: @escaping () -> Void
 ) {
@@ -69,17 +70,27 @@ func saveNewServer(
     let finalNameInput = nameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?
         hostInput : nameInput
 
-    // Save host
-    let newHost = Host(context: viewContext)
-    newHost.name = finalNameInput
-    newHost.server = hostInput
-    newHost.port = Int16(portInput)
-    newHost.username = userInput
-    newHost.isDefault = isDefault
-    newHost.isSSL = isSSL
-    _ = ensureCredentialKey(for: newHost)
+    if isDefault {
+        hosts.forEach { host in
+            if host.isDefault {
+                host.isDefault = false
+            }
+        }
+    }
 
-    try? viewContext.save()
+    // Save host
+    let newHost = Host(
+        isDefault: isDefault,
+        isSSL: isSSL,
+        name: finalNameInput,
+        port: Int16(portInput),
+        server: hostInput,
+        username: userInput
+    )
+    _ = newHost.ensureCredentialKey()
+    modelContext.insert(newHost)
+
+    try? modelContext.save()
 
     // Save password to keychain
     KeychainPasswordStore.savePassword(passInput, for: newHost)
@@ -102,8 +113,8 @@ func updateExistingServer(
     passInput: String,
     isDefault: Bool,
     isSSL: Bool,
-    viewContext: NSManagedObjectContext,
-    hosts: FetchedResults<Host>,
+    modelContext: ModelContext,
+    hosts: [Host],
     completion: @escaping () -> Void
 ) {
     // Save host
@@ -113,18 +124,18 @@ func updateExistingServer(
     host.port = Int16(portInput)
     host.username = userInput
     host.isSSL = isSSL
-    _ = ensureCredentialKey(for: host)
+    _ = host.ensureCredentialKey()
 
     // If default is being enabled then ensure to disable it on any current default server
     if (isDefault) {
         hosts.forEach { h in
-            if (h.isDefault && h.id != host.id) {
-                h.isDefault.toggle()
+            if h.isDefault && h.serverID != host.serverID {
+                h.isDefault = false
             }
         }
     }
 
-    try? viewContext.save()
+    try? modelContext.save()
 
     // Save password to keychain
     KeychainPasswordStore.savePassword(passInput, for: host)
@@ -151,11 +162,11 @@ func loadServerData(
 /// Deletes a server from Core Data
 func deleteServer(
     host: Host,
-    viewContext: NSManagedObjectContext,
+    modelContext: ModelContext,
     completion: @escaping () -> Void
 ) {
     KeychainPasswordStore.deletePassword(for: host)
-    viewContext.delete(host)
-    try? viewContext.save()
+    modelContext.delete(host)
+    try? modelContext.save()
     completion()
 }

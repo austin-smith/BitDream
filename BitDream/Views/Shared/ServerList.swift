@@ -1,11 +1,12 @@
 import SwiftUI
-import CoreData
+import SwiftData
 
 /// Platform-agnostic wrapper for ServerList view
 /// This view simply delegates to the appropriate platform-specific implementation
 struct ServerList: View {
     @ObservedObject var store: Store
-    var viewContext: NSManagedObjectContext
+    let modelContext: ModelContext
+    let hosts: [Host]
 
     var body: some View {
         // Use NavigationStack for iOS to handle navigation properly
@@ -13,14 +14,16 @@ struct ServerList: View {
         #if os(iOS)
         NavigationStack {
             iOSServerList(
-                viewContext: viewContext,
+                modelContext: modelContext,
+                hosts: hosts,
                 store: store
             )
         }
         #else
         // No navigation container needed for macOS
         macOSServerList(
-            viewContext: viewContext,
+            modelContext: modelContext,
+            hosts: hosts,
             store: store
         )
         #endif
@@ -34,20 +37,20 @@ struct ServerList: View {
 func deleteServer(
     host: Host,
     store: Store,
-    hosts: FetchedResults<Host>,
-    viewContext: NSManagedObjectContext,
+    hosts: [Host],
+    modelContext: ModelContext,
     completion: @escaping () -> Void
 ) {
     // If deleting the connected server, disconnect first
     let currentStore = store // Create a local reference to avoid wrapper issues
-    if host == currentStore.host {
+    if host.serverID == currentStore.host?.serverID {
         // Find another server to connect to
-        let otherServers = hosts.filter { $0 != host }
+        let otherServers = hosts.filter { $0.serverID != host.serverID }
         if let newServer = otherServers.first {
             // Set the new server as the current host
-            currentStore.host = newServer
+            currentStore.setHost(host: newServer)
             // Save the change to UserDefaults
-            UserDefaults.standard.set(newServer.objectID.uriRepresentation().absoluteString, forKey: UserDefaultsKeys.selectedHost)
+            UserDefaults.standard.set(newServer.serverID, forKey: UserDefaultsKeys.selectedHost)
         } else {
             // If no other servers, set host to nil
             // Clear the current host
@@ -66,8 +69,8 @@ func deleteServer(
 
     // Delete the server
     KeychainPasswordStore.deletePassword(for: host)
-    viewContext.delete(host)
-    try? viewContext.save()
+    modelContext.delete(host)
+    try? modelContext.save()
     completion()
 }
 
@@ -78,7 +81,7 @@ func deleteConfirmationMessage(for host: Host, store: Store) -> some View {
     VStack(alignment: .leading, spacing: 8) {
         Text("Are you sure you want to delete \(host.name ?? "Unnamed Server")?")
 
-        if host == currentStore.host {
+        if host.serverID == currentStore.host?.serverID {
             Text("This is your currently connected server. You will be disconnected and connected to another server if available.")
                 .font(.caption)
                 .foregroundColor(.orange)

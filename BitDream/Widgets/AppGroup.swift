@@ -28,6 +28,26 @@ enum AppGroup {
         static func sessionURL(for serverId: String) -> URL? {
             AppGroup.containerURL()?.appendingPathComponent(sessionFilename(for: serverId), isDirectory: false)
         }
+
+        // TODO(swiftdata-cutover): Delete this function after the migration window.
+        // It exists only to clear stale widget files created before serverID-based IDs.
+        static func removeWidgetSnapshotFiles() {
+            guard let containerURL = AppGroup.containerURL(),
+                  let contents = try? FileManager.default.contentsOfDirectory(
+                    at: containerURL,
+                    includingPropertiesForKeys: nil,
+                    options: [.skipsHiddenFiles]
+                  ) else {
+                return
+            }
+
+            for fileURL in contents {
+                let name = fileURL.lastPathComponent
+                if name == serversIndexFilename || (name.hasPrefix("session_") && name.hasSuffix(".json")) {
+                    try? FileManager.default.removeItem(at: fileURL)
+                }
+            }
+        }
     }
 }
 

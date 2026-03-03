@@ -1,7 +1,7 @@
 //  Shared refresh logic for both iOS and macOS widget background updates.
 
 import Foundation
-import CoreData
+import SwiftData
 import WidgetKit
 
 private let widgetRefreshQueue: OperationQueue = {
@@ -14,21 +14,26 @@ private let widgetRefreshQueue: OperationQueue = {
 
 /// Shared operation that fetches data for all servers and writes widget snapshots.
 /// Concurrency: Runs on an `OperationQueue`, confines mutable state to the operation's
-/// execution context, and uses a private Core Data background context.
+/// execution context, and fetches hosts from a local SwiftData context.
 final class WidgetRefreshOperation: Operation, @unchecked Sendable {
-    private let context: NSManagedObjectContext
     private static let backgroundWaitTimeout: DispatchTimeInterval = .seconds(15)
+}
 
-    override init() {
-        self.context = PersistenceController.shared.container.newBackgroundContext()
-        self.context.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy
-        super.init()
-    }
+private struct HostSnapshot: Sendable {
+    let serverID: String
+    let name: String?
+    let server: String?
+    let port: Int16
+    let username: String?
+    let isSSL: Bool
+    let credentialKey: String?
+}
 
+extension WidgetRefreshOperation {
     override func main() {
         if isCancelled { return }
 
-        let hosts: [Host] = fetchHosts()
+        let hosts: [HostSnapshot] = fetchHosts()
         guard !hosts.isEmpty else { return }
 
         for host in hosts {
@@ -40,13 +45,25 @@ final class WidgetRefreshOperation: Operation, @unchecked Sendable {
         WidgetCenter.shared.reloadTimelines(ofKind: WidgetKind.sessionOverview)
     }
 
-    private func fetchHosts() -> [Host] {
-        let request = NSFetchRequest<Host>(entityName: "Host")
-        request.includesPendingChanges = false
-        return (try? context.fetch(request)) ?? []
+    private func fetchHosts() -> [HostSnapshot] {
+        let context = ModelContext(PersistenceController.shared.container)
+        let descriptor = FetchDescriptor<Host>()
+        let hosts = (try? context.fetch(descriptor)) ?? []
+
+        return hosts.map { host in
+            HostSnapshot(
+                serverID: host.serverID,
+                name: host.name,
+                server: host.server,
+                port: host.port,
+                username: host.username,
+                isSSL: host.isSSL,
+                credentialKey: host.credentialKey
+            )
+        }
     }
 
-    private func refreshHost(host: Host) {
+    private func refreshHost(host: HostSnapshot) {
         // Build Transmission config/auth
         var config = TransmissionConfig()
         config.host = host.server
@@ -54,7 +71,13 @@ final class WidgetRefreshOperation: Operation, @unchecked Sendable {
         config.scheme = host.isSSL ? "https" : "http"
 
         let username = host.username ?? ""
-        let password = KeychainPasswordStore.readPassword(for: host)
+        let password: String
+        if let credentialKey = host.credentialKey?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !credentialKey.isEmpty {
+            password = KeychainPasswordStore.readPassword(credentialKey: credentialKey)
+        } else {
+            password = ""
+        }
         let auth = TransmissionAuth(username: username, password: password)
 
         let group = DispatchGroup()
@@ -85,12 +108,14 @@ final class WidgetRefreshOperation: Operation, @unchecked Sendable {
 
         guard let stats = stats, !isCancelled else { return }
 
-        // Write snapshots using temporary store
-        let tmpStore = Store()
-        tmpStore.host = host
-        tmpStore.torrents = torrents
-        writeServersIndex(store: tmpStore)
-        writeSessionSnapshot(store: tmpStore, stats: stats)
+        let serverName = host.name ?? host.server ?? "Server"
+        writeServersIndex(serverID: host.serverID, serverName: serverName)
+        writeSessionSnapshot(
+            serverID: host.serverID,
+            serverName: serverName,
+            stats: stats,
+            torrents: torrents
+        )
     }
 }
 

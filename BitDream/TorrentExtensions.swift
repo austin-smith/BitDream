@@ -1,10 +1,3 @@
-//
-//  TorrentExtensions.swift
-//  BitDream
-//
-//  Extensions for Torrent action validation
-//
-
 import Foundation
 
 // MARK: - Torrent Action Extensions

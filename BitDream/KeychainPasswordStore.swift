@@ -1,32 +1,39 @@
 import Foundation
 import Security
-import CoreData
 
 enum KeychainPasswordStore {
     private static let service = "crapshack.BitDream"
 
     static func readPassword(for host: Host) -> String {
-        let primaryAccount = accountForPrimaryCredential(for: host)
-
-        if let password = readPassword(account: primaryAccount) {
-            return password
-        }
-
-        return ""
+        readPassword(credentialKey: host.ensureCredentialKey())
     }
 
     static func savePassword(_ password: String, for host: Host) {
-        let primaryAccount = accountForPrimaryCredential(for: host)
-        _ = upsertPassword(password, account: primaryAccount)
+        savePassword(password, credentialKey: host.ensureCredentialKey())
     }
 
     static func deletePassword(for host: Host) {
-        let primaryAccount = accountForPrimaryCredential(for: host)
-        _ = deletePassword(account: primaryAccount)
+        deletePassword(credentialKey: host.ensureCredentialKey())
     }
 
-    private static func accountForPrimaryCredential(for host: Host) -> String {
-        "host:\(ensureCredentialKey(for: host))"
+    static func readPassword(credentialKey: String) -> String {
+        guard let password = readPassword(account: accountForCredentialKey(credentialKey)) else {
+            return ""
+        }
+
+        return password
+    }
+
+    static func savePassword(_ password: String, credentialKey: String) {
+        _ = upsertPassword(password, account: accountForCredentialKey(credentialKey))
+    }
+
+    static func deletePassword(credentialKey: String) {
+        _ = deletePassword(account: accountForCredentialKey(credentialKey))
+    }
+
+    private static func accountForCredentialKey(_ credentialKey: String) -> String {
+        "host:\(credentialKey.trimmingCharacters(in: .whitespacesAndNewlines))"
     }
 
     private static func baseQuery(account: String) -> [CFString: Any] {

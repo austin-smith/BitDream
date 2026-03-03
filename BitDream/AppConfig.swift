@@ -50,4 +50,5 @@ enum UserDefaultsKeys {
     static let ratioDisplayMode = "ratioDisplayMode"
     static let selectedHost = "selectedHost"
     static let startupConnectionBehavior = "startupConnectionBehavior"
+    static let persistenceSchemaVersion = "persistenceSchemaVersion"
 }

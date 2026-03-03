@@ -1,13 +1,13 @@
 import Foundation
 import SwiftUI
-import CoreData
+import SwiftData
 
 #if os(iOS)
 struct iOSServerDetail: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var store: Store
-    var viewContext: NSManagedObjectContext
-    var hosts: FetchedResults<Host>
+    let modelContext: ModelContext
+    let hosts: [Host]
     @State var host: Host?
     var isAddNew: Bool
 
@@ -134,7 +134,7 @@ struct iOSServerDetail: View {
             .alert("Delete Server", isPresented: $showingDeleteConfirmation) {
                 Button("Delete", role: .destructive) {
                     if let host = host {
-                        deleteServer(host: host, viewContext: viewContext) {
+                        deleteServer(host: host, modelContext: modelContext) {
                             dismiss()
                         }
                     }
@@ -157,7 +157,8 @@ struct iOSServerDetail: View {
                                     passInput: passInput,
                                     isDefault: isDefault,
                                     isSSL: isSSL,
-                                    viewContext: viewContext,
+                                    modelContext: modelContext,
+                                    hosts: hosts,
                                     store: store
                                 ) {
                                     dismiss()
@@ -180,7 +181,7 @@ struct iOSServerDetail: View {
                                         passInput: passInput,
                                         isDefault: isDefault,
                                         isSSL: isSSL,
-                                        viewContext: viewContext,
+                                        modelContext: modelContext,
                                         hosts: hosts
                                     ) {
                                         dismiss()
@@ -198,14 +199,14 @@ struct iOSServerDetail: View {
 // Empty struct for macOS to reference - this won't be compiled on iOS but provides the type
 struct iOSServerDetail: View {
     @ObservedObject var store: Store
-    var viewContext: NSManagedObjectContext
-    var hosts: FetchedResults<Host>
+    let modelContext: ModelContext
+    let hosts: [Host]
     @State var host: Host?
     var isAddNew: Bool
 
-    init(store: Store, viewContext: NSManagedObjectContext, hosts: FetchedResults<Host>, host: Host? = nil, isAddNew: Bool) {
+    init(store: Store, modelContext: ModelContext, hosts: [Host], host: Host? = nil, isAddNew: Bool) {
         self.store = store
-        self.viewContext = viewContext
+        self.modelContext = modelContext
         self.hosts = hosts
         self.host = host
         self.isAddNew = isAddNew

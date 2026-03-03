@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
-import CoreData
 
 /// Platform-agnostic wrapper for AddTorrent view
 /// This view simply delegates to the appropriate platform-specific implementation

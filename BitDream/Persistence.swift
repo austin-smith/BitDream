@@ -1,28 +1,23 @@
-import CoreData
+import SwiftData
 
 struct PersistenceController {
     static let shared = PersistenceController()
+    private static let hostStoreID = "bitdream.persistence.hosts"
+    private static let hostSchema = Schema([Host.self])
 
-    let container: NSPersistentCloudKitContainer
+    let container: ModelContainer
 
-    init(inMemory: Bool = false) {
-        container = NSPersistentCloudKitContainer(name: "BitDream")
-        if inMemory {
-            container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
+    init() {
+        let config = ModelConfiguration(
+            Self.hostStoreID,
+            schema: Self.hostSchema,
+            cloudKitDatabase: .none
+        )
+
+        do {
+            container = try ModelContainer(for: Self.hostSchema, configurations: [config])
+        } catch {
+            fatalError("Failed to initialize SwiftData container: \(error.localizedDescription)")
         }
-        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
-            if let error = error as NSError? {
-                /*
-                 Typical reasons for an error here include:
-                 * The parent directory does not exist, cannot be created, or disallows writing.
-                 * The persistent store is not accessible, due to permissions or data protection when the device is locked.
-                 * The device is out of space.
-                 * The store could not be migrated to the current model version.
-                 Check the error message to determine what the actual problem was.
-                 */
-                fatalError("Unresolved error \(error), \(error.userInfo)")
-            }
-        })
-        container.viewContext.automaticallyMergesChangesFromParent = true
     }
 }

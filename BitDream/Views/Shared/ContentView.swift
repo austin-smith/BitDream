@@ -1,6 +1,6 @@
 import Foundation
-import CoreData
 import SwiftUI
+import SwiftData
 
 // MARK: - UserDefaults Extension for View State
 extension UserDefaults {
@@ -67,20 +67,17 @@ extension UserDefaults {
 }
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-    @FetchRequest(
-        entity: Host.entity(),
-        sortDescriptors: [NSSortDescriptor(key: "name", ascending: true)]
-    ) var hosts: FetchedResults<Host>
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \Host.name, order: .forward) private var hosts: [Host]
 
     // Use the store passed from the environment
     @EnvironmentObject var store: Store
 
     var body: some View {
         #if os(iOS)
-        iOSContentView(viewContext: viewContext, hosts: hosts, store: store)
+        iOSContentView(modelContext: modelContext, hosts: hosts, store: store)
         #elseif os(macOS)
-        macOSContentView(viewContext: viewContext, hosts: hosts, store: store)
+        macOSContentView(modelContext: modelContext, hosts: hosts, store: store)
         #endif
     }
 }
@@ -106,10 +103,9 @@ func applyStartupConnectionBehavior(hosts: [Host], store: Store) {
 
     switch behavior {
     case .lastUsed:
-        if let savedHostURI = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedHost),
-           !savedHostURI.isEmpty {
-            if let savedHostURL = URL(string: savedHostURI),
-               let savedHost = hosts.first(where: { $0.objectID.uriRepresentation() == savedHostURL }) {
+        if let savedHostID = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedHost),
+           !savedHostID.isEmpty {
+            if let savedHost = hosts.first(where: { $0.serverID == savedHostID }) {
                 store.setHost(host: savedHost)
                 return
             }
@@ -124,15 +120,16 @@ func applyStartupConnectionBehavior(hosts: [Host], store: Store) {
     }
 }
 
-func ensureStartupConnectionBehaviorApplied(store: Store, viewContext: NSManagedObjectContext) {
+func ensureStartupConnectionBehaviorApplied(store: Store, modelContext: ModelContext) {
     guard store.host == nil else { return }
 
-    let request = NSFetchRequest<Host>(entityName: "Host")
-    request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
+    let descriptor = FetchDescriptor<Host>(
+        sortBy: [Foundation.SortDescriptor(\Host.name)]
+    )
 
     let hosts: [Host]
     do {
-        hosts = try viewContext.fetch(request)
+        hosts = try modelContext.fetch(descriptor)
     } catch {
         hosts = []
     }

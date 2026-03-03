@@ -1,13 +1,14 @@
 import SwiftUI
 import UserNotifications
-import CoreData
 import Foundation
 import Combine
 import UniformTypeIdentifiers
+import SwiftData
 
 @main
 struct BitDreamApp: App {
     let persistenceController = PersistenceController.shared
+    private let swiftDataSchemaVersion = "swiftdata_v1"
 
     // Create a shared store instance that will be used by both the main app and settings
     @StateObject private var store = Store()
@@ -29,6 +30,8 @@ struct BitDreamApp: App {
     #endif
 
     init() {
+        performPersistenceFreshStartCutoverIfNeeded(targetVersion: swiftDataSchemaVersion)
+
         // Register default values for view state
         UserDefaults.registerViewStateDefaults()
 
@@ -69,26 +72,30 @@ struct BitDreamApp: App {
         #if os(macOS)
         Window("BitDream", id: "main") {
             ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(store) // Pass the shared store to the ContentView
                 .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
                 .immediateTheme(manager: themeManager)
                 .onOpenURL { url in
-                    // Handle bitdream://server?id=<coredata-URI>
+                    // Handle bitdream://server?id=<serverID>
                     guard url.scheme == DeepLinkConfig.scheme else { return }
                     let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-                    let id = components?.queryItems?.first(where: { $0.name == DeepLinkConfig.QueryKey.id })?.value
-                    guard let id, let hostURL = URL(string: id) else { return }
-                    let ctx = persistenceController.container.viewContext
-                    if let oid = ctx.persistentStoreCoordinator?.managedObjectID(forURIRepresentation: hostURL),
-                       let host = try? ctx.existingObject(with: oid) as? Host {
+                    let serverID = components?.queryItems?.first(where: { $0.name == DeepLinkConfig.QueryKey.id })?.value
+                    guard let serverID, !serverID.isEmpty else { return }
+                    let targetServerID = serverID
+                    let descriptor = FetchDescriptor<Host>(
+                        predicate: #Predicate<Host> { host in
+                            host.serverID == targetServerID
+                        }
+                    )
+                    let context = persistenceController.container.mainContext
+                    if let host = try? context.fetch(descriptor).first {
                         store.setHost(host: host)
                     }
                 }
                 .task {
                     appFileOpenDelegate.configure(with: store)
-                    ensureStartupConnectionBehaviorApplied(store: store, viewContext: persistenceController.container.viewContext)
+                    ensureStartupConnectionBehaviorApplied(store: store, modelContext: persistenceController.container.mainContext)
                     syncMenuBarStatusItem()
                     appUpdater.start()
                 }
@@ -208,9 +215,9 @@ struct BitDreamApp: App {
                 hideHUDWork: $hideHUDWork
             )
         }
+        .modelContainer(persistenceController.container)
         WindowGroup("Connection Info", id: "connection-info") {
             macOSConnectionInfoView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(store)
                 .accentColor(themeManager.accentColor)
                 .environmentObject(themeManager)
@@ -218,10 +225,10 @@ struct BitDreamApp: App {
                 .frame(minWidth: 420, idealWidth: 460, maxWidth: 600, minHeight: 320, idealHeight: 360, maxHeight: 800)
         }
         .windowResizability(.contentSize)
+        .modelContainer(persistenceController.container)
 
         WindowGroup("Statistics", id: "statistics") {
             macOSStatisticsView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(store)
                 .accentColor(themeManager.accentColor)
                 .environmentObject(themeManager)
@@ -229,6 +236,7 @@ struct BitDreamApp: App {
                 .frame(minWidth: 420, idealWidth: 460, maxWidth: 600, minHeight: 320, idealHeight: 360, maxHeight: 800)
         }
         .windowResizability(.contentSize)
+        .modelContainer(persistenceController.container)
 
         // About window - Using WindowGroup to prevent automatic Window menu entry
         // This follows Apple's recommended pattern for auxiliary windows that shouldn't
@@ -242,11 +250,11 @@ struct BitDreamApp: App {
         }
         .windowResizability(.contentSize)
         .defaultPosition(.center)
+        .modelContainer(persistenceController.container)
 
         #else
         WindowGroup {
             ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
                 .environmentObject(store) // Pass the shared store to the ContentView
                 .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
@@ -260,6 +268,7 @@ struct BitDreamApp: App {
                     }
                 }
         }
+        .modelContainer(persistenceController.container)
         #endif
 
         #if os(macOS)
@@ -271,6 +280,40 @@ struct BitDreamApp: App {
                 .immediateTheme(manager: themeManager)
         }
         #endif
+    }
+}
+
+// TODO(swiftdata-cutover): Remove this function entirely after the migration
+// window for pre-SwiftData installs has ended.
+private func performPersistenceFreshStartCutoverIfNeeded(targetVersion: String) {
+    let defaults = UserDefaults.standard
+    let currentVersion = defaults.string(forKey: UserDefaultsKeys.persistenceSchemaVersion)
+    guard currentVersion != targetVersion else { return }
+
+    defaults.removeObject(forKey: UserDefaultsKeys.selectedHost)
+    // TODO(swiftdata-cutover): Remove this one-time widget snapshot cleanup
+    // once legacy pre-SwiftData upgrade paths are no longer supported.
+    AppGroup.Files.removeWidgetSnapshotFiles()
+    removeLegacyCoreDataStoreFiles()
+    defaults.set(targetVersion, forKey: UserDefaultsKeys.persistenceSchemaVersion)
+}
+
+// TODO(swiftdata-cutover): Remove this helper when
+// `performPersistenceFreshStartCutoverIfNeeded` is deleted.
+private func removeLegacyCoreDataStoreFiles() {
+    guard let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+        return
+    }
+
+    let legacyFilenames = [
+        "BitDream.sqlite",
+        "BitDream.sqlite-shm",
+        "BitDream.sqlite-wal"
+    ]
+
+    legacyFilenames.forEach { filename in
+        let url = appSupportURL.appendingPathComponent(filename, isDirectory: false)
+        try? FileManager.default.removeItem(at: url)
     }
 }
 
