@@ -283,13 +283,13 @@ jobs:
 
           create-dmg \
             --volname "BitDream" \
-            --window-size 660 460 \
+            --window-size 660 420 \
             --background "$DMG_BACKGROUND_PATH" \
             --icon-size 128 \
             --text-size 14 \
-            --icon "BitDream.app" 180 230 \
+            --icon "BitDream.app" 180 165 \
             --hide-extension "BitDream.app" \
-            --app-drop-link 480 230 \
+            --app-drop-link 480 165 \
             "$DMG_PATH" \
             "dmg-contents/"
 
