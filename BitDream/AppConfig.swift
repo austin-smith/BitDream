@@ -50,6 +50,12 @@ enum AppIdentity {
     }()
 }
 
+enum RuntimeDomain {
+    static let transmission: String = "\(AppIdentity.bundleIdentifier).transmission"
+    static let fileOpen: String = AppIdentity.bundleIdentifier
+    static let widgetRefreshQueue: String = "\(AppIdentity.bundleIdentifier).widgetRefreshQueue"
+}
+
 enum UserDefaultsKeys {
     static let pollInterval = "pollInterval"
     static let torrentListCompactMode = "torrentListCompactMode"

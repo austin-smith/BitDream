@@ -5,7 +5,7 @@ import Synchronization
 import WidgetKit
 
 private let widgetRefreshQueue: DispatchQueue = {
-    DispatchQueue(label: "com.bitdream.widgetRefreshQueue", qos: .utility)
+    DispatchQueue(label: RuntimeDomain.widgetRefreshQueue, qos: .utility)
 }()
 
 private final class WidgetRefreshCancellationToken: Sendable {
