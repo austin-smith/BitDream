@@ -103,10 +103,14 @@ func sortTorrents(_ torrents: [Torrent], by property: SortProperty, order: SortO
 
 // MARK: - Formatting
 
-/// Shared byte formatting helper using modern format style with a minimum display unit of kB.
+/// Shared byte formatting helper using modern format style
+/// Round up 1 to 999 bytes to 1 kB
 public func formatByteCount(_ bytes: Int64) -> String {
-    if abs(bytes) < 1_000 {
+    if bytes == 0 {
         return "0 kB"
+    }
+    if bytes > 0 && bytes < 1_000 {
+        return "1 kB"
     }
     return bytes.formatted(
         ByteCountFormatStyle(
