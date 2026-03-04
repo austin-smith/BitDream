@@ -55,7 +55,9 @@ struct BitDreamApp: App {
         #endif
 
         #if os(macOS)
-        BackgroundActivityScheduler.register()
+        Task { @MainActor in
+            BackgroundActivityScheduler.register()
+        }
         #endif
     }
 
@@ -103,7 +105,11 @@ struct BitDreamApp: App {
                 .onChange(of: menuBarTransferWidgetEnabled) { _, isEnabled in
                     syncMenuBarStatusItem(isEnabled: isEnabled)
                 }
-                .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+                .onReceive(
+                    NotificationCenter.default
+                        .publisher(for: NSApplication.willTerminateNotification)
+                        .receive(on: RunLoop.main)
+                ) { _ in
                     BackgroundActivityScheduler.unregister()
                 }
                 .overlay(alignment: .center) {
@@ -135,26 +141,22 @@ struct BitDreamApp: App {
                             }
                         }
                         if !failures.isEmpty {
-                            DispatchQueue.main.async {
-                                if failures.count == 1, let first = failures.first {
-                                    store.globalAlertTitle = "Error"
-                                    store.globalAlertMessage = "Failed to open '\(first.0)'\n\n\(first.1)"
-                                } else {
-                                    let list = failures.prefix(10).map { "- \($0.0): \($0.1)" }.joined(separator: "\n")
-                                    let remainder = failures.count - min(failures.count, 10)
-                                    let suffix = remainder > 0 ? "\n...and \(remainder) more" : ""
-                                    store.globalAlertTitle = "Error"
-                                    store.globalAlertMessage = "Failed to open \(failures.count) torrent files\n\n\(list)\(suffix)"
-                                }
-                                store.showGlobalAlert = true
+                            if failures.count == 1, let first = failures.first {
+                                store.globalAlertTitle = "Error"
+                                store.globalAlertMessage = "Failed to open '\(first.0)'\n\n\(first.1)"
+                            } else {
+                                let list = failures.prefix(10).map { "- \($0.0): \($0.1)" }.joined(separator: "\n")
+                                let remainder = failures.count - min(failures.count, 10)
+                                let suffix = remainder > 0 ? "\n...and \(remainder) more" : ""
+                                store.globalAlertTitle = "Error"
+                                store.globalAlertMessage = "Failed to open \(failures.count) torrent files\n\n\(list)\(suffix)"
                             }
-                        }
-                    case .failure(let error):
-                        DispatchQueue.main.async {
-                            store.globalAlertTitle = "Error"
-                            store.globalAlertMessage = "File import failed\n\n\(error.localizedDescription)"
                             store.showGlobalAlert = true
                         }
+                    case .failure(let error):
+                        store.globalAlertTitle = "Error"
+                        store.globalAlertMessage = "File import failed\n\n\(error.localizedDescription)"
+                        store.showGlobalAlert = true
                     }
                 }
                 #if os(macOS)
@@ -179,16 +181,14 @@ struct BitDreamApp: App {
                                     return
                                 }
                                 renameTorrentRoot(torrent: targetTorrent, to: newName, store: store) { error in
-                                    DispatchQueue.main.async {
-                                        if let error = error {
-                                            store.globalAlertTitle = "Rename Error"
-                                            store.globalAlertMessage = error
-                                            store.showGlobalAlert = true
-                                        } else {
-                                            store.showGlobalRenameDialog = false
-                                            store.globalRenameInput = ""
-                                            store.globalRenameTargetId = nil
-                                        }
+                                    if let error = error {
+                                        store.globalAlertTitle = "Rename Error"
+                                        store.globalAlertMessage = error
+                                        store.showGlobalAlert = true
+                                    } else {
+                                        store.showGlobalRenameDialog = false
+                                        store.globalRenameInput = ""
+                                        store.globalRenameTargetId = nil
                                     }
                                 }
                             }

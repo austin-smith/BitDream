@@ -109,7 +109,7 @@ struct macOSTorrentDetail: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 PiecesGridView(pieceCount: pieceCount, piecesBitfieldBase64: piecesBitfield)
                                     .frame(maxWidth: .infinity)
-                                Text("\(piecesHaveCount) of \(pieceCount) pieces • \(byteCountFormatter.string(fromByteCount: pieceSize)) each")
+                                Text("\(piecesHaveCount) of \(pieceCount) pieces • \(formatByteCount(pieceSize)) each")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -169,7 +169,7 @@ struct macOSTorrentDetail: View {
             .padding(20)
         }
         .sheet(isPresented: $isShowingFilesSheet) {
-            let totalSizeFormatted = byteCountFormatter.string(fromByteCount: files.reduce(0) { $0 + $1.length })
+            let totalSizeFormatted = formatByteCount(files.reduce(0) { $0 + $1.length })
 
             VStack(spacing: 0) {
                 // Header with proper hierarchy

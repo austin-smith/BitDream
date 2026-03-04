@@ -29,12 +29,6 @@ final class AppIconManager: ObservableObject {
         }
     }
 
-    deinit {
-        if let observer = foregroundObserver {
-            NotificationCenter.default.removeObserver(observer)
-        }
-    }
-
     func refreshCurrentIcon() {
         currentIconName = UIApplication.shared.alternateIconName
     }
@@ -52,7 +46,7 @@ final class AppIconManager: ObservableObject {
 
         isChanging = true
         UIApplication.shared.setAlternateIconName(name) { [weak self] error in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 guard let self else { return }
                 self.isChanging = false
 

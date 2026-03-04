@@ -1,6 +1,7 @@
 //  Shared refresh logic for both iOS and macOS widget background updates.
 
 import Foundation
+import Synchronization
 import WidgetKit
 
 private let widgetRefreshQueue: OperationQueue = {
@@ -14,6 +15,9 @@ private let widgetRefreshQueue: OperationQueue = {
 /// Shared operation that fetches data for all servers and writes widget snapshots.
 /// Concurrency: Runs on an `OperationQueue`, confines mutable state to the operation's
 /// execution context, and fetches hosts from an app-private refresh catalog.
+/// Safety invariant for `@unchecked Sendable`: operations are enqueued on a queue with
+/// `maxConcurrentOperationCount = 1`, and any cross-callback mutable state is guarded by
+/// `HostRefreshResultStore`'s `Mutex` (or otherwise kept operation-local).
 final class WidgetRefreshOperation: Operation, @unchecked Sendable {
     private static let backgroundWaitTimeout: DispatchTimeInterval = .seconds(15)
 }
@@ -26,6 +30,27 @@ private struct HostSnapshot: Sendable {
     let username: String
     let isSSL: Bool
     let credentialKey: String
+}
+
+private final class HostRefreshResultStore: Sendable {
+    private struct State: Sendable {
+        var stats: SessionStats?
+        var torrents: [Torrent] = []
+    }
+
+    private let state = Mutex(State())
+
+    func setStats(_ value: SessionStats?) {
+        state.withLock { $0.stats = value }
+    }
+
+    func setTorrents(_ value: [Torrent]) {
+        state.withLock { $0.torrents = value }
+    }
+
+    func snapshot() -> (stats: SessionStats?, torrents: [Torrent]) {
+        state.withLock { ($0.stats, $0.torrents) }
+    }
 }
 
 extension WidgetRefreshOperation {
@@ -81,20 +106,20 @@ extension WidgetRefreshOperation {
         let auth = TransmissionAuth(username: username, password: password)
 
         let group = DispatchGroup()
-        var stats: SessionStats?
-        var torrents: [Torrent] = []
+        let results = HostRefreshResultStore()
 
         // Fetch session stats
         group.enter()
-        getSessionStats(config: config, auth: auth) { s, _ in
-            stats = s
+        // Widget refresh intentionally uses a non-@MainActor path to avoid pumping through the main actor.
+        getSessionStatsForWidgetRefresh(config: config, auth: auth) { s, _ in
+            results.setStats(s)
             group.leave()
         }
 
         // Fetch torrent list for status breakdown
         group.enter()
-        getTorrents(config: config, auth: auth) { t, _ in
-            torrents = t ?? []
+        getTorrentsForWidgetRefresh(config: config, auth: auth) { t, _ in
+            results.setTorrents(t ?? [])
             group.leave()
         }
 
@@ -106,27 +131,26 @@ extension WidgetRefreshOperation {
             return
         }
 
-        guard let stats = stats, !isCancelled else { return }
+        let snapshot = results.snapshot()
+        guard let stats = snapshot.stats, !isCancelled else { return }
 
         let serverName = host.name
         writeSessionSnapshot(
             serverID: host.serverID,
             serverName: serverName,
             stats: stats,
-            torrents: torrents
+            torrents: snapshot.torrents
         )
     }
 }
 
 /// Convenience function to perform a widget refresh operation
-func performWidgetRefresh(completion: (() -> Void)? = nil) {
+func performWidgetRefresh(completion: (@Sendable () -> Void)? = nil) {
     let operation = WidgetRefreshOperation()
     operation.qualityOfService = .utility
 
     operation.completionBlock = {
-        DispatchQueue.main.async {
-            completion?()
-        }
+        completion?()
     }
 
     WidgetRefreshOperation.enqueue(operation)

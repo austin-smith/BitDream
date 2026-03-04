@@ -105,14 +105,12 @@ class SessionSettingsEditModel: ObservableObject {
             config: serverInfo.config,
             auth: serverInfo.auth
         ) { response in
-            DispatchQueue.main.async {
-                switch response {
-                case .success:
-                    self.values = [:]
-                    store.refreshSessionConfiguration()
-                case .unauthorized, .configError, .failed:
-                    print("Failed to save session settings: \(response)")
-                }
+            switch response {
+            case .success:
+                self.values = [:]
+                store.refreshSessionConfiguration()
+            case .unauthorized, .configError, .failed:
+                print("Failed to save session settings: \(response)")
             }
         }
     }
@@ -808,19 +806,17 @@ func checkDirectoryFreeSpace(path: String, editModel: SessionSettingsEditModel) 
         config: serverInfo.config,
         auth: serverInfo.auth
     ) { result in
-        DispatchQueue.main.async {
-            editModel.isCheckingSpace = false
-            switch result {
-            case .success(let response):
-                let formatter = ByteCountFormatter()
-                formatter.countStyle = .binary
-                let freeSpace = formatter.string(fromByteCount: response.sizeBytes)
-                let totalSpace = formatter.string(fromByteCount: response.totalSize)
-                let percentUsed = 100.0 - (Double(response.sizeBytes) / Double(response.totalSize) * 100.0)
-                editModel.freeSpaceInfo = "Free: \(freeSpace) of \(totalSpace) (\(String(format: "%.1f", percentUsed))% used)"
-            case .failure(let error):
-                editModel.freeSpaceInfo = "Error: \(error.localizedDescription)"
-            }
+        editModel.isCheckingSpace = false
+        switch result {
+        case .success(let response):
+            let formatter = ByteCountFormatter()
+            formatter.countStyle = .binary
+            let freeSpace = formatter.string(fromByteCount: response.sizeBytes)
+            let totalSpace = formatter.string(fromByteCount: response.totalSize)
+            let percentUsed = 100.0 - (Double(response.sizeBytes) / Double(response.totalSize) * 100.0)
+            editModel.freeSpaceInfo = "Free: \(freeSpace) of \(totalSpace) (\(String(format: "%.1f", percentUsed))% used)"
+        case .failure(let error):
+            editModel.freeSpaceInfo = "Error: \(error.localizedDescription)"
         }
     }
 }
@@ -838,22 +834,20 @@ func checkPort(editModel: SessionSettingsEditModel, ipProtocol: String? = nil) {
         config: serverInfo.config,
         auth: serverInfo.auth
     ) { result in
-        DispatchQueue.main.async {
-            editModel.isTestingPort = false
-            switch result {
-            case .success(let response):
-                if response.portIsOpen == true {
-                    let protocolName = response.ipProtocol?.uppercased() ?? "IP"
-                    editModel.portTestResult = "Port is open (\(protocolName))"
-                } else if response.portIsOpen == false {
-                    let protocolName = response.ipProtocol?.uppercased() ?? "IP"
-                    editModel.portTestResult = "Port is closed (\(protocolName))"
-                } else {
-                    editModel.portTestResult = "Port check site is down"
-                }
-            case .failure(let error):
-                editModel.portTestResult = "Failed to test port: \(error.localizedDescription)"
+        editModel.isTestingPort = false
+        switch result {
+        case .success(let response):
+            if response.portIsOpen == true {
+                let protocolName = response.ipProtocol?.uppercased() ?? "IP"
+                editModel.portTestResult = "Port is open (\(protocolName))"
+            } else if response.portIsOpen == false {
+                let protocolName = response.ipProtocol?.uppercased() ?? "IP"
+                editModel.portTestResult = "Port is closed (\(protocolName))"
+            } else {
+                editModel.portTestResult = "Port check site is down"
             }
+        case .failure(let error):
+            editModel.portTestResult = "Failed to test port: \(error.localizedDescription)"
         }
     }
 }
@@ -870,16 +864,14 @@ func updateBlocklist(editModel: SessionSettingsEditModel) {
         config: serverInfo.config,
         auth: serverInfo.auth
     ) { result in
-        DispatchQueue.main.async {
-            editModel.isUpdatingBlocklist = false
-            switch result {
-            case .success(let response):
-                editModel.blocklistUpdateResult = "Updated blocklist: \(response.blocklistSize) rules"
-                // Refresh session configuration to get the updated blocklist size
-                store.refreshSessionConfiguration()
-            case .failure(let error):
-                editModel.blocklistUpdateResult = "Failed to update blocklist: \(error.localizedDescription)"
-            }
+        editModel.isUpdatingBlocklist = false
+        switch result {
+        case .success(let response):
+            editModel.blocklistUpdateResult = "Updated blocklist: \(response.blocklistSize) rules"
+            // Refresh session configuration to get the updated blocklist size
+            store.refreshSessionConfiguration()
+        case .failure(let error):
+            editModel.blocklistUpdateResult = "Failed to update blocklist: \(error.localizedDescription)"
         }
     }
 }

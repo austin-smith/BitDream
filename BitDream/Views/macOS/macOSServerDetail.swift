@@ -108,7 +108,7 @@ struct macOSServerDetail: View {
                                 .foregroundColor(.secondary)
 
                             HStack {
-                                TextField("", value: $portInput, formatter: ServerDetail.portFormatter)
+                                TextField("", value: $portInput, format: .number.grouping(.never))
                                     .textFieldStyle(ValidationTextFieldStyle(isInvalid: hasAttemptedSave && !isPortValid))
                                     .frame(maxWidth: .infinity)
 

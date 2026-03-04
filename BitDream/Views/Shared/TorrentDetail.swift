@@ -36,6 +36,7 @@ func statusColor(for torrent: Torrent) -> Color {
 }
 
 // Shared function to fetch torrent files
+@MainActor
 func fetchTorrentFiles(transferId: Int, store: Store, completion: @escaping ([TorrentFile], [TorrentFileStats]) -> Void) {
     let info = makeConfig(store: store)
 
@@ -45,6 +46,7 @@ func fetchTorrentFiles(transferId: Int, store: Store, completion: @escaping ([To
 }
 
 // Shared function to fetch torrent peers
+@MainActor
 func fetchTorrentPeers(transferId: Int, store: Store, completion: @escaping ([Peer], PeersFrom?) -> Void) {
     let info = makeConfig(store: store)
 
@@ -54,6 +56,7 @@ func fetchTorrentPeers(transferId: Int, store: Store, completion: @escaping ([Pe
 }
 
 // Shared function to play/pause a torrent
+@MainActor
 func toggleTorrentPlayPause(torrent: Torrent, store: Store, completion: @escaping () -> Void = {}) {
     let info = makeConfig(store: store)
     playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
@@ -75,13 +78,13 @@ func formatTorrentDetails(torrent: Torrent) -> (percentComplete: String, percent
 
     let percentComplete = String(format: "%.1f%%", torrent.percentDone * 100)
     let percentAvailable = String(format: "%.1f%%", ((Double(torrent.haveUnchecked + torrent.haveValid + torrent.desiredAvailable) / Double(torrent.sizeWhenDone))) * 100)
-    let downloadedFormatted = byteCountFormatter.string(fromByteCount: (torrent.downloadedCalc))
-    let sizeWhenDoneFormatted = byteCountFormatter.string(fromByteCount: torrent.sizeWhenDone)
-    let uploadedFormatted = byteCountFormatter.string(fromByteCount: torrent.uploadedEver)
+    let downloadedFormatted = formatByteCount(torrent.downloadedCalc)
+    let sizeWhenDoneFormatted = formatByteCount(torrent.sizeWhenDone)
+    let uploadedFormatted = formatByteCount(torrent.uploadedEver)
     let uploadRatio = String(format: "%.2f", torrent.uploadRatio)
 
-    let activityDate = dateFormatter.string(from: Date(timeIntervalSince1970: Double(torrent.activityDate)))
-    let addedDate = dateFormatter.string(from: Date(timeIntervalSince1970: Double(torrent.addedDate)))
+    let activityDate = formatTorrentDetailDate(torrent.activityDate)
+    let addedDate = formatTorrentDetailDate(torrent.addedDate)
 
     return (percentComplete, percentAvailable, downloadedFormatted, sizeWhenDoneFormatted, uploadedFormatted, uploadRatio, activityDate, addedDate)
 }
@@ -172,10 +175,13 @@ struct TorrentStatusBadge: View {
     }
 }
 
-// Date Formatter
-let dateFormatter: DateFormatter = {
-    var formatter = DateFormatter()
-    formatter.dateFormat = "MM/dd/YYYY"
-
-    return formatter
-}()
+private func formatTorrentDetailDate(_ timestamp: Int) -> String {
+    let date = Date(timeIntervalSince1970: Double(timestamp))
+    return date.formatted(
+        Date.FormatStyle()
+            .locale(Locale(identifier: "en_US_POSIX"))
+            .month(.twoDigits)
+            .day(.twoDigits)
+            .year(.defaultDigits)
+    )
+}

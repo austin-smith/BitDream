@@ -162,7 +162,7 @@ struct macOSTorrentListCompact: View {
 
             // Total size column
             TableColumn("Size", value: \.totalBytes) { row in
-                Text(byteCountFormatter.string(fromByteCount: row.totalBytes))
+                Text(formatByteCount(row.totalBytes))
                     .font(.system(size: 10, design: .monospaced))
             }
             .width(min: 70, ideal: 90)
@@ -170,7 +170,7 @@ struct macOSTorrentListCompact: View {
 
             // Downloaded column
             TableColumn("Downloaded", value: \.downloadedBytes) { row in
-                Text(byteCountFormatter.string(fromByteCount: row.downloadedBytes))
+                Text(formatByteCount(row.downloadedBytes))
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundColor(.secondary)
             }
@@ -184,7 +184,7 @@ struct macOSTorrentListCompact: View {
                         HStack(spacing: 2) {
                             Image(systemName: "arrow.down")
                                 .font(.system(size: 8))
-                            Text(byteCountFormatter.string(fromByteCount: row.downloadSpeed) + "/s")
+                            Text(formatByteCount(row.downloadSpeed) + "/s")
                                 .font(.system(size: 9, design: .monospaced))
                         }
                         .foregroundColor(.blue)
@@ -194,7 +194,7 @@ struct macOSTorrentListCompact: View {
                         HStack(spacing: 2) {
                             Image(systemName: "arrow.up")
                                 .font(.system(size: 8))
-                            Text(byteCountFormatter.string(fromByteCount: row.uploadSpeed) + "/s")
+                            Text(formatByteCount(row.uploadSpeed) + "/s")
                                 .font(.system(size: 9, design: .monospaced))
                         }
                         .foregroundColor(.green)

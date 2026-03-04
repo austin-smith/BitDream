@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Enums
 
-public enum TransmissionResponse {
+public enum TransmissionResponse: Sendable {
     case success
     case unauthorized
     case configError
@@ -73,9 +73,11 @@ public struct TransmissionGenericResponse<T: Codable>: Codable {
     public let arguments: T
 }
 
+extension TransmissionGenericResponse: Sendable where T: Sendable {}
+
 // MARK: - Domain Models
 
-public struct Torrent: Codable, Hashable, Identifiable {
+public struct Torrent: Codable, Hashable, Identifiable, Sendable {
     let activityDate: Int
     let addedDate: Int
     let desiredAvailable: Int64
@@ -176,7 +178,7 @@ public struct Torrent: Codable, Hashable, Identifiable {
     }
 }
 
-public struct TorrentFile: Codable, Identifiable {
+public struct TorrentFile: Codable, Identifiable, Sendable {
     public var id: String { name }
     var bytesCompleted: Int64
     var length: Int64
@@ -184,13 +186,13 @@ public struct TorrentFile: Codable, Identifiable {
     var percentDone: Double { Double(bytesCompleted) / Double(length) }
 }
 
-public struct TorrentFileStats: Codable {
+public struct TorrentFileStats: Codable, Sendable {
     var bytesCompleted: Int64
     var wanted: Bool
     var priority: Int
 }
 
-public struct SessionStats: Codable, Hashable {
+public struct SessionStats: Codable, Hashable, Sendable {
     let activeTorrentCount: Int
     let downloadSpeed: Int64
     let pausedTorrentCount: Int
@@ -210,7 +212,7 @@ public struct SessionStats: Codable, Hashable {
     }
 }
 
-public struct TransmissionCumulativeStats: Codable, Hashable {
+public struct TransmissionCumulativeStats: Codable, Hashable, Sendable {
     let downloadedBytes: Int64
     let filesAdded: Int64
     let secondsActive: Int64
@@ -362,19 +364,19 @@ public struct TorrentSetRequestArgs: Codable {
 // MARK: - Response Argument Models
 
 /// Response for torrent list
-public struct TorrentListResponse: Codable {
+public struct TorrentListResponse: Codable, Sendable {
     public let torrents: [Torrent]
 }
 
 /// Response for torrent-add method
-public struct TorrentAddResponseArgs: Codable {
+public struct TorrentAddResponseArgs: Codable, Sendable {
     public var hashString: String
     public var id: Int
     public var name: String
 }
 
 /// Torrent add response wraps the added torrent info
-public struct TorrentAddResponseData: Codable {
+public struct TorrentAddResponseData: Codable, Sendable {
     public var torrentAdded: TorrentAddResponseArgs
 
     enum CodingKeys: String, CodingKey {
@@ -383,18 +385,18 @@ public struct TorrentAddResponseData: Codable {
 }
 
 /// Response for torrent files
-public struct TorrentFilesResponseData: Codable {
+public struct TorrentFilesResponseData: Codable, Sendable {
     public let files: [TorrentFile]
     public let fileStats: [TorrentFileStats]
 }
 
 /// Response for torrent files list contains a torrents array
-public struct TorrentFilesResponseTorrents: Codable {
+public struct TorrentFilesResponseTorrents: Codable, Sendable {
     public let torrents: [TorrentFilesResponseData]
 }
 
 /// Session info response arguments
-public struct TransmissionSessionResponseArguments: Codable, Hashable {
+public struct TransmissionSessionResponseArguments: Codable, Hashable, Sendable {
     // Existing fields
     public let downloadDir: String
     public let version: String
@@ -586,14 +588,14 @@ public struct TransmissionSessionResponseArguments: Codable, Hashable {
 }
 
 /// Response for torrent-rename-path
-public struct TorrentRenameResponseArgs: Codable {
+public struct TorrentRenameResponseArgs: Codable, Sendable {
     public let path: String
     public let name: String
     public let id: Int
 }
 
 /// Response for free-space method
-public struct FreeSpaceResponse: Codable {
+public struct FreeSpaceResponse: Codable, Sendable {
     public let path: String
     public let sizeBytes: Int64
     public let totalSize: Int64
@@ -742,7 +744,7 @@ public struct PortTestRequestArgs: Codable {
 }
 
 /// Response for port-test method
-public struct PortTestResponse: Codable {
+public struct PortTestResponse: Codable, Sendable {
     public let portIsOpen: Bool?
     public let ipProtocol: String?
 
@@ -753,7 +755,7 @@ public struct PortTestResponse: Codable {
 }
 
 /// Response for blocklist-update method
-public struct BlocklistUpdateResponse: Codable {
+public struct BlocklistUpdateResponse: Codable, Sendable {
     public let blocklistSize: Int
 
     enum CodingKeys: String, CodingKey {
@@ -764,7 +766,7 @@ public struct BlocklistUpdateResponse: Codable {
 // MARK: - Peer Models
 
 /// Represents a single peer returned by torrent-get `peers`
-public struct Peer: Codable, Identifiable, Hashable {
+public struct Peer: Codable, Identifiable, Hashable, Sendable {
     public var id: String { "\(address):\(port)" }
     public let address: String
     public let clientName: String
@@ -785,7 +787,7 @@ public struct Peer: Codable, Identifiable, Hashable {
 }
 
 /// Breakdown of where peers were discovered from, returned by torrent-get `peersFrom`
-public struct PeersFrom: Codable, Hashable {
+public struct PeersFrom: Codable, Hashable, Sendable {
     public let fromCache: Int
     public let fromDht: Int
     public let fromIncoming: Int
@@ -796,24 +798,24 @@ public struct PeersFrom: Codable, Hashable {
 }
 
 /// Response object for peers inside torrents list
-public struct TorrentPeersResponseData: Codable {
+public struct TorrentPeersResponseData: Codable, Sendable {
     public let peers: [Peer]
     public let peersFrom: PeersFrom?
 }
 
 /// Response wrapper for torrent peers `torrent-get` response
-public struct TorrentPeersResponseTorrents: Codable {
+public struct TorrentPeersResponseTorrents: Codable, Sendable {
     public let torrents: [TorrentPeersResponseData]
 }
 
 /// Response object for pieces inside torrents list
-public struct TorrentPiecesResponseData: Codable {
+public struct TorrentPiecesResponseData: Codable, Sendable {
     public let pieceCount: Int
     public let pieceSize: Int64
     public let pieces: String
 }
 
 /// Response wrapper for torrent pieces `torrent-get` response
-public struct TorrentPiecesResponseTorrents: Codable {
+public struct TorrentPiecesResponseTorrents: Codable, Sendable {
     public let torrents: [TorrentPiecesResponseData]
 }

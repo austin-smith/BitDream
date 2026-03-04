@@ -46,7 +46,6 @@
 		4B8670062E73DE6E0004ECBA /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BDACD502E73DBBE0074F714 /* AppGroup.swift */; };
 		4B9CAC542D7E833A0094CD03 /* macOSAddTorrent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */; };
 		4B9CAC562D7E83460094CD03 /* iOSAddTorrent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9CAC552D7E83460094CD03 /* iOSAddTorrent.swift */; };
-		4B9CAC5D2D7F02FA0094CD03 /* AppBadgeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */; };
 		4BC2C92A2E6E22B800011971 /* macOSTorrentList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC2C9272E6E22B800011971 /* macOSTorrentList.swift */; };
 		4BC2C92B2E6E22B800011971 /* macOSTorrentListExpanded.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC2C9292E6E22B800011971 /* macOSTorrentListExpanded.swift */; };
 		4BC2C92C2E6E22B800011971 /* macOSTorrentListCompact.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC2C9282E6E22B800011971 /* macOSTorrentListCompact.swift */; };
@@ -150,7 +149,6 @@
 		4B908AED2E6EBAC700C2DA5C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSAddTorrent.swift; sourceTree = "<group>"; };
 		4B9CAC552D7E83460094CD03 /* iOSAddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSAddTorrent.swift; sourceTree = "<group>"; };
-		4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBadgeManager.swift; sourceTree = "<group>"; };
 		4BC2C9272E6E22B800011971 /* macOSTorrentList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentList.swift; sourceTree = "<group>"; };
 		4BC2C9282E6E22B800011971 /* macOSTorrentListCompact.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentListCompact.swift; sourceTree = "<group>"; };
 		4BC2C9292E6E22B800011971 /* macOSTorrentListExpanded.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentListExpanded.swift; sourceTree = "<group>"; };
@@ -266,7 +264,6 @@
 			isa = PBXGroup;
 			children = (
 				4B908AED2E6EBAC700C2DA5C /* Info.plist */,
-				4B9CAC582D7F02FA0094CD03 /* AppBadgeManager.swift */,
 				4B7EF5702E6E9F0C00C1C281 /* AppConfig.swift */,
 				4D1000033B00000000B1C2D3 /* AppUpdater.swift */,
 				4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */,
@@ -603,7 +600,6 @@
 				4BC5C2AA2D7D20B500D80AB4 /* iOSContentView.swift in Sources */,
 				4B642D6D2D7E151A003CEADC /* iOSServerDetail.swift in Sources */,
 				4BDACD572E73DBBE0074F714 /* AppGroup.swift in Sources */,
-				4B9CAC5D2D7F02FA0094CD03 /* AppBadgeManager.swift in Sources */,
 				4B7398602E7029BD00D06E5D /* macOSAboutView.swift in Sources */,
 				4B642D7B2D7E1EF6003CEADC /* iOSServerList.swift in Sources */,
 				4B6F1EC02D86D52A003D8F6E /* TorrentFileDetail.swift in Sources */,
@@ -809,7 +805,7 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -860,7 +856,7 @@
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -901,7 +897,7 @@
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -946,7 +942,7 @@
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};

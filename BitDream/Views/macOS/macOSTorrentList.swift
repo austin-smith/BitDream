@@ -36,6 +36,7 @@ struct LinearTorrentProgressStyle: ProgressViewStyle {
 
 // MARK: - Torrent Row Modifier
 // Shared modifier for handling torrent row interactions
+@MainActor
 struct TorrentRowModifier: ViewModifier {
     var torrent: Torrent
     var selectedTorrents: Set<Torrent>
@@ -130,6 +131,7 @@ struct TorrentRowModifier: ViewModifier {
 }
 
 // MARK: - Context Menu Builder
+@MainActor
 @ViewBuilder
 func createTorrentContextMenu(
     torrents: Set<Torrent>,
@@ -466,6 +468,7 @@ func createTorrentContextMenu(
 }
 
 // MARK: - Rename Sheet View
+@MainActor
 struct RenameSheetView: View {
     let title: String
     @Binding var name: String
@@ -515,6 +518,7 @@ struct RenameSheetView: View {
 }
 
 // MARK: - Label Edit View
+@MainActor
 struct LabelEditView: View {
     @Binding var labelInput: String
     let existingLabels: [String]
@@ -638,6 +642,7 @@ struct LabelEditView: View {
 }
 
 // MARK: - Move Sheet View
+@MainActor
 struct MoveSheetContent: View {
     let store: Store
     let selectedTorrents: Set<Torrent>

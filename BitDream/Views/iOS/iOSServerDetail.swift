@@ -71,7 +71,7 @@ struct iOSServerDetail: View {
 
                     HStack {
                         Text("Port")
-                        TextField("port", value: $portInput, formatter: ServerDetail.portFormatter)
+                        TextField("port", value: $portInput, format: .number.grouping(.never))
                             .multilineTextAlignment(.trailing)
                     }
 

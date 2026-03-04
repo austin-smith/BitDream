@@ -1,95 +1,271 @@
 import Foundation
 
-var TOKEN_HEAD = "x-transmission-session-id"
 public typealias TransmissionConfig = URLComponents
-var lastSessionToken: String?
-var url: TransmissionConfig?
+private let sessionTokenHeader = "X-Transmission-Session-Id"
 
-public struct TransmissionAuth {
+public struct TransmissionAuth: Sendable {
     let username: String
     let password: String
 }
 
+private actor TransmissionSessionTokenStore {
+    static let shared = TransmissionSessionTokenStore()
+    private var tokens: [String: String] = [:]
+
+    func token(for endpoint: String) -> String? {
+        tokens[endpoint]
+    }
+
+    func setToken(_ token: String, for endpoint: String) {
+        tokens[endpoint] = token
+    }
+
+    func clearToken(for endpoint: String) {
+        tokens.removeValue(forKey: endpoint)
+    }
+}
+
 // MARK: - Core Request Functions
 
+private func rpcURL(from config: TransmissionConfig) -> URL? {
+    var endpoint = config
+    endpoint.path = "/transmission/rpc"
+    return endpoint.url
+}
+
+private func extractSessionToken(from response: HTTPURLResponse) -> String? {
+    for (key, value) in response.allHeaderFields {
+        let header = String(describing: key)
+        if header.compare(sessionTokenHeader, options: .caseInsensitive) == .orderedSame {
+            return value as? String
+        }
+    }
+    return nil
+}
+
+private func buildRequest(
+    url: URL,
+    requestData: Data,
+    auth: TransmissionAuth,
+    sessionToken: String?
+) -> URLRequest {
+    var req = URLRequest(url: url)
+    req.httpMethod = "POST"
+    req.httpBody = requestData
+    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    if let sessionToken {
+        req.setValue(sessionToken, forHTTPHeaderField: sessionTokenHeader)
+    }
+    let loginString = "\(auth.username):\(auth.password)"
+    let loginData = loginString.data(using: .utf8) ?? Data()
+    let base64LoginString = loginData.base64EncodedString()
+    req.setValue("Basic \(base64LoginString)", forHTTPHeaderField: "Authorization")
+    return req
+}
+
 /// Core private request function that handles common functionality
-private func sendRPCRequest<T: Codable>(
+private func sendRPCRequest(
     method: String,
-    requestBody: T,
+    requestData: Data,
     config: TransmissionConfig,
     auth: TransmissionAuth,
+    sessionToken: String? = nil,
     retrying: Bool = false,
-    responseHandler: @escaping (Data?, HTTPURLResponse?, Error?) -> Void
+    responseHandler: @MainActor @escaping (Data?, HTTPURLResponse?, Error?) -> Void
 ) {
-    url = config
-    url?.path = "/transmission/rpc"
+    sendRPCRequestInBackground(
+        method: method,
+        requestData: requestData,
+        config: config,
+        auth: auth,
+        sessionToken: sessionToken,
+        retrying: retrying
+    ) { data, response, error in
+        Task { @MainActor in
+            responseHandler(data, response, error)
+        }
+    }
+}
 
-    guard let req = buildRequest(requestBody: requestBody, auth: auth) else {
-        responseHandler(nil, nil, NSError(domain: "com.bitdream.transmission", code: -1,
-                        userInfo: [NSLocalizedDescriptionKey: "Failed to build request - URL not configured"]))
+private func sendRPCRequestInBackground(
+    method: String,
+    requestData: Data,
+    config: TransmissionConfig,
+    auth: TransmissionAuth,
+    sessionToken: String? = nil,
+    retrying: Bool = false,
+    responseHandler: @Sendable @escaping (Data?, HTTPURLResponse?, Error?) -> Void
+) {
+    guard let url = rpcURL(from: config) else {
+        responseHandler(
+            nil,
+            nil,
+            NSError(
+                domain: "com.bitdream.transmission",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to build request - URL not configured"]
+            )
+        )
         return
     }
+    let endpoint = url.absoluteString
 
-    let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
-        if let error = error {
-            return responseHandler(nil, resp as? HTTPURLResponse, error)
+    Task {
+        let resolvedToken: String?
+        if let sessionToken {
+            resolvedToken = sessionToken
+        } else {
+            resolvedToken = await TransmissionSessionTokenStore.shared.token(for: endpoint)
         }
+        let req = buildRequest(url: url, requestData: requestData, auth: auth, sessionToken: resolvedToken)
 
-        let httpResp = resp as? HTTPURLResponse
-        switch httpResp?.statusCode {
-        case 409?: // If we get a 409, save the session token and try again
-            authorize(httpResp: httpResp, ssl: (config.scheme == "https"))
-            if !retrying {
-                sendRPCRequest(method: method, requestBody: requestBody,
-                               config: config, auth: auth, retrying: true,
-                               responseHandler: responseHandler)
-            } else {
-                responseHandler(nil, httpResp, NSError(domain: "com.bitdream.transmission", code: 409,
-                                userInfo: [NSLocalizedDescriptionKey: "Session token error after retry"]))
+        let task = URLSession.shared.dataTask(with: req) { (data, resp, error) in
+            if let error = error {
+                let httpResp = resp as? HTTPURLResponse
+                if httpResp?.statusCode == 401 {
+                    Task {
+                        await TransmissionSessionTokenStore.shared.clearToken(for: endpoint)
+                    }
+                }
+                responseHandler(nil, httpResp, error)
+                return
             }
-            return
-        default:
-            responseHandler(data, httpResp, error)
+
+            let httpResp = resp as? HTTPURLResponse
+            switch httpResp?.statusCode {
+            case 409?:
+                guard !retrying, let httpResp, let nextToken = extractSessionToken(from: httpResp) else {
+                    responseHandler(
+                        nil,
+                        httpResp,
+                        NSError(
+                            domain: "com.bitdream.transmission",
+                            code: 409,
+                            userInfo: [NSLocalizedDescriptionKey: "Session token error after retry"]
+                        )
+                    )
+                    return
+                }
+
+                Task {
+                    await TransmissionSessionTokenStore.shared.setToken(nextToken, for: endpoint)
+                    sendRPCRequestInBackground(
+                        method: method,
+                        requestData: requestData,
+                        config: config,
+                        auth: auth,
+                        sessionToken: nextToken,
+                        retrying: true,
+                        responseHandler: responseHandler
+                    )
+                }
+            default:
+                if let httpResp, let refreshedToken = extractSessionToken(from: httpResp) {
+                    Task {
+                        await TransmissionSessionTokenStore.shared.setToken(refreshedToken, for: endpoint)
+                    }
+                } else if httpResp?.statusCode == 401 {
+                    Task {
+                        await TransmissionSessionTokenStore.shared.clearToken(for: endpoint)
+                    }
+                }
+
+                responseHandler(data, httpResp, nil)
+            }
         }
+        task.resume()
     }
-    task.resume()
+}
+
+private func decodeRPCResponse<R: Codable & Sendable>(
+    data: Data?,
+    response: HTTPURLResponse?,
+    error: Error?
+) -> Result<R, Error> {
+    if let error {
+        return .failure(error)
+    }
+
+    switch response?.statusCode {
+    case 401?:
+        return .failure(
+            NSError(
+                domain: "com.bitdream.transmission",
+                code: 401,
+                userInfo: [NSLocalizedDescriptionKey: "Unauthorized"]
+            )
+        )
+    case 200?:
+        do {
+            guard let data else {
+                throw NSError(
+                    domain: "com.bitdream.transmission",
+                    code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: "No data in response"]
+                )
+            }
+            let decoded = try JSONDecoder().decode(R.self, from: data)
+            return .success(decoded)
+        } catch {
+            return .failure(error)
+        }
+    default:
+        let errorMessage = data.map { String(decoding: $0, as: UTF8.self) } ?? "Unknown error"
+        return .failure(
+            NSError(
+                domain: "com.bitdream.transmission",
+                code: response?.statusCode ?? -1,
+                userInfo: [NSLocalizedDescriptionKey: errorMessage]
+            )
+        )
+    }
 }
 
 /// For requests that return decoded data
-private func executeAndDecodeRequest<T: Codable, R: Codable>(
+private func executeAndDecodeRequest<T: Codable, R: Codable & Sendable>(
     method: String,
     requestBody: T,
     config: TransmissionConfig,
     auth: TransmissionAuth,
     retrying: Bool = false,
-    completion: @escaping (Result<R, Error>) -> Void
+    completion: @MainActor @escaping (Result<R, Error>) -> Void
 ) {
-    sendRPCRequest(method: method, requestBody: requestBody, config: config, auth: auth, retrying: retrying) { (data, resp, error) in
-        if let error = error {
-            return completion(.failure(error))
+    let requestData: Data
+    do {
+        requestData = try JSONEncoder().encode(requestBody)
+    } catch {
+        Task { @MainActor in
+            completion(.failure(error))
         }
+        return
+    }
 
-        let httpResp = resp
-        switch httpResp?.statusCode {
-        case 401?:
-            return completion(.failure(NSError(domain: "com.bitdream.transmission", code: 401,
-                              userInfo: [NSLocalizedDescriptionKey: "Unauthorized"])))
-        case 200?:
-            do {
-                guard let data = data else {
-                    throw NSError(domain: "com.bitdream.transmission", code: -1,
-                                 userInfo: [NSLocalizedDescriptionKey: "No data in response"])
-                }
-                let decoded = try JSONDecoder().decode(R.self, from: data)
-                return completion(.success(decoded))
-            } catch {
-                return completion(.failure(error))
-            }
-        default:
-            let errorMessage = data != nil ? String(decoding: data!, as: UTF8.self) : "Unknown error"
-            completion(.failure(NSError(domain: "com.bitdream.transmission", code: httpResp?.statusCode ?? -1,
-                                userInfo: [NSLocalizedDescriptionKey: errorMessage])))
+    sendRPCRequestInBackground(method: method, requestData: requestData, config: config, auth: auth, retrying: retrying) { (data, resp, error) in
+        let result: Result<R, Error> = decodeRPCResponse(data: data, response: resp, error: error)
+        Task { @MainActor in
+            completion(result)
         }
+    }
+}
+
+private func executeAndDecodeRequestInBackground<T: Codable, R: Codable & Sendable>(
+    method: String,
+    requestBody: T,
+    config: TransmissionConfig,
+    auth: TransmissionAuth,
+    retrying: Bool = false,
+    completion: @Sendable @escaping (Result<R, Error>) -> Void
+) {
+    let requestData: Data
+    do {
+        requestData = try JSONEncoder().encode(requestBody)
+    } catch {
+        completion(.failure(error))
+        return
+    }
+
+    sendRPCRequestInBackground(method: method, requestData: requestData, config: config, auth: auth, retrying: retrying) { (data, resp, error) in
+        completion(decodeRPCResponse(data: data, response: resp, error: error))
     }
 }
 
@@ -100,9 +276,19 @@ private func executeStatusOnlyRequest<T: Codable>(
     config: TransmissionConfig,
     auth: TransmissionAuth,
     retrying: Bool = false,
-    completion: @escaping (TransmissionResponse) -> Void
+    completion: @MainActor @escaping (TransmissionResponse) -> Void
 ) {
-    sendRPCRequest(method: method, requestBody: requestBody, config: config, auth: auth, retrying: retrying) { (data, resp, error) in
+    let requestData: Data
+    do {
+        requestData = try JSONEncoder().encode(requestBody)
+    } catch {
+        Task { @MainActor in
+            completion(TransmissionResponse.configError)
+        }
+        return
+    }
+
+    sendRPCRequest(method: method, requestData: requestData, config: config, auth: auth, retrying: retrying) { (data, resp, error) in
         if error != nil {
             return completion(TransmissionResponse.configError)
         }
@@ -122,15 +308,32 @@ private func executeStatusOnlyRequest<T: Codable>(
 // MARK: - Generic API Method Factory
 
 /// Generic method to perform any Transmission RPC action that returns data
-public func performTransmissionDataRequest<Args: Codable, ResponseData: Codable>(
+public func performTransmissionDataRequest<Args: Codable, ResponseData: Codable & Sendable>(
     method: String,
     args: Args,
     config: TransmissionConfig,
     auth: TransmissionAuth,
-    completion: @escaping (Result<ResponseData, Error>) -> Void
+    completion: @MainActor @escaping (Result<ResponseData, Error>) -> Void
 ) {
     let requestBody = TransmissionGenericRequest(method: method, arguments: args)
     executeAndDecodeRequest(
+        method: method,
+        requestBody: requestBody,
+        config: config,
+        auth: auth,
+        completion: completion
+    )
+}
+
+private func performTransmissionDataRequestInBackground<Args: Codable, ResponseData: Codable & Sendable>(
+    method: String,
+    args: Args,
+    config: TransmissionConfig,
+    auth: TransmissionAuth,
+    completion: @Sendable @escaping (Result<TransmissionGenericResponse<ResponseData>, Error>) -> Void
+) {
+    let requestBody = TransmissionGenericRequest(method: method, arguments: args)
+    executeAndDecodeRequestInBackground(
         method: method,
         requestBody: requestBody,
         config: config,
@@ -145,7 +348,7 @@ public func performTransmissionStatusRequest<Args: Codable>(
     args: Args,
     config: TransmissionConfig,
     auth: TransmissionAuth,
-    completion: @escaping (TransmissionResponse) -> Void
+    completion: @MainActor @escaping (TransmissionResponse) -> Void
 ) {
     let requestBody = TransmissionGenericRequest(method: method, arguments: args)
     executeStatusOnlyRequest(
@@ -166,7 +369,7 @@ public func performTransmissionStatusRequest<Args: Codable>(
 ///   - config: Server configuration
 ///   - auth: Authentication credentials
 ///   - onResponse: Callback with the server's response
-private func executeTorrentAction(actionMethod: String, torrentId: Int, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (TransmissionResponse) -> Void) {
+private func executeTorrentAction(actionMethod: String, torrentId: Int, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @MainActor @escaping (TransmissionResponse) -> Void) {
     performTransmissionStatusRequest(
         method: actionMethod,
         args: ["ids": [torrentId]] as [String: [Int]],
@@ -179,7 +382,7 @@ private func executeTorrentAction(actionMethod: String, torrentId: Int, config: 
 // MARK: - API Functions
 
 /// Makes a request to the server for a list of the currently running torrents
-public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @escaping ([Torrent]?, String?) -> Void) -> Void {
+public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping ([Torrent]?, String?) -> Void) -> Void {
     let fields: [String] = [
         "activityDate", "addedDate", "desiredAvailable", "error", "errorString",
         "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled",
@@ -205,8 +408,50 @@ public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onRe
     }
 }
 
-public func getSessionStats(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @escaping (SessionStats?, String?) -> Void) -> Void {
+func getTorrentsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping ([Torrent]?, String?) -> Void) -> Void {
+    let fields: [String] = [
+        "activityDate", "addedDate", "desiredAvailable", "error", "errorString",
+        "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled",
+        "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete",
+        "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs",
+        "percentDone", "primary-mime-type", "downloadDir", "queuePosition",
+        "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status",
+        "uploadRatio", "uploadedEver", "downloadedEver"
+    ]
+
+    performTransmissionDataRequestInBackground(
+        method: "torrent-get",
+        args: ["fields": fields] as StringListArguments,
+        config: config,
+        auth: auth
+    ) { (result: Result<TransmissionGenericResponse<[String: [Torrent]]>, Error>) in
+        switch result {
+        case .success(let response):
+            onReceived(response.arguments["torrents"], nil)
+        case .failure(let error):
+            onReceived(nil, error.localizedDescription)
+        }
+    }
+}
+
+public func getSessionStats(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping (SessionStats?, String?) -> Void) -> Void {
     performTransmissionDataRequest(
+        method: "session-stats",
+        args: EmptyArguments(),
+        config: config,
+        auth: auth
+    ) { (result: Result<TransmissionGenericResponse<SessionStats>, Error>) in
+        switch result {
+        case .success(let response):
+            onReceived(response.arguments, nil)
+        case .failure(let error):
+            onReceived(nil, error.localizedDescription)
+        }
+    }
+}
+
+func getSessionStatsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping (SessionStats?, String?) -> Void) -> Void {
+    performTransmissionDataRequestInBackground(
         method: "session-stats",
         args: EmptyArguments(),
         config: config,
@@ -227,7 +472,7 @@ public func getSessionStats(config: TransmissionConfig, auth: TransmissionAuth, 
 /// - Parameter file: A boolean value; true if `fileUrl` is a base64 encoded file and false if `fileUrl` is a magnet link
 /// - Parameter config: A `TransmissionConfig` containing the server's address and port
 /// - Parameter onAdd: An escaping function that receives the servers response code represented as a `TransmissionResponse`
-public func addTorrent(fileUrl: String, saveLocation: String, auth: TransmissionAuth, file: Bool, config: TransmissionConfig, onAdd: @escaping ((response: TransmissionResponse, transferId: Int)) -> Void) -> Void {
+public func addTorrent(fileUrl: String, saveLocation: String, auth: TransmissionAuth, file: Bool, config: TransmissionConfig, onAdd: @MainActor @escaping ((response: TransmissionResponse, transferId: Int)) -> Void) -> Void {
     // Create the torrent body based on the value of `fileUrl` and `file`
     let args: [String: String] = file ?
         ["metainfo": fileUrl, "download-dir": saveLocation] :
@@ -256,7 +501,7 @@ public func addTorrent(fileUrl: String, saveLocation: String, auth: Transmission
 /// - Parameter transferId: The ID of the torrent to get files for
 /// - Parameter info: A tuple containing the server config and auth info
 /// - Parameter onReceived: A callback that receives the list of files and their stats
-public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, auth: TransmissionAuth), onReceived: @escaping ([TorrentFile], [TorrentFileStats])->(Void)) {
+public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, auth: TransmissionAuth), onReceived: @MainActor @escaping ([TorrentFile], [TorrentFileStats])->(Void)) {
     let args = TorrentFilesRequestArgs(
         fields: ["files", "fileStats"],
         ids: [transferId]
@@ -288,7 +533,7 @@ public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, 
 /// - Parameter config: A `TransmissionConfig` containing the server's address and port
 /// - Parameter auth: A `TransmissionAuth` containing username and password for the server
 /// - Parameter onDel: An escaping function that receives the server's response code as a `TransmissionResponse`
-public func deleteTorrent(torrent: Torrent, erase: Bool, config: TransmissionConfig, auth: TransmissionAuth, onDel: @escaping (TransmissionResponse) -> Void) -> Void {
+public func deleteTorrent(torrent: Torrent, erase: Bool, config: TransmissionConfig, auth: TransmissionAuth, onDel: @MainActor @escaping (TransmissionResponse) -> Void) -> Void {
     let args = TransmissionRemoveRequestArgs(
         ids: [torrent.id],
         deleteLocalData: erase
@@ -318,7 +563,7 @@ public struct SessionInfo {
 /// - Parameter config: The server's config
 /// - Parameter auth: The username and password for the server
 /// - Parameter onResponse: An escaping function that receives session information from the server
-public func getSession(config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (TransmissionSessionResponseArguments) -> Void, onError: @escaping (String) -> Void) {
+public func getSession(config: TransmissionConfig, auth: TransmissionAuth, onResponse: @MainActor @escaping (TransmissionSessionResponseArguments) -> Void, onError: @MainActor @escaping (String) -> Void) {
     let fields = [
         // Existing fields
         "download-dir",
@@ -387,7 +632,7 @@ public func getSession(config: TransmissionConfig, auth: TransmissionAuth, onRes
     }
 }
 
-public func playPauseTorrent(torrent: Torrent, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (TransmissionResponse) -> Void) {
+public func playPauseTorrent(torrent: Torrent, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @MainActor @escaping (TransmissionResponse) -> Void) {
     // If the torrent already has `stopped` status, start it. Otherwise, stop it.
     let actionMethod = torrent.status == TorrentStatus.stopped.rawValue ? "torrent-start" : "torrent-stop"
     executeTorrentAction(actionMethod: actionMethod, torrentId: torrent.id, config: config, auth: auth, onResponse: onResponse)
@@ -397,7 +642,7 @@ public func playPauseTorrent(torrent: Torrent, config: TransmissionConfig, auth:
 /// - Parameter start: True if we are starting all transfers, false if we are stopping them
 /// - Parameter info: An info struct generated from makeConfig
 /// - Parameter onResponse: Called when the request is complete
-public func playPauseAllTorrents(start: Bool, info: (config: TransmissionConfig, auth: TransmissionAuth), onResponse: @escaping (TransmissionResponse) -> Void) {
+public func playPauseAllTorrents(start: Bool, info: (config: TransmissionConfig, auth: TransmissionAuth), onResponse: @MainActor @escaping (TransmissionResponse) -> Void) {
     // If the torrent already has `stopped` status, start it. Otherwise, stop it.
     let method = start ? "torrent-start" : "torrent-stop"
 
@@ -414,7 +659,7 @@ public func playPauseAllTorrents(start: Bool, info: (config: TransmissionConfig,
 public func pauseTorrents(
     ids: [Int],
     info: (config: TransmissionConfig, auth: TransmissionAuth),
-    onResponse: @escaping (TransmissionResponse) -> Void
+    onResponse: @MainActor @escaping (TransmissionResponse) -> Void
 ) {
     performTransmissionStatusRequest(
         method: "torrent-stop",
@@ -429,7 +674,7 @@ public func pauseTorrents(
 public func resumeTorrents(
     ids: [Int],
     info: (config: TransmissionConfig, auth: TransmissionAuth),
-    onResponse: @escaping (TransmissionResponse) -> Void
+    onResponse: @MainActor @escaping (TransmissionResponse) -> Void
 ) {
     performTransmissionStatusRequest(
         method: "torrent-start",
@@ -440,7 +685,7 @@ public func resumeTorrents(
     )
 }
 
-public func verifyTorrent(torrent: Torrent, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (TransmissionResponse) -> Void) {
+public func verifyTorrent(torrent: Torrent, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @MainActor @escaping (TransmissionResponse) -> Void) {
     executeTorrentAction(actionMethod: "torrent-verify", torrentId: torrent.id, config: config, auth: auth, onResponse: onResponse)
 }
 
@@ -448,7 +693,7 @@ public func verifyTorrent(torrent: Torrent, config: TransmissionConfig, auth: Tr
 /// - Parameter args: TorrentSetRequestArgs containing the properties and IDs to update
 /// - Parameter info: Tuple containing server config and auth info
 /// - Parameter onComplete: Called when the server's response is received
-public func updateTorrent(args: TorrentSetRequestArgs, info: (config: TransmissionConfig, auth: TransmissionAuth), onComplete: @escaping (TransmissionResponse) -> Void) {
+public func updateTorrent(args: TorrentSetRequestArgs, info: (config: TransmissionConfig, auth: TransmissionAuth), onComplete: @MainActor @escaping (TransmissionResponse) -> Void) {
     performTransmissionStatusRequest(
         method: "torrent-set",
         args: args,
@@ -458,42 +703,11 @@ public func updateTorrent(args: TorrentSetRequestArgs, info: (config: Transmissi
     )
 }
 
-/// Gets the session-token from the response and sets it as the `lastSessionToken`
-public func authorize(httpResp: HTTPURLResponse?, ssl: Bool) {
-    TOKEN_HEAD = ssl ? TOKEN_HEAD : "X-Transmission-Session-Id" // Apparently it's different with SSL 🤦‍♂️
-    if let headers = httpResp?.allHeaderFields {
-        lastSessionToken = headers[TOKEN_HEAD] as? String
-    }
-}
-
-/// Creates a `URLRequest` with provided body and TransmissionAuth
-/// - Parameter requestBody: Any struct that conforms to `Codable` to be sent as the request body
-/// - Parameter auth: The authorization values username and password to authorize the request with credentials
-/// - Returns: A `URLRequest` with the provided body and auth values
-private func buildRequest<T: Codable>(requestBody: T, auth: TransmissionAuth) -> URLRequest? {
-    // Create the request with auth values
-    guard let url = url, let urlValue = url.url else {
-        return nil
-    }
-
-    var req = URLRequest(url: urlValue)
-    req.httpMethod = "POST"
-    req.httpBody = try? JSONEncoder().encode(requestBody)
-    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    req.setValue(lastSessionToken, forHTTPHeaderField: TOKEN_HEAD)
-    let loginString = String(format: "%@:%@", auth.username, auth.password)
-    let loginData = loginString.data(using: String.Encoding.utf8)!
-    let base64LoginString = loginData.base64EncodedString()
-    req.setValue("Basic \(base64LoginString)", forHTTPHeaderField: "Authorization")
-
-    return req
-}
-
-public func startTorrentNow(torrent: Torrent, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (TransmissionResponse) -> Void) {
+public func startTorrentNow(torrent: Torrent, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @MainActor @escaping (TransmissionResponse) -> Void) {
     executeTorrentAction(actionMethod: "torrent-start-now", torrentId: torrent.id, config: config, auth: auth, onResponse: onResponse)
 }
 
-public func reAnnounceTorrent(torrent: Torrent, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @escaping (TransmissionResponse) -> Void) {
+public func reAnnounceTorrent(torrent: Torrent, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @MainActor @escaping (TransmissionResponse) -> Void) {
     executeTorrentAction(actionMethod: "torrent-reannounce", torrentId: torrent.id, config: config, auth: auth, onResponse: onResponse)
 }
 
@@ -505,7 +719,7 @@ public func setFileWantedStatus(
     fileIndices: [Int],
     wanted: Bool,
     info: (config: TransmissionConfig, auth: TransmissionAuth),
-    completion: @escaping (TransmissionResponse) -> Void
+    completion: @MainActor @escaping (TransmissionResponse) -> Void
 ) {
     var args = TorrentSetRequestArgs(ids: [torrentId])
     if wanted {
@@ -525,7 +739,7 @@ public func setFileWantedStatus(
 public func setTorrentLocation(
     args: TorrentSetLocationRequestArgs,
     info: (config: TransmissionConfig, auth: TransmissionAuth),
-    completion: @escaping (TransmissionResponse) -> Void
+    completion: @MainActor @escaping (TransmissionResponse) -> Void
 ) {
     performTransmissionStatusRequest(
         method: "torrent-set-location",
@@ -550,7 +764,7 @@ public func renameTorrentPath(
     newName: String,
     config: TransmissionConfig,
     auth: TransmissionAuth,
-    completion: @escaping (Result<TorrentRenameResponseArgs, Error>) -> Void
+    completion: @MainActor @escaping (Result<TorrentRenameResponseArgs, Error>) -> Void
 ) {
     let args = TorrentRenameRequestArgs(ids: [torrentId], path: path, name: newName)
     performTransmissionDataRequest(
@@ -575,7 +789,7 @@ public func setFilePriority(
     fileIndices: [Int],
     priority: FilePriority,
     info: (config: TransmissionConfig, auth: TransmissionAuth),
-    completion: @escaping (TransmissionResponse) -> Void
+    completion: @MainActor @escaping (TransmissionResponse) -> Void
 ) {
     var args = TorrentSetRequestArgs(ids: [torrentId])
 
@@ -598,7 +812,7 @@ public func setFilePriority(
 public func queueMoveTop(
     ids: [Int],
     info: (config: TransmissionConfig, auth: TransmissionAuth),
-    completion: @escaping (TransmissionResponse) -> Void
+    completion: @MainActor @escaping (TransmissionResponse) -> Void
 ) {
     performTransmissionStatusRequest(
         method: "queue-move-top",
@@ -617,7 +831,7 @@ public func queueMoveTop(
 public func queueMoveUp(
     ids: [Int],
     info: (config: TransmissionConfig, auth: TransmissionAuth),
-    completion: @escaping (TransmissionResponse) -> Void
+    completion: @MainActor @escaping (TransmissionResponse) -> Void
 ) {
     performTransmissionStatusRequest(
         method: "queue-move-up",
@@ -636,7 +850,7 @@ public func queueMoveUp(
 public func queueMoveDown(
     ids: [Int],
     info: (config: TransmissionConfig, auth: TransmissionAuth),
-    completion: @escaping (TransmissionResponse) -> Void
+    completion: @MainActor @escaping (TransmissionResponse) -> Void
 ) {
     performTransmissionStatusRequest(
         method: "queue-move-down",
@@ -655,7 +869,7 @@ public func queueMoveDown(
 public func queueMoveBottom(
     ids: [Int],
     info: (config: TransmissionConfig, auth: TransmissionAuth),
-    completion: @escaping (TransmissionResponse) -> Void
+    completion: @MainActor @escaping (TransmissionResponse) -> Void
 ) {
     performTransmissionStatusRequest(
         method: "queue-move-bottom",
@@ -678,7 +892,7 @@ public func setSession(
     args: TransmissionSessionSetRequestArgs,
     config: TransmissionConfig,
     auth: TransmissionAuth,
-    completion: @escaping (TransmissionResponse) -> Void
+    completion: @MainActor @escaping (TransmissionResponse) -> Void
 ) {
     performTransmissionStatusRequest(
         method: "session-set",
@@ -701,7 +915,7 @@ public func checkFreeSpace(
     path: String,
     config: TransmissionConfig,
     auth: TransmissionAuth,
-    completion: @escaping (Result<FreeSpaceResponse, Error>) -> Void
+    completion: @MainActor @escaping (Result<FreeSpaceResponse, Error>) -> Void
 ) {
     performTransmissionDataRequest(
         method: "free-space",
@@ -728,7 +942,7 @@ public func testPort(
     ipProtocol: String? = nil,
     config: TransmissionConfig,
     auth: TransmissionAuth,
-    completion: @escaping (Result<PortTestResponse, Error>) -> Void
+    completion: @MainActor @escaping (Result<PortTestResponse, Error>) -> Void
 ) {
     let args = PortTestRequestArgs(ipProtocol: ipProtocol)
     performTransmissionDataRequest(
@@ -754,7 +968,7 @@ public func testPort(
 public func updateBlocklist(
     config: TransmissionConfig,
     auth: TransmissionAuth,
-    completion: @escaping (Result<BlocklistUpdateResponse, Error>) -> Void
+    completion: @MainActor @escaping (Result<BlocklistUpdateResponse, Error>) -> Void
 ) {
     performTransmissionDataRequest(
         method: "blocklist-update",
@@ -781,7 +995,7 @@ public func updateBlocklist(
 public func getTorrentPeers(
     transferId: Int,
     info: (config: TransmissionConfig, auth: TransmissionAuth),
-    onReceived: @escaping (_ peers: [Peer], _ peersFrom: PeersFrom?) -> Void
+    onReceived: @MainActor @escaping (_ peers: [Peer], _ peersFrom: PeersFrom?) -> Void
 ) {
     let args = TorrentFilesRequestArgs(
         fields: ["peers", "peersFrom"],
@@ -817,7 +1031,7 @@ public func getTorrentPeers(
 public func getTorrentPieces(
     transferId: Int,
     info: (config: TransmissionConfig, auth: TransmissionAuth),
-    onReceived: @escaping (_ pieceCount: Int, _ pieceSize: Int64, _ piecesBitfieldBase64: String) -> Void
+    onReceived: @MainActor @escaping (_ pieceCount: Int, _ pieceSize: Int64, _ piecesBitfieldBase64: String) -> Void
 ) {
     let args = TorrentFilesRequestArgs(
         fields: ["pieceCount", "pieceSize", "pieces"],

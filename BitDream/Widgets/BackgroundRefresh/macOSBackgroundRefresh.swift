@@ -5,6 +5,7 @@ import Foundation
 import WidgetKit
 
 /// Manages background widget updates on macOS using NSBackgroundActivityScheduler
+@MainActor
 enum BackgroundActivityScheduler {
     private static var scheduler: NSBackgroundActivityScheduler?
     private static let activityIdentifier = "crapshack.BitDream.widgetRefresh"
@@ -23,12 +24,7 @@ enum BackgroundActivityScheduler {
         newScheduler.tolerance = defaultTolerance
         newScheduler.qualityOfService = .utility
 
-        newScheduler.schedule { [weak newScheduler] completion in
-            guard newScheduler != nil else {
-                completion(.finished)
-                return
-            }
-
+        newScheduler.schedule { completion in
             // Perform widget refresh
             performWidgetRefresh {
                 completion(.finished)
@@ -57,12 +53,7 @@ enum BackgroundActivityScheduler {
         newScheduler.tolerance = min(5 * 60, safeInterval * 0.3) // 30% tolerance, max 5 minutes
         newScheduler.qualityOfService = .utility
 
-        newScheduler.schedule { [weak newScheduler] completion in
-            guard newScheduler != nil else {
-                completion(.finished)
-                return
-            }
-
+        newScheduler.schedule { completion in
             performWidgetRefresh {
                 completion(.finished)
             }

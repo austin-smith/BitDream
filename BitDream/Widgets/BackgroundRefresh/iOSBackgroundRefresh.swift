@@ -1,7 +1,29 @@
 #if os(iOS)
 import Foundation
 import BackgroundTasks
+import Synchronization
 import WidgetKit
+
+/// Bridges non-Sendable `BGAppRefreshTask` into `@Sendable` completion contexts.
+/// Safety invariant: `setTaskCompleted` is invoked at most once, guarded by a mutex.
+private final class AppRefreshTaskBox: @unchecked Sendable {
+    private let task: BGAppRefreshTask
+    private let completionState = Mutex(false)
+
+    init(task: BGAppRefreshTask) {
+        self.task = task
+    }
+
+    func complete(success: Bool) {
+        let shouldComplete = completionState.withLock { completed in
+            guard !completed else { return false }
+            completed = true
+            return true
+        }
+        guard shouldComplete else { return }
+        task.setTaskCompleted(success: success)
+    }
+}
 
 enum BackgroundRefreshManager {
     static let taskIdentifier = "crapshack.BitDream.refresh"
@@ -29,15 +51,17 @@ enum BackgroundRefreshManager {
         schedule() // schedule the next one ASAP to keep cadence
 
         let operation = WidgetRefreshOperation()
+        let taskBox = AppRefreshTaskBox(task: task)
         operation.qualityOfService = .utility
 
         task.expirationHandler = {
             operation.cancel()
+            taskBox.complete(success: false)
         }
 
         operation.completionBlock = {
             let success = !operation.isCancelled
-            task.setTaskCompleted(success: success)
+            taskBox.complete(success: success)
         }
 
         WidgetRefreshOperation.enqueue(operation)

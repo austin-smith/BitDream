@@ -120,7 +120,7 @@ struct iOSTorrentDetail: View {
                             VStack(alignment: .leading, spacing: 6) {
                                 PiecesGridView(pieceCount: pieceCount, piecesBitfieldBase64: piecesBitfield)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                Text("\(piecesHaveCount) of \(pieceCount) pieces • \(byteCountFormatter.string(fromByteCount: pieceSize)) each")
+                                Text("\(piecesHaveCount) of \(pieceCount) pieces • \(formatByteCount(pieceSize)) each")
                                     .font(.caption)
                                     .foregroundColor(.gray)
                             }

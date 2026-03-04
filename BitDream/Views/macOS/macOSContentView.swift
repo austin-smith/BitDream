@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import Synchronization
 import SwiftData
 import UniformTypeIdentifiers
 
@@ -50,7 +51,7 @@ struct macOSContentView: View {
     private var torrentPreviewCard: some View {
         let totalSize = draggedTorrentInfo.reduce(0) { $0 + $1.totalSize }
         let totalFiles = draggedTorrentInfo.reduce(0) { $0 + $1.fileCount }
-        let formattedTotalSize = byteCountFormatter.string(fromByteCount: totalSize)
+        let formattedTotalSize = formatByteCount(totalSize)
         let fileCountText = totalFiles == 1 ? "1 file" : "\(totalFiles) files"
 
         let displayTitle: String = {
@@ -190,11 +191,9 @@ struct macOSContentView: View {
                 handleTransmissionResponse(response,
                     onSuccess: {},
                     onError: { error in
-                        DispatchQueue.main.async {
-                            store.debugBrief = "Failed to remove torrent"
-                            store.debugMessage = error
-                            store.isError = true
-                        }
+                        store.debugBrief = "Failed to remove torrent"
+                        store.debugMessage = error
+                        store.isError = true
                     }
                 )
             }
@@ -430,7 +429,7 @@ struct macOSContentView: View {
         .onChange(of: isInspectorVisible) { oldValue, newValue in
             UserDefaults.standard.inspectorVisibility = newValue
             // Defer state change to avoid publishing during view update
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 store.isInspectorVisible = newValue
             }
             focusedTarget = .contentList
@@ -445,7 +444,7 @@ struct macOSContentView: View {
             if newValue {
                 isSearchPresented = true
                 // Defer state change to avoid publishing during view update
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     store.shouldActivateSearch = false
                 }
             }
@@ -456,7 +455,7 @@ struct macOSContentView: View {
                     isInspectorVisible.toggle()
                 }
                 // Defer state change to avoid publishing during view update
-                DispatchQueue.main.async {
+                Task { @MainActor in
                     store.shouldToggleInspector = false
                 }
             }
@@ -807,19 +806,41 @@ private struct ConnectionBannerView: View {
 
 // MARK: - Custom Drop Delegate
 
+private final class TorrentInfoAccumulator: Sendable {
+    private let values = Mutex<[TorrentInfo]>([])
+
+    func append(_ value: TorrentInfo) {
+        values.withLock { $0.append(value) }
+    }
+
+    var snapshot: [TorrentInfo] {
+        values.withLock { $0 }
+    }
+}
+
 struct TorrentDropDelegate: DropDelegate {
     @Binding var isDropTargeted: Bool
     @Binding var draggedTorrentInfo: [TorrentInfo]
     let store: Store
+
+    private nonisolated static func readTorrentData(from url: URL) async throws -> Data {
+        try await Task.detached(priority: .userInitiated) {
+            var didAccess = false
+            if url.isFileURL {
+                didAccess = url.startAccessingSecurityScopedResource()
+            }
+            defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
+            return try Data(contentsOf: url)
+        }.value
+    }
 
     func dropEntered(info: DropInfo) {
         isDropTargeted = true
 
         // Count expected torrents first
         let providers = info.itemProviders(for: [.fileURL])
-        var parsedInfos: [TorrentInfo] = []
+        let parsedInfos = TorrentInfoAccumulator()
         let group = DispatchGroup()
-        let resultsLock = NSLock()
 
         for provider in providers {
             if provider.canLoadObject(ofClass: URL.self) {
@@ -837,9 +858,7 @@ struct TorrentDropDelegate: DropDelegate {
 
                         let data = try Data(contentsOf: url)
                         if let torrentInfo = parseTorrentInfo(from: data) {
-                            resultsLock.lock()
                             parsedInfos.append(torrentInfo)
-                            resultsLock.unlock()
                         }
                     } catch {
                         print("Failed to parse torrent during drag: \(error)")
@@ -850,7 +869,7 @@ struct TorrentDropDelegate: DropDelegate {
 
         // Update UI only when ALL torrents are parsed
         group.notify(queue: .main) {
-            draggedTorrentInfo = parsedInfos
+            draggedTorrentInfo = parsedInfos.snapshot
         }
     }
 
@@ -866,19 +885,10 @@ struct TorrentDropDelegate: DropDelegate {
             if provider.canLoadObject(ofClass: URL.self) {
                 _ = provider.loadObject(ofClass: URL.self) { url, error in
                     guard let url = url, url.pathExtension.lowercased() == "torrent" else { return }
-
-                    DispatchQueue.global(qos: .userInitiated).async {
+                    Task { @MainActor in
                         do {
-                            var didAccess = false
-                            if url.isFileURL {
-                                didAccess = url.startAccessingSecurityScopedResource()
-                            }
-                            defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
-
-                            let data = try Data(contentsOf: url)
-                            DispatchQueue.main.async {
-                                addTorrentFromFileData(data, store: store)
-                            }
+                            let data = try await Self.readTorrentData(from: url)
+                            addTorrentFromFileData(data, store: store)
                         } catch {
                             print("Failed to read dropped torrent file: \(error)")
                         }

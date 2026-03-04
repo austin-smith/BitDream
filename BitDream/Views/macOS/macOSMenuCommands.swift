@@ -211,11 +211,9 @@ struct TorrentCommands: Commands {
             handleTransmissionResponse(response,
                 onSuccess: {},
                 onError: { error in
-                    DispatchQueue.main.async {
-                        store.debugBrief = "Failed to pause torrents"
-                        store.debugMessage = error
-                        store.isError = true
-                    }
+                    store.debugBrief = "Failed to pause torrents"
+                    store.debugMessage = error
+                    store.isError = true
                 }
             )
         }
@@ -232,11 +230,9 @@ struct TorrentCommands: Commands {
             handleTransmissionResponse(response,
                 onSuccess: {},
                 onError: { error in
-                    DispatchQueue.main.async {
-                        store.debugBrief = "Failed to resume torrents"
-                        store.debugMessage = error
-                        store.isError = true
-                    }
+                    store.debugBrief = "Failed to resume torrents"
+                    store.debugMessage = error
+                    store.isError = true
                 }
             )
         }
@@ -251,11 +247,9 @@ struct TorrentCommands: Commands {
                 handleTransmissionResponse(response,
                     onSuccess: {},
                     onError: { error in
-                        DispatchQueue.main.async {
-                            store.debugBrief = "Failed to resume torrents now"
-                            store.debugMessage = error
-                            store.isError = true
-                        }
+                        store.debugBrief = "Failed to resume torrents now"
+                        store.debugMessage = error
+                        store.isError = true
                     }
                 )
             }
@@ -271,11 +265,9 @@ struct TorrentCommands: Commands {
             handleTransmissionResponse(response,
                 onSuccess: {},
                 onError: { error in
-                    DispatchQueue.main.async {
-                        store.debugBrief = "Failed to pause all torrents"
-                        store.debugMessage = error
-                        store.isError = true
-                    }
+                    store.debugBrief = "Failed to pause all torrents"
+                    store.debugMessage = error
+                    store.isError = true
                 }
             )
         }
@@ -290,11 +282,9 @@ struct TorrentCommands: Commands {
             handleTransmissionResponse(response,
                 onSuccess: {},
                 onError: { error in
-                    DispatchQueue.main.async {
-                        store.debugBrief = "Failed to resume all torrents"
-                        store.debugMessage = error
-                        store.isError = true
-                    }
+                    store.debugBrief = "Failed to resume all torrents"
+                    store.debugMessage = error
+                    store.isError = true
                 }
             )
         }
@@ -309,11 +299,9 @@ struct TorrentCommands: Commands {
                 handleTransmissionResponse(response,
                     onSuccess: {},
                     onError: { error in
-                        DispatchQueue.main.async {
-                            store.debugBrief = "Failed to ask for more peers"
-                            store.debugMessage = error
-                            store.isError = true
-                        }
+                        store.debugBrief = "Failed to ask for more peers"
+                        store.debugMessage = error
+                        store.isError = true
                     }
                 )
             }
@@ -331,11 +319,9 @@ struct TorrentCommands: Commands {
                 handleTransmissionResponse(response,
                     onSuccess: {},
                     onError: { error in
-                        DispatchQueue.main.async {
-                            store.debugBrief = "Failed to verify torrent"
-                            store.debugMessage = error
-                            store.isError = true
-                        }
+                        store.debugBrief = "Failed to verify torrent"
+                        store.debugMessage = error
+                        store.isError = true
                     }
                 )
             }
@@ -353,11 +339,9 @@ struct TorrentCommands: Commands {
             handleTransmissionResponse(response,
                 onSuccess: {},
                 onError: { error in
-                    DispatchQueue.main.async {
-                        store.globalAlertTitle = "Queue Error"
-                        store.globalAlertMessage = error
-                        store.showGlobalAlert = true
-                    }
+                    store.globalAlertTitle = "Queue Error"
+                    store.globalAlertMessage = error
+                    store.showGlobalAlert = true
                 }
             )
         }
@@ -372,11 +356,9 @@ struct TorrentCommands: Commands {
             handleTransmissionResponse(response,
                 onSuccess: {},
                 onError: { error in
-                    DispatchQueue.main.async {
-                        store.globalAlertTitle = "Queue Error"
-                        store.globalAlertMessage = error
-                        store.showGlobalAlert = true
-                    }
+                    store.globalAlertTitle = "Queue Error"
+                    store.globalAlertMessage = error
+                    store.showGlobalAlert = true
                 }
             )
         }
@@ -391,11 +373,9 @@ struct TorrentCommands: Commands {
             handleTransmissionResponse(response,
                 onSuccess: {},
                 onError: { error in
-                    DispatchQueue.main.async {
-                        store.globalAlertTitle = "Queue Error"
-                        store.globalAlertMessage = error
-                        store.showGlobalAlert = true
-                    }
+                    store.globalAlertTitle = "Queue Error"
+                    store.globalAlertMessage = error
+                    store.showGlobalAlert = true
                 }
             )
         }
@@ -410,11 +390,9 @@ struct TorrentCommands: Commands {
             handleTransmissionResponse(response,
                 onSuccess: {},
                 onError: { error in
-                    DispatchQueue.main.async {
-                        store.globalAlertTitle = "Queue Error"
-                        store.globalAlertMessage = error
-                        store.showGlobalAlert = true
-                    }
+                    store.globalAlertTitle = "Queue Error"
+                    store.globalAlertMessage = error
+                    store.showGlobalAlert = true
                 }
             )
         }
