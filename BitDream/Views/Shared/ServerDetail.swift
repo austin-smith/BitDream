@@ -48,7 +48,14 @@ struct ServerDetail: View {
 
 // MARK: - Shared Helper Functions
 
-/// Saves a new server to Core Data and Keychain
+private func userFacingHostPersistenceMessage(_ error: Error) -> String {
+    if let persistenceError = error as? HostPersistenceError {
+        return persistenceError.userMessage
+    }
+    return error.localizedDescription
+}
+
+/// Saves a new server through the host repository
 func saveNewServer(
     nameInput: String,
     hostInput: String,
@@ -58,52 +65,47 @@ func saveNewServer(
     isDefault: Bool,
     isSSL: Bool,
     modelContext: ModelContext,
-    hosts: [Host],
+    hosts _: [Host],
     store: Store,
-    completion: @escaping () -> Void
+    completion: @escaping () -> Void,
+    onError: @escaping (String) -> Void = { _ in }
 ) {
     // Validate required fields
     guard !hostInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
     guard portInput >= 1 && portInput <= 65535 else { return }
 
-    // If friendly name is empty, use hostname
-    let finalNameInput = nameInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?
-        hostInput : nameInput
+    Task { @MainActor in
+        do {
+            let draft = HostDraft(
+                name: nameInput,
+                server: hostInput,
+                port: portInput,
+                username: userInput,
+                isSSL: isSSL,
+                isDefault: isDefault,
+                password: passInput
+            )
 
-    if isDefault {
-        hosts.forEach { host in
-            if host.isDefault {
-                host.isDefault = false
+            let host = try await HostRepository.shared.create(draft: draft)
+            if store.host == nil {
+                store.setHost(host: host)
             }
+            completion()
+        } catch {
+            if let persistenceError = error as? HostPersistenceError,
+               case .catalogSyncFailure = persistenceError {
+                if store.host == nil {
+                    ensureStartupConnectionBehaviorApplied(store: store, modelContext: modelContext)
+                }
+                completion()
+                return
+            }
+            onError(userFacingHostPersistenceMessage(error))
         }
     }
-
-    // Save host
-    let newHost = Host(
-        isDefault: isDefault,
-        isSSL: isSSL,
-        name: finalNameInput,
-        port: Int16(portInput),
-        server: hostInput,
-        username: userInput
-    )
-    _ = newHost.ensureCredentialKey()
-    modelContext.insert(newHost)
-
-    try? modelContext.save()
-
-    // Save password to keychain
-    KeychainPasswordStore.savePassword(passInput, for: newHost)
-
-    // if there is no host currently set, then set it to the one being created
-    if (store.host == nil) {
-        store.setHost(host: newHost)
-    }
-
-    completion()
 }
 
-/// Updates an existing server in Core Data and Keychain
+/// Updates an existing server through the host repository
 func updateExistingServer(
     host: Host,
     nameInput: String,
@@ -113,34 +115,34 @@ func updateExistingServer(
     passInput: String,
     isDefault: Bool,
     isSSL: Bool,
-    modelContext: ModelContext,
-    hosts: [Host],
-    completion: @escaping () -> Void
+    modelContext _: ModelContext,
+    hosts _: [Host],
+    completion: @escaping () -> Void,
+    onError: @escaping (String) -> Void = { _ in }
 ) {
-    // Save host
-    host.name = nameInput
-    host.isDefault = isDefault
-    host.server = hostInput
-    host.port = Int16(portInput)
-    host.username = userInput
-    host.isSSL = isSSL
-    _ = host.ensureCredentialKey()
+    Task { @MainActor in
+        do {
+            let draft = HostDraft(
+                name: nameInput,
+                server: hostInput,
+                port: portInput,
+                username: userInput,
+                isSSL: isSSL,
+                isDefault: isDefault,
+                password: passInput
+            )
 
-    // If default is being enabled then ensure to disable it on any current default server
-    if (isDefault) {
-        hosts.forEach { h in
-            if h.isDefault && h.serverID != host.serverID {
-                h.isDefault = false
+            _ = try await HostRepository.shared.update(serverID: host.serverID, draft: draft)
+            completion()
+        } catch {
+            if let persistenceError = error as? HostPersistenceError,
+               case .catalogSyncFailure = persistenceError {
+                completion()
+                return
             }
+            onError(userFacingHostPersistenceMessage(error))
         }
     }
-
-    try? modelContext.save()
-
-    // Save password to keychain
-    KeychainPasswordStore.savePassword(passInput, for: host)
-
-    completion()
 }
 
 /// Loads server data into state variables
@@ -154,19 +156,53 @@ func loadServerData(
     let portInput = Int(host.port)
     let isSSL = host.isSSL
     let userInput = host.username ?? ""
-    let passInput = KeychainPasswordStore.readPassword(for: host)
+    let passInput: String
+    if let credentialKey = KeychainPasswordStore.credentialKeyIfPresent(for: host) {
+        passInput = KeychainPasswordStore.readPassword(credentialKey: credentialKey)
+    } else {
+        passInput = ""
+    }
 
     onLoad(nameInput, isDefault, hostInput, portInput, isSSL, userInput, passInput)
 }
 
-/// Deletes a server from Core Data
-func deleteServer(
+/// Deletes a server through the host repository
+func deleteServerFromDetail(
     host: Host,
-    modelContext: ModelContext,
-    completion: @escaping () -> Void
+    store: Store,
+    hosts: [Host],
+    modelContext _: ModelContext,
+    completion: @escaping () -> Void,
+    onError: @escaping (String) -> Void = { _ in }
 ) {
-    KeychainPasswordStore.deletePassword(for: host)
-    modelContext.delete(host)
-    try? modelContext.save()
-    completion()
+    let completeDeletion = {
+        if host.serverID == store.host?.serverID {
+            if let nextHost = hosts.first(where: { $0.serverID != host.serverID }) {
+                store.setHost(host: nextHost)
+                UserDefaults.standard.set(nextHost.serverID, forKey: UserDefaultsKeys.selectedHost)
+            } else {
+                store.host = nil
+                UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedHost)
+                store.torrents = []
+                store.sessionStats = nil
+                store.timer.invalidate()
+            }
+        }
+
+        completion()
+    }
+
+    Task { @MainActor in
+        do {
+            try await HostRepository.shared.delete(serverID: host.serverID)
+            completeDeletion()
+        } catch {
+            if let persistenceError = error as? HostPersistenceError,
+               case .catalogSyncFailure = persistenceError {
+                completeDeletion()
+                return
+            }
+            onError(userFacingHostPersistenceMessage(error))
+        }
+    }
 }

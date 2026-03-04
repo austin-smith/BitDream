@@ -134,8 +134,11 @@ struct iOSServerDetail: View {
             .alert("Delete Server", isPresented: $showingDeleteConfirmation) {
                 Button("Delete", role: .destructive) {
                     if let host = host {
-                        deleteServer(host: host, modelContext: modelContext) {
+                        deleteServerFromDetail(host: host, store: store, hosts: hosts, modelContext: modelContext) {
                             dismiss()
+                        } onError: { message in
+                            validationMessage = message
+                            showingValidationAlert = true
                         }
                     }
                 }
@@ -162,6 +165,9 @@ struct iOSServerDetail: View {
                                     store: store
                                 ) {
                                     dismiss()
+                                } onError: { message in
+                                    validationMessage = message
+                                    showingValidationAlert = true
                                 }
                             }
                         }
@@ -185,6 +191,9 @@ struct iOSServerDetail: View {
                                         hosts: hosts
                                     ) {
                                         dismiss()
+                                    } onError: { message in
+                                        validationMessage = message
+                                        showingValidationAlert = true
                                     }
                                 }
                             }

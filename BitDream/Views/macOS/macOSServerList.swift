@@ -130,6 +130,10 @@ struct macOSServerList: View {
                 Button("Delete \(host.name ?? "Unnamed Server")", role: .destructive) {
                     deleteServer(host: host, store: store, hosts: hosts, modelContext: modelContext) {
                         serverToDelete = nil
+                    } onError: { message in
+                        store.globalAlertTitle = "Error"
+                        store.globalAlertMessage = message
+                        store.showGlobalAlert = true
                     }
                 }
             } message: { host in

@@ -94,6 +94,7 @@ struct BitDreamApp: App {
                     }
                 }
                 .task {
+                    await HostRepository.shared.bootstrap()
                     appFileOpenDelegate.configure(with: store)
                     ensureStartupConnectionBehaviorApplied(store: store, modelContext: persistenceController.container.mainContext)
                     syncMenuBarStatusItem()
@@ -260,6 +261,8 @@ struct BitDreamApp: App {
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
                 .immediateTheme(manager: themeManager)
                 .task {
+                    await HostRepository.shared.bootstrap()
+                    ensureStartupConnectionBehaviorApplied(store: store, modelContext: persistenceController.container.mainContext)
                     BackgroundRefreshManager.schedule()
                 }
                 .onChange(of: scenePhase) { oldPhase, newPhase in

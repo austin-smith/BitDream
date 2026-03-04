@@ -8,11 +8,13 @@ enum KeychainPasswordStore {
         readPassword(credentialKey: host.ensureCredentialKey())
     }
 
-    static func savePassword(_ password: String, for host: Host) {
+    @discardableResult
+    static func savePassword(_ password: String, for host: Host) -> Bool {
         savePassword(password, credentialKey: host.ensureCredentialKey())
     }
 
-    static func deletePassword(for host: Host) {
+    @discardableResult
+    static func deletePassword(for host: Host) -> Bool {
         deletePassword(credentialKey: host.ensureCredentialKey())
     }
 
@@ -24,12 +26,21 @@ enum KeychainPasswordStore {
         return password
     }
 
-    static func savePassword(_ password: String, credentialKey: String) {
-        _ = upsertPassword(password, account: accountForCredentialKey(credentialKey))
+    @discardableResult
+    static func savePassword(_ password: String, credentialKey: String) -> Bool {
+        upsertPassword(password, account: accountForCredentialKey(credentialKey))
     }
 
-    static func deletePassword(credentialKey: String) {
-        _ = deletePassword(account: accountForCredentialKey(credentialKey))
+    @discardableResult
+    static func deletePassword(credentialKey: String) -> Bool {
+        deletePassword(account: accountForCredentialKey(credentialKey))
+    }
+
+    static func credentialKeyIfPresent(for host: Host) -> String? {
+        guard let key = host.credentialKey?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else {
+            return nil
+        }
+        return key
     }
 
     private static func accountForCredentialKey(_ credentialKey: String) -> String {

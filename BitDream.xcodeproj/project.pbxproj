@@ -83,6 +83,7 @@
 		4D1000023B00000000B1C2D3 /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D1000033B00000000B1C2D3 /* AppUpdater.swift */; };
 		4D3A00023C00000000E1F1A1 /* KeychainPasswordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3A00043C00000000E1F1A1 /* KeychainPasswordStore.swift */; };
 		4D3A00053C00000000E1F1A1 /* Host.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3A00063C00000000E1F1A1 /* Host.swift */; };
+		4D4A00123D00000000E2F2A2 /* HostRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D4A00113D00000000E2F2A2 /* HostRepository.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -167,7 +168,6 @@
 		4BDACD142E73DB220074F714 /* BitDreamWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BitDreamWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4BDACD162E73DB220074F714 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		4BDACD182E73DB220074F714 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		4BDACD382E73DB520074F714 /* BitDreamWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BitDreamWidgetsExtension.entitlements; sourceTree = "<group>"; };
 		4BDACD502E73DBBE0074F714 /* AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroup.swift; sourceTree = "<group>"; };
 		4BDE147E2F0B015C00FF6A46 /* AppIconManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconManager.swift; sourceTree = "<group>"; };
 		4BE364B92E6E75B300CF1A33 /* SharedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComponents.swift; sourceTree = "<group>"; };
@@ -186,6 +186,7 @@
 		4D2000023B10000000C3D4E5 /* BuildSettings.example.local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildSettings.example.local.xcconfig; sourceTree = "<group>"; };
 		4D3A00043C00000000E1F1A1 /* KeychainPasswordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainPasswordStore.swift; sourceTree = "<group>"; };
 		4D3A00063C00000000E1F1A1 /* Host.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Host.swift; sourceTree = "<group>"; };
+		4D4A00113D00000000E2F2A2 /* HostRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostRepository.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -245,7 +246,6 @@
 			children = (
 				4B4E4C1A2E8A1F6E00418FD7 /* AppIcons */,
 				4D2000033B10000000C3D4E5 /* Config */,
-				4BDACD382E73DB520074F714 /* BitDreamWidgetsExtension.entitlements */,
 				4B1DADDD295E6C440037E9FB /* BitDream */,
 				4BDACD1A2E73DB220074F714 /* BitDreamWidgets */,
 				4BDACD152E73DB220074F714 /* Frameworks */,
@@ -272,6 +272,7 @@
 				4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */,
 				4D3A00043C00000000E1F1A1 /* KeychainPasswordStore.swift */,
 				4B1DADE0295E6C440037E9FB /* Persistence.swift */,
+				4D4A00103D00000000E2F2A2 /* Persistence */,
 				4B1DAE0F295E702B0037E9FB /* Store.swift */,
 				4BD938E92D82AF6F006CE97C /* ThemeManager.swift */,
 				4B054C852E6FEB58004DDB99 /* TorrentExtensions.swift */,
@@ -445,6 +446,14 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		4D4A00103D00000000E2F2A2 /* Persistence */ = {
+			isa = PBXGroup;
+			children = (
+				4D4A00113D00000000E2F2A2 /* HostRepository.swift */,
+			);
+			path = Persistence;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -560,6 +569,7 @@
 				4D1000023B00000000B1C2D3 /* AppUpdater.swift in Sources */,
 				4D3A00053C00000000E1F1A1 /* Host.swift in Sources */,
 				4B1DADE1295E6C440037E9FB /* Persistence.swift in Sources */,
+				4D4A00123D00000000E2F2A2 /* HostRepository.swift in Sources */,
 				4B1DAE10295E702B0037E9FB /* Store.swift in Sources */,
 				4B4E4C8A2E8A2B4D00418FD7 /* AppIconCatalog.swift in Sources */,
 				4BF593BB2E89C8C400A8C1FC /* iOSTorrentPeerDetail.swift in Sources */,
@@ -792,7 +802,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -842,7 +852,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "BitDream App Developer ID";
@@ -861,7 +871,7 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = BitDreamWidgetsExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = BitDreamWidgets/BitDreamWidgetsExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
@@ -879,7 +889,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream.BitDreamWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -902,7 +912,7 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = BitDreamWidgetsExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = BitDreamWidgets/BitDreamWidgetsExtension.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				"CODE_SIGN_STYLE[sdk=iphoneos*]" = Automatic;
@@ -924,7 +934,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDream.BitDreamWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "BitDream Widget Developer ID";
