@@ -64,7 +64,7 @@ func saveNewServer(
     passInput: String,
     isDefault: Bool,
     isSSL: Bool,
-    modelContext _: ModelContext,
+    modelContext: ModelContext,
     hosts _: [Host],
     store: Store,
     completion: @escaping () -> Void,
@@ -92,6 +92,14 @@ func saveNewServer(
             }
             completion()
         } catch {
+            if let persistenceError = error as? HostPersistenceError,
+               case .catalogSyncFailure = persistenceError {
+                if store.host == nil {
+                    ensureStartupConnectionBehaviorApplied(store: store, modelContext: modelContext)
+                }
+                completion()
+                return
+            }
             onError(userFacingHostPersistenceMessage(error))
         }
     }
@@ -127,6 +135,11 @@ func updateExistingServer(
             _ = try await HostRepository.shared.update(serverID: host.serverID, draft: draft)
             completion()
         } catch {
+            if let persistenceError = error as? HostPersistenceError,
+               case .catalogSyncFailure = persistenceError {
+                completion()
+                return
+            }
             onError(userFacingHostPersistenceMessage(error))
         }
     }
@@ -162,25 +175,33 @@ func deleteServerFromDetail(
     completion: @escaping () -> Void,
     onError: @escaping (String) -> Void = { _ in }
 ) {
+    let completeDeletion = {
+        if host.serverID == store.host?.serverID {
+            if let nextHost = hosts.first(where: { $0.serverID != host.serverID }) {
+                store.setHost(host: nextHost)
+                UserDefaults.standard.set(nextHost.serverID, forKey: UserDefaultsKeys.selectedHost)
+            } else {
+                store.host = nil
+                UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedHost)
+                store.torrents = []
+                store.sessionStats = nil
+                store.timer.invalidate()
+            }
+        }
+
+        completion()
+    }
+
     Task { @MainActor in
         do {
             try await HostRepository.shared.delete(serverID: host.serverID)
-
-            if host.serverID == store.host?.serverID {
-                if let nextHost = hosts.first(where: { $0.serverID != host.serverID }) {
-                    store.setHost(host: nextHost)
-                    UserDefaults.standard.set(nextHost.serverID, forKey: UserDefaultsKeys.selectedHost)
-                } else {
-                    store.host = nil
-                    UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedHost)
-                    store.torrents = []
-                    store.sessionStats = nil
-                    store.timer.invalidate()
-                }
-            }
-
-            completion()
+            completeDeletion()
         } catch {
+            if let persistenceError = error as? HostPersistenceError,
+               case .catalogSyncFailure = persistenceError {
+                completeDeletion()
+                return
+            }
             onError(userFacingHostPersistenceMessage(error))
         }
     }

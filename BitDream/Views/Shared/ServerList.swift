@@ -50,26 +50,34 @@ func deleteServer(
     onError: @escaping (String) -> Void = { _ in }
 ) {
     let currentStore = store
+    let completeDeletion = {
+        if host.serverID == currentStore.host?.serverID {
+            let otherServers = hosts.filter { $0.serverID != host.serverID }
+            if let newServer = otherServers.first {
+                currentStore.setHost(host: newServer)
+                UserDefaults.standard.set(newServer.serverID, forKey: UserDefaultsKeys.selectedHost)
+            } else {
+                currentStore.host = nil
+                UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedHost)
+                currentStore.torrents = []
+                currentStore.sessionStats = nil
+                currentStore.timer.invalidate()
+            }
+        }
+
+        completion()
+    }
+
     Task { @MainActor in
         do {
             try await HostRepository.shared.delete(serverID: host.serverID)
-
-            if host.serverID == currentStore.host?.serverID {
-                let otherServers = hosts.filter { $0.serverID != host.serverID }
-                if let newServer = otherServers.first {
-                    currentStore.setHost(host: newServer)
-                    UserDefaults.standard.set(newServer.serverID, forKey: UserDefaultsKeys.selectedHost)
-                } else {
-                    currentStore.host = nil
-                    UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedHost)
-                    currentStore.torrents = []
-                    currentStore.sessionStats = nil
-                    currentStore.timer.invalidate()
-                }
-            }
-
-            completion()
+            completeDeletion()
         } catch {
+            if let persistenceError = error as? HostPersistenceError,
+               case .catalogSyncFailure = persistenceError {
+                completeDeletion()
+                return
+            }
             onError(userFacingServerListPersistenceMessage(error))
         }
     }
