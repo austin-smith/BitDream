@@ -2,10 +2,9 @@
 import Foundation
 import BackgroundTasks
 import Synchronization
-import WidgetKit
 
 /// Bridges non-Sendable `BGAppRefreshTask` into `@Sendable` completion contexts.
-/// Safety invariant: `setTaskCompleted` is invoked at most once, guarded by a mutex.
+/// Safety invariant: `setTaskCompleted(success:)` is invoked at most once, guarded by a mutex.
 private final class AppRefreshTaskBox: @unchecked Sendable {
     private let task: BGAppRefreshTask
     private let completionState = Mutex(false)
@@ -33,7 +32,11 @@ enum BackgroundRefreshManager {
 
     static func register() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: taskIdentifier, using: nil) { task in
-            handle(task: task as! BGAppRefreshTask)
+            guard let refreshTask = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            handle(task: refreshTask)
         }
     }
 
@@ -50,21 +53,15 @@ enum BackgroundRefreshManager {
     private static func handle(task: BGAppRefreshTask) {
         schedule() // schedule the next one ASAP to keep cadence
 
-        let operation = WidgetRefreshOperation()
         let taskBox = AppRefreshTaskBox(task: task)
-        operation.qualityOfService = .utility
-
-        task.expirationHandler = {
-            operation.cancel()
-            taskBox.complete(success: false)
-        }
-
-        operation.completionBlock = {
-            let success = !operation.isCancelled
+        let refreshHandle = enqueueWidgetRefresh { success in
             taskBox.complete(success: success)
         }
 
-        WidgetRefreshOperation.enqueue(operation)
+        task.expirationHandler = {
+            refreshHandle.cancel()
+            taskBox.complete(success: false)
+        }
     }
 }
 #endif
