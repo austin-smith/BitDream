@@ -145,7 +145,7 @@ struct iOSTorrentFileDetail: View {
                         .tint(row.percentDone >= 1.0 ? .green : .blue)
 
                     HStack {
-                        Text("\(byteCountFormatter.string(fromByteCount: row.bytesCompleted)) / \(byteCountFormatter.string(fromByteCount: row.size)) (\(String(format: "%.1f%%", row.percentDone * 100)))")
+                        Text("\(formatByteCount(row.bytesCompleted)) / \(formatByteCount(row.size)) (\(String(format: "%.1f%%", row.percentDone * 100)))")
                             .font(.system(.caption2, design: .monospaced))
                             .foregroundColor(.secondary)
 
@@ -305,31 +305,37 @@ struct iOSTorrentFileDetail: View {
     // MARK: - File Operations
 
     private func setFileWanted(_ row: TorrentFileRow, wanted: Bool) {
-        FileActionExecutor.setWanted(
-            torrentId: torrentId,
-            fileIndices: [row.fileIndex],
-            store: store,
-            wanted: wanted,
-            optimisticApply: { updateLocalFileStatus(fileIndex: row.fileIndex, wanted: wanted) },
-            revert: { revertToOriginalData() },
-            onComplete: { response in
-                print("Set wanted status: \(response)")
+        updateLocalFileStatus(fileIndex: row.fileIndex, wanted: wanted)
+
+        Task { @MainActor in
+            let response = await FileActionExecutor.setWanted(
+                torrentId: torrentId,
+                fileIndices: [row.fileIndex],
+                store: store,
+                wanted: wanted
+            )
+            if response != .success {
+                revertToOriginalData()
             }
-        )
+            print("Set wanted status: \(response)")
+        }
     }
 
     private func setFilePriority(_ row: TorrentFileRow, priority: FilePriority) {
-        FileActionExecutor.setPriority(
-            torrentId: torrentId,
-            fileIndices: [row.fileIndex],
-            store: store,
-            priority: priority,
-            optimisticApply: { updateLocalFilePriority(fileIndex: row.fileIndex, priority: priority) },
-            revert: { revertToOriginalData() },
-            onComplete: { response in
-                print("Set priority: \(response)")
+        updateLocalFilePriority(fileIndex: row.fileIndex, priority: priority)
+
+        Task { @MainActor in
+            let response = await FileActionExecutor.setPriority(
+                torrentId: torrentId,
+                fileIndices: [row.fileIndex],
+                store: store,
+                priority: priority
+            )
+            if response != .success {
+                revertToOriginalData()
             }
-        )
+            print("Set priority: \(response)")
+        }
     }
 
     // MARK: - Optimistic Updates

@@ -17,14 +17,6 @@ struct ServerDetail: View {
     static let hostRequiredMessage = "Hostname is required"
     static let invalidPortMessage = "Port number is required"
 
-    static let portFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .none
-        formatter.minimum = 1
-        formatter.maximum = 65535  // Maximum valid port number
-        return formatter
-    }()
-
     var body: some View {
         #if os(iOS)
         iOSServerDetail(
@@ -56,6 +48,7 @@ private func userFacingHostPersistenceMessage(_ error: Error) -> String {
 }
 
 /// Saves a new server through the host repository
+@MainActor
 func saveNewServer(
     nameInput: String,
     hostInput: String,
@@ -67,8 +60,8 @@ func saveNewServer(
     modelContext: ModelContext,
     hosts _: [Host],
     store: Store,
-    completion: @escaping () -> Void,
-    onError: @escaping (String) -> Void = { _ in }
+    completion: @MainActor @escaping () -> Void,
+    onError: @MainActor @escaping (String) -> Void = { _ in }
 ) {
     // Validate required fields
     guard !hostInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
@@ -106,6 +99,7 @@ func saveNewServer(
 }
 
 /// Updates an existing server through the host repository
+@MainActor
 func updateExistingServer(
     host: Host,
     nameInput: String,
@@ -117,8 +111,8 @@ func updateExistingServer(
     isSSL: Bool,
     modelContext _: ModelContext,
     hosts _: [Host],
-    completion: @escaping () -> Void,
-    onError: @escaping (String) -> Void = { _ in }
+    completion: @MainActor @escaping () -> Void,
+    onError: @MainActor @escaping (String) -> Void = { _ in }
 ) {
     Task { @MainActor in
         do {
@@ -146,6 +140,7 @@ func updateExistingServer(
 }
 
 /// Loads server data into state variables
+@MainActor
 func loadServerData(
     host: Host,
     onLoad: @escaping (String, Bool, String, Int, Bool, String, String) -> Void
@@ -167,13 +162,14 @@ func loadServerData(
 }
 
 /// Deletes a server through the host repository
+@MainActor
 func deleteServerFromDetail(
     host: Host,
     store: Store,
     hosts: [Host],
     modelContext _: ModelContext,
-    completion: @escaping () -> Void,
-    onError: @escaping (String) -> Void = { _ in }
+    completion: @MainActor @escaping () -> Void,
+    onError: @MainActor @escaping (String) -> Void = { _ in }
 ) {
     let completeDeletion = {
         if host.serverID == store.host?.serverID {

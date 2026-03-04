@@ -1,7 +1,7 @@
 #if os(iOS)
 import Foundation
 
-public struct AppIconPresentation {
+public struct AppIconPresentation: Sendable {
     public let key: String?
     public let title: String
     public let previewAssetName: String

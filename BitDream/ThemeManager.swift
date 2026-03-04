@@ -38,7 +38,8 @@ enum ThemeMode: String, CaseIterable {
 }
 
 // Theme manager class
-class ThemeManager: ObservableObject {
+@MainActor
+final class ThemeManager: ObservableObject {
     static let shared = ThemeManager()
 
     @Published var accentColor: Color

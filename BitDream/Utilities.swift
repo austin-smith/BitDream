@@ -103,25 +103,35 @@ func sortTorrents(_ torrents: [Torrent], by property: SortProperty, order: SortO
 
 // MARK: - Formatting
 
-public let byteCountFormatter: ByteCountFormatter = {
-    var formatter = ByteCountFormatter()
-    formatter.allowsNonnumericFormatting = false // Uses '0' instead of 'Zero'
-    formatter.countStyle = .file
-    formatter.allowedUnits = [.useKB, .useMB, .useGB, .useTB]
-
-    return formatter
-}()
+/// Shared byte formatting helper using modern format style
+/// Round up 1 to 999 bytes to 1 kB
+public func formatByteCount(_ bytes: Int64) -> String {
+    if bytes == 0 {
+        return "0 kB"
+    }
+    if bytes > 0 && bytes < 1_000 {
+        return "1 kB"
+    }
+    return bytes.formatted(
+        ByteCountFormatStyle(
+            style: .file,
+            allowedUnits: [.kb, .mb, .gb, .tb],
+            spellsOutZero: false,
+            includesActualByteCount: false
+        )
+    )
+}
 
 /// Shared speed formatting helper (Bytes per second -> human-readable short string)
 func formatSpeed(_ bytesPerSecond: Int64) -> String {
-    if bytesPerSecond <= 0 { return "0 B/s" }
-    let base = byteCountFormatter.string(fromByteCount: bytesPerSecond)
+    let base = formatByteCount(bytesPerSecond)
     return "\(base)/s"
 }
 
 // MARK: - Transmission Refresh
 
 /// Updates the list of torrents when called
+@MainActor
 func updateList(store: Store, update: @escaping ([Torrent]) -> Void, retry: Int = 0) {
     let info = makeConfig(store: store)
     getTorrents(config: info.config, auth: info.auth, onReceived: { torrents, err in
@@ -141,6 +151,7 @@ func updateList(store: Store, update: @escaping ([Torrent]) -> Void, retry: Int 
 }
 
 /// Updates the list of torrents when called
+@MainActor
 func updateSessionStats(store: Store, update: @escaping (SessionStats) -> Void, retry: Int = 0) {
     let info = makeConfig(store: store)
     getSessionStats(config: info.config, auth: info.auth, onReceived: { sessions, err in
@@ -170,6 +181,7 @@ func updateSessionStats(store: Store, update: @escaping (SessionStats) -> Void, 
 }
 
 /// Updates the session configuration (download directory, version, settings) with retry logic
+@MainActor
 func updateSessionInfo(store: Store, update: @escaping (TransmissionSessionResponseArguments) -> Void, retry: Int = 0) {
     let info = makeConfig(store: store)
     getSession(config: info.config, auth: info.auth, onResponse: { sessionInfo in
@@ -180,6 +192,7 @@ func updateSessionInfo(store: Store, update: @escaping (TransmissionSessionRespo
     })
 }
 
+@MainActor
 func pollTransmissionData(store: Store) {
     let info = makeConfig(store: store)
     getSessionStats(config: info.config, auth: info.auth, onReceived: { sessions, err in
@@ -195,9 +208,7 @@ func pollTransmissionData(store: Store) {
         }
 
         store.markConnected()
-        DispatchQueue.main.async {
-            store.sessionStats = stats
-        }
+        store.sessionStats = stats
         if let host = store.host {
             let serverName = host.name ?? host.server ?? "Server"
             writeSessionSnapshot(
@@ -209,20 +220,17 @@ func pollTransmissionData(store: Store) {
         }
 
         updateList(store: store, update: { vals in
-            DispatchQueue.main.async {
-                store.torrents = vals
-            }
+            store.torrents = vals
         })
 
         updateSessionInfo(store: store, update: { sessionInfo in
-            DispatchQueue.main.async {
-                store.sessionConfiguration = sessionInfo
-                store.defaultDownloadDir = sessionInfo.downloadDir
+            store.sessionConfiguration = sessionInfo
+            store.defaultDownloadDir = sessionInfo.downloadDir
 
-                if let host = store.host {
-                    Task { @MainActor in
-                        await HostRepository.shared.persistVersionIfNeeded(serverID: host.serverID, version: sessionInfo.version)
-                    }
+            if let serverID = store.host?.serverID {
+                let version = sessionInfo.version
+                Task { @MainActor in
+                    await HostRepository.shared.persistVersionIfNeeded(serverID: serverID, version: version)
                 }
             }
         })
@@ -230,6 +238,7 @@ func pollTransmissionData(store: Store) {
 }
 
 // updates all Transmission data based on current host
+@MainActor
 func refreshTransmissionData(store: Store) {
     pollTransmissionData(store: store)
 }
@@ -239,6 +248,7 @@ func refreshTransmissionData(store: Store) {
 /// Function for generating config and auth for API calls
 /// - Parameter store: The current `Store` containing session information needed for creating the config.
 /// - Returns a tuple containing the requested `config` and `auth`
+@MainActor
 func makeConfig(store: Store) -> (config: TransmissionConfig, auth: TransmissionAuth) {
     // Build config and auth safely without force unwraps
     var config = TransmissionConfig()
@@ -273,19 +283,17 @@ func handleTransmissionResponse(
     onSuccess: @escaping () -> Void,
     onError: @escaping (String) -> Void
 ) {
-    DispatchQueue.main.async {
-        switch response {
-        case .success:
-            onSuccess()
-        case .failed:
-            onError("Operation failed. Please try again.")
-        case .unauthorized:
-            onError("Authentication failed. Please check your server credentials.")
-        case .configError:
-            onError("Connection error. Please check your server settings.")
-        @unknown default:
-            onError("An unexpected error occurred. Please try again.")
-        }
+    switch response {
+    case .success:
+        onSuccess()
+    case .failed:
+        onError("Operation failed. Please try again.")
+    case .unauthorized:
+        onError("Authentication failed. Please check your server credentials.")
+    case .configError:
+        onError("Connection error. Please check your server settings.")
+    @unknown default:
+        onError("An unexpected error occurred. Please try again.")
     }
 }
 
@@ -314,13 +322,13 @@ extension View {
 // MARK: - Torrent Parsing
 
 /// Torrent metadata structure
-struct TorrentInfo {
+struct TorrentInfo: Sendable {
     let name: String
     let totalSize: Int64
     let fileCount: Int
 
     var formattedSize: String {
-        return byteCountFormatter.string(fromByteCount: totalSize)
+        return formatByteCount(totalSize)
     }
 
     var fileCountText: String {

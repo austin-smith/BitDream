@@ -346,11 +346,8 @@ struct macOSAddTorrent: View {
             file: true,
             config: info.config,
             onAdd: { response in
-                // Ensure UI updates happen on the main thread
-                DispatchQueue.main.async {
-                    if response.response != TransmissionResponse.success {
-                        handleAddTorrentError("Failed to add torrent: \(response.response)", errorMessage: $errorMessage, showingError: $showingError)
-                    }
+                if response.response != TransmissionResponse.success {
+                    handleAddTorrentError("Failed to add torrent: \(response.response)", errorMessage: $errorMessage, showingError: $showingError)
                 }
             }
         )

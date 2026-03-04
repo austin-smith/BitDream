@@ -2,9 +2,9 @@ import AppIntents
 import Foundation
 
 struct ServerEntity: AppEntity {
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Server"
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Server"
 
-    static var defaultQuery = ServerQuery()
+    static let defaultQuery = ServerQuery()
 
     @Property(title: "Server")
     var name: String

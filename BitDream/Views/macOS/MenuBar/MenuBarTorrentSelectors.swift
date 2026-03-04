@@ -10,6 +10,7 @@ struct MenuBarTorrentSummary {
     let ratio: Double
 }
 
+@MainActor
 func menuBarActiveTorrents(from store: Store, sortMode: MenuBarSortMode) -> [Torrent] {
     let active = store.torrents.filter(\.isActiveTransfer)
 
@@ -23,10 +24,12 @@ func menuBarActiveTorrents(from store: Store, sortMode: MenuBarSortMode) -> [Tor
     }
 }
 
+@MainActor
 func menuBarSummary(from store: Store) -> MenuBarTorrentSummary {
     menuBarSummary(from: store, activeTorrents: menuBarActiveTorrents(from: store, sortMode: .activity))
 }
 
+@MainActor
 func menuBarSummary(from store: Store, activeTorrents: [Torrent]) -> MenuBarTorrentSummary {
     let stats = store.sessionStats
 

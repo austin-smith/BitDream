@@ -3,10 +3,27 @@ import AppKit
 import Foundation
 import Combine
 
+@MainActor
 final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     @Published var pendingOpenFiles: [URL] = []
     var storeProvider: (() -> Store?)?
     private var hostCancellable: AnyCancellable?
+    private var isProcessingOpenFiles = false
+    
+    private struct OpenFailure: Sendable {
+        let filename: String
+        let message: String
+    }
+
+    private enum OpenAction: Sendable {
+        case magnet(String)
+        case torrentData(Data)
+    }
+
+    private struct OpenBatchResult: Sendable {
+        let actions: [OpenAction]
+        let failures: [OpenFailure]
+    }
 
     func application(_ sender: NSApplication, openFile filename: String) -> Bool {
         // Handle both file paths and magnet URLs passed as strings
@@ -59,34 +76,69 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
             return url.scheme?.lowercased() == "magnet"
         }
         guard !accepted.isEmpty else { return }
-        if let store = storeProvider?(), store.host != nil {
-            process(accepted, with: store)
-        } else {
-            pendingOpenFiles.append(contentsOf: accepted)
-        }
+        pendingOpenFiles.append(contentsOf: accepted)
+        flushIfPossible()
     }
 
     private func flushIfPossible() {
+        guard !isProcessingOpenFiles else { return }
         guard !pendingOpenFiles.isEmpty, let store = storeProvider?(), store.host != nil else { return }
-        process(pendingOpenFiles, with: store)
+
+        let batch = pendingOpenFiles
         pendingOpenFiles.removeAll()
+        isProcessingOpenFiles = true
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let result = await Self.prepareOpenBatch(from: batch)
+            apply(result, to: store)
+            isProcessingOpenFiles = false
+            flushIfPossible()
+        }
     }
 
-    private func process(_ urls: [URL], with store: Store) {
-        // Process files on background queue to avoid UI blocking
-        DispatchQueue.global(qos: .userInitiated).async {
-            var failures: [(filename: String, message: String)] = []
+    @MainActor
+    private func apply(_ result: OpenBatchResult, to store: Store) {
+        for action in result.actions {
+            switch action {
+            case .magnet(let magnetString):
+                store.enqueueMagnet(magnetString)
+            case .torrentData(let data):
+                addTorrentFromFileData(data, store: store)
+            }
+        }
+
+        guard !result.failures.isEmpty else { return }
+
+        let count = result.failures.count
+        if count == 1, let first = result.failures.first {
+            store.debugBrief = "Failed to open '\(first.filename)'"
+            store.debugMessage = first.message
+        } else {
+            store.debugBrief = "Failed to open \(count) torrent files"
+            let maxListed = 10
+            let listed = result.failures.prefix(maxListed)
+            let details = listed.map { "- \($0.filename): \($0.message)" }.joined(separator: "\n")
+            let remainder = count - listed.count
+            let suffix = remainder > 0 ? "\n...and \(remainder) more" : ""
+            store.debugMessage = details + suffix
+        }
+        store.isError = true
+    }
+
+    private nonisolated static func prepareOpenBatch(from urls: [URL]) async -> OpenBatchResult {
+        await Task(priority: .userInitiated) {
+            var actions: [OpenAction] = []
+            var failures: [OpenFailure] = []
+
             for url in urls {
                 do {
                     if url.scheme?.lowercased() == "magnet" {
                         let magnetString = url.absoluteString
-                        guard Self.isValidMagnet(magnetString) else {
+                        guard isValidMagnet(magnetString) else {
                             throw NSError(domain: "com.bitdream", code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid magnet link"])
                         }
-                        DispatchQueue.main.async {
-                            // Use global queueing to support sequential prompts
-                            store.enqueueMagnet(magnetString)
-                        }
+                        actions.append(.magnet(magnetString))
                     } else {
                         var didAccess = false
                         if url.isFileURL {
@@ -96,41 +148,27 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
                             if didAccess { url.stopAccessingSecurityScopedResource() }
                         }
                         let data = try Data(contentsOf: url)
-
-                        // Switch back to main queue for the actual add operation
-                        DispatchQueue.main.async {
-                            addTorrentFromFileData(data, store: store)
-                        }
+                        actions.append(.torrentData(data))
                     }
                 } catch {
-                    failures.append((filename: url.lastPathComponent, message: error.localizedDescription))
+                    failures.append(OpenFailure(filename: failureLabel(for: url), message: error.localizedDescription))
                 }
             }
 
-            // Present a single aggregated error dialog if any files failed
-            if !failures.isEmpty {
-                DispatchQueue.main.async {
-                    let count = failures.count
-                    if count == 1, let first = failures.first {
-                        store.debugBrief = "Failed to open '\(first.filename)'"
-                        store.debugMessage = first.message
-                    } else {
-                        store.debugBrief = "Failed to open \(count) torrent files"
-                        let maxListed = 10
-                        let listed = failures.prefix(maxListed)
-                        let details = listed.map { "- \($0.filename): \($0.message)" }.joined(separator: "\n")
-                        let remainder = count - listed.count
-                        let suffix = remainder > 0 ? "\n...and \(remainder) more" : ""
-                        store.debugMessage = details + suffix
-                    }
-                    store.isError = true
-                }
-            }
+            return OpenBatchResult(actions: actions, failures: failures)
+        }.value
+    }
+
+    private nonisolated static func failureLabel(for url: URL) -> String {
+        if url.isFileURL {
+            return url.lastPathComponent
         }
+        let magnet = url.absoluteString
+        return magnet.isEmpty ? "magnet link" : magnet
     }
 
     // Basic magnet validation per spec: scheme and xt=urn:btih
-    private static func isValidMagnet(_ magnet: String) -> Bool {
+    private nonisolated static func isValidMagnet(_ magnet: String) -> Bool {
         guard magnet.count <= 4096 else { return false }
         guard let url = URL(string: magnet), url.scheme?.lowercased() == "magnet" else { return false }
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = components.queryItems else { return false }

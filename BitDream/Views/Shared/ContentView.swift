@@ -13,17 +13,17 @@ extension UserDefaults {
         static let showContentTypeIcons = UserDefaultsKeys.showContentTypeIcons
     }
 
-    static let viewStateDefaults: [String: Any] = [
-        Keys.sidebarVisibility: true, // true = show sidebar (.all), false = hide sidebar (.detailOnly)
-        Keys.inspectorVisibility: true,
-        Keys.sortProperty: "Name", // Default sort property as "Name"
-        Keys.sortOrder: true, // true = ascending, false = descending
-        Keys.torrentListCompactMode: false, // false = expanded view, true = compact table view
-        Keys.showContentTypeIcons: true // true = show icons, false = hide icons
-    ]
-
     static func registerViewStateDefaults() {
-        UserDefaults.standard.register(defaults: viewStateDefaults)
+        let defaults: [String: Any] = [
+            Keys.sidebarVisibility: true, // true = show sidebar (.all), false = hide sidebar (.detailOnly)
+            Keys.inspectorVisibility: true,
+            Keys.sortProperty: "Name", // Default sort property as "Name"
+            Keys.sortOrder: true, // true = ascending, false = descending
+            Keys.torrentListCompactMode: false, // false = expanded view, true = compact table view
+            Keys.showContentTypeIcons: true // true = show icons, false = hide icons
+        ]
+
+        UserDefaults.standard.register(defaults: defaults)
     }
 
     var sidebarVisibility: NavigationSplitViewVisibility {
@@ -84,6 +84,7 @@ struct ContentView: View {
 
 
 // Helper function to set up the host
+@MainActor
 func applyStartupConnectionBehavior(hosts: [Host], store: Store) {
     // Read behavior from UserDefaults (fallback to default)
     let behaviorRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.startupConnectionBehavior) ?? AppDefaults.startupConnectionBehavior.rawValue
@@ -120,6 +121,7 @@ func applyStartupConnectionBehavior(hosts: [Host], store: Store) {
     }
 }
 
+@MainActor
 func ensureStartupConnectionBehaviorApplied(store: Store, modelContext: ModelContext) {
     guard store.host == nil else { return }
 
@@ -174,8 +176,8 @@ struct StatsHeaderView: View {
     private var ratioTooltip: String {
         let totals = overallTotals
         let mode = ratioDisplayMode == .cumulative ? "Total Ratio" : "Session Ratio"
-        let uploaded = byteCountFormatter.string(fromByteCount: totals.uploaded)
-        let downloaded = byteCountFormatter.string(fromByteCount: totals.downloaded)
+        let uploaded = formatByteCount(totals.uploaded)
+        let downloaded = formatByteCount(totals.downloaded)
         return "\(mode)\n----------\nUploaded: \(uploaded)\nDownloaded: \(downloaded)"
     }
 
@@ -298,17 +300,20 @@ extension Array where Element == Torrent {
 
 #if os(macOS)
 // Helper function to update the app badge on macOS
+@MainActor
 func updateMacOSAppBadge(count: Int) {
     NSApplication.shared.dockTile.badgeLabel = count > 0 ? "\(count)" : ""
 }
 
 // Helper function to get completed torrents count
+@MainActor
 func getCompletedTorrentsCount(in store: Store) -> Int {
     return store.torrents.filter { $0.statusCalc == .complete }.count
 }
 #endif
 
 // Helper function to calculate total ratio across all torrents
+@MainActor
 func calculateTotalRatio(store: Store) -> Double {
     let totalDownloaded = store.torrents.reduce(0) { $0 + $1.downloadedEver }
     let totalUploaded = store.torrents.reduce(0) { $0 + $1.uploadedEver }

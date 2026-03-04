@@ -14,7 +14,8 @@ struct Server {
     var auth: TransmissionAuth
 }
 
-class Store: NSObject, ObservableObject {
+@MainActor
+final class Store: NSObject, ObservableObject {
     @Published var torrents: [Torrent] = []
     @Published var sessionStats: SessionStats?
     @Published var setup: Bool = false
@@ -100,20 +101,18 @@ class Store: NSObject, ObservableObject {
     // MARK: - Magnet Queue Helpers (macOS)
     #if os(macOS)
     func enqueueMagnet(_ magnet: String) {
-        DispatchQueue.main.async {
-            let wasEmpty = self.pendingMagnetQueue.isEmpty
-            self.pendingMagnetQueue.append(magnet)
-            if wasEmpty {
-                // New batch
-                self.magnetQueueTotal = self.pendingMagnetQueue.count
-                self.magnetQueueDisplayIndex = 1
-                if !self.isShowingAddAlert {
-                    self.presentNextMagnetIfAvailable()
-                }
-            } else {
-                // Increase total while batch is in progress
-                self.magnetQueueTotal += 1
+        let wasEmpty = pendingMagnetQueue.isEmpty
+        pendingMagnetQueue.append(magnet)
+        if wasEmpty {
+            // New batch
+            magnetQueueTotal = pendingMagnetQueue.count
+            magnetQueueDisplayIndex = 1
+            if !isShowingAddAlert {
+                presentNextMagnetIfAvailable()
             }
+        } else {
+            // Increase total while batch is in progress
+            magnetQueueTotal += 1
         }
     }
 
@@ -125,19 +124,17 @@ class Store: NSObject, ObservableObject {
     }
 
     func advanceMagnetQueue() {
-        DispatchQueue.main.async {
-            if !self.pendingMagnetQueue.isEmpty {
-                self.pendingMagnetQueue.removeFirst()
-            }
-            if !self.pendingMagnetQueue.isEmpty {
-                // Move to next item in the same batch
-                self.magnetQueueDisplayIndex = min(self.magnetQueueDisplayIndex + 1, self.magnetQueueTotal)
-                self.presentNextMagnetIfAvailable()
-            } else {
-                // Batch complete
-                self.magnetQueueDisplayIndex = 0
-                self.magnetQueueTotal = 0
-            }
+        if !pendingMagnetQueue.isEmpty {
+            pendingMagnetQueue.removeFirst()
+        }
+        if !pendingMagnetQueue.isEmpty {
+            // Move to next item in the same batch
+            magnetQueueDisplayIndex = min(magnetQueueDisplayIndex + 1, magnetQueueTotal)
+            presentNextMagnetIfAvailable()
+        } else {
+            // Batch complete
+            magnetQueueDisplayIndex = 0
+            magnetQueueTotal = 0
         }
     }
     #endif
@@ -181,9 +178,17 @@ class Store: NSObject, ObservableObject {
     }
 
     func startTimer() {
-        self.timer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true, block: { _ in
-            pollTransmissionData(store: self)
-        })
+        self.timer = Timer.scheduledTimer(
+            timeInterval: pollInterval,
+            target: self,
+            selector: #selector(pollTimerFired(_:)),
+            userInfo: nil,
+            repeats: true
+        )
+    }
+
+    @objc private func pollTimerFired(_ timer: Timer) {
+        pollTransmissionData(store: self)
     }
 
     // Method to reconnect to the server
@@ -209,10 +214,8 @@ class Store: NSObject, ObservableObject {
         guard let serverInfo = currentServerInfo else { return }
 
         getSession(config: serverInfo.config, auth: serverInfo.auth, onResponse: { sessionInfo in
-            DispatchQueue.main.async {
-                self.sessionConfiguration = sessionInfo
-                self.defaultDownloadDir = sessionInfo.downloadDir
-            }
+            self.sessionConfiguration = sessionInfo
+            self.defaultDownloadDir = sessionInfo.downloadDir
         }, onError: { error in
             print("Failed to refresh session info: \(error)")
         })
@@ -234,70 +237,69 @@ class Store: NSObject, ObservableObject {
         cancelRetryTimer()
         guard let nextRetryAt else { return }
         let delay = max(0, nextRetryAt.timeIntervalSinceNow)
-        retryTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
-            guard let self else { return }
-            refreshTransmissionData(store: self)
-        }
+        retryTimer = Timer.scheduledTimer(
+            timeInterval: delay,
+            target: self,
+            selector: #selector(retryTimerFired(_:)),
+            userInfo: nil,
+            repeats: false
+        )
+    }
+
+    @objc private func retryTimerFired(_ timer: Timer) {
+        refreshTransmissionData(store: self)
     }
 
     func markConnecting() {
-        DispatchQueue.main.async {
-            self.connectionStatus = .connecting
-        }
+        connectionStatus = .connecting
     }
 
     func markConnected() {
-        DispatchQueue.main.async {
-            self.resetReconnectState()
-            self.connectionStatus = .connected
-            self.lastErrorMessage = ""
-            self.lastRefreshAt = Date()
-            self.timer.invalidate()
-            self.startTimer()
-        }
+        resetReconnectState()
+        connectionStatus = .connected
+        lastErrorMessage = ""
+        lastRefreshAt = Date()
+        timer.invalidate()
+        startTimer()
     }
 
     func retryNow() {
-        DispatchQueue.main.async {
-            self.reconnectBackoff.reset()
-            self.nextRetryAt = nil
-            self.cancelRetryTimer()
-            refreshTransmissionData(store: self)
-        }
+        reconnectBackoff.reset()
+        nextRetryAt = nil
+        cancelRetryTimer()
+        refreshTransmissionData(store: self)
     }
 
     // Method to handle connection errors
     func handleConnectionError(message: String) {
-        DispatchQueue.main.async {
-            let now = Date()
-            let wasReconnecting = self.connectionStatus == .reconnecting
+        let now = Date()
+        let wasReconnecting = connectionStatus == .reconnecting
 
-            self.lastErrorMessage = message
-            self.connectionStatus = .reconnecting
+        lastErrorMessage = message
+        connectionStatus = .reconnecting
 
-            if !wasReconnecting {
-                self.timer.invalidate()
-            }
-
-            if let nextRetryAt = self.nextRetryAt, nextRetryAt > now {
-                #if os(iOS)
-                self.showConnectionErrorAlert = true
-                #else
-                self.showConnectionErrorAlert = false
-                #endif
-                return
-            }
-
-            let scheduledDelay = self.reconnectBackoff.nextDelay()
-            self.nextRetryAt = now.addingTimeInterval(scheduledDelay)
-            self.scheduleRetryTimer()
-
-            #if os(iOS)
-            self.showConnectionErrorAlert = true
-            #else
-            self.showConnectionErrorAlert = false
-            #endif
+        if !wasReconnecting {
+            timer.invalidate()
         }
+
+        if let nextRetryAt, nextRetryAt > now {
+            #if os(iOS)
+            showConnectionErrorAlert = true
+            #else
+            showConnectionErrorAlert = false
+            #endif
+            return
+        }
+
+        let scheduledDelay = reconnectBackoff.nextDelay()
+        nextRetryAt = now.addingTimeInterval(scheduledDelay)
+        scheduleRetryTimer()
+
+        #if os(iOS)
+        showConnectionErrorAlert = true
+        #else
+        showConnectionErrorAlert = false
+        #endif
     }
 
     // Add a method to update the poll interval and restart the timer

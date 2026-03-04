@@ -1,7 +1,28 @@
 #if os(iOS)
 import Foundation
 import BackgroundTasks
-import WidgetKit
+import Synchronization
+
+/// Bridges non-Sendable `BGAppRefreshTask` into `@Sendable` completion contexts.
+/// Safety invariant: `setTaskCompleted(success:)` is invoked at most once, guarded by a mutex.
+private final class AppRefreshTaskBox: @unchecked Sendable {
+    private let task: BGAppRefreshTask
+    private let completionState = Mutex(false)
+
+    init(task: BGAppRefreshTask) {
+        self.task = task
+    }
+
+    func complete(success: Bool) {
+        let shouldComplete = completionState.withLock { completed in
+            guard !completed else { return false }
+            completed = true
+            return true
+        }
+        guard shouldComplete else { return }
+        task.setTaskCompleted(success: success)
+    }
+}
 
 enum BackgroundRefreshManager {
     static let taskIdentifier = "crapshack.BitDream.refresh"
@@ -11,7 +32,11 @@ enum BackgroundRefreshManager {
 
     static func register() {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: taskIdentifier, using: nil) { task in
-            handle(task: task as! BGAppRefreshTask)
+            guard let refreshTask = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            handle(task: refreshTask)
         }
     }
 
@@ -28,19 +53,15 @@ enum BackgroundRefreshManager {
     private static func handle(task: BGAppRefreshTask) {
         schedule() // schedule the next one ASAP to keep cadence
 
-        let operation = WidgetRefreshOperation()
-        operation.qualityOfService = .utility
+        let taskBox = AppRefreshTaskBox(task: task)
+        let refreshHandle = enqueueWidgetRefresh { success in
+            taskBox.complete(success: success)
+        }
 
         task.expirationHandler = {
-            operation.cancel()
+            refreshHandle.cancel()
+            taskBox.complete(success: false)
         }
-
-        operation.completionBlock = {
-            let success = !operation.isCancelled
-            task.setTaskCompleted(success: success)
-        }
-
-        WidgetRefreshOperation.enqueue(operation)
     }
 }
 #endif

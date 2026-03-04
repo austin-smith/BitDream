@@ -5,6 +5,7 @@ import SwiftUI
 
 // AppKit bridge is intentional here.
 // A status-item-attached NSMenu matches standard macOS menu bar behavior.
+@MainActor
 final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate {
     private var statusItem: NSStatusItem?
     private var statusMenu: NSMenu?
@@ -12,6 +13,7 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
     private var contentHostingView: NSHostingView<AnyView>?
     private weak var store: Store?
     private var storeChangeCancellable: AnyCancellable?
+    private var pendingRelayoutTask: Task<Void, Never>?
     private var isMenuOpen = false
     private let panelWidth: CGFloat = 380
 
@@ -63,6 +65,8 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
         contentMenuItem = nil
         contentHostingView = nil
         storeChangeCancellable = nil
+        pendingRelayoutTask?.cancel()
+        pendingRelayoutTask = nil
         isMenuOpen = false
     }
 
@@ -130,7 +134,9 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
         sizeContentView()
         statusMenu?.update()
 
-        DispatchQueue.main.async { [weak self] in
+        pendingRelayoutTask?.cancel()
+        pendingRelayoutTask = Task { @MainActor [weak self] in
+            await Task.yield()
             guard let self, self.isMenuOpen else { return }
             self.sizeContentView()
             self.statusMenu?.update()

@@ -240,22 +240,23 @@ struct macOSTorrentFileDetail: View {
             return (idx, current)
         }
 
-        FileActionExecutor.setWanted(
-            torrentId: torrentId,
-            fileIndices: fileIndices,
-            store: store,
-            wanted: wanted,
-            optimisticApply: { updateLocalFileStatus(selectedRows, wanted: wanted) },
-            revert: {
+        updateLocalFileStatus(selectedRows, wanted: wanted)
+
+        Task { @MainActor in
+            let response = await FileActionExecutor.setWanted(
+                torrentId: torrentId,
+                fileIndices: fileIndices,
+                store: store,
+                wanted: wanted
+            )
+            if response != .success {
                 for (idx, old) in previousStats {
                     if idx < mutableFileStats.count { mutableFileStats[idx] = old }
                 }
                 recomputeRows()
-            },
-            onComplete: { response in
-                print("macOS set wanted status: \(response)")
             }
-        )
+            print("macOS set wanted status: \(response)")
+        }
     }
 
     private func setFilesPriority(_ selectedRows: [TorrentFileRow], priority: FilePriority) {
@@ -268,22 +269,23 @@ struct macOSTorrentFileDetail: View {
             return (idx, current)
         }
 
-        FileActionExecutor.setPriority(
-            torrentId: torrentId,
-            fileIndices: fileIndices,
-            store: store,
-            priority: priority,
-            optimisticApply: { updateLocalFilePriority(selectedRows, priority: priority) },
-            revert: {
+        updateLocalFilePriority(selectedRows, priority: priority)
+
+        Task { @MainActor in
+            let response = await FileActionExecutor.setPriority(
+                torrentId: torrentId,
+                fileIndices: fileIndices,
+                store: store,
+                priority: priority
+            )
+            if response != .success {
                 for (idx, old) in previousStats {
                     if idx < mutableFileStats.count { mutableFileStats[idx] = old }
                 }
                 recomputeRows()
-            },
-            onComplete: { response in
-                print("macOS set file priority: \(response)")
             }
-        )
+            print("macOS set file priority: \(response)")
+        }
     }
 
     private func updateLocalFileStatus(_ selectedRows: [TorrentFileRow], wanted: Bool) {

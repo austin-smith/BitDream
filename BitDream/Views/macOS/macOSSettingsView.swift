@@ -41,15 +41,8 @@ struct macOSSettingsView: View {
 
     private var lastUpdateCheckText: String {
         guard let date = appUpdater.lastUpdateCheckDate else { return "Never" }
-        return Self.lastUpdateCheckFormatter.string(from: date)
+        return date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened))
     }
-
-    private static let lastUpdateCheckFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter
-    }()
 
     var body: some View {
         // macOS version adapted for the Settings scene
@@ -325,6 +318,7 @@ struct macOSSettingsView: View {
     }
 }
 
+@MainActor
 @ViewBuilder
 func torrentsTabContent(config: TransmissionSessionResponseArguments, editModel: SessionSettingsEditModel) -> some View {
     GroupBox {
@@ -368,6 +362,7 @@ func torrentsTabContent(config: TransmissionSessionResponseArguments, editModel:
 
 // MARK: - macOS Wrappers for Shared Content
 
+@MainActor
 @ViewBuilder
 func speedLimitsSection(config: TransmissionSessionResponseArguments, editModel: SessionSettingsEditModel) -> some View {
     GroupBox {
@@ -376,6 +371,7 @@ func speedLimitsSection(config: TransmissionSessionResponseArguments, editModel:
     }
 }
 
+@MainActor
 @ViewBuilder
 func networkSection(config: TransmissionSessionResponseArguments, editModel: SessionSettingsEditModel) -> some View {
     GroupBox {
@@ -384,6 +380,7 @@ func networkSection(config: TransmissionSessionResponseArguments, editModel: Ses
     }
 }
 
+@MainActor
 @ViewBuilder
 func fileManagementSection(config: TransmissionSessionResponseArguments, editModel: SessionSettingsEditModel) -> some View {
     GroupBox(label: Text("File Management").font(.headline)) {
@@ -392,6 +389,7 @@ func fileManagementSection(config: TransmissionSessionResponseArguments, editMod
     }
 }
 
+@MainActor
 @ViewBuilder
 func queueManagementSection(config: TransmissionSessionResponseArguments, editModel: SessionSettingsEditModel) -> some View {
     GroupBox(label: Text("Queue Management").font(.headline)) {
@@ -400,6 +398,7 @@ func queueManagementSection(config: TransmissionSessionResponseArguments, editMo
     }
 }
 
+@MainActor
 @ViewBuilder
 func seedingSection(config: TransmissionSessionResponseArguments, editModel: SessionSettingsEditModel) -> some View {
     GroupBox(label: Text("Seeding").font(.headline)) {

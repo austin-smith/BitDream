@@ -85,7 +85,7 @@ struct SpeedChip: View {
                 .imageScale(size.iconScale)
                 .foregroundColor(direction.color)
 
-            Text("\(byteCountFormatter.string(fromByteCount: speed))/s")
+            Text("\(formatByteCount(speed))/s")
                 .monospacedDigit()
         }
         .font(size.font)

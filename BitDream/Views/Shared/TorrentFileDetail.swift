@@ -231,11 +231,11 @@ struct TorrentFileRow: Identifiable {
 
     // Computed properties for display
     var sizeDisplay: String {
-        byteCountFormatter.string(fromByteCount: size)
+        formatByteCount(size)
     }
 
     var downloadedDisplay: String {
-        byteCountFormatter.string(fromByteCount: bytesCompleted)
+        formatByteCount(bytesCompleted)
     }
 
     var progressDisplay: String {
@@ -276,65 +276,45 @@ struct TorrentFileRow: Identifiable {
 /// Namespaced executor that standardizes optimistic apply + revert-on-failure
 /// across platforms while keeping all network calls in TransmissionFunctions.
 enum FileActionExecutor {
-    /// Set wanted status for specific file indices with optimistic update and revert on failure
+    /// Set wanted status for specific file indices.
+    @MainActor
     static func setWanted(
         torrentId: Int,
         fileIndices: [Int],
         store: Store,
-        wanted: Bool,
-        optimisticApply: @escaping () -> Void,
-        revert: @escaping () -> Void,
-        onComplete: ((TransmissionResponse) -> Void)? = nil
-    ) {
-        // Apply UI changes immediately on the main thread
-        DispatchQueue.main.async {
-            optimisticApply()
-        }
-
+        wanted: Bool
+    ) async -> TransmissionResponse {
         let info = makeConfig(store: store)
-        setFileWantedStatus(
-            torrentId: torrentId,
-            fileIndices: fileIndices,
-            wanted: wanted,
-            info: info
-        ) { response in
-            if response != .success {
-                DispatchQueue.main.async {
-                    revert()
-                }
+        return await withCheckedContinuation { continuation in
+            setFileWantedStatus(
+                torrentId: torrentId,
+                fileIndices: fileIndices,
+                wanted: wanted,
+                info: info
+            ) { response in
+                continuation.resume(returning: response)
             }
-            onComplete?(response)
         }
     }
 
-    /// Set priority for specific file indices with optimistic update and revert on failure
+    /// Set priority for specific file indices.
+    @MainActor
     static func setPriority(
         torrentId: Int,
         fileIndices: [Int],
         store: Store,
-        priority: FilePriority,
-        optimisticApply: @escaping () -> Void,
-        revert: @escaping () -> Void,
-        onComplete: ((TransmissionResponse) -> Void)? = nil
-    ) {
-        // Apply UI changes immediately on the main thread
-        DispatchQueue.main.async {
-            optimisticApply()
-        }
-
+        priority: FilePriority
+    ) async -> TransmissionResponse {
         let info = makeConfig(store: store)
-        setFilePriority(
-            torrentId: torrentId,
-            fileIndices: fileIndices,
-            priority: priority,
-            info: info
-        ) { response in
-            if response != .success {
-                DispatchQueue.main.async {
-                    revert()
-                }
+        return await withCheckedContinuation { continuation in
+            setFilePriority(
+                torrentId: torrentId,
+                fileIndices: fileIndices,
+                priority: priority,
+                info: info
+            ) { response in
+                continuation.resume(returning: response)
             }
-            onComplete?(response)
         }
     }
 }

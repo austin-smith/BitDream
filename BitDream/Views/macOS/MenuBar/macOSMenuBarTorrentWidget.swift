@@ -227,7 +227,7 @@ struct macOSMenuBarTorrentWidget: View {
 }
 
 private struct TorrentRowsHeightPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
+    static let defaultValue: CGFloat = 0
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())

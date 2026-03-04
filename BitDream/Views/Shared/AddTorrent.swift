@@ -19,23 +19,22 @@ struct AddTorrent: View {
 // MARK: - Shared Helper Functions
 
 /// Function to handle errors in the torrent adding process
+@MainActor
 func handleAddTorrentError(_ message: String, errorMessage: Binding<String?>, showingError: Binding<Bool>) {
-    // Ensure UI updates happen on the main thread
-    DispatchQueue.main.async {
-        errorMessage.wrappedValue = message
-        showingError.wrappedValue = true
-        print(message)
-    }
+    errorMessage.wrappedValue = message
+    showingError.wrappedValue = true
+    print(message)
 }
 
 /// Function to add a torrent to the server
+@MainActor
 func addTorrentAction(
     alertInput: String,
     downloadDir: String,
     store: Store,
     errorMessage: Binding<String?>,
     showingError: Binding<Bool>,
-    onSuccess: (() -> Void)? = nil
+    onSuccess: (@MainActor () -> Void)? = nil
 ) {
     // Only proceed if we have a magnet link
     guard !alertInput.isEmpty else { return }
@@ -49,13 +48,10 @@ func addTorrentAction(
         file: false,
         config: info.config,
         onAdd: { response in
-            // Ensure UI updates happen on the main thread
-            DispatchQueue.main.async {
-                if response.response == TransmissionResponse.success {
-                    onSuccess?()
-                } else {
-                    handleAddTorrentError("Failed to add torrent: \(response.response)", errorMessage: errorMessage, showingError: showingError)
-                }
+            if response.response == TransmissionResponse.success {
+                onSuccess?()
+            } else {
+                handleAddTorrentError("Failed to add torrent: \(response.response)", errorMessage: errorMessage, showingError: showingError)
             }
         }
     )
@@ -74,20 +70,19 @@ extension UTType {
 // MARK: - Programmatic Add from .torrent data
 
 /// Adds a torrent by sending a base64-encoded .torrent file to Transmission without presenting UI
+@MainActor
 func addTorrentFromFileData(_ fileData: Data, store: Store) {
     // Ensure server is configured; surface an error instead of silently returning
     guard store.host != nil else {
-        DispatchQueue.main.async {
-            #if os(macOS)
-            store.globalAlertTitle = "Error"
-            store.globalAlertMessage = "Failed to add torrent\n\nNo server configured. Please add or select a server in Settings."
-            store.showGlobalAlert = true
-            #else
-            store.debugBrief = "Failed to add torrent"
-            store.debugMessage = "No server configured. Please add or select a server in Settings."
-            store.isError = true
-            #endif
-        }
+        #if os(macOS)
+        store.globalAlertTitle = "Error"
+        store.globalAlertMessage = "Failed to add torrent\n\nNo server configured. Please add or select a server in Settings."
+        store.showGlobalAlert = true
+        #else
+        store.debugBrief = "Failed to add torrent"
+        store.debugMessage = "No server configured. Please add or select a server in Settings."
+        store.isError = true
+        #endif
         return
     }
 

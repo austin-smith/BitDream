@@ -41,13 +41,14 @@ private func userFacingServerListPersistenceMessage(_ error: Error) -> String {
 }
 
 /// Deletes a server through the host repository and handles disconnection if needed
+@MainActor
 func deleteServer(
     host: Host,
     store: Store,
     hosts: [Host],
     modelContext _: ModelContext,
-    completion: @escaping () -> Void,
-    onError: @escaping (String) -> Void = { _ in }
+    completion: @MainActor @escaping () -> Void,
+    onError: @MainActor @escaping (String) -> Void = { _ in }
 ) {
     let currentStore = store
     let completeDeletion = {
@@ -84,6 +85,7 @@ func deleteServer(
 }
 
 /// Creates a confirmation message for server deletion
+@MainActor
 @ViewBuilder
 func deleteConfirmationMessage(for host: Host, store: Store) -> some View {
     let currentStore = store // Create a local reference to avoid wrapper issues

@@ -42,13 +42,15 @@ func makeEtaSortKey(for torrent: Torrent) -> EtaSortKey {
 }
 
 // Shared function to handle re-announce action
-func reAnnounceToTrackers(torrent: Torrent, store: Store, onResponse: @escaping (TransmissionResponse) -> Void = { _ in }) {
+@MainActor
+func reAnnounceToTrackers(torrent: Torrent, store: Store, onResponse: @MainActor @escaping (TransmissionResponse) -> Void = { _ in }) {
     let info = makeConfig(store: store)
     reAnnounceTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: onResponse)
 }
 
 // Shared function to handle "Resume Now" action
-func resumeTorrentNow(torrent: Torrent, store: Store, onResponse: @escaping (TransmissionResponse) -> Void = { _ in }) {
+@MainActor
+func resumeTorrentNow(torrent: Torrent, store: Store, onResponse: @MainActor @escaping (TransmissionResponse) -> Void = { _ in }) {
     let info = makeConfig(store: store)
     startTorrentNow(torrent: torrent, config: info.config, auth: info.auth, onResponse: onResponse)
 }
@@ -121,8 +123,8 @@ func progressColorForTorrent(_ torrent: Torrent) -> Color {
 // Shared function to format subtext
 func formatTorrentSubtext(_ torrent: Torrent) -> String {
     let percentComplete = String(format: "%.1f%%", torrent.percentDone * 100)
-    let downloadedSizeFormatted = byteCountFormatter.string(fromByteCount: torrent.downloadedCalc)
-    let sizeWhenDoneFormatted = byteCountFormatter.string(fromByteCount: torrent.sizeWhenDone)
+    let downloadedSizeFormatted = formatByteCount(torrent.downloadedCalc)
+    let sizeWhenDoneFormatted = formatByteCount(torrent.sizeWhenDone)
 
     let progressText = "\(downloadedSizeFormatted) of \(sizeWhenDoneFormatted) (\(percentComplete))"
 
@@ -145,8 +147,8 @@ func formatTorrentSubtext(_ torrent: Torrent) -> String {
 
 // Shared function to create status view content
 func createStatusView(for torrent: Torrent) -> some View {
-    let rateDownloadFormatted = byteCountFormatter.string(fromByteCount: torrent.rateDownload)
-    let rateUploadFormatted = byteCountFormatter.string(fromByteCount: torrent.rateUpload)
+    let rateDownloadFormatted = formatByteCount(torrent.rateDownload)
+    let rateUploadFormatted = formatByteCount(torrent.rateUpload)
 
     return Group {
         if (torrent.error != TorrentError.ok.rawValue) {
@@ -199,6 +201,7 @@ func copyMagnetLinkToClipboard(_ magnetLink: String) {
 // MARK: - Shared Label Components
 
 // Shared function to save labels and refresh torrent data
+@MainActor
 func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: Store, onComplete: @escaping () -> Void = {}) {
     let info = makeConfig(store: store)
     let sortedLabels = Array(labels).sorted()
@@ -216,6 +219,7 @@ func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: Store, onComp
 }
 
 // Shared function to handle adding new tags from input field
+@MainActor
 func addNewTag(from input: inout String, to workingLabels: inout Set<String>) -> Bool {
     let trimmed = input.trimmingCharacters(in: .whitespaces)
     if !trimmed.isEmpty {
@@ -268,6 +272,7 @@ struct LabelTag: View {
 }
 
 // Shared function to create label tags view
+@MainActor
 func createLabelTagsView(for torrent: Torrent) -> some View {
     ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: 4) {
@@ -353,6 +358,7 @@ func validateNewName(_ name: String, current: String) -> String? {
 ///   - newName: The new root name
 ///   - store: App store for config/auth and refresh
 ///   - onComplete: Called with nil on success, or an error message on failure
+@MainActor
 func renameTorrentRoot(torrent: Torrent, to newName: String, store: Store, onComplete: @escaping (String?) -> Void) {
     let info = makeConfig(store: store)
     // For root rename, Transmission expects the current root path (the torrent's name)
