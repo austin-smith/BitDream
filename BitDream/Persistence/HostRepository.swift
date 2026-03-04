@@ -63,7 +63,7 @@ final class HostRepository: HostPersisting {
     private let modelContext: ModelContext
     private let catalogStore: HostRefreshCatalogStore
     private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "crapshack.BitDream",
+        subsystem: AppIdentity.bundleIdentifier,
         category: "HostRepository"
     )
 

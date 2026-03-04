@@ -136,7 +136,7 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
                     if url.scheme?.lowercased() == "magnet" {
                         let magnetString = url.absoluteString
                         guard isValidMagnet(magnetString) else {
-                            throw NSError(domain: "com.bitdream", code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid magnet link"])
+                            throw NSError(domain: RuntimeDomain.fileOpen, code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid magnet link"])
                         }
                         actions.append(.magnet(magnetString))
                     } else {

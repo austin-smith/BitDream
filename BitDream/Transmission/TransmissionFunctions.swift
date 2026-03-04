@@ -101,7 +101,7 @@ private func sendRPCRequestInBackground(
             nil,
             nil,
             NSError(
-                domain: "com.bitdream.transmission",
+                domain: RuntimeDomain.transmission,
                 code: -1,
                 userInfo: [NSLocalizedDescriptionKey: "Failed to build request - URL not configured"]
             )
@@ -139,7 +139,7 @@ private func sendRPCRequestInBackground(
                         nil,
                         httpResp,
                         NSError(
-                            domain: "com.bitdream.transmission",
+                            domain: RuntimeDomain.transmission,
                             code: 409,
                             userInfo: [NSLocalizedDescriptionKey: "Session token error after retry"]
                         )
@@ -190,7 +190,7 @@ private func decodeRPCResponse<R: Codable & Sendable>(
     case 401?:
         return .failure(
             NSError(
-                domain: "com.bitdream.transmission",
+                domain: RuntimeDomain.transmission,
                 code: 401,
                 userInfo: [NSLocalizedDescriptionKey: "Unauthorized"]
             )
@@ -199,7 +199,7 @@ private func decodeRPCResponse<R: Codable & Sendable>(
         do {
             guard let data else {
                 throw NSError(
-                    domain: "com.bitdream.transmission",
+                    domain: RuntimeDomain.transmission,
                     code: -1,
                     userInfo: [NSLocalizedDescriptionKey: "No data in response"]
                 )
@@ -213,7 +213,7 @@ private func decodeRPCResponse<R: Codable & Sendable>(
         let errorMessage = data.map { String(decoding: $0, as: UTF8.self) } ?? "Unknown error"
         return .failure(
             NSError(
-                domain: "com.bitdream.transmission",
+                domain: RuntimeDomain.transmission,
                 code: response?.statusCode ?? -1,
                 userInfo: [NSLocalizedDescriptionKey: errorMessage]
             )

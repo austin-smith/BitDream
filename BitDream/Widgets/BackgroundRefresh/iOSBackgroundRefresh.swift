@@ -25,7 +25,7 @@ private final class AppRefreshTaskBox: @unchecked Sendable {
 }
 
 enum BackgroundRefreshManager {
-    static let taskIdentifier = "crapshack.BitDream.refresh"
+    static let taskIdentifier = "\(AppIdentity.bundleIdentifier).refresh"
     /// Default refresh cadence for background app refresh (15 minutes)
     /// iOS executes opportunistically; this expresses our desired minimum cadence
     private static let defaultRefreshInterval: TimeInterval = 15 * 60
