@@ -109,7 +109,7 @@ public func formatByteCount(_ bytes: Int64) -> String {
         ByteCountFormatStyle(
             style: .file,
             allowedUnits: [.kb, .mb, .gb, .tb],
-            spellsOutZero: false,
+            spellsOutZero: true,
             includesActualByteCount: false
         )
     )
