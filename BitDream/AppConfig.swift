@@ -41,6 +41,15 @@ enum AppDefaults {
     static let startupConnectionBehavior: StartupConnectionBehavior = .lastUsed
 }
 
+enum AppIdentity {
+    static let bundleIdentifier: String = {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier, !bundleIdentifier.isEmpty else {
+            fatalError("Missing CFBundleIdentifier on main bundle.")
+        }
+        return bundleIdentifier
+    }()
+}
+
 enum UserDefaultsKeys {
     static let pollInterval = "pollInterval"
     static let torrentListCompactMode = "torrentListCompactMode"

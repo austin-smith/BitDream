@@ -8,7 +8,7 @@ import WidgetKit
 @MainActor
 enum BackgroundActivityScheduler {
     private static var scheduler: NSBackgroundActivityScheduler?
-    private static let activityIdentifier = "crapshack.BitDream.widgetRefresh"
+    private static let activityIdentifier = "\(AppIdentity.bundleIdentifier).widgetRefresh"
     /// Default cadence for macOS background activity refresh (15 minutes)
     private static let defaultInterval: TimeInterval = 15 * 60
     /// Default tolerance to let the system batch work efficiently (5 minutes)

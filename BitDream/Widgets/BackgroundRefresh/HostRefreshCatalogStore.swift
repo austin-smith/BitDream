@@ -28,7 +28,7 @@ actor HostRefreshCatalogStore {
 
     private static let fileName = "host_refresh_catalog_v1.json"
     private static let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "crapshack.BitDream",
+        subsystem: AppIdentity.bundleIdentifier,
         category: "HostRefreshCatalogStore"
     )
 
@@ -164,7 +164,7 @@ actor HostRefreshCatalogStore {
             throw CocoaError(.fileNoSuchFile)
         }
 
-        let bundleID = Bundle.main.bundleIdentifier ?? "crapshack.BitDream"
+        let bundleID = AppIdentity.bundleIdentifier
         return base.appendingPathComponent(bundleID, isDirectory: true)
     }
 }

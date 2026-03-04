@@ -2,7 +2,7 @@ import Foundation
 import Security
 
 enum KeychainPasswordStore {
-    private static let service = "crapshack.BitDream"
+    private static let service = AppIdentity.bundleIdentifier
 
     static func readPassword(for host: Host) -> String {
         readPassword(credentialKey: host.ensureCredentialKey())
