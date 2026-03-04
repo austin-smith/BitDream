@@ -103,13 +103,16 @@ func sortTorrents(_ torrents: [Torrent], by property: SortProperty, order: SortO
 
 // MARK: - Formatting
 
-/// Shared byte formatting helper using value-style formatting for Swift 6 concurrency safety.
+/// Shared byte formatting helper using modern format style with a minimum display unit of kB.
 public func formatByteCount(_ bytes: Int64) -> String {
-    bytes.formatted(
+    if abs(bytes) < 1_000 {
+        return "0 kB"
+    }
+    return bytes.formatted(
         ByteCountFormatStyle(
             style: .file,
             allowedUnits: [.kb, .mb, .gb, .tb],
-            spellsOutZero: true,
+            spellsOutZero: false,
             includesActualByteCount: false
         )
     )
@@ -117,7 +120,6 @@ public func formatByteCount(_ bytes: Int64) -> String {
 
 /// Shared speed formatting helper (Bytes per second -> human-readable short string)
 func formatSpeed(_ bytesPerSecond: Int64) -> String {
-    if bytesPerSecond <= 0 { return "0 B/s" }
     let base = formatByteCount(bytesPerSecond)
     return "\(base)/s"
 }
