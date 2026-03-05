@@ -13,7 +13,7 @@ struct macOSTorrentDetail: View {
     @State private var fileStats: [TorrentFileStats] = []
     @State private var isShowingFilesSheet = false
     @State private var peers: [Peer] = []
-    @State private var peersFrom: PeersFrom? = nil
+    @State private var peersFrom: PeersFrom?
     @State private var isShowingPeersSheet = false
     @State private var showingDeleteConfirmation = false
     @State private var showingDeleteError = false

@@ -105,7 +105,7 @@ struct SpeedChip: View {
 struct RatioChip: View {
     let ratio: Double
     var size: SpeedChipSize = .compact
-    var helpText: String? = nil
+    var helpText: String?
 
     private var progressRingSize: CGFloat {
         switch size {

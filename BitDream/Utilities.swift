@@ -344,8 +344,8 @@ func parseTorrentInfo(from data: Data) -> TorrentInfo? {
 
         // Locate top-level key "info" and capture its value bounds [infoStart, infoEnd)
         var index = 1 // skip initial 'd'
-        var infoStart: Int? = nil
-        var infoEnd: Int? = nil
+        var infoStart: Int?
+        var infoEnd: Int?
 
         while index < count {
             if bytes[index] == UInt8(ascii: "e") { break }

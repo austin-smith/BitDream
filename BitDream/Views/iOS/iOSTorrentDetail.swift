@@ -12,7 +12,7 @@ struct iOSTorrentDetail: View {
     @State public var fileStats: [TorrentFileStats] = []
     @State private var isShowingFilesSheet = false
     @State private var peers: [Peer] = []
-    @State private var peersFrom: PeersFrom? = nil
+    @State private var peersFrom: PeersFrom?
     @State private var isShowingPeersSheet = false
     @State private var pieceCount: Int = 0
     @State private var pieceSize: Int64 = 0

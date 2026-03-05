@@ -69,7 +69,7 @@ struct macOSTorrentListCompact: View {
     @State private var shouldSave: Bool = false
     @State private var renameDialog: Bool = false
     @State private var renameInput: String = ""
-    @State private var renameTargetId: Int? = nil
+    @State private var renameTargetId: Int?
     @State private var showingError = false
     @State private var errorMessage = ""
     @State private var moveDialog: Bool = false

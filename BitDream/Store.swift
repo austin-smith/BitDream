@@ -27,7 +27,7 @@ final class Store: NSObject, ObservableObject {
 
     @Published var isShowingAddAlert: Bool = false
     // When presenting Add Torrent, optional prefill for the magnet link input (macOS only used)
-    @Published var addTorrentPrefill: String? = nil
+    @Published var addTorrentPrefill: String?
     // Queue of pending magnet links to present sequentially (macOS)
     @Published var pendingMagnetQueue: [String] = []
     // Visual indicator state for queued magnets
@@ -63,7 +63,7 @@ final class Store: NSObject, ObservableObject {
 
 #if os(macOS)
     // Controls how the Add Torrent flow should start when invoked from menu
-    @Published var addTorrentInitialMode: AddTorrentInitialMode? = nil
+    @Published var addTorrentInitialMode: AddTorrentInitialMode?
     // Triggers a global file importer from top-level window
     @Published var presentGlobalTorrentFileImporter: Bool = false
     // Global native alert state for macOS
@@ -73,7 +73,7 @@ final class Store: NSObject, ObservableObject {
     // Global rename dialog state for menu command
     @Published var showGlobalRenameDialog: Bool = false
     @Published var globalRenameInput: String = ""
-    @Published var globalRenameTargetId: Int? = nil
+    @Published var globalRenameTargetId: Int?
 #endif
 
     // Confirmation dialog state for menu remove command

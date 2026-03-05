@@ -16,7 +16,7 @@ struct TorrentActionsToolbarMenu: View {
     @State private var errorMessage: String = ""
     @State private var renameDialog: Bool = false
     @State private var renameInput: String = ""
-    @State private var renameTargetId: Int? = nil
+    @State private var renameTargetId: Int?
     @State private var moveDialog: Bool = false
     @State private var movePath: String = ""
     @State private var moveShouldMove: Bool = true

@@ -11,14 +11,14 @@ struct macOSAddTorrent: View {
     @State private var inputMethod: TorrentInputMethod = .magnetLink
     @State private var alertInput: String = ""
     @State private var downloadDir: String = ""
-    @State private var errorMessage: String? = nil
+    @State private var errorMessage: String?
     @State private var showingError = false
     @State private var selectedTorrentFiles: [(name: String, data: Data)] = []
     private enum ActiveImporter {
         case torrentFiles
         case downloadFolder
     }
-    @State private var activeImporter: ActiveImporter? = nil
+    @State private var activeImporter: ActiveImporter?
     @State private var isShowingImporter: Bool = false
 
     enum TorrentInputMethod: String, CaseIterable, Identifiable {

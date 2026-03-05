@@ -10,7 +10,7 @@ struct iOSAddTorrent: View {
 
     @State private var alertInput: String = ""
     @State private var downloadDir: String = ""
-    @State private var errorMessage: String? = nil
+    @State private var errorMessage: String?
     @State private var showingError = false
 
     // MARK: - Body

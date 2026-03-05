@@ -9,10 +9,10 @@ struct macOSServerList: View {
     let hosts: [Host]
     @ObservedObject var store: Store
 
-    @State var selected: Host? = nil
+    @State var selected: Host?
     @State private var showingAddServer = false
     @State private var confirmingDelete = false
-    @State private var serverToDelete: Host? = nil
+    @State private var serverToDelete: Host?
 
     var body: some View {
         VStack(spacing: 0) {
