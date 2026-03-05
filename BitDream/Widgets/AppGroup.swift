@@ -2,6 +2,7 @@
 
 import Foundation
 import CryptoKit
+import OSLog
 
 enum AppGroup {
     /// App Group identifier shared by the app and widget extension
@@ -60,6 +61,7 @@ extension String {
 }
 
 enum AppGroupJSON {
+    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "persistence")
     /// Reads and decodes JSON from a file URL
     static func read<T: Decodable>(_ type: T.Type, from url: URL) -> T? {
         guard let data = try? Data(contentsOf: url) else { return nil }
@@ -86,6 +88,7 @@ enum AppGroupJSON {
             try FileManager.default.moveItem(at: tmpURL, to: url)
             return true
         } catch {
+            logger.error("Failed to write App Group file \(url.lastPathComponent): \(error.localizedDescription)")
             return false
         }
     }

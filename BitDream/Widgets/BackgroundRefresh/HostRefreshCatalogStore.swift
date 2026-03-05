@@ -64,6 +64,7 @@ actor HostRefreshCatalogStore {
         do {
             url = try catalogURL()
         } catch {
+            logger.error("Failed to resolve catalog URL: \(error.localizedDescription)")
             return []
         }
 
