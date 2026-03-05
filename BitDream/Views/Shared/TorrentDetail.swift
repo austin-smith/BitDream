@@ -20,17 +20,13 @@ struct TorrentDetail: View {
 func statusColor(for torrent: Torrent) -> Color {
     if torrent.statusCalc == TorrentStatusCalc.complete || torrent.statusCalc == TorrentStatusCalc.seeding {
         return .green.opacity(0.9)
-    }
-    else if torrent.statusCalc == TorrentStatusCalc.paused {
+    } else if torrent.statusCalc == TorrentStatusCalc.paused {
         return .gray
-    }
-    else if torrent.statusCalc == TorrentStatusCalc.retrievingMetadata {
+    } else if torrent.statusCalc == TorrentStatusCalc.retrievingMetadata {
         return .red.opacity(0.9)
-    }
-    else if torrent.statusCalc == TorrentStatusCalc.stalled {
+    } else if torrent.statusCalc == TorrentStatusCalc.stalled {
         return .orange.opacity(0.9)
-    }
-    else {
+    } else {
         return .blue.opacity(0.9)
     }
 }

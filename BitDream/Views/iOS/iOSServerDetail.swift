@@ -172,8 +172,7 @@ struct iOSServerDetail: View {
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     ToolbarItem (placement: .automatic) {
                         Button("Save") {
                             if validateFields() {

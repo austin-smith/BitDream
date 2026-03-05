@@ -32,12 +32,19 @@ struct EtaSortKey: Comparable {
 
 func makeEtaSortKey(for torrent: Torrent) -> EtaSortKey {
     let priority: Int
-    if torrent.statusCalc == .complete { priority = 5 }
-    else if torrent.statusCalc == .seeding { priority = 4 }
-    else if torrent.statusCalc == .paused { priority = 3 }
-    else if torrent.statusCalc == .stalled { priority = 2 }
-    else if torrent.eta <= 0 { priority = 1 }
-    else { priority = 0 }
+    if torrent.statusCalc == .complete {
+        priority = 5
+    } else if torrent.statusCalc == .seeding {
+        priority = 4
+    } else if torrent.statusCalc == .paused {
+        priority = 3
+    } else if torrent.statusCalc == .stalled {
+        priority = 2
+    } else if torrent.eta <= 0 {
+        priority = 1
+    } else {
+        priority = 0
+    }
     return EtaSortKey(priority: priority, eta: torrent.eta)
 }
 
@@ -154,8 +161,7 @@ func createStatusView(for torrent: Torrent) -> some View {
         if (torrent.error != TorrentError.ok.rawValue) {
             Text("Tracker returned error: \(torrent.errorString)")
                 .foregroundColor(.red)
-        }
-        else {
+        } else {
             switch torrent.statusCalc {
             case .downloading, .retrievingMetadata:
                 HStack(spacing: 4) {
