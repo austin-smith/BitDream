@@ -3,6 +3,7 @@
 import Foundation
 import Synchronization
 import WidgetKit
+import OSLog
 
 private let widgetRefreshQueue: DispatchQueue = {
     DispatchQueue(label: RuntimeDomain.widgetRefreshQueue, qos: .utility)
@@ -65,6 +66,7 @@ private final class HostRefreshResultStore: Sendable {
 
 private enum WidgetRefreshRunner {
     private static let backgroundWaitTimeout: DispatchTimeInterval = .seconds(15)
+    private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "backgroundRefresh")
 
     static func run(isCancelled: @Sendable () -> Bool) -> Bool {
         if isCancelled() { return false }
@@ -144,7 +146,7 @@ private enum WidgetRefreshRunner {
         let waitResult = group.wait(timeout: .now() + backgroundWaitTimeout)
         if waitResult == .timedOut {
             let hostIdentifier: String = host.name.isEmpty ? host.server : host.name
-            print("WidgetRefreshRunner: timed out waiting for background fetches for host \(hostIdentifier)")
+            logger.error("Timed out waiting for background fetches for host \(hostIdentifier)")
             return
         }
 

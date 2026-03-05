@@ -2,6 +2,7 @@
 import Foundation
 import BackgroundTasks
 import Synchronization
+import OSLog
 
 /// Bridges non-Sendable `BGAppRefreshTask` into `@Sendable` completion contexts.
 /// Safety invariant: `setTaskCompleted(success:)` is invoked at most once, guarded by a mutex.
@@ -26,6 +27,7 @@ private final class AppRefreshTaskBox: @unchecked Sendable {
 
 enum BackgroundRefreshManager {
     static let taskIdentifier = "\(AppIdentity.bundleIdentifier).refresh"
+    private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "backgroundRefresh")
     /// Default refresh cadence for background app refresh (15 minutes)
     /// iOS executes opportunistically; this expresses our desired minimum cadence
     private static let defaultRefreshInterval: TimeInterval = 15 * 60
@@ -46,7 +48,7 @@ enum BackgroundRefreshManager {
         let request = BGAppRefreshTaskRequest(identifier: taskIdentifier)
         request.earliestBeginDate = Date().addingTimeInterval(interval)
         do { try BGTaskScheduler.shared.submit(request) } catch {
-            print("BGTaskScheduler submit failed for \(taskIdentifier): \(error)")
+            logger.error("BGTaskScheduler submit failed for \(taskIdentifier): \(error.localizedDescription)")
         }
     }
 

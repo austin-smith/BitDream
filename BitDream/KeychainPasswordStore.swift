@@ -1,8 +1,10 @@
 import Foundation
 import Security
+import OSLog
 
 enum KeychainPasswordStore {
     private static let service = AppIdentity.bundleIdentifier
+    private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "keychain")
 
     static func readPassword(for host: Host) -> String {
         readPassword(credentialKey: host.ensureCredentialKey())
@@ -87,7 +89,7 @@ enum KeychainPasswordStore {
     @discardableResult
     private static func upsertPassword(_ password: String, account: String) -> Bool {
         guard let data = password.data(using: .utf8) else {
-            print("KeychainPasswordStore: Unable to encode password data.")
+            logger.error("Unable to encode password data.")
             return false
         }
 
@@ -137,6 +139,6 @@ enum KeychainPasswordStore {
         }
 
         let message = (SecCopyErrorMessageString(status, nil) as String?) ?? "Unknown error"
-        print("KeychainPasswordStore \(operation) failed (\(status)): \(message)")
+        logger.error("Keychain \(operation, privacy: .public) failed with status \(status, privacy: .public): \(message)")
     }
 }

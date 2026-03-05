@@ -304,8 +304,6 @@ struct macOSTorrentListCompact: View {
                     let decoded = try JSONDecoder().decode(TableColumnCustomization<TorrentTableRow>.self, from: data)
                     columnCustomization = decoded
                 } catch {
-                    let dataSummary = data.base64EncodedString()
-                    print("Failed to decode columnCustomizationData to TableColumnCustomization<TorrentTableRow>: \(error). Data (base64): \(dataSummary)")
                     columnCustomization = TableColumnCustomization<TorrentTableRow>()
                 }
             }
@@ -324,8 +322,6 @@ struct macOSTorrentListCompact: View {
                 let encoded = try JSONEncoder().encode(newValue)
                 columnCustomizationData = encoded
             } catch {
-                print("Failed to encode columnCustomization: \(error)")
-                print("Failed to encode columnCustomization (TableColumnCustomization<TorrentTableRow>): \(error.localizedDescription)")
             }
         }
     }

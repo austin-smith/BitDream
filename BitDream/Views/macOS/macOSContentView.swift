@@ -273,8 +273,6 @@ struct macOSContentView: View {
                     selectedTorrentIds.removeAll()
                 }
             }
-
-            print("\(newValue.rawValue) selected")
         }
         .onReceive(store.$torrents) { _ in
             updateAppBadge()
@@ -861,7 +859,6 @@ struct TorrentDropDelegate: DropDelegate {
                             parsedInfos.append(torrentInfo)
                         }
                     } catch {
-                        print("Failed to parse torrent during drag: \(error)")
                     }
                 }
             }
@@ -890,7 +887,6 @@ struct TorrentDropDelegate: DropDelegate {
                             let data = try await Self.readTorrentData(from: url)
                             addTorrentFromFileData(data, store: store)
                         } catch {
-                            print("Failed to read dropped torrent file: \(error)")
                         }
                     }
                 }

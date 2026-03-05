@@ -105,12 +105,9 @@ class SessionSettingsEditModel: ObservableObject {
             config: serverInfo.config,
             auth: serverInfo.auth
         ) { response in
-            switch response {
-            case .success:
+            if response == .success {
                 self.values = [:]
                 store.refreshSessionConfiguration()
-            case .unauthorized, .configError, .failed:
-                print("Failed to save session settings: \(response)")
             }
         }
     }

@@ -217,7 +217,6 @@ final class Store: NSObject, ObservableObject {
             self.sessionConfiguration = sessionInfo
             self.defaultDownloadDir = sessionInfo.downloadDir
         }, onError: { error in
-            print("Failed to refresh session info: \(error)")
         })
     }
 

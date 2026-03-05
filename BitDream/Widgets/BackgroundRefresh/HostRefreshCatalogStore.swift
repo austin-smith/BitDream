@@ -27,10 +27,7 @@ actor HostRefreshCatalogStore {
     static let shared = HostRefreshCatalogStore()
 
     private static let fileName = "host_refresh_catalog_v1.json"
-    private static let logger = Logger(
-        subsystem: AppIdentity.bundleIdentifier,
-        category: "HostRefreshCatalogStore"
-    )
+    private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "persistence")
 
     private let fileManager: FileManager
     private let encoder: JSONEncoder
@@ -67,7 +64,6 @@ actor HostRefreshCatalogStore {
         do {
             url = try catalogURL()
         } catch {
-            logger.error("Failed to resolve catalog URL for snapshot read: \(error.localizedDescription, privacy: .public)")
             return []
         }
 
@@ -79,19 +75,18 @@ actor HostRefreshCatalogStore {
             if nsError.domain == NSCocoaErrorDomain && nsError.code == NSFileReadNoSuchFileError {
                 return []
             }
-            logger.error("Failed to read catalog snapshot at \(url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to read catalog snapshot at path \(url.path): \(error.localizedDescription)")
             return []
         }
 
         do {
             let catalog = try decoder.decode(HostRefreshCatalog.self, from: data)
             guard catalog.schemaVersion == HostRefreshCatalog.currentSchemaVersion else {
-                logger.error("Ignoring catalog snapshot with schema \(catalog.schemaVersion, privacy: .public)")
                 return []
             }
             return catalog.records
         } catch {
-            logger.error("Failed to decode catalog snapshot: \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to decode catalog snapshot: \(error.localizedDescription)")
             return []
         }
     }
@@ -101,7 +96,6 @@ actor HostRefreshCatalogStore {
         do {
             url = try Self.catalogURL(fileManager: fileManager)
         } catch {
-            Self.logger.error("Failed to resolve catalog URL: \(error.localizedDescription, privacy: .public)")
             return nil
         }
 
@@ -113,19 +107,19 @@ actor HostRefreshCatalogStore {
             if nsError.domain == NSCocoaErrorDomain && nsError.code == NSFileReadNoSuchFileError {
                 return nil
             }
-            Self.logger.error("Failed to read catalog: \(error.localizedDescription, privacy: .public)")
+            Self.logger.error("Failed to read catalog: \(error.localizedDescription)")
             return nil
         }
 
         do {
             let catalog = try decoder.decode(HostRefreshCatalog.self, from: data)
             guard catalog.schemaVersion == HostRefreshCatalog.currentSchemaVersion else {
-                Self.logger.error("Ignoring catalog with schema \(catalog.schemaVersion, privacy: .public)")
+                Self.logger.error("Ignoring catalog with unsupported schema \(catalog.schemaVersion, privacy: .public)")
                 return nil
             }
             return catalog
         } catch {
-            Self.logger.error("Failed to decode catalog JSON: \(error.localizedDescription, privacy: .public)")
+            Self.logger.error("Failed to decode catalog JSON: \(error.localizedDescription)")
             return nil
         }
     }
@@ -139,7 +133,7 @@ actor HostRefreshCatalogStore {
             let data = try encoder.encode(catalog)
             try data.write(to: url, options: [.atomic])
         } catch {
-            Self.logger.error("Failed to write catalog: \(error.localizedDescription, privacy: .public)")
+            Self.logger.error("Failed to write catalog: \(error.localizedDescription)")
             throw error
         }
     }

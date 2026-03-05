@@ -317,7 +317,6 @@ struct iOSTorrentFileDetail: View {
             if response != .success {
                 revertToOriginalData()
             }
-            print("Set wanted status: \(response)")
         }
     }
 
@@ -334,7 +333,6 @@ struct iOSTorrentFileDetail: View {
             if response != .success {
                 revertToOriginalData()
             }
-            print("Set priority: \(response)")
         }
     }
 
@@ -450,7 +448,6 @@ struct BulkActionToolbar: View {
             priority: priority,
             info: info
         ) { response in
-            print("Bulk priority set: \(response)")
             if response != .success {
                 // Revert on failure
                 revertData()
@@ -474,7 +471,6 @@ struct BulkActionToolbar: View {
             wanted: wanted,
             info: info
         ) { response in
-            print("Bulk wanted status set: \(response)")
             if response != .success {
                 // Revert on failure
                 revertData()
