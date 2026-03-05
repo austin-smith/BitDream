@@ -43,11 +43,7 @@ struct BitDreamApp: App {
 
         // Request permission to use badges on macOS
         #if os(macOS)
-        UNUserNotificationCenter.current().requestAuthorization(options: [.badge]) { granted, error in
-            if let error = error {
-                print("Error requesting notification authorization: \(error)")
-            }
-        }
+        UNUserNotificationCenter.current().requestAuthorization(options: [.badge]) { _, _ in }
         #endif
 
         #if os(iOS)

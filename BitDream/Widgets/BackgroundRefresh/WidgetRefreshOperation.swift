@@ -3,6 +3,7 @@
 import Foundation
 import Synchronization
 import WidgetKit
+import OSLog
 
 private let widgetRefreshQueue: DispatchQueue = {
     DispatchQueue(label: RuntimeDomain.widgetRefreshQueue, qos: .utility)
@@ -65,6 +66,7 @@ private final class HostRefreshResultStore: Sendable {
 
 private enum WidgetRefreshRunner {
     private static let backgroundWaitTimeout: DispatchTimeInterval = .seconds(15)
+    private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "backgroundRefresh")
 
     static func run(isCancelled: @Sendable () -> Bool) -> Bool {
         if isCancelled() { return false }
@@ -111,6 +113,7 @@ private enum WidgetRefreshRunner {
 
     private static func refreshHost(host: HostSnapshot, isCancelled: @Sendable () -> Bool) {
         if isCancelled() { return }
+        let hostIdentifier: String = host.name.isEmpty ? host.server : host.name
 
         // Build Transmission config/auth
         var config = TransmissionConfig()
@@ -128,14 +131,20 @@ private enum WidgetRefreshRunner {
         // Fetch session stats
         group.enter()
         // Widget refresh intentionally uses a non-@MainActor path to avoid pumping through the main actor.
-        getSessionStatsForWidgetRefresh(config: config, auth: auth) { s, _ in
+        getSessionStatsForWidgetRefresh(config: config, auth: auth) { s, errorMessage in
+            if let errorMessage {
+                logger.error("Background refresh session stats request failed for host \(hostIdentifier): \(errorMessage)")
+            }
             results.setStats(s)
             group.leave()
         }
 
         // Fetch torrent list for status breakdown
         group.enter()
-        getTorrentsForWidgetRefresh(config: config, auth: auth) { t, _ in
+        getTorrentsForWidgetRefresh(config: config, auth: auth) { t, errorMessage in
+            if let errorMessage {
+                logger.notice("Background refresh torrent list request failed for host \(hostIdentifier): \(errorMessage)")
+            }
             results.setTorrents(t ?? [])
             group.leave()
         }
@@ -143,15 +152,17 @@ private enum WidgetRefreshRunner {
         // Wait with timeout to respect background limits
         let waitResult = group.wait(timeout: .now() + backgroundWaitTimeout)
         if waitResult == .timedOut {
-            let hostIdentifier: String = host.name.isEmpty ? host.server : host.name
-            print("WidgetRefreshRunner: timed out waiting for background fetches for host \(hostIdentifier)")
+            logger.error("Timed out waiting for background fetches for host \(hostIdentifier)")
             return
         }
 
         if isCancelled() { return }
 
         let snapshot = results.snapshot()
-        guard let stats = snapshot.stats else { return }
+        guard let stats = snapshot.stats else {
+            logger.error("Background refresh missing session stats for host \(hostIdentifier); skipping snapshot write.")
+            return
+        }
 
         let serverName = host.name
         writeSessionSnapshot(

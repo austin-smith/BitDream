@@ -255,7 +255,6 @@ struct macOSTorrentFileDetail: View {
                 }
                 recomputeRows()
             }
-            print("macOS set wanted status: \(response)")
         }
     }
 
@@ -284,7 +283,6 @@ struct macOSTorrentFileDetail: View {
                 }
                 recomputeRows()
             }
-            print("macOS set file priority: \(response)")
         }
     }
 

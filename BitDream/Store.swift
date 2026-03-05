@@ -1,6 +1,7 @@
 import SwiftUI
 import Foundation
 import SwiftData
+import OSLog
 
 #if os(macOS)
 enum AddTorrentInitialMode {
@@ -81,6 +82,7 @@ final class Store: NSObject, ObservableObject {
     var timer: Timer = Timer()
     private var retryTimer: Timer?
     private var reconnectBackoff = ExponentialBackoff(base: 1, maxDelay: 30)
+    private let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "network")
 
     var canAttemptReconnect: Bool {
         guard connectionStatus == .reconnecting else { return true }
@@ -217,7 +219,7 @@ final class Store: NSObject, ObservableObject {
             self.sessionConfiguration = sessionInfo
             self.defaultDownloadDir = sessionInfo.downloadDir
         }, onError: { error in
-            print("Failed to refresh session info: \(error)")
+            self.logger.error("Failed to refresh session configuration: \(error)")
         })
     }
 

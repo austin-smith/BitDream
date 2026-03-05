@@ -62,10 +62,7 @@ final class HostRepository: HostPersisting {
 
     private let modelContext: ModelContext
     private let catalogStore: HostRefreshCatalogStore
-    private let logger = Logger(
-        subsystem: AppIdentity.bundleIdentifier,
-        category: "HostRepository"
-    )
+    private let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "persistence")
 
     private var bootstrapState: BootstrapState = .idle
 
@@ -86,7 +83,7 @@ final class HostRepository: HostPersisting {
         } catch {
             rollbackChangesIfNeeded()
             bootstrapState = .idle
-            logger.error("Bootstrap failed: \(error.localizedDescription, privacy: .public)")
+            logger.error("Bootstrap failed: \(error.localizedDescription)")
         }
     }
 
@@ -192,7 +189,7 @@ final class HostRepository: HostPersisting {
         }
 
         if let credentialKey, !KeychainPasswordStore.deletePassword(credentialKey: credentialKey) {
-            logger.error("Failed to remove credentials for deleted serverID=\(serverID, privacy: .public)")
+            logger.error("Failed to remove credentials for deleted server ID: \(serverID)")
         }
 
         try await syncCatalogAfterUserMutation()
@@ -243,7 +240,7 @@ final class HostRepository: HostPersisting {
             await syncCatalog()
         } catch {
             rollbackChangesIfNeeded()
-            logger.error("Failed to persist host version for serverID=\(serverID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            logger.error("Failed to persist host version for server ID \(serverID): \(error.localizedDescription)")
         }
     }
 
@@ -251,7 +248,7 @@ final class HostRepository: HostPersisting {
         do {
             try await syncCatalogInternal()
         } catch {
-            logger.error("Catalog sync failed: \(error.localizedDescription, privacy: .public)")
+            logger.error("Catalog sync failed: \(error.localizedDescription)")
         }
     }
 
@@ -287,7 +284,7 @@ final class HostRepository: HostPersisting {
         do {
             try await syncCatalogInternal()
         } catch {
-            logger.error("Catalog sync failed after user mutation: \(error.localizedDescription, privacy: .public)")
+            logger.error("Catalog sync failed after user mutation: \(error.localizedDescription)")
             throw catalogSyncFailure(from: error)
         }
     }

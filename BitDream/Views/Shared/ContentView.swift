@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import SwiftData
+import OSLog
 
 // MARK: - UserDefaults Extension for View State
 extension UserDefaults {
@@ -133,6 +134,8 @@ func ensureStartupConnectionBehaviorApplied(store: Store, modelContext: ModelCon
     do {
         hosts = try modelContext.fetch(descriptor)
     } catch {
+        Logger(subsystem: AppIdentity.bundleIdentifier, category: "persistence")
+            .error("Failed to fetch hosts during startup: \(error.localizedDescription)")
         hosts = []
     }
 

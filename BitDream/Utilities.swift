@@ -136,7 +136,6 @@ func updateList(store: Store, update: @escaping ([Torrent]) -> Void, retry: Int 
     let info = makeConfig(store: store)
     getTorrents(config: info.config, auth: info.auth, onReceived: { torrents, err in
         if let err = err {
-            print("Connection error…")
             store.handleConnectionError(message: err)
             return
         }
@@ -156,7 +155,6 @@ func updateSessionStats(store: Store, update: @escaping (SessionStats) -> Void, 
     let info = makeConfig(store: store)
     getSessionStats(config: info.config, auth: info.auth, onReceived: { sessions, err in
         if let err = err {
-            print("Connection error…")
             store.handleConnectionError(message: err)
             return
         }
@@ -187,7 +185,6 @@ func updateSessionInfo(store: Store, update: @escaping (TransmissionSessionRespo
     getSession(config: info.config, auth: info.auth, onResponse: { sessionInfo in
         update(sessionInfo)
     }, onError: { err in
-        print("Session info error: \(err)")
         store.handleConnectionError(message: err)
     })
 }
@@ -197,7 +194,6 @@ func pollTransmissionData(store: Store) {
     let info = makeConfig(store: store)
     getSessionStats(config: info.config, auth: info.auth, onReceived: { sessions, err in
         if let err = err {
-            print("Connection error…")
             store.handleConnectionError(message: err)
             return
         }

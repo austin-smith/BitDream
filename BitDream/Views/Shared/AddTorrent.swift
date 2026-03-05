@@ -23,7 +23,6 @@ struct AddTorrent: View {
 func handleAddTorrentError(_ message: String, errorMessage: Binding<String?>, showingError: Binding<Bool>) {
     errorMessage.wrappedValue = message
     showingError.wrappedValue = true
-    print(message)
 }
 
 /// Function to add a torrent to the server

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import OSLog
 
 #if os(macOS)
 
@@ -76,6 +77,7 @@ struct macOSTorrentListCompact: View {
     @State private var moveShouldMove: Bool = true
     @State private var columnCustomization = TableColumnCustomization<TorrentTableRow>()
     private static let columnCustomizationKey = "mac.compact.columns.v1"
+    private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "persistence")
     @AppStorage(Self.columnCustomizationKey) private var columnCustomizationData: Data?
 
 
@@ -304,8 +306,7 @@ struct macOSTorrentListCompact: View {
                     let decoded = try JSONDecoder().decode(TableColumnCustomization<TorrentTableRow>.self, from: data)
                     columnCustomization = decoded
                 } catch {
-                    let dataSummary = data.base64EncodedString()
-                    print("Failed to decode columnCustomizationData to TableColumnCustomization<TorrentTableRow>: \(error). Data (base64): \(dataSummary)")
+                    Self.logger.notice("Failed to decode saved table column customization; resetting to defaults: \(error.localizedDescription)")
                     columnCustomization = TableColumnCustomization<TorrentTableRow>()
                 }
             }
@@ -324,8 +325,7 @@ struct macOSTorrentListCompact: View {
                 let encoded = try JSONEncoder().encode(newValue)
                 columnCustomizationData = encoded
             } catch {
-                print("Failed to encode columnCustomization: \(error)")
-                print("Failed to encode columnCustomization (TableColumnCustomization<TorrentTableRow>): \(error.localizedDescription)")
+                Self.logger.error("Failed to encode table column customization: \(error.localizedDescription)")
             }
         }
     }
