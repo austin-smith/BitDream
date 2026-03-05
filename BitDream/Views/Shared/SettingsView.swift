@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import OSLog
 
 /// Platform-agnostic wrapper for SettingsView
 /// This view simply delegates to the appropriate platform-specific implementation
@@ -55,6 +56,7 @@ class SessionSettingsEditModel: ObservableObject {
     @Published var isUpdatingBlocklist = false
     private var saveTimer: Timer?
     var store: Store?
+    private let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "network")
 
     func setup(store: Store) {
         self.store = store
@@ -108,6 +110,8 @@ class SessionSettingsEditModel: ObservableObject {
             if response == .success {
                 self.values = [:]
                 store.refreshSessionConfiguration()
+            } else {
+                self.logger.error("Failed to save session settings: \(String(describing: response), privacy: .public)")
             }
         }
     }
