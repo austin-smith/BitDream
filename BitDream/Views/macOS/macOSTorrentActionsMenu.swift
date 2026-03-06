@@ -144,7 +144,7 @@ struct TorrentActionsToolbarMenu: View {
                             showingError = true
                             return
                         }
-                        renameTorrentRoot(torrent: t, to: newName, store: store) { err in
+                        renameTorrentRoot(torrent: targetTorrent, to: newName, store: store) { err in
                             if let err = err {
                                 errorMessage = err
                                 showingError = true
@@ -245,7 +245,7 @@ struct RenameSheetContent: View {
                             showingError = true
                             return
                         }
-                        renameTorrentRoot(torrent: t, to: newName, store: store) { err in
+                        renameTorrentRoot(torrent: targetTorrent, to: newName, store: store) { err in
                             if let err = err {
                                 errorMessage = err
                                 showingError = true

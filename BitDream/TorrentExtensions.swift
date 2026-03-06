@@ -2,6 +2,13 @@ import Foundation
 
 // MARK: - Torrent Action Extensions
 
+struct TorrentActivitySortKey {
+    let maxRate: Int64
+    let downloadRate: Int64
+    let uploadRate: Int64
+    let normalizedName: String
+}
+
 extension Collection where Element == Torrent {
     /// Whether pause action should be disabled for this collection of torrents
     var shouldDisablePause: Bool {
@@ -24,9 +31,14 @@ extension Torrent {
         }
     }
 
-    var activitySortKey: (Int64, Int64, Int64, String) {
+    var activitySortKey: TorrentActivitySortKey {
         let maxRate = max(rateDownload, rateUpload)
-        return (maxRate, rateDownload, rateUpload, name.lowercased())
+        return TorrentActivitySortKey(
+            maxRate: maxRate,
+            downloadRate: rateDownload,
+            uploadRate: rateUpload,
+            normalizedName: name.lowercased()
+        )
     }
 }
 
@@ -38,10 +50,16 @@ extension Sequence where Element == Torrent {
                 let leftSortKey = lhs.activitySortKey
                 let rightSortKey = rhs.activitySortKey
 
-                if leftSortKey.0 != rightSortKey.0 { return leftSortKey.0 > rightSortKey.0 }
-                if leftSortKey.1 != rightSortKey.1 { return leftSortKey.1 > rightSortKey.1 }
-                if leftSortKey.2 != rightSortKey.2 { return leftSortKey.2 > rightSortKey.2 }
-                return leftSortKey.3 < rightSortKey.3
+                if leftSortKey.maxRate != rightSortKey.maxRate {
+                    return leftSortKey.maxRate > rightSortKey.maxRate
+                }
+                if leftSortKey.downloadRate != rightSortKey.downloadRate {
+                    return leftSortKey.downloadRate > rightSortKey.downloadRate
+                }
+                if leftSortKey.uploadRate != rightSortKey.uploadRate {
+                    return leftSortKey.uploadRate > rightSortKey.uploadRate
+                }
+                return leftSortKey.normalizedName < rightSortKey.normalizedName
             }
     }
 }

@@ -96,13 +96,25 @@ func stripCommonPrefix(_ filename: String, prefix: String) -> String {
     return String(filename.dropFirst(prefix.count))
 }
 
+struct ProcessedTorrentFile {
+    let file: TorrentFile
+    let stats: TorrentFileStats
+    let displayName: String
+    let fileIndex: Int
+}
+
 /// Process all files with smart display names (calculates prefix once)
-func processFilesForDisplay(_ files: [TorrentFile], stats: [TorrentFileStats]) -> [(file: TorrentFile, stats: TorrentFileStats, displayName: String, fileIndex: Int)] {
+func processFilesForDisplay(_ files: [TorrentFile], stats: [TorrentFileStats]) -> [ProcessedTorrentFile] {
     let filenames = files.map { $0.name }
     let commonPrefix = calculateCommonPrefix(filenames)
 
     return zip(files, stats).enumerated().map { index, pair in
-        (file: pair.0, stats: pair.1, displayName: stripCommonPrefix(pair.0.name, prefix: commonPrefix), fileIndex: index)
+        ProcessedTorrentFile(
+            file: pair.0,
+            stats: pair.1,
+            displayName: stripCommonPrefix(pair.0.name, prefix: commonPrefix),
+            fileIndex: index
+        )
     }
 }
 

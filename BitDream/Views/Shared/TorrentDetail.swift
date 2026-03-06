@@ -69,8 +69,19 @@ func toggleTorrentPlayPause(torrent: Torrent, store: Store, completion: @escapin
     })
 }
 
+struct TorrentDetailsDisplay {
+    let percentComplete: String
+    let percentAvailable: String
+    let downloadedFormatted: String
+    let sizeWhenDoneFormatted: String
+    let uploadedFormatted: String
+    let uploadRatio: String
+    let activityDate: String
+    let addedDate: String
+}
+
 // Shared function to format torrent details
-func formatTorrentDetails(torrent: Torrent) -> (percentComplete: String, percentAvailable: String, downloadedFormatted: String, sizeWhenDoneFormatted: String, uploadedFormatted: String, uploadRatio: String, activityDate: String, addedDate: String) {
+func formatTorrentDetails(torrent: Torrent) -> TorrentDetailsDisplay {
 
     let percentComplete = String(format: "%.1f%%", torrent.percentDone * 100)
     let percentAvailable = String(format: "%.1f%%", ((Double(torrent.haveUnchecked + torrent.haveValid + torrent.desiredAvailable) / Double(torrent.sizeWhenDone))) * 100)
@@ -82,7 +93,16 @@ func formatTorrentDetails(torrent: Torrent) -> (percentComplete: String, percent
     let activityDate = formatTorrentDetailDate(torrent.activityDate)
     let addedDate = formatTorrentDetailDate(torrent.addedDate)
 
-    return (percentComplete, percentAvailable, downloadedFormatted, sizeWhenDoneFormatted, uploadedFormatted, uploadRatio, activityDate, addedDate)
+    return TorrentDetailsDisplay(
+        percentComplete: percentComplete,
+        percentAvailable: percentAvailable,
+        downloadedFormatted: downloadedFormatted,
+        sizeWhenDoneFormatted: sizeWhenDoneFormatted,
+        uploadedFormatted: uploadedFormatted,
+        uploadRatio: uploadRatio,
+        activityDate: activityDate,
+        addedDate: addedDate
+    )
 }
 
 // Shared header view for both platforms
