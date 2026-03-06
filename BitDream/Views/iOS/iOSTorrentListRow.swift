@@ -74,7 +74,7 @@ struct iOSTorrentListRow: View {
                         priority: .high
                     ),
                     info: info,
-                    onComplete: { r in }
+                    onComplete: { _ in }
                 )
             }) {
                 Label("High", systemImage: "arrow.up")
@@ -87,7 +87,7 @@ struct iOSTorrentListRow: View {
                         priority: .normal
                     ),
                     info: info,
-                    onComplete: { r in }
+                    onComplete: { _ in }
                 )
             }) {
                 Label("Normal", systemImage: "minus")
@@ -100,7 +100,7 @@ struct iOSTorrentListRow: View {
                         priority: .low
                     ),
                     info: info,
-                    onComplete: { r in }
+                    onComplete: { _ in }
                 )
             }) {
                 Label("Low", systemImage: "arrow.down")

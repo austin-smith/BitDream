@@ -73,9 +73,9 @@ func calculateCommonPrefix(_ filenames: [String]) -> String {
     let shortestPath = filenames.min(by: { $0.count < $1.count }) ?? ""
     var commonPrefix = ""
 
-    for i in shortestPath.indices {
-        let char = shortestPath[i]
-        if filenames.allSatisfy({ $0.indices.contains(i) && $0[i] == char }) {
+    for index in shortestPath.indices {
+        let char = shortestPath[index]
+        if filenames.allSatisfy({ $0.indices.contains(index) && $0[index] == char }) {
             commonPrefix.append(char)
         } else {
             break

@@ -192,12 +192,12 @@ private struct AppIconPickerView: View {
 
     private func reloadOptions() {
         let presentations = AppIconCatalog.presentations()
-        options = presentations.map { p in
+        options = presentations.map { presentation in
             AppIconOption(
-                id: p.key ?? "__default__",
-                key: p.key,
-                title: p.title,
-                previewAssetName: p.previewAssetName
+                id: presentation.key ?? "__default__",
+                key: presentation.key,
+                title: presentation.title,
+                previewAssetName: presentation.previewAssetName
             )
         }
     }

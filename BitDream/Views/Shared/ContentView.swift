@@ -158,12 +158,12 @@ struct StatsHeaderView: View {
     private var overallTotals: (uploaded: Int64, downloaded: Int64) {
         switch ratioDisplayMode {
         case .cumulative:
-            if let s = store.sessionStats?.cumulativeStats {
-                return (uploaded: s.uploadedBytes, downloaded: s.downloadedBytes)
+            if let stats = store.sessionStats?.cumulativeStats {
+                return (uploaded: stats.uploadedBytes, downloaded: stats.downloadedBytes)
             }
         case .current:
-            if let s = store.sessionStats?.currentStats {
-                return (uploaded: s.uploadedBytes, downloaded: s.downloadedBytes)
+            if let stats = store.sessionStats?.currentStats {
+                return (uploaded: stats.uploadedBytes, downloaded: stats.downloadedBytes)
             }
         }
         let fallbackDownloaded = store.torrents.reduce(0) { $0 + $1.downloadedEver }

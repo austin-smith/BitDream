@@ -296,21 +296,21 @@ struct FlowLayout: Layout {
         let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
         var height: CGFloat = 0
         var width: CGFloat = 0
-        var x: CGFloat = 0
-        var y: CGFloat = 0
+        var currentX: CGFloat = 0
+        var currentY: CGFloat = 0
         var maxHeight: CGFloat = 0
 
         for size in sizes {
-            if x + size.width > (proposal.width ?? .infinity) {
-                y += maxHeight + spacing
-                x = 0
+            if currentX + size.width > (proposal.width ?? .infinity) {
+                currentY += maxHeight + spacing
+                currentX = 0
                 maxHeight = 0
             }
 
-            x += size.width + spacing
-            width = max(width, x)
+            currentX += size.width + spacing
+            width = max(width, currentX)
             maxHeight = max(maxHeight, size.height)
-            height = y + maxHeight
+            height = currentY + maxHeight
         }
 
         return CGSize(width: width, height: height)
@@ -318,23 +318,23 @@ struct FlowLayout: Layout {
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
-        var x = bounds.minX
-        var y = bounds.minY
+        var currentX = bounds.minX
+        var currentY = bounds.minY
         var maxHeight: CGFloat = 0
 
         for (index, size) in sizes.enumerated() {
-            if x + size.width > bounds.maxX {
-                y += maxHeight + spacing
-                x = bounds.minX
+            if currentX + size.width > bounds.maxX {
+                currentY += maxHeight + spacing
+                currentX = bounds.minX
                 maxHeight = 0
             }
 
             subviews[index].place(
-                at: CGPoint(x: x, y: y),
+                at: CGPoint(x: currentX, y: currentY),
                 proposal: ProposedViewSize(size)
             )
 
-            x += size.width + spacing
+            currentX += size.width + spacing
             maxHeight = max(maxHeight, size.height)
         }
     }

@@ -88,13 +88,13 @@ func sortTorrents(_ torrents: [Torrent], by property: SortProperty, order: SortO
     case .status:
         return order == .ascending ? sortedList.sortedAscending(using: .keyPath(\.statusCalc.rawValue)) : sortedList.sortedDescending(using: .keyPath(\.statusCalc.rawValue))
     case .eta:
-        return sortedList.sorted { a, b in
-            let keyA = makeEtaSortKey(for: a)
-            let keyB = makeEtaSortKey(for: b)
+        return sortedList.sorted { leftTorrent, rightTorrent in
+            let leftEtaSortKey = makeEtaSortKey(for: leftTorrent)
+            let rightEtaSortKey = makeEtaSortKey(for: rightTorrent)
             if order == .ascending {
-                return keyA < keyB
+                return leftEtaSortKey < rightEtaSortKey
             }
-            return keyA > keyB
+            return leftEtaSortKey > rightEtaSortKey
         }
     case .size:
         return order == .ascending ? sortedList.sortedAscending(using: .keyPath(\.sizeWhenDone)) : sortedList.sortedDescending(using: .keyPath(\.sizeWhenDone))
@@ -386,10 +386,10 @@ private func fastReadDecimalNumber(_ bytes: UnsafeBufferPointer<UInt8>, startInd
     // Cap extremely large declared lengths to avoid pathological allocations
     let maxAllowed = 100_000_000 // 100 MB
     while idx < upperBound {
-        let b = bytes[idx]
-        if b >= UInt8(ascii: "0") && b <= UInt8(ascii: "9") {
+        let byte = bytes[idx]
+        if byte >= UInt8(ascii: "0") && byte <= UInt8(ascii: "9") {
             sawDigit = true
-            let digit = Int(b &- UInt8(ascii: "0"))
+            let digit = Int(byte &- UInt8(ascii: "0"))
             let (mul, mulOverflow) = value.multipliedReportingOverflow(by: 10)
             if mulOverflow { return nil }
             let (add, addOverflow) = mul.addingReportingOverflow(digit)
@@ -416,9 +416,9 @@ private func fastSkipBencodeValue(_ bytes: UnsafeBufferPointer<UInt8>, startInde
         idx &+= 1
         if idx < upperBound, bytes[idx] == UInt8(ascii: "-") { idx &+= 1 }
         while idx < upperBound {
-            let b = bytes[idx]
-            if b == UInt8(ascii: "e") { return idx + 1 }
-            if b < UInt8(ascii: "0") || b > UInt8(ascii: "9") { return nil }
+            let byte = bytes[idx]
+            if byte == UInt8(ascii: "e") { return idx + 1 }
+            if byte < UInt8(ascii: "0") || byte > UInt8(ascii: "9") { return nil }
             idx &+= 1
         }
         return nil
@@ -473,10 +473,10 @@ private func fastKeyEquals(_ bytes: UnsafeBufferPointer<UInt8>, start: Int, leng
           keyLen <= bytes.count - start else { return false }
     // Access the raw pointer to the StaticString's UTF8 storage
     return key.withUTF8Buffer { keyBuf -> Bool in
-        var i = 0
-        while i < keyLen {
-            if bytes[start + i] != keyBuf[i] { return false }
-            i &+= 1
+        var offset = 0
+        while offset < keyLen {
+            if bytes[start + offset] != keyBuf[offset] { return false }
+            offset &+= 1
         }
         return true
     }
@@ -570,16 +570,16 @@ private func fastParseInfoDictionary(_ bytes: UnsafeBufferPointer<UInt8>, startI
                         idx &+= 1
                         var negative = false
                         if idx < endIndex, bytes[idx] == UInt8(ascii: "-") { negative = true; idx &+= 1 }
-                        var v: Int64 = 0
+                        var value: Int64 = 0
                         while idx < endIndex {
-                            let b = bytes[idx]
-                            if b == UInt8(ascii: "e") { idx &+= 1; break }
-                            let d = Int64(b) - Int64(UInt8(ascii: "0"))
-                            if d < 0 || d > 9 { return nil }
-                            v = v &* 10 &+ d
+                            let byte = bytes[idx]
+                            if byte == UInt8(ascii: "e") { idx &+= 1; break }
+                            let digit = Int64(byte) - Int64(UInt8(ascii: "0"))
+                            if digit < 0 || digit > 9 { return nil }
+                            value = value &* 10 &+ digit
                             idx &+= 1
                         }
-                        fileLength = negative ? -v : v
+                        fileLength = negative ? -value : value
                     } else {
                         // Skip non-length values
                         guard let next = fastSkipBencodeValue(bytes, startIndex: idx, upperBound: endIndex) else { return nil }
@@ -607,16 +607,16 @@ private func fastParseInfoDictionary(_ bytes: UnsafeBufferPointer<UInt8>, startI
             idx &+= 1
             var negative = false
             if idx < endIndex, bytes[idx] == UInt8(ascii: "-") { negative = true; idx &+= 1 }
-            var v: Int64 = 0
+            var value: Int64 = 0
             while idx < endIndex {
-                let b = bytes[idx]
-                if b == UInt8(ascii: "e") { idx &+= 1; break }
-                let d = Int64(b) - Int64(UInt8(ascii: "0"))
-                if d < 0 || d > 9 { return nil }
-                v = v &* 10 &+ d
+                let byte = bytes[idx]
+                if byte == UInt8(ascii: "e") { idx &+= 1; break }
+                let digit = Int64(byte) - Int64(UInt8(ascii: "0"))
+                if digit < 0 || digit > 9 { return nil }
+                value = value &* 10 &+ digit
                 idx &+= 1
             }
-            totalSize = negative ? -v : v
+            totalSize = negative ? -value : value
             fileCount = 1
         } else {
             // Skip uninteresting value

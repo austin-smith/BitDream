@@ -194,8 +194,8 @@ func createTorrentContextMenu(
 
     // Resume Now Button (always shown; disabled for single non-stopped)
     Button(action: {
-        for t in torrents {
-            resumeTorrentNow(torrent: t, store: store)
+        for torrent in torrents {
+            resumeTorrentNow(torrent: torrent, store: store)
         }
     }) {
         HStack {
@@ -220,7 +220,7 @@ func createTorrentContextMenu(
                     priority: .high
                 ),
                 info: info,
-                onComplete: { r in }
+                onComplete: { _ in }
             )
         }) {
             HStack {
@@ -237,7 +237,7 @@ func createTorrentContextMenu(
                     priority: .normal
                 ),
                 info: info,
-                onComplete: { r in }
+                onComplete: { _ in }
             )
         }) {
             HStack {
@@ -254,7 +254,7 @@ func createTorrentContextMenu(
                     priority: .low
                 ),
                 info: info,
-                onComplete: { r in }
+                onComplete: { _ in }
             )
         }) {
             HStack {
@@ -418,8 +418,8 @@ func createTorrentContextMenu(
 
     // Re-announce Button (supports multi-select)
     Button(action: {
-        for t in torrents {
-            reAnnounceToTrackers(torrent: t, store: store)
+        for torrent in torrents {
+            reAnnounceToTrackers(torrent: torrent, store: store)
         }
     }) {
         HStack {
@@ -432,8 +432,8 @@ func createTorrentContextMenu(
     // Verify Button (supports multi-select)
     Button(action: {
         let info = makeConfig(store: store)
-        for t in torrents {
-            verifyTorrent(torrent: t, config: info.config, auth: info.auth, onResponse: { response in
+        for torrent in torrents {
+            verifyTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
                 handleTransmissionResponse(response,
                     onSuccess: {
                         // Success - verification started

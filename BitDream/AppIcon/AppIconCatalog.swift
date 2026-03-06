@@ -46,7 +46,7 @@ public enum AppIconCatalog {
             case (nil, nil): return false
             case (nil, _): return true
             case (_, nil): return false
-            case let (l?, r?): return l < r
+            case let (leftKey?, rightKey?): return leftKey < rightKey
             }
         }
     }

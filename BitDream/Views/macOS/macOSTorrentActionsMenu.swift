@@ -84,8 +84,8 @@ struct TorrentActionsToolbarMenu: View {
             isPresented: $deleteDialog) {
                 Button(role: .destructive) {
                     let info = makeConfig(store: store)
-                    for t in selectedTorrents {
-                        deleteTorrent(torrent: t, erase: true, config: info.config, auth: info.auth, onDel: { response in
+                    for torrent in selectedTorrents {
+                        deleteTorrent(torrent: torrent, erase: true, config: info.config, auth: info.auth, onDel: { response in
                             handleTransmissionResponse(response,
                                 onSuccess: {
                                     // Success - torrent deleted
@@ -103,8 +103,8 @@ struct TorrentActionsToolbarMenu: View {
                 }
                 Button("Remove from list only") {
                     let info = makeConfig(store: store)
-                    for t in selectedTorrents {
-                        deleteTorrent(torrent: t, erase: false, config: info.config, auth: info.auth, onDel: { response in
+                    for torrent in selectedTorrents {
+                        deleteTorrent(torrent: torrent, erase: false, config: info.config, auth: info.auth, onDel: { response in
                             handleTransmissionResponse(response,
                                 onSuccess: {
                                     // Success - torrent removed from list
@@ -130,16 +130,16 @@ struct TorrentActionsToolbarMenu: View {
                 }
                 return selectedTorrents.first
             }()
-            if let t = targetTorrent {
+            if let targetTorrent {
                 RenameSheetView(
                     title: "Rename Torrent",
                     name: $renameInput,
-                    currentName: t.name,
+                    currentName: targetTorrent.name,
                     onCancel: {
                         renameDialog = false
                     },
                     onSave: { newName in
-                        if let validation = validateNewName(newName, current: t.name) {
+                        if let validation = validateNewName(newName, current: targetTorrent.name) {
                             errorMessage = validation
                             showingError = true
                             return
@@ -231,16 +231,16 @@ struct RenameSheetContent: View {
             return selectedTorrents.count == 1 ? selectedTorrents.first : nil
         }()
         Group {
-            if let t = targetTorrent {
+            if let targetTorrent {
                 RenameSheetView(
                     title: "Rename Torrent",
                     name: $renameInput,
-                    currentName: t.name,
+                    currentName: targetTorrent.name,
                     onCancel: {
                         isPresented = false
                     },
                     onSave: { newName in
-                        if let validation = validateNewName(newName, current: t.name) {
+                        if let validation = validateNewName(newName, current: targetTorrent.name) {
                             errorMessage = validation
                             showingError = true
                             return
@@ -276,8 +276,8 @@ extension View {
         ) {
             Button(role: .destructive) {
                 let info = makeConfig(store: store)
-                for t in set {
-                    deleteTorrent(torrent: t, erase: true, config: info.config, auth: info.auth, onDel: { response in
+                for torrent in set {
+                    deleteTorrent(torrent: torrent, erase: true, config: info.config, auth: info.auth, onDel: { response in
                         handleTransmissionResponse(response,
                             onSuccess: {},
                             onError: { error in
@@ -293,8 +293,8 @@ extension View {
             }
             Button("Remove from list only") {
                 let info = makeConfig(store: store)
-                for t in set {
-                    deleteTorrent(torrent: t, erase: false, config: info.config, auth: info.auth, onDel: { response in
+                for torrent in set {
+                    deleteTorrent(torrent: torrent, erase: false, config: info.config, auth: info.auth, onDel: { response in
                         handleTransmissionResponse(response,
                             onSuccess: {},
                             onError: { error in

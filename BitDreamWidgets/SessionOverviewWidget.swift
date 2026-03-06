@@ -111,11 +111,11 @@ private struct SessionOverviewBackground: View {
 
     private var headerHeight: CGFloat { 32 }
     private static let speedFormatter: ByteCountFormatter = {
-        let f = ByteCountFormatter()
-        f.allowsNonnumericFormatting = false
-        f.countStyle = .file
-        f.allowedUnits = [.useKB, .useMB, .useGB, .useTB]
-        return f
+        let formatter = ByteCountFormatter()
+        formatter.allowsNonnumericFormatting = false
+        formatter.countStyle = .file
+        formatter.allowedUnits = [.useKB, .useMB, .useGB, .useTB]
+        return formatter
     }()
 
     var body: some View {
