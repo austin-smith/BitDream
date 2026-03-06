@@ -98,6 +98,22 @@ struct macOSTorrentListCompact: View {
         })
     }
 
+    private var dialogState: TorrentActionDialogState {
+        TorrentActionDialogState(
+            labelInput: $labelInput,
+            labelDialog: $labelDialog,
+            deleteDialog: $deleteDialog,
+            renameInput: $renameInput,
+            renameDialog: $renameDialog,
+            renameTargetId: $renameTargetId,
+            movePath: $movePath,
+            moveDialog: $moveDialog,
+            moveShouldMove: $moveShouldMove,
+            showingError: $showingError,
+            errorMessage: $errorMessage
+        )
+    }
+
     var body: some View {
         Table(sortedRows, selection: $selection, sortOrder: $tableSortOrder, columnCustomization: $columnCustomization, columns: {
             // Status icon column
@@ -419,20 +435,10 @@ struct macOSTorrentListCompact: View {
                 self.selection = Set(rows.map { $0.id })
             }
         } else {
-            createTorrentContextMenu(
+            TorrentContextMenu(
                 torrents: Set(selectedTorrents),
                 store: store,
-                labelInput: $labelInput,
-                labelDialog: $labelDialog,
-                deleteDialog: $deleteDialog,
-                renameInput: $renameInput,
-                renameDialog: $renameDialog,
-                renameTargetId: $renameTargetId,
-                movePath: $movePath,
-                moveDialog: $moveDialog,
-                moveShouldMove: $moveShouldMove,
-                showingError: $showingError,
-                errorMessage: $errorMessage
+                dialogState: dialogState
             )
         }
     }

@@ -9,7 +9,7 @@ struct TorrentListRow: View {
 
     var body: some View {
         #if os(iOS)
-        iOSTorrentListRow(torrent: torrent, store: store, selectedTorrents: selectedTorrents, showContentTypeIcons: showContentTypeIcons)
+        iOSTorrentListRow(torrent: torrent, store: store, showContentTypeIcons: showContentTypeIcons)
         #elseif os(macOS)
         macOSTorrentListExpanded(torrent: torrent, store: store, selectedTorrents: selectedTorrents, showContentTypeIcons: showContentTypeIcons)
         #endif

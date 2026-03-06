@@ -3,6 +3,256 @@ import SwiftUI
 
 #if os(macOS)
 
+struct TorrentActionDialogState {
+    let labelInput: Binding<String>
+    let labelDialog: Binding<Bool>
+    let deleteDialog: Binding<Bool>
+    let renameInput: Binding<String>
+    let renameDialog: Binding<Bool>
+    let renameTargetId: Binding<Int?>
+    let movePath: Binding<String>
+    let moveDialog: Binding<Bool>
+    let moveShouldMove: Binding<Bool>
+    let showingError: Binding<Bool>
+    let errorMessage: Binding<String>
+
+    func presentError(_ message: String) {
+        errorMessage.wrappedValue = message
+        showingError.wrappedValue = true
+    }
+}
+
+@MainActor
+struct TorrentContextMenu: View {
+    let torrents: Set<Torrent>
+    let store: AppStore
+    let dialogState: TorrentActionDialogState
+
+    private var firstTorrent: Torrent? {
+        torrents.first
+    }
+
+    private var torrentIDs: [Int] {
+        Array(torrents.map(\.id))
+    }
+
+    var body: some View {
+        if let firstTorrent {
+            playbackSection
+            Divider()
+            prioritySection
+            queueSection
+            Divider()
+            locationButton
+            renameButton(for: firstTorrent)
+            editLabelsButton
+            Divider()
+            copyMagnetLinkButton(for: firstTorrent)
+            Divider()
+            reannounceButton
+            verifyButton
+            Divider()
+            deleteButton
+        }
+    }
+
+    private var playbackSection: some View {
+        Group {
+            Button(action: pauseTorrentsAction) {
+                Label("Pause", systemImage: "pause")
+            }
+            .disabled(torrents.shouldDisablePause)
+
+            Button(action: resumeTorrentsAction) {
+                Label("Resume", systemImage: "play")
+            }
+            .disabled(torrents.shouldDisableResume)
+
+            Button(action: resumeNowAction) {
+                Label("Resume Now", systemImage: "play.fill")
+            }
+            .disabled(torrents.shouldDisableResume)
+        }
+    }
+
+    private var prioritySection: some View {
+        Menu("Update Priority", systemImage: "flag.badge.ellipsis") {
+            Button("High", systemImage: "arrow.up") {
+                updatePriority(.high)
+            }
+            Button("Normal", systemImage: "minus") {
+                updatePriority(.normal)
+            }
+            Button("Low", systemImage: "arrow.down") {
+                updatePriority(.low)
+            }
+        }
+    }
+
+    private var queueSection: some View {
+        Menu("Move in Queue", systemImage: "line.3.horizontal") {
+            Button("Move to Front", systemImage: "arrow.up.to.line") {
+                queueMoveTopAction()
+            }
+            Button("Move Up", systemImage: "arrow.up") {
+                queueMoveUpAction()
+            }
+            Button("Move Down", systemImage: "arrow.down") {
+                queueMoveDownAction()
+            }
+            Button("Move to Back", systemImage: "arrow.down.to.line") {
+                queueMoveBottomAction()
+            }
+        }
+    }
+
+    private var locationButton: some View {
+        Button(action: showMoveDialog) {
+            Label("Set Location…", systemImage: "folder.badge.gearshape")
+        }
+    }
+
+    private func renameButton(for torrent: Torrent) -> some View {
+        Button(action: {
+            dialogState.renameInput.wrappedValue = torrent.name
+            dialogState.renameTargetId.wrappedValue = torrent.id
+            dialogState.renameDialog.wrappedValue = true
+        }, label: {
+            Label("Rename…", systemImage: "pencil")
+        })
+        .disabled(torrents.count != 1)
+    }
+
+    private var editLabelsButton: some View {
+        Button(action: showLabelDialog, label: {
+            Label("Edit Labels…", systemImage: "tag")
+        })
+    }
+
+    private func copyMagnetLinkButton(for torrent: Torrent) -> some View {
+        Button(action: {
+            copyMagnetLinkToClipboard(torrent.magnetLink)
+        }, label: {
+            Label("Copy Magnet Link", systemImage: "document.on.document")
+        })
+        .disabled(torrents.count != 1)
+    }
+
+    private var reannounceButton: some View {
+        Button(action: {
+            for torrent in torrents {
+                reAnnounceToTrackers(torrent: torrent, store: store)
+            }
+        }, label: {
+            Label("Ask For More Peers", systemImage: "arrow.left.arrow.right")
+        })
+    }
+
+    private var verifyButton: some View {
+        Button(action: verifyTorrentsAction) {
+            Label("Verify Local Data", systemImage: "checkmark.arrow.trianglehead.counterclockwise")
+        }
+    }
+
+    private var deleteButton: some View {
+        Button(role: .destructive, action: {
+            dialogState.deleteDialog.wrappedValue.toggle()
+        }, label: {
+            Label("Delete…", systemImage: "trash")
+        })
+    }
+
+    private func pauseTorrentsAction() {
+        let info = makeConfig(store: store)
+        pauseTorrents(ids: torrentIDs, info: info) { response in
+            handleResponse(response)
+        }
+    }
+
+    private func resumeTorrentsAction() {
+        let info = makeConfig(store: store)
+        resumeTorrents(ids: torrentIDs, info: info) { response in
+            handleResponse(response)
+        }
+    }
+
+    private func resumeNowAction() {
+        for torrent in torrents {
+            resumeTorrentNow(torrent: torrent, store: store)
+        }
+    }
+
+    private func updatePriority(_ priority: TorrentPriority) {
+        let info = makeConfig(store: store)
+        updateTorrent(
+            args: TorrentSetRequestArgs(ids: torrentIDs, priority: priority),
+            info: info,
+            onComplete: { _ in }
+        )
+    }
+
+    private func queueMoveTopAction() {
+        let info = makeConfig(store: store)
+        queueMoveTop(ids: torrentIDs, info: info) { response in
+            handleResponse(response)
+        }
+    }
+
+    private func queueMoveUpAction() {
+        let info = makeConfig(store: store)
+        queueMoveUp(ids: torrentIDs, info: info) { response in
+            handleResponse(response)
+        }
+    }
+
+    private func queueMoveDownAction() {
+        let info = makeConfig(store: store)
+        queueMoveDown(ids: torrentIDs, info: info) { response in
+            handleResponse(response)
+        }
+    }
+
+    private func queueMoveBottomAction() {
+        let info = makeConfig(store: store)
+        queueMoveBottom(ids: torrentIDs, info: info) { response in
+            handleResponse(response)
+        }
+    }
+
+    private func showMoveDialog() {
+        dialogState.movePath.wrappedValue = store.defaultDownloadDir
+        dialogState.moveDialog.wrappedValue = true
+    }
+
+    private func showLabelDialog() {
+        if torrents.count == 1 {
+            dialogState.labelInput.wrappedValue = firstTorrent?.labels.joined(separator: ", ") ?? ""
+        } else {
+            dialogState.labelInput.wrappedValue = ""
+        }
+        dialogState.labelDialog.wrappedValue.toggle()
+    }
+
+    private func verifyTorrentsAction() {
+        let info = makeConfig(store: store)
+        for torrent in torrents {
+            verifyTorrent(torrent: torrent, config: info.config, auth: info.auth) { response in
+                handleResponse(response)
+            }
+        }
+    }
+
+    private func handleResponse(_ response: TransmissionResponse) {
+        handleTransmissionResponse(
+            response,
+            onSuccess: {},
+            onError: { error in
+                dialogState.presentError(error)
+            }
+        )
+    }
+}
+
 struct TorrentActionsToolbarMenu: View {
     let store: AppStore
     let selectedTorrents: Set<Torrent>
@@ -21,6 +271,22 @@ struct TorrentActionsToolbarMenu: View {
     @State private var movePath: String = ""
     @State private var moveShouldMove: Bool = true
 
+    private var dialogState: TorrentActionDialogState {
+        TorrentActionDialogState(
+            labelInput: $labelInput,
+            labelDialog: $labelDialog,
+            deleteDialog: $deleteDialog,
+            renameInput: $renameInput,
+            renameDialog: $renameDialog,
+            renameTargetId: $renameTargetId,
+            movePath: $movePath,
+            moveDialog: $moveDialog,
+            moveShouldMove: $moveShouldMove,
+            showingError: $showingError,
+            errorMessage: $errorMessage
+        )
+    }
+
     var body: some View {
         Menu {
             if selectedTorrents.isEmpty {
@@ -28,20 +294,10 @@ struct TorrentActionsToolbarMenu: View {
                     .foregroundColor(.secondary)
                     .disabled(true)
             } else {
-                createTorrentContextMenu(
+                TorrentContextMenu(
                     torrents: selectedTorrents,
                     store: store,
-                    labelInput: $labelInput,
-                    labelDialog: $labelDialog,
-                    deleteDialog: $deleteDialog,
-                    renameInput: $renameInput,
-                    renameDialog: $renameDialog,
-                    renameTargetId: $renameTargetId,
-                    movePath: $movePath,
-                    moveDialog: $moveDialog,
-                    moveShouldMove: $moveShouldMove,
-                    showingError: $showingError,
-                    errorMessage: $errorMessage
+                    dialogState: dialogState
                 )
             }
         } label: {
@@ -58,7 +314,6 @@ struct TorrentActionsToolbarMenu: View {
                     labelInput: $labelInput,
                     existingLabels: torrents.count == 1 ? Array(torrents.first!.labels) : [],
                     store: store,
-                    torrentIds: Array(torrents.map { $0.id }),
                     selectedTorrents: torrents,
                     shouldSave: $shouldSave
                 )
@@ -192,7 +447,6 @@ struct LabelEditSheetContent: View {
                 labelInput: $labelInput,
                 existingLabels: selectedTorrents.count == 1 ? Array(selectedTorrents.first!.labels) : [],
                 store: store,
-                torrentIds: Array(selectedTorrents.map { $0.id }),
                 selectedTorrents: selectedTorrents,
                 shouldSave: $shouldSave
             )

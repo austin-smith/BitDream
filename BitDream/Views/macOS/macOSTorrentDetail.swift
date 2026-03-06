@@ -4,7 +4,6 @@ import SwiftUI
 #if os(macOS)
 struct macOSTorrentDetail: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) var colorScheme
 
     @ObservedObject var store: AppStore
     var torrent: Torrent

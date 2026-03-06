@@ -17,7 +17,6 @@ struct macOSTorrentListExpanded: View {
     @State private var renameTargetId: Int?
     @State private var showingError = false
     @State private var errorMessage = ""
-    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         HStack(spacing: 12) {
