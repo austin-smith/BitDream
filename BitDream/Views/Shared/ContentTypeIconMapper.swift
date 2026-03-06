@@ -97,7 +97,7 @@ public enum ContentTypeIconMapper {
 
         // Disk images
         "application/x-iso9660-image": "opticaldiscdrive",
-        "application/x-apple-diskimage": "opticaldiscdrive",
+        "application/x-apple-diskimage": "opticaldiscdrive"
     ]
 
     /// MIME type category to icon mapping
@@ -107,7 +107,7 @@ public enum ContentTypeIconMapper {
         "image": "photo",
         "text": "doc.text",
         "application": "doc",
-        "font": "textformat",
+        "font": "textformat"
     ]
 
     // MARK: - Default Icon

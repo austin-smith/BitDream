@@ -356,7 +356,7 @@ func renameTorrentRoot(torrent: Torrent, to newName: String, store: AppStore, on
         auth: info.auth
     ) { result in
         switch result {
-        case .success(_):
+        case .success:
             // Refresh to pick up updated name and files
             refreshTransmissionData(store: store)
             onComplete(nil)

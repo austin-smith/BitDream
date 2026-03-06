@@ -20,7 +20,7 @@ struct EtaSortKey: Comparable {
     }
 }
 
-fileprivate struct TorrentActivitySortKey {
+private struct TorrentActivitySortKey {
     let maxRate: Int64
     let downloadRate: Int64
     let uploadRate: Int64

@@ -382,7 +382,7 @@ private func executeTorrentAction(actionMethod: String, torrentId: Int, config: 
 // MARK: - API Functions
 
 /// Makes a request to the server for a list of the currently running torrents
-public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping ([Torrent]?, String?) -> Void) -> Void {
+public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping ([Torrent]?, String?) -> Void) {
     let fields: [String] = [
         "activityDate", "addedDate", "desiredAvailable", "error", "errorString",
         "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled",
@@ -408,7 +408,7 @@ public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onRe
     }
 }
 
-func getTorrentsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping ([Torrent]?, String?) -> Void) -> Void {
+func getTorrentsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping ([Torrent]?, String?) -> Void) {
     let fields: [String] = [
         "activityDate", "addedDate", "desiredAvailable", "error", "errorString",
         "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled",
@@ -434,7 +434,7 @@ func getTorrentsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionA
     }
 }
 
-public func getSessionStats(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping (SessionStats?, String?) -> Void) -> Void {
+public func getSessionStats(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping (SessionStats?, String?) -> Void) {
     performTransmissionDataRequest(
         method: "session-stats",
         args: EmptyArguments(),
@@ -450,7 +450,7 @@ public func getSessionStats(config: TransmissionConfig, auth: TransmissionAuth, 
     }
 }
 
-func getSessionStatsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping (SessionStats?, String?) -> Void) -> Void {
+func getSessionStatsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping (SessionStats?, String?) -> Void) {
     performTransmissionDataRequestInBackground(
         method: "session-stats",
         args: EmptyArguments(),
@@ -479,7 +479,7 @@ public func addTorrent(
     file: Bool,
     config: TransmissionConfig,
     onAdd: @MainActor @escaping ((response: TransmissionResponse, transferId: Int)) -> Void
-) -> Void {
+) {
     // Create the torrent body based on the value of `fileUrl` and `file`
     let args: [String: String] = file ?
         ["metainfo": fileUrl, "download-dir": saveLocation] :
@@ -498,7 +498,7 @@ public func addTorrent(
             } else {
                 onAdd((TransmissionResponse.failed, 0))
             }
-        case .failure(_):
+        case .failure:
             onAdd((TransmissionResponse.failed, 0))
         }
     }
@@ -508,7 +508,7 @@ public func addTorrent(
 /// - Parameter transferId: The ID of the torrent to get files for
 /// - Parameter info: A tuple containing the server config and auth info
 /// - Parameter onReceived: A callback that receives the list of files and their stats
-public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, auth: TransmissionAuth), onReceived: @MainActor @escaping ([TorrentFile], [TorrentFileStats])->(Void)) {
+public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, auth: TransmissionAuth), onReceived: @MainActor @escaping ([TorrentFile], [TorrentFileStats]) -> Void) {
     let args = TorrentFilesRequestArgs(
         fields: ["files", "fileStats"],
         ids: [transferId]
@@ -528,7 +528,7 @@ public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, 
             } else {
                 onReceived([], [])
             }
-        case .failure(_):
+        case .failure:
             onReceived([], [])
         }
     }
@@ -540,7 +540,7 @@ public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, 
 /// - Parameter config: A `TransmissionConfig` containing the server's address and port
 /// - Parameter auth: A `TransmissionAuth` containing username and password for the server
 /// - Parameter onDel: An escaping function that receives the server's response code as a `TransmissionResponse`
-public func deleteTorrent(torrent: Torrent, erase: Bool, config: TransmissionConfig, auth: TransmissionAuth, onDel: @MainActor @escaping (TransmissionResponse) -> Void) -> Void {
+public func deleteTorrent(torrent: Torrent, erase: Bool, config: TransmissionConfig, auth: TransmissionAuth, onDel: @MainActor @escaping (TransmissionResponse) -> Void) {
     let args = TransmissionRemoveRequestArgs(
         ids: [torrent.id],
         deleteLocalData: erase
@@ -1027,7 +1027,7 @@ public func getTorrentPeers(
             } else {
                 onReceived([], nil)
             }
-        case .failure(_):
+        case .failure:
             onReceived([], nil)
         }
     }
@@ -1063,7 +1063,7 @@ public func getTorrentPieces(
             } else {
                 onReceived(0, 0, "")
             }
-        case .failure(_):
+        case .failure:
             onReceived(0, 0, "")
         }
     }

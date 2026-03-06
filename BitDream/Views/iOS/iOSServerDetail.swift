@@ -53,7 +53,7 @@ struct iOSServerDetail: View {
                         .multilineTextAlignment(.trailing)
                 }
 
-                Section (footer: Text("Automatically connect to this server on app startup.")) {
+                Section(footer: Text("Automatically connect to this server on app startup.")) {
                     Toggle("Default", isOn: $isDefault)
                         // disable the "Default" toggle if this is the only server
                         // it is either the first server being added, or the only one that exists
@@ -149,7 +149,7 @@ struct iOSServerDetail: View {
             .navigationBarTitle(Text(isAddNew ? "Add Server" : "Edit Server"), displayMode: .inline)
             .toolbar {
                 if isAddNew {
-                    ToolbarItem (placement: .automatic) {
+                    ToolbarItem(placement: .automatic) {
                         Button("Save") {
                             if validateFields() {
                                 let draft = HostDraft(
@@ -175,7 +175,7 @@ struct iOSServerDetail: View {
                         }
                     }
                 } else {
-                    ToolbarItem (placement: .automatic) {
+                    ToolbarItem(placement: .automatic) {
                         Button("Save") {
                             if validateFields() {
                                 if let host = host {

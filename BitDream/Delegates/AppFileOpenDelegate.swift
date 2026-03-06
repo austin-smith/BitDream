@@ -9,7 +9,7 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
     var storeProvider: (() -> AppStore?)?
     private var hostCancellable: AnyCancellable?
     private var isProcessingOpenFiles = false
-    
+
     private struct OpenFailure: Sendable {
         let filename: String
         let message: String
