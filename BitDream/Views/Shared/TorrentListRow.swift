@@ -69,7 +69,7 @@ enum TorrentStatusPresentationStyle {
 func torrentStatusSymbol(for torrent: Torrent, style: TorrentStatusPresentationStyle = .standard) -> String {
     switch style {
     case .standard:
-        if torrent.error != TorrentError.ok.rawValue {
+        if torrent.error != TorrentError.none.rawValue {
             return "exclamationmark.triangle.fill"
         }
 
@@ -95,7 +95,7 @@ func torrentStatusSymbol(for torrent: Torrent, style: TorrentStatusPresentationS
 }
 
 func torrentStatusTint(for torrent: Torrent) -> Color {
-    if torrent.error != TorrentError.ok.rawValue {
+    if torrent.error != TorrentError.none.rawValue {
         return .red
     }
 
@@ -158,7 +158,7 @@ func createStatusView(for torrent: Torrent) -> some View {
     let rateUploadFormatted = formatByteCount(torrent.rateUpload)
 
     return Group {
-        if (torrent.error != TorrentError.ok.rawValue) {
+        if (torrent.error != TorrentError.none.rawValue) {
             Text("Tracker returned error: \(torrent.errorString)")
                 .foregroundColor(.red)
         } else {

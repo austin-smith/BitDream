@@ -5,3 +5,7 @@ type_name:
   excluded:
     - "^iOS[A-Z].*$"
     - "^macOS[A-Z].*$"
+
+identifier_name:
+  excluded:
+    - "^xt$"

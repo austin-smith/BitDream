@@ -6,6 +6,8 @@ import SwiftData
 struct ValidationTextFieldStyle: TextFieldStyle {
     var isInvalid: Bool
 
+    // SwiftUI's TextFieldStyle protocol requires this underscored witness name.
+    // swiftlint:disable:next identifier_name
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
             .textFieldStyle(RoundedBorderTextFieldStyle())

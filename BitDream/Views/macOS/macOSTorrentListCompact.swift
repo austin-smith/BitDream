@@ -149,7 +149,7 @@ struct macOSTorrentListCompact: View {
 
             // Status text column
             TableColumn("Status", value: \.status) { row in
-                if row.torrent.error != TorrentError.ok.rawValue {
+                if row.torrent.error != TorrentError.none.rawValue {
                     Text("Error")
                         .font(.system(size: 10))
                         .foregroundColor(.red)

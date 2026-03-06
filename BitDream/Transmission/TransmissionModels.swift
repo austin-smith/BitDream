@@ -34,7 +34,7 @@ public enum TorrentStatus: Int {
 
 public enum TorrentError: Int {
     /// everything's fine
-    case ok = 0
+    case none = 0
     /// when we announced to the tracker, we got a warning in the response
     case trackerWarning = 1
     /// when we announced to the tracker, we got an error in the response
