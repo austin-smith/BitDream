@@ -46,18 +46,18 @@ struct iOSTorrentListRow: View {
                     }
                 )
             })
-        }) {
+        }, label: {
             Label(torrent.status == TorrentStatus.stopped.rawValue ? "Resume" : "Pause",
                   systemImage: torrent.status == TorrentStatus.stopped.rawValue ? "play" : "pause")
-        }
+        })
 
         // Resume Now Button (only show for stopped torrents)
         if torrent.status == TorrentStatus.stopped.rawValue {
             Button(action: {
                 resumeTorrentNow(torrent: torrent, store: store)
-            }) {
+            }, label: {
                 Label("Resume Now", systemImage: "play.fill")
-            }
+            })
         }
 
         Divider()
@@ -76,9 +76,9 @@ struct iOSTorrentListRow: View {
                     info: info,
                     onComplete: { _ in }
                 )
-            }) {
+            }, label: {
                 Label("High", systemImage: "arrow.up")
-            }
+            })
             Button(action: {
                 let info = makeConfig(store: store)
                 updateTorrent(
@@ -89,9 +89,9 @@ struct iOSTorrentListRow: View {
                     info: info,
                     onComplete: { _ in }
                 )
-            }) {
+            }, label: {
                 Label("Normal", systemImage: "minus")
-            }
+            })
             Button(action: {
                 let info = makeConfig(store: store)
                 updateTorrent(
@@ -102,9 +102,9 @@ struct iOSTorrentListRow: View {
                     info: info,
                     onComplete: { _ in }
                 )
-            }) {
+            }, label: {
                 Label("Low", systemImage: "arrow.down")
-            }
+            })
         } label: {
             Label("Update Priority", systemImage: "flag.badge.ellipsis")
         }
@@ -122,9 +122,9 @@ struct iOSTorrentListRow: View {
                         }
                     )
                 }
-            }) {
+            }, label: {
                 Label("Move to Front", systemImage: "arrow.up.to.line")
-            }
+            })
             Button(action: {
                 let info = makeConfig(store: store)
                 queueMoveUp(ids: [torrent.id], info: info) { response in
@@ -136,9 +136,9 @@ struct iOSTorrentListRow: View {
                         }
                     )
                 }
-            }) {
+            }, label: {
                 Label("Move Up", systemImage: "arrow.up")
-            }
+            })
             Button(action: {
                 let info = makeConfig(store: store)
                 queueMoveDown(ids: [torrent.id], info: info) { response in
@@ -150,9 +150,9 @@ struct iOSTorrentListRow: View {
                         }
                     )
                 }
-            }) {
+            }, label: {
                 Label("Move Down", systemImage: "arrow.down")
-            }
+            })
             Button(action: {
                 let info = makeConfig(store: store)
                 queueMoveBottom(ids: [torrent.id], info: info) { response in
@@ -164,9 +164,9 @@ struct iOSTorrentListRow: View {
                         }
                     )
                 }
-            }) {
+            }, label: {
                 Label("Move to Back", systemImage: "arrow.down.to.line")
-            }
+            })
         } label: {
             Label("Move in Queue", systemImage: "line.3.horizontal")
         }
@@ -177,41 +177,41 @@ struct iOSTorrentListRow: View {
         Button(action: {
             movePath = store.defaultDownloadDir
             moveDialog = true
-        }) {
+        }, label: {
             Label("Set Location…", systemImage: "folder.badge.gearshape")
-        }
+        })
 
         // Rename
         Button(action: {
             renameInput = torrent.name
             renameDialog = true
-        }) {
+        }, label: {
             Label("Rename…", systemImage: "pencil")
-        }
+        })
 
         Button(action: {
             labelDialog.toggle()
-        }) {
+        }, label: {
             Label("Edit Labels…", systemImage: "tag")
-        }
+        })
 
         Divider()
 
         // Copy Magnet Link Button
         Button(action: {
             copyMagnetLinkToClipboard(torrent.magnetLink)
-        }) {
+        }, label: {
             Label("Copy Magnet Link", systemImage: "document.on.document")
-        }
+        })
 
         Divider()
 
         // Re-announce Button
         Button(action: {
             reAnnounceToTrackers(torrent: torrent, store: store)
-        }) {
+        }, label: {
             Label("Ask For More Peers", systemImage: "arrow.left.arrow.right")
-        }
+        })
 
         // Verify Button
         Button(action: {
@@ -227,18 +227,18 @@ struct iOSTorrentListRow: View {
                     }
                 )
             })
-        }) {
+        }, label: {
             Label("Verify Local Data", systemImage: "checkmark.arrow.trianglehead.counterclockwise")
-        }
+        })
 
         Divider()
 
         // Delete Button
         Button(role: .destructive, action: {
             deleteDialog.toggle()
-        }) {
+        }, label: {
             Label("Delete", systemImage: "trash")
-        }
+        })
     }
 
     var body: some View {
@@ -537,10 +537,10 @@ struct iOSLabelEditView: View {
                                 if addNewTag(from: &newTagInput, to: &workingLabels) {
                                     labelInput = workingLabels.joined(separator: ", ")
                                 }
-                            }) {
+                            }, label: {
                                 Image(systemName: "plus.circle.fill")
                                     .foregroundColor(.accentColor)
-                            }
+                            })
                         }
                     }
                     .padding(.horizontal)

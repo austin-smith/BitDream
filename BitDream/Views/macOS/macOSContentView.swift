@@ -239,22 +239,22 @@ struct macOSContentView: View {
     // View with just sheet modifiers
     private var viewWithSheets: some View {
         baseView
-        .sheet(isPresented: $store.setup) {
+        .sheet(isPresented: $store.setup, content: {
             ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)
-        }
-        .sheet(isPresented: $store.editServers) {
+        })
+        .sheet(isPresented: $store.editServers, content: {
             ServerList(store: store, modelContext: modelContext, hosts: hosts)
-        }
+        })
         .sheet(isPresented: $store.isShowingAddAlert, onDismiss: {
             // Advance queued magnet links when the sheet closes
             store.advanceMagnetQueue()
-        }) {
+        }, content: {
             AddTorrent(store: store)
-        }
-        .sheet(isPresented: $store.isError) {
+        })
+        .sheet(isPresented: $store.isError, content: {
             ErrorDialog(store: store)
                 .frame(width: 400, height: 400)
-        }
+        })
     }
 
     // View with basic event handlers
@@ -299,9 +299,9 @@ struct macOSContentView: View {
                     get: { sortProperty == property },
                     set: { if $0 { sortProperty = property } }
                 )
-                Toggle(isOn: isSelected) {
+                Toggle(isOn: isSelected, label: {
                     Text(property.rawValue)
-                }
+                })
             }
 
             Divider()
@@ -310,17 +310,17 @@ struct macOSContentView: View {
                 get: { sortOrder == .ascending },
                 set: { if $0 { sortOrder = .ascending } }
             )
-            Toggle(isOn: isAscending) {
+            Toggle(isOn: isAscending, label: {
                 Text("Ascending")
-            }
+            })
 
             let isDescending = Binding<Bool>(
                 get: { sortOrder == .descending },
                 set: { if $0 { sortOrder = .descending } }
             )
-            Toggle(isOn: isDescending) {
+            Toggle(isOn: isDescending, label: {
                 Text("Descending")
-            }
+            })
         }
     }
 
@@ -345,7 +345,7 @@ struct macOSContentView: View {
                             } else {
                                 includedLabels.insert(label)
                             }
-                        }) {
+                        }, label: {
                             HStack {
                                 Image(systemName: includedLabels.contains(label) ? "checkmark.circle.fill" : excludedLabels.contains(label) ? "minus.circle.fill" : "circle")
                                     .foregroundColor(includedLabels.contains(label) ? themeManager.accentColor : excludedLabels.contains(label) ? .red : .secondary)
@@ -360,7 +360,7 @@ struct macOSContentView: View {
                                     .foregroundColor(.secondary)
                             }
                             .contentShape(Rectangle())
-                        }
+                        })
                         .buttonStyle(.plain)
                     }
 
@@ -375,7 +375,7 @@ struct macOSContentView: View {
                         includedLabels.removeAll()
                         excludedLabels.removeAll()
                     }
-                }) {
+                }, label: {
                     HStack {
                         Image(systemName: showOnlyNoLabels ? "checkmark.circle.fill" : "circle")
                             .foregroundColor(showOnlyNoLabels ? themeManager.accentColor : .secondary)
@@ -391,7 +391,7 @@ struct macOSContentView: View {
                             .foregroundColor(.secondary)
                     }
                     .contentShape(Rectangle())
-                }
+                })
                 .buttonStyle(.plain)
             }
 
@@ -478,12 +478,12 @@ struct macOSContentView: View {
             ToolbarItem(placement: .automatic) {
                 Button(action: {
                     showingFilterPopover.toggle()
-                }) {
+                }, label: {
                     Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
                         .if(hasActiveFilters) { view in
                             view.foregroundColor(themeManager.accentColor)
                         }
-                }
+                })
                 .help(hasActiveFilters ? "Active filters (\(activeFilterCount))" : "Filter torrents")
                 .popover(isPresented: $showingFilterPopover, arrowEdge: .bottom) {
                     VStack(alignment: .leading, spacing: 12) {
@@ -498,9 +498,9 @@ struct macOSContentView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: {
                     store.isShowingAddAlert.toggle()
-                }) {
+                }, label: {
                     Label("Add Torrent", systemImage: "plus")
-                }
+                })
                 .help("Add torrent")
             }
 
@@ -510,12 +510,12 @@ struct macOSContentView: View {
                     withAnimation {
                         isCompactMode.toggle()
                     }
-                }) {
+                }, label: {
                     Label(
                         isCompactMode ? "Expanded View" : "Compact View",
                         systemImage: isCompactMode ? "rectangle.grid.1x2" : "list.bullet"
                     )
-                }
+                })
                 .help(isCompactMode ? "Expanded view" : "Compact view")
             }
 
@@ -526,9 +526,9 @@ struct macOSContentView: View {
                     withAnimation {
                         isInspectorVisible.toggle()
                     }
-                }) {
+                }, label: {
                     Label("Inspector", systemImage: "sidebar.right")
-                }
+                })
                 .help(isInspectorVisible ? "Hide inspector" : "Show inspector")
             }
         }
@@ -970,7 +970,7 @@ struct LabelFilterChip: View {
             } else {
                 onAction(.include)
             }
-        }) {
+        }, label: {
             HStack(spacing: 4) {
                 Image(systemName: "tag.fill")
                     .font(.caption2)
@@ -990,6 +990,7 @@ struct LabelFilterChip: View {
                         .foregroundColor(.red)
                 }
             }
+        })
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(backgroundColor)
@@ -998,7 +999,6 @@ struct LabelFilterChip: View {
                     .stroke(borderColor, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
         .buttonStyle(.plain)
         .help(isIncluded ? "Click to exclude '\(label)'" : isExcluded ? "Click to clear filter" : "Click to include '\(label)'")
     }

@@ -145,7 +145,7 @@ struct macOSAddTorrent: View {
                     Button(action: {
                         inputMethod = .magnetLink
                         selectedTorrentFiles = []
-                    }) {
+                    }, label: {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Image(systemName: "link")
@@ -180,7 +180,7 @@ struct macOSAddTorrent: View {
                                 .stroke(inputMethod == .magnetLink ? Color.accentColor : Color.gray.opacity(0.3), lineWidth: 1)
                         )
                         .foregroundColor(inputMethod == .magnetLink ? .accentColor : .primary)
-                    }
+                    })
                     .buttonStyle(PlainButtonStyle())
                     .frame(maxWidth: .infinity)
 
@@ -188,7 +188,7 @@ struct macOSAddTorrent: View {
                     Button(action: {
                         inputMethod = .torrentFile
                         alertInput = ""
-                    }) {
+                    }, label: {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Image(systemName: "doc")
@@ -223,7 +223,7 @@ struct macOSAddTorrent: View {
                                 .stroke(inputMethod == .torrentFile ? Color.accentColor : Color.gray.opacity(0.3), lineWidth: 1)
                         )
                         .foregroundColor(inputMethod == .torrentFile ? .accentColor : .primary)
-                    }
+                    })
                     .buttonStyle(PlainButtonStyle())
                     .frame(maxWidth: .infinity)
                 }
@@ -302,9 +302,9 @@ struct macOSAddTorrent: View {
                     Button(action: {
                         activeImporter = .downloadFolder
                         isShowingImporter = true
-                    }) {
+                    }, label: {
                         Image(systemName: "folder")
-                    }
+                    })
                     .buttonStyle(.borderless)
                     .help("Choose download location")
                 }

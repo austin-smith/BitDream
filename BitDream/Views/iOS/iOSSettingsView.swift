@@ -81,10 +81,10 @@ struct iOSSettingsView: View {
                 Section(header: Text("Reset")) {
                     Button(action: {
                         SettingsView.resetAllSettings(store: store)
-                    }) {
+                    }, label: {
                         Text("Reset All Settings")
                             .foregroundColor(.accentColor)
-                    }
+                    })
                 }
 
                 Section(header: Text("About")) {

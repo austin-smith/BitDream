@@ -30,9 +30,9 @@ struct SearchCommands: Commands {
             Divider()
             Button(action: {
                 store.shouldActivateSearch.toggle()
-            }) {
+            }, label: {
                 Label("Search Torrents", systemImage: "magnifyingglass")
-            }
+            })
             .keyboardShortcut("f", modifiers: .command)
         }
     }
@@ -55,17 +55,17 @@ struct FileCommands: Commands {
         CommandGroup(after: .newItem) {
             Button(action: {
                 store.presentGlobalTorrentFileImporter = true
-            }) {
+            }, label: {
                 Label("Add Torrent from File…", systemImage: "doc.badge.plus")
-            }
+            })
             .keyboardShortcut("o", modifiers: .command)
 
             Button(action: {
                 store.addTorrentInitialMode = .magnet
                 store.isShowingAddAlert.toggle()
-            }) {
+            }, label: {
                 Label("Add Torrent from Magnet Link…", systemImage: "link.badge.plus")
-            }
+            })
             .keyboardShortcut("o", modifiers: [.option, .command])
 
             Divider()
@@ -76,9 +76,9 @@ struct FileCommands: Commands {
                     store.globalRenameTargetId = firstTorrent.id
                     store.showGlobalRenameDialog = true
                 }
-            }) {
+            }, label: {
                 Label("Rename…", systemImage: "pencil")
-            }
+            })
             .disabled(selectedTorrents.count != 1)
         }
     }
@@ -101,34 +101,34 @@ struct TorrentCommands: Commands {
         CommandMenu("Torrent") {
             Button(action: {
                 pauseSelectedTorrents()
-            }) {
+            }, label: {
                 Label("Pause Selected", systemImage: "pause")
-            }
+            })
             .keyboardShortcut(".", modifiers: .command)
             .disabled(selectedTorrents.shouldDisablePause)
 
             Button(action: {
                 resumeSelectedTorrents()
-            }) {
+            }, label: {
                 Label("Resume Selected", systemImage: "play")
-            }
+            })
             .keyboardShortcut("/", modifiers: .command)
             .disabled(selectedTorrents.shouldDisableResume)
 
             Button(action: {
                 resumeSelectedTorrentsNow()
-            }) {
+            }, label: {
                 Label("Resume Selected Now", systemImage: "play.fill")
-            }
+            })
             .disabled(selectedTorrents.shouldDisableResume)
 
             Divider()
 
             Button(action: {
                 store.showingMenuRemoveConfirmation = true
-            }) {
+            }, label: {
                 Label("Remove…", systemImage: "trash")
-            }
+            })
             .keyboardShortcut(.delete, modifiers: .command)
             .disabled(selectedTorrents.isEmpty)
 
@@ -136,47 +136,47 @@ struct TorrentCommands: Commands {
 
             Button(action: {
                 moveSelectedTorrentsToFront()
-            }) {
+            }, label: {
                 Label("Move to Front of Queue", systemImage: "arrow.up.to.line")
-            }
+            })
             .disabled(selectedTorrents.isEmpty)
 
             Button(action: {
                 moveSelectedTorrentsUp()
-            }) {
+            }, label: {
                 Label("Move Up in Queue", systemImage: "arrow.up")
-            }
+            })
             .disabled(selectedTorrents.isEmpty)
 
             Button(action: {
                 moveSelectedTorrentsDown()
-            }) {
+            }, label: {
                 Label("Move Down in Queue", systemImage: "arrow.down")
-            }
+            })
             .disabled(selectedTorrents.isEmpty)
 
             Button(action: {
                 moveSelectedTorrentsToBack()
-            }) {
+            }, label: {
                 Label("Move to Back of Queue", systemImage: "arrow.down.to.line")
-            }
+            })
             .disabled(selectedTorrents.isEmpty)
 
             Divider()
 
             Button(action: {
                 pauseAllTorrents()
-            }) {
+            }, label: {
                 Label("Pause All", systemImage: "pause.circle")
-            }
+            })
             .keyboardShortcut(".", modifiers: [.option, .command])
             .disabled(store.torrents.isEmpty)
 
             Button(action: {
                 resumeAllTorrents()
-            }) {
+            }, label: {
                 Label("Resume All", systemImage: "play.circle")
-            }
+            })
             .keyboardShortcut("/", modifiers: [.option, .command])
             .disabled(store.torrents.isEmpty)
 
@@ -184,16 +184,16 @@ struct TorrentCommands: Commands {
 
             Button(action: {
                 reannounceSelectedTorrents()
-            }) {
+            }, label: {
                 Label("Ask For More Peers", systemImage: "arrow.left.arrow.right")
-            }
+            })
             .disabled(selectedTorrents.isEmpty)
 
             Button(action: {
                 verifySelectedTorrents()
-            }) {
+            }, label: {
                 Label("Verify Local Data", systemImage: "checkmark.arrow.trianglehead.counterclockwise")
-            }
+            })
             .disabled(selectedTorrents.isEmpty)
         }
     }
@@ -410,27 +410,27 @@ struct ViewCommands: Commands {
     var body: some Commands {
         CommandGroup(after: .toolbar) {
             Divider()
-            Toggle(isOn: $isCompactMode) {
+            Toggle(isOn: $isCompactMode, label: {
                 Label("Compact View", systemImage: "list.bullet")
-            }
+            })
 
-            Toggle(isOn: $showContentTypeIcons) {
+            Toggle(isOn: $showContentTypeIcons, label: {
                 Label("Show File Type Icons", systemImage: "doc.richtext")
-            }
+            })
 
             Divider()
 
             Button(action: {
                 openWindow(id: "connection-info")
-            }) {
+            }, label: {
                 Label("Connection Info", systemImage: "network")
-            }
+            })
 
             Button(action: {
                 openWindow(id: "statistics")
-            }) {
+            }, label: {
                 Label("Statistics", systemImage: "chart.bar")
-            }
+            })
         }
     }
 }
@@ -445,9 +445,9 @@ struct InspectorCommands: Commands {
             Divider()
             Button(action: {
                 store.shouldToggleInspector.toggle()
-            }) {
+            }, label: {
                 Label(store.isInspectorVisible ? "Hide Inspector" : "Show Inspector", systemImage: "sidebar.right")
-            }
+            })
             .keyboardShortcut("i", modifiers: [.option, .command])
         }
     }
@@ -484,9 +484,9 @@ struct AppearanceCommands: Commands {
                     }
                     hideHUDWork = work
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.8, execute: work)
-                }) {
+                }, label: {
                     Label("Toggle Appearance", systemImage: "circle.lefthalf.filled")
-                }
+                })
                 .keyboardShortcut("j", modifiers: .command)
             } label: {
                 Label("Appearance", systemImage: "circle.lefthalf.filled")
@@ -506,15 +506,15 @@ struct AppCommands: Commands {
         CommandGroup(replacing: .appInfo) {
             Button(action: {
                 openWindow(id: "about")
-            }) {
+            }, label: {
                 Label("About BitDream", systemImage: "info.circle")
-            }
+            })
 
             Button(action: {
                 appUpdater.checkForUpdates()
-            }) {
+            }, label: {
                 Label("Check for Updates…", systemImage: "square.and.arrow.down")
-            }
+            })
             .disabled(!appUpdater.canCheckForUpdates)
         }
     }

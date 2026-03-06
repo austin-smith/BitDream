@@ -28,12 +28,15 @@ struct macOSConnectionInfoView: View {
             Text("Connection")
             Spacer(minLength: 16)
             if store.connectionStatus == Store.ConnectionStatus.reconnecting {
-                Button(action: {
-                    store.retryNow()
-                }) {
-                    Image(systemName: "arrow.clockwise")
-                        .imageScale(.small)
-                }
+                Button(
+                    action: {
+                        store.retryNow()
+                    },
+                    label: {
+                        Image(systemName: "arrow.clockwise")
+                            .imageScale(.small)
+                    }
+                )
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 .help("Retry now")

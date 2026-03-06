@@ -191,18 +191,18 @@ struct StatsHeaderView: View {
                 helpText: ratioTooltip
             )
             .contextMenu {
-                Button(action: { ratioDisplayModeRaw = RatioDisplayMode.cumulative.rawValue }) {
+                Button(action: { ratioDisplayModeRaw = RatioDisplayMode.cumulative.rawValue }, label: {
                     HStack {
                         if ratioDisplayMode == .cumulative { Image(systemName: "checkmark") }
                         Text("Total Ratio")
                     }
-                }
-                Button(action: { ratioDisplayModeRaw = RatioDisplayMode.current.rawValue }) {
+                })
+                Button(action: { ratioDisplayModeRaw = RatioDisplayMode.current.rawValue }, label: {
                     HStack {
                         if ratioDisplayMode == .current { Image(systemName: "checkmark") }
                         Text("Session Ratio")
                     }
-                }
+                })
             }
 
             Spacer()

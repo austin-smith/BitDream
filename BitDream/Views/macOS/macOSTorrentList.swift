@@ -162,13 +162,13 @@ func createTorrentContextMenu(
                 }
             )
         }
-    }) {
+    }, label: {
         HStack {
             Image(systemName: "pause")
                 .foregroundStyle(.secondary)
             Text("Pause")
         }
-    }
+    })
     .disabled(torrents.shouldDisablePause)
 
     // Resume Button (always shown; disabled for single non-stopped)
@@ -183,13 +183,13 @@ func createTorrentContextMenu(
                 }
             )
         }
-    }) {
+    }, label: {
         HStack {
             Image(systemName: "play")
                 .foregroundStyle(.secondary)
             Text("Resume")
         }
-    }
+    })
     .disabled(torrents.shouldDisableResume)
 
     // Resume Now Button (always shown; disabled for single non-stopped)
@@ -197,13 +197,13 @@ func createTorrentContextMenu(
         for torrent in torrents {
             resumeTorrentNow(torrent: torrent, store: store)
         }
-    }) {
+    }, label: {
         HStack {
             Image(systemName: "play.fill")
                 .foregroundStyle(.secondary)
             Text("Resume Now")
         }
-    }
+    })
     .disabled(torrents.shouldDisableResume)
 
     Divider()
@@ -222,13 +222,13 @@ func createTorrentContextMenu(
                 info: info,
                 onComplete: { _ in }
             )
-        }) {
+        }, label: {
             HStack {
                 Image(systemName: "arrow.up")
                     .foregroundStyle(.secondary)
                 Text("High")
             }
-        }
+        })
         Button(action: {
             let info = makeConfig(store: store)
             updateTorrent(
@@ -239,13 +239,13 @@ func createTorrentContextMenu(
                 info: info,
                 onComplete: { _ in }
             )
-        }) {
+        }, label: {
             HStack {
                 Image(systemName: "minus")
                     .foregroundStyle(.secondary)
                 Text("Normal")
             }
-        }
+        })
         Button(action: {
             let info = makeConfig(store: store)
             updateTorrent(
@@ -256,13 +256,13 @@ func createTorrentContextMenu(
                 info: info,
                 onComplete: { _ in }
             )
-        }) {
+        }, label: {
             HStack {
                 Image(systemName: "arrow.down")
                     .foregroundStyle(.secondary)
                 Text("Low")
             }
-        }
+        })
     } label: {
         HStack {
             Image(systemName: "flag.badge.ellipsis")
@@ -284,13 +284,13 @@ func createTorrentContextMenu(
                     }
                 )
             }
-        }) {
+        }, label: {
             HStack {
                 Image(systemName: "arrow.up.to.line")
                     .foregroundStyle(.secondary)
                 Text("Move to Front")
             }
-        }
+        })
         Button(action: {
             let info = makeConfig(store: store)
             queueMoveUp(ids: Array(torrents.map { $0.id }), info: info) { response in
@@ -302,13 +302,13 @@ func createTorrentContextMenu(
                     }
                 )
             }
-        }) {
+        }, label: {
             HStack {
                 Image(systemName: "arrow.up")
                     .foregroundStyle(.secondary)
                 Text("Move Up")
             }
-        }
+        })
         Button(action: {
             let info = makeConfig(store: store)
             queueMoveDown(ids: Array(torrents.map { $0.id }), info: info) { response in
@@ -320,13 +320,13 @@ func createTorrentContextMenu(
                     }
                 )
             }
-        }) {
+        }, label: {
             HStack {
                 Image(systemName: "arrow.down")
                     .foregroundStyle(.secondary)
                 Text("Move Down")
             }
-        }
+        })
         Button(action: {
             let info = makeConfig(store: store)
             queueMoveBottom(ids: Array(torrents.map { $0.id }), info: info) { response in
@@ -338,13 +338,13 @@ func createTorrentContextMenu(
                     }
                 )
             }
-        }) {
+        }, label: {
             HStack {
                 Image(systemName: "arrow.down.to.line")
                     .foregroundStyle(.secondary)
                 Text("Move to Back")
             }
-        }
+        })
     } label: {
         HStack {
             Image(systemName: "line.3.horizontal")
@@ -360,26 +360,26 @@ func createTorrentContextMenu(
         // Prefill with server default download dir if available
         movePath.wrappedValue = store.defaultDownloadDir
         moveDialog.wrappedValue = true
-    }) {
+    }, label: {
         HStack {
             Image(systemName: "folder.badge.gearshape")
                 .foregroundStyle(.secondary)
             Text("Set Location…")
         }
-    }
+    })
 
     // Rename Button (moved into edit section)
     Button(action: {
         renameInput.wrappedValue = firstTorrent.name
         renameTargetId.wrappedValue = firstTorrent.id
         renameDialog.wrappedValue = true
-    }) {
+    }, label: {
         HStack {
             Image(systemName: "pencil")
                 .foregroundStyle(.secondary)
             Text("Rename…")
         }
-    }
+    })
     .disabled(torrents.count != 1)
 
     Button(action: {
@@ -392,26 +392,26 @@ func createTorrentContextMenu(
             labelInput.wrappedValue = ""
         }
         labelDialog.wrappedValue.toggle()
-    }) {
+    }, label: {
         HStack {
             Image(systemName: "tag")
                 .foregroundStyle(.secondary)
             Text("Edit Labels…")
         }
-    }
+    })
 
     Divider()
 
     // Copy Magnet Link Button (disabled for multi-select)
     Button(action: {
         copyMagnetLinkToClipboard(firstTorrent.magnetLink)
-    }) {
+    }, label: {
         HStack {
             Image(systemName: "document.on.document")
                 .foregroundStyle(.secondary)
             Text("Copy Magnet Link")
         }
-    }
+    })
     .disabled(torrents.count != 1)
 
     Divider()
@@ -421,13 +421,13 @@ func createTorrentContextMenu(
         for torrent in torrents {
             reAnnounceToTrackers(torrent: torrent, store: store)
         }
-    }) {
+    }, label: {
         HStack {
             Image(systemName: "arrow.left.arrow.right")
                 .foregroundStyle(.secondary)
             Text("Ask For More Peers")
         }
-    }
+    })
 
     // Verify Button (supports multi-select)
     Button(action: {
@@ -445,26 +445,26 @@ func createTorrentContextMenu(
                 )
             })
         }
-    }) {
+    }, label: {
         HStack {
             Image(systemName: "checkmark.arrow.trianglehead.counterclockwise")
                 .foregroundStyle(.secondary)
             Text("Verify Local Data")
         }
-    }
+    })
 
     Divider()
 
     // Delete Button
     Button(role: .destructive, action: {
         deleteDialog.wrappedValue.toggle()
-    }) {
+    }, label: {
         HStack {
             Image(systemName: "trash")
                 .foregroundStyle(.secondary)
             Text("Delete…")
         }
-    }
+    })
 }
 
 // MARK: - Rename Sheet View

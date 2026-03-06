@@ -125,8 +125,8 @@ struct macOSServerList: View {
             .confirmationDialog(
                 "Delete Server",
                 isPresented: $confirmingDelete,
-                presenting: serverToDelete
-            ) { host in
+                presenting: serverToDelete,
+                actions: { host in
                 Button("Delete \(host.name ?? "Unnamed Server")", role: .destructive) {
                     deleteServer(host: host, store: store, hosts: hosts, modelContext: modelContext) {
                         serverToDelete = nil
@@ -136,9 +136,10 @@ struct macOSServerList: View {
                         store.showGlobalAlert = true
                     }
                 }
-            } message: { host in
+            },
+                message: { host in
                 deleteConfirmationMessage(for: host, store: store)
-            }
+            })
 
             Divider()
 
@@ -158,13 +159,13 @@ struct macOSServerList: View {
         .frame(width: 500, height: 400)
         .background(Color(NSColor.windowBackgroundColor))
         // Sheet for editing an existing server
-        .sheet(item: $selected) { host in
+        .sheet(item: $selected, content: { host in
             ServerDetail(store: store, modelContext: modelContext, hosts: hosts, host: host, isAddNew: false)
-        }
+        })
         // Sheet for adding a new server
-        .sheet(isPresented: $showingAddServer) {
+        .sheet(isPresented: $showingAddServer, content: {
             ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)
-        }
+        })
     }
 
     // Empty state view for when there are no servers
@@ -188,11 +189,11 @@ struct macOSServerList: View {
 
             Button(action: {
                 showingAddServer = true
-            }) {
+            }, label: {
                 Label("Add Your First Server", systemImage: "plus")
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-            }
+            })
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .padding(.top, 10)

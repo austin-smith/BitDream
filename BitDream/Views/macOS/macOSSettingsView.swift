@@ -182,9 +182,9 @@ struct macOSSettingsView: View {
                             HStack(alignment: .firstTextBaseline) {
                                 Button(action: {
                                     appUpdater.checkForUpdates()
-                                }) {
+                                }, label: {
                                     Text("Check for Updates…")
-                                }
+                                })
                                 .disabled(!appUpdater.canCheckForUpdates)
 
                                 Spacer()

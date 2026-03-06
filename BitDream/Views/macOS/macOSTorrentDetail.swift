@@ -160,9 +160,9 @@ struct macOSTorrentDetail: View {
                     Spacer()
                     Button(role: .destructive, action: {
                         showingDeleteConfirmation = true
-                    }) {
+                    }, label: {
                         Label("Delete…", systemImage: "trash")
-                    }
+                    })
                 }
                 .padding(.top, 8)
             }

@@ -152,14 +152,14 @@ struct macOSServerDetail: View {
                     if !isAddNew {
                         Button(action: {
                             showingDeleteConfirmation = true
-                        }) {
+                        }, label: {
                             HStack {
                                 Image(systemName: "trash")
                                 Text("Delete Server")
                             }
                             .foregroundColor(.red)
                             .padding(.vertical, 4)
-                        }
+                        })
                         .buttonStyle(PlainButtonStyle())
                     }
                 }
