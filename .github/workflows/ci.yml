@@ -1,4 +1,4 @@
-name: Build Verification
+name: CI
 
 on:
   pull_request:
@@ -14,8 +14,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    name: SwiftLint
+    runs-on: macos-26
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+        run: brew install swiftlint
+
+      - name: Run SwiftLint
+        run: swiftlint lint --strict --reporter github-actions-logging
+
   macos-build:
     name: macOS Build
+    needs: lint
     runs-on: macos-26
 
     steps:
@@ -55,6 +72,7 @@ jobs:
 
   ios-build:
     name: iOS Build
+    needs: lint
     runs-on: macos-26
 
     steps:
