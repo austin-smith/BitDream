@@ -320,11 +320,11 @@ private func readBencodeKey(
     return (key, keyEnd)
 }
 
-private func readBencodeString(
+private func readBencodeStringRange(
     _ bytes: UnsafeBufferPointer<UInt8>,
     startIndex: Int,
     upperBound: Int
-) -> (value: String, nextIndex: Int)? {
+) -> (range: Range<Int>, nextIndex: Int)? {
     guard let (length, afterLength) = readBencodeDecimalNumber(
         bytes,
         startIndex: startIndex,
@@ -336,12 +336,25 @@ private func readBencodeString(
 
     let valueStart = afterLength + 1
     let valueEnd = valueStart + length
-    guard valueEnd <= upperBound, let base = bytes.baseAddress else { return nil }
+    guard valueEnd <= upperBound else { return nil }
+    return (valueStart..<valueEnd, valueEnd)
+}
 
-    let valuePointer = base.advanced(by: valueStart)
-    let valueBuffer = UnsafeBufferPointer(start: valuePointer, count: length)
-    guard let value = String(bytes: valueBuffer, encoding: .utf8) else { return nil }
-    return (value, valueEnd)
+private func decodeBencodeString(
+    _ bytes: UnsafeBufferPointer<UInt8>,
+    range: Range<Int>,
+    allowLossyUTF8: Bool
+) -> String? {
+    guard let base = bytes.baseAddress else { return nil }
+
+    let valuePointer = base.advanced(by: range.lowerBound)
+    let valueBuffer = UnsafeBufferPointer(start: valuePointer, count: range.count)
+
+    if allowLossyUTF8 {
+        return String(decoding: valueBuffer, as: UTF8.self)
+    }
+
+    return String(bytes: valueBuffer, encoding: .utf8)
 }
 
 private func readBencodeInteger(
@@ -492,10 +505,19 @@ private func applyInfoDictionaryEntry(
 ) -> Int? {
     switch key {
     case .nameUTF8, .name:
-        guard let parsedName = readBencodeString(bytes, startIndex: valueStartIndex, upperBound: endIndex) else {
+        guard let parsedName = readBencodeStringRange(bytes, startIndex: valueStartIndex, upperBound: endIndex) else {
             return nil
         }
-        state.applyName(parsedName.value, isUTF8: key == .nameUTF8)
+        // `name.utf-8` should only win when it decodes cleanly. Legacy `name` bytes
+        // are more forgiving so drag/drop previews still work for older torrents.
+        let decodedName = decodeBencodeString(
+            bytes,
+            range: parsedName.range,
+            allowLossyUTF8: key == .name
+        )
+        if let decodedName {
+            state.applyName(decodedName, isUTF8: key == .nameUTF8)
+        }
         return parsedName.nextIndex
 
     case .files:
