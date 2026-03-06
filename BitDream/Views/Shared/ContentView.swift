@@ -72,7 +72,7 @@ struct ContentView: View {
     @Query(sort: \Host.name, order: .forward) private var hosts: [Host]
 
     // Use the store passed from the environment
-    @EnvironmentObject var store: Store
+    @EnvironmentObject var store: AppStore
 
     var body: some View {
         #if os(iOS)
@@ -85,7 +85,7 @@ struct ContentView: View {
 
 // Helper function to set up the host
 @MainActor
-func applyStartupConnectionBehavior(hosts: [Host], store: Store) {
+func applyStartupConnectionBehavior(hosts: [Host], store: AppStore) {
     // Read behavior from UserDefaults (fallback to default)
     let behaviorRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.startupConnectionBehavior) ?? AppDefaults.startupConnectionBehavior.rawValue
     let behavior = StartupConnectionBehavior(rawValue: behaviorRaw) ?? AppDefaults.startupConnectionBehavior
@@ -122,7 +122,7 @@ func applyStartupConnectionBehavior(hosts: [Host], store: Store) {
 }
 
 @MainActor
-func ensureStartupConnectionBehaviorApplied(store: Store, modelContext: ModelContext) {
+func ensureStartupConnectionBehaviorApplied(store: AppStore, modelContext: ModelContext) {
     guard store.host == nil else { return }
 
     let descriptor = FetchDescriptor<Host>(
@@ -145,7 +145,7 @@ func ensureStartupConnectionBehaviorApplied(store: Store, modelContext: ModelCon
 
 // Stats header view used on both platforms
 struct StatsHeaderView: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     @ObservedObject private var themeManager = ThemeManager.shared
     @AppStorage(UserDefaultsKeys.ratioDisplayMode) private var ratioDisplayModeRaw: String = AppDefaults.ratioDisplayMode.rawValue
 
@@ -309,14 +309,14 @@ func updateMacOSAppBadge(count: Int) {
 
 // Helper function to get completed torrents count
 @MainActor
-func getCompletedTorrentsCount(in store: Store) -> Int {
+func getCompletedTorrentsCount(in store: AppStore) -> Int {
     return store.torrents.filter { $0.statusCalc == .complete }.count
 }
 #endif
 
 // Helper function to calculate total ratio across all torrents
 @MainActor
-func calculateTotalRatio(store: Store) -> Double {
+func calculateTotalRatio(store: AppStore) -> Double {
     let totalDownloaded = store.torrents.reduce(0) { $0 + $1.downloadedEver }
     let totalUploaded = store.torrents.reduce(0) { $0 + $1.uploadedEver }
 

@@ -108,7 +108,7 @@ final class HostRepository: HostPersisting {
         )
 
         let credentialKey = host.ensureCredentialKey()
-        guard KeychainPasswordStore.savePassword(normalizedDraft.password, credentialKey: credentialKey) else {
+        guard KeychainService.savePassword(normalizedDraft.password, credentialKey: credentialKey) else {
             rollbackChangesIfNeeded()
             throw HostPersistenceError.keychainFailure("Failed to write credentials")
         }
@@ -118,7 +118,7 @@ final class HostRepository: HostPersisting {
             try saveIfNeeded()
         } catch {
             rollbackChangesIfNeeded()
-            _ = KeychainPasswordStore.deletePassword(credentialKey: credentialKey)
+            _ = KeychainService.deletePassword(credentialKey: credentialKey)
             throw HostPersistenceError.saveFailure(error.localizedDescription)
         }
 
@@ -132,8 +132,8 @@ final class HostRepository: HostPersisting {
             throw HostPersistenceError.notFound(serverID)
         }
 
-        let previousCredentialKey = KeychainPasswordStore.credentialKeyIfPresent(for: host)
-        let previousPassword = previousCredentialKey.map { KeychainPasswordStore.readPassword(credentialKey: $0) }
+        let previousCredentialKey = KeychainService.credentialKeyIfPresent(for: host)
+        let previousPassword = previousCredentialKey.map { KeychainService.readPassword(credentialKey: $0) }
 
         if normalizedDraft.isDefault {
             do {
@@ -152,7 +152,7 @@ final class HostRepository: HostPersisting {
         host.isDefault = normalizedDraft.isDefault
 
         let credentialKey = host.ensureCredentialKey()
-        guard KeychainPasswordStore.savePassword(normalizedDraft.password, credentialKey: credentialKey) else {
+        guard KeychainService.savePassword(normalizedDraft.password, credentialKey: credentialKey) else {
             rollbackChangesIfNeeded()
             throw HostPersistenceError.keychainFailure("Failed to write credentials")
         }
@@ -178,7 +178,7 @@ final class HostRepository: HostPersisting {
             throw HostPersistenceError.notFound(serverID)
         }
 
-        let credentialKey = KeychainPasswordStore.credentialKeyIfPresent(for: host)
+        let credentialKey = KeychainService.credentialKeyIfPresent(for: host)
         modelContext.delete(host)
 
         do {
@@ -188,7 +188,7 @@ final class HostRepository: HostPersisting {
             throw HostPersistenceError.saveFailure(error.localizedDescription)
         }
 
-        if let credentialKey, !KeychainPasswordStore.deletePassword(credentialKey: credentialKey) {
+        if let credentialKey, !KeychainService.deletePassword(credentialKey: credentialKey) {
             logger.error("Failed to remove credentials for deleted server ID: \(serverID)")
         }
 
@@ -383,14 +383,14 @@ final class HostRepository: HostPersisting {
     ) {
         if let previousCredentialKey {
             if let previousPassword {
-                _ = KeychainPasswordStore.savePassword(previousPassword, credentialKey: previousCredentialKey)
+                _ = KeychainService.savePassword(previousPassword, credentialKey: previousCredentialKey)
             }
             if previousCredentialKey != attemptedCredentialKey {
-                _ = KeychainPasswordStore.deletePassword(credentialKey: attemptedCredentialKey)
+                _ = KeychainService.deletePassword(credentialKey: attemptedCredentialKey)
             }
             return
         }
 
-        _ = KeychainPasswordStore.deletePassword(credentialKey: attemptedCredentialKey)
+        _ = KeychainService.deletePassword(credentialKey: attemptedCredentialKey)
     }
 }

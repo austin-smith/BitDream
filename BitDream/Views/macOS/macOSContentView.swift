@@ -15,7 +15,7 @@ struct macOSContentView: View {
     @State private var showingThemeSettings = false
     let modelContext: ModelContext
     let hosts: [Host]
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     // Add ThemeManager to access accent color
     @ObservedObject private var themeManager = ThemeManager.shared
@@ -610,7 +610,7 @@ struct macOSContentView: View {
         VStack(spacing: 0) {
             StatsHeaderView(store: store)
 
-            if store.connectionStatus == Store.ConnectionStatus.reconnecting {
+            if store.connectionStatus == AppStore.ConnectionStatus.reconnecting {
                 ConnectionBannerView(status: store.connectionStatus, retryAt: store.nextRetryAt)
             }
 
@@ -769,7 +769,7 @@ struct macOSContentView: View {
 private struct ConnectionBannerView: View {
     @Environment(\.openWindow) private var openWindow
 
-    let status: Store.ConnectionStatus
+    let status: AppStore.ConnectionStatus
     let retryAt: Date?
 
     var body: some View {
@@ -820,7 +820,7 @@ private final class TorrentInfoAccumulator: Sendable {
 struct TorrentDropDelegate: DropDelegate {
     @Binding var isDropTargeted: Bool
     @Binding var draggedTorrentInfo: [TorrentInfo]
-    let store: Store
+    let store: AppStore
     private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "ui")
 
     private nonisolated static func readTorrentData(from url: URL) async throws -> Data {
@@ -1009,7 +1009,7 @@ struct LabelFilterChip: View {
 struct macOSContentView: View {
     let modelContext: ModelContext
     let hosts: [Host]
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     var body: some View {
         EmptyView()

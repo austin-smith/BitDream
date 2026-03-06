@@ -5,7 +5,7 @@ import OSLog
 /// Platform-agnostic wrapper for SettingsView
 /// This view simply delegates to the appropriate platform-specific implementation
 struct SettingsView: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     // Shared poll interval options
     static let pollIntervalOptions: [Double] = [1.0, 2.0, 5.0, 10.0, 30.0, 60.0]
@@ -22,7 +22,7 @@ struct SettingsView: View {
     }
 
     // Shared reset for both platforms
-    static func resetAllSettings(store: Store, afterReset: () -> Void = {}) {
+    static func resetAllSettings(store: AppStore, afterReset: () -> Void = {}) {
         let theme = ThemeManager.shared
         theme.setAccentColor(AppDefaults.accentColor)
         theme.setThemeMode(AppDefaults.themeMode)
@@ -33,7 +33,7 @@ struct SettingsView: View {
         UserDefaults.standard.set(AppDefaults.menuBarSortMode.rawValue, forKey: UserDefaultsKeys.menuBarSortMode)
         UserDefaults.standard.set(AppDefaults.startupConnectionBehavior.rawValue, forKey: UserDefaultsKeys.startupConnectionBehavior)
 
-        // Poll interval via Store API
+        // Poll interval via AppStore API
         store.updatePollInterval(AppDefaults.pollInterval)
         afterReset()
     }
@@ -55,10 +55,10 @@ class SessionSettingsEditModel: ObservableObject {
     @Published var blocklistUpdateResult: String?
     @Published var isUpdatingBlocklist = false
     private var saveTimer: Timer?
-    var store: Store?
+    var store: AppStore?
     private let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "network")
 
-    func setup(store: Store) {
+    func setup(store: AppStore) {
         self.store = store
         // Clear info when switching servers
         freeSpaceInfo = nil
@@ -876,5 +876,5 @@ func updateBlocklist(editModel: SessionSettingsEditModel) {
 }
 
 #Preview {
-    SettingsView(store: Store())
+    SettingsView(store: AppStore())
 }

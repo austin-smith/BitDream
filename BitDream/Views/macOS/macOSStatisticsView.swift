@@ -9,7 +9,7 @@ import SwiftUI
 
 #if os(macOS)
 struct macOSStatisticsView: View {
-    @EnvironmentObject var store: Store
+    @EnvironmentObject var store: AppStore
 
     private let durationFormatter: DateComponentsFormatter = {
         let formatter = DateComponentsFormatter()

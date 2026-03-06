@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 struct iOSAddTorrent: View {
     // MARK: - Properties
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     @State private var alertInput: String = ""
     @State private var downloadDir: String = ""
@@ -90,9 +90,9 @@ struct iOSAddTorrent: View {
 #else
 // Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
 struct iOSAddTorrent: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
-    init(store: Store) {
+    init(store: AppStore) {
         self.store = store
     }
 

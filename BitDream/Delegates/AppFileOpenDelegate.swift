@@ -6,7 +6,7 @@ import Combine
 @MainActor
 final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     @Published var pendingOpenFiles: [URL] = []
-    var storeProvider: (() -> Store?)?
+    var storeProvider: (() -> AppStore?)?
     private var hostCancellable: AnyCancellable?
     private var isProcessingOpenFiles = false
     
@@ -98,7 +98,7 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
     }
 
     @MainActor
-    private func apply(_ result: OpenBatchResult, to store: Store) {
+    private func apply(_ result: OpenBatchResult, to store: AppStore) {
         for action in result.actions {
             switch action {
             case .magnet(let magnetString):
@@ -135,10 +135,10 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
                 do {
                     if url.scheme?.lowercased() == "magnet" {
                         let magnetString = url.absoluteString
-                        guard isValidMagnet(magnetString) else {
+                        guard let magnet = TorrentMagnetLink(rawValue: magnetString) else {
                             throw NSError(domain: RuntimeDomain.fileOpen, code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid magnet link"])
                         }
-                        actions.append(.magnet(magnetString))
+                        actions.append(.magnet(magnet.rawValue))
                     } else {
                         var didAccess = false
                         if url.isFileURL {
@@ -167,18 +167,7 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
         return magnet.isEmpty ? "magnet link" : magnet
     }
 
-    // Basic magnet validation per spec: scheme and xt=urn:btih
-    private nonisolated static func isValidMagnet(_ magnet: String) -> Bool {
-        guard magnet.count <= 4096 else { return false }
-        guard let url = URL(string: magnet), url.scheme?.lowercased() == "magnet" else { return false }
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false), let items = components.queryItems else { return false }
-        if let xt = items.first(where: { $0.name.lowercased() == "xt" })?.value?.lowercased() {
-            return xt.hasPrefix("urn:btih:")
-        }
-        return false
-    }
-
-    func configure(with store: Store) {
+    func configure(with store: AppStore) {
         self.storeProvider = { store }
         hostCancellable = store.$host.sink { [weak self] _ in
             self?.flushIfPossible()

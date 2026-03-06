@@ -11,7 +11,7 @@ struct BitDreamApp: App {
     private let swiftDataSchemaVersion = "swiftdata_v1"
 
     // Create a shared store instance that will be used by both the main app and settings
-    @StateObject private var store = Store()
+    @StateObject private var store = AppStore()
     @StateObject private var themeManager = ThemeManager.shared
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppFileOpenDelegate.self) private var appFileOpenDelegate

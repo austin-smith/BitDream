@@ -40,7 +40,7 @@ struct LinearTorrentProgressStyle: ProgressViewStyle {
 struct TorrentRowModifier: ViewModifier {
     var torrent: Torrent
     var selectedTorrents: Set<Torrent>
-    let store: Store
+    let store: AppStore
     @Binding var deleteDialog: Bool
     @Binding var labelDialog: Bool
     @Binding var labelInput: String
@@ -135,7 +135,7 @@ struct TorrentRowModifier: ViewModifier {
 @ViewBuilder
 func createTorrentContextMenu(
     torrents: Set<Torrent>,
-    store: Store,
+    store: AppStore,
     labelInput: Binding<String>,
     labelDialog: Binding<Bool>,
     deleteDialog: Binding<Bool>,
@@ -526,12 +526,12 @@ struct LabelEditView: View {
     @State private var newTagInput: String = ""
     @FocusState private var isInputFocused: Bool
     @Environment(\.dismiss) private var dismiss
-    var store: Store
+    var store: AppStore
     var torrentIds: [Int]
     let selectedTorrents: Set<Torrent>
     @Binding var shouldSave: Bool
 
-    init(labelInput: Binding<String>, existingLabels: [String], store: Store, torrentIds: [Int], selectedTorrents: Set<Torrent>, shouldSave: Binding<Bool>) {
+    init(labelInput: Binding<String>, existingLabels: [String], store: AppStore, torrentIds: [Int], selectedTorrents: Set<Torrent>, shouldSave: Binding<Bool>) {
         self._labelInput = labelInput
         self.existingLabels = existingLabels
         self._workingLabels = State(initialValue: Set(existingLabels))
@@ -644,7 +644,7 @@ struct LabelEditView: View {
 // MARK: - Move Sheet View
 @MainActor
 struct MoveSheetContent: View {
-    let store: Store
+    let store: AppStore
     let selectedTorrents: Set<Torrent>
     @Binding var movePath: String
     @Binding var moveShouldMove: Bool
@@ -715,7 +715,7 @@ struct MoveSheetContent: View {
 // Empty struct for iOS to reference - this won't be compiled on iOS but provides the type
 struct macOSTorrentListRow: View {
     var torrent: Torrent
-    var store: Store
+    var store: AppStore
     var selectedTorrents: Set<Torrent>
     let isCompact: Bool
 

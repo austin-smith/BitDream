@@ -5,7 +5,7 @@ import SwiftData
 /// Platform-agnostic wrapper for ServerDetail view
 /// This view simply delegates to the appropriate platform-specific implementation
 struct ServerDetail: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     let modelContext: ModelContext
     let hosts: [Host]
     @State var host: Host?
@@ -59,7 +59,7 @@ func saveNewServer(
     isSSL: Bool,
     modelContext: ModelContext,
     hosts _: [Host],
-    store: Store,
+    store: AppStore,
     completion: @MainActor @escaping () -> Void,
     onError: @MainActor @escaping (String) -> Void = { _ in }
 ) {
@@ -152,8 +152,8 @@ func loadServerData(
     let isSSL = host.isSSL
     let userInput = host.username ?? ""
     let passInput: String
-    if let credentialKey = KeychainPasswordStore.credentialKeyIfPresent(for: host) {
-        passInput = KeychainPasswordStore.readPassword(credentialKey: credentialKey)
+    if let credentialKey = KeychainService.credentialKeyIfPresent(for: host) {
+        passInput = KeychainService.readPassword(credentialKey: credentialKey)
     } else {
         passInput = ""
     }
@@ -165,7 +165,7 @@ func loadServerData(
 @MainActor
 func deleteServerFromDetail(
     host: Host,
-    store: Store,
+    store: AppStore,
     hosts: [Host],
     modelContext _: ModelContext,
     completion: @MainActor @escaping () -> Void,

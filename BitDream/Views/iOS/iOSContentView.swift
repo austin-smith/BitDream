@@ -6,16 +6,16 @@ import SwiftData
 struct iOSContentView: View {
     let modelContext: ModelContext
     let hosts: [Host]
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     // Add explicit initializer with internal access level
-    init(modelContext: ModelContext, hosts: [Host], store: Store) {
+    init(modelContext: ModelContext, hosts: [Host], store: AppStore) {
         self.modelContext = modelContext
         self.hosts = hosts
         self.store = store
     }
 
-    // Store the selected torrent IDs
+    // AppStore the selected torrent IDs
     @State private var selectedTorrentIds: Set<Int> = []
 
     // Computed property to get the selected torrents from the IDs
@@ -289,10 +289,10 @@ struct iOSContentView: View {
 struct iOSContentView: View {
     let modelContext: ModelContext
     let hosts: [Host]
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     // Add explicit initializer with internal access level
-    init(modelContext: ModelContext, hosts: [Host], store: Store) {
+    init(modelContext: ModelContext, hosts: [Host], store: AppStore) {
         self.modelContext = modelContext
         self.hosts = hosts
         self.store = store

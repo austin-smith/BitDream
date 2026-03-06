@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 struct macOSAddTorrent: View {
     // MARK: - Properties
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     @State private var inputMethod: TorrentInputMethod = .magnetLink
     @State private var alertInput: String = ""
@@ -358,15 +358,15 @@ struct macOSAddTorrent: View {
 
 // MARK: - Preview
 #Preview("Add Torrent") {
-    macOSAddTorrent(store: Store())
+    macOSAddTorrent(store: AppStore())
 }
 
 #else
 // Empty struct for iOS to reference - this won't be compiled on iOS but provides the type
 struct macOSAddTorrent: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
-    init(store: Store) {
+    init(store: AppStore) {
         self.store = store
     }
 

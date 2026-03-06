@@ -3,7 +3,7 @@ import SwiftUI
 
 struct TorrentListRow: View {
     var torrent: Torrent
-    var store: Store
+    var store: AppStore
     var selectedTorrents: Set<Torrent>
     var showContentTypeIcons: Bool
 
@@ -18,46 +18,26 @@ struct TorrentListRow: View {
 
 // MARK: - Shared Helpers
 
-struct EtaSortKey: Comparable {
-    let priority: Int
-    let eta: Int
-
-    static func < (lhs: EtaSortKey, rhs: EtaSortKey) -> Bool {
-        if lhs.priority != rhs.priority {
-            return lhs.priority < rhs.priority
-        }
-        return lhs.eta < rhs.eta
+extension Collection where Element == Torrent {
+    var shouldDisablePause: Bool {
+        return isEmpty || (count == 1 && first?.status == TorrentStatus.stopped.rawValue)
     }
-}
 
-func makeEtaSortKey(for torrent: Torrent) -> EtaSortKey {
-    let priority: Int
-    if torrent.statusCalc == .complete {
-        priority = 5
-    } else if torrent.statusCalc == .seeding {
-        priority = 4
-    } else if torrent.statusCalc == .paused {
-        priority = 3
-    } else if torrent.statusCalc == .stalled {
-        priority = 2
-    } else if torrent.eta <= 0 {
-        priority = 1
-    } else {
-        priority = 0
+    var shouldDisableResume: Bool {
+        return isEmpty || (count == 1 && first?.status != TorrentStatus.stopped.rawValue)
     }
-    return EtaSortKey(priority: priority, eta: torrent.eta)
 }
 
 // Shared function to handle re-announce action
 @MainActor
-func reAnnounceToTrackers(torrent: Torrent, store: Store, onResponse: @MainActor @escaping (TransmissionResponse) -> Void = { _ in }) {
+func reAnnounceToTrackers(torrent: Torrent, store: AppStore, onResponse: @MainActor @escaping (TransmissionResponse) -> Void = { _ in }) {
     let info = makeConfig(store: store)
     reAnnounceTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: onResponse)
 }
 
 // Shared function to handle "Resume Now" action
 @MainActor
-func resumeTorrentNow(torrent: Torrent, store: Store, onResponse: @MainActor @escaping (TransmissionResponse) -> Void = { _ in }) {
+func resumeTorrentNow(torrent: Torrent, store: AppStore, onResponse: @MainActor @escaping (TransmissionResponse) -> Void = { _ in }) {
     let info = makeConfig(store: store)
     startTorrentNow(torrent: torrent, config: info.config, auth: info.auth, onResponse: onResponse)
 }
@@ -208,7 +188,7 @@ func copyMagnetLinkToClipboard(_ magnetLink: String) {
 
 // Shared function to save labels and refresh torrent data
 @MainActor
-func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: Store, onComplete: @escaping () -> Void = {}) {
+func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: AppStore, onComplete: @escaping () -> Void = {}) {
     let info = makeConfig(store: store)
     let sortedLabels = Array(labels).sorted()
 
@@ -365,7 +345,7 @@ func validateNewName(_ name: String, current: String) -> String? {
 ///   - store: App store for config/auth and refresh
 ///   - onComplete: Called with nil on success, or an error message on failure
 @MainActor
-func renameTorrentRoot(torrent: Torrent, to newName: String, store: Store, onComplete: @escaping (String?) -> Void) {
+func renameTorrentRoot(torrent: Torrent, to newName: String, store: AppStore, onComplete: @escaping (String?) -> Void) {
     let info = makeConfig(store: store)
     // For root rename, Transmission expects the current root path (the torrent's name)
     renameTorrentPath(

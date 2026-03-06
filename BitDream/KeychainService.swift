@@ -2,7 +2,7 @@ import Foundation
 import Security
 import OSLog
 
-enum KeychainPasswordStore {
+enum KeychainService {
     private static let service = AppIdentity.bundleIdentifier
     private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "keychain")
 

@@ -5,7 +5,7 @@ import SwiftData
 #if os(iOS)
 struct iOSServerDetail: View {
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     let modelContext: ModelContext
     let hosts: [Host]
     @State var host: Host?
@@ -206,13 +206,13 @@ struct iOSServerDetail: View {
 #else
 // Empty struct for macOS to reference - this won't be compiled on iOS but provides the type
 struct iOSServerDetail: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     let modelContext: ModelContext
     let hosts: [Host]
     @State var host: Host?
     var isAddNew: Bool
 
-    init(store: Store, modelContext: ModelContext, hosts: [Host], host: Host? = nil, isAddNew: Bool) {
+    init(store: AppStore, modelContext: ModelContext, hosts: [Host], host: Host? = nil, isAddNew: Bool) {
         self.store = store
         self.modelContext = modelContext
         self.hosts = hosts

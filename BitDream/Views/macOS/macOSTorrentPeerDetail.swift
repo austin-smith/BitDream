@@ -5,7 +5,7 @@ import Foundation
 struct macOSTorrentPeerDetail: View {
     let torrentName: String
     let torrentId: Int
-    let store: Store
+    let store: AppStore
     let peers: [Peer]
     let peersFrom: PeersFrom?
     let onRefresh: () -> Void
@@ -97,7 +97,7 @@ struct macOSTorrentPeerDetail: View {
 struct macOSTorrentPeerDetail: View {
     let torrentName: String
     let torrentId: Int
-    let store: Store
+    let store: AppStore
     let peers: [Peer]
     let peersFrom: PeersFrom?
     let onRefresh: () -> Void

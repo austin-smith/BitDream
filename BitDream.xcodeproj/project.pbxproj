@@ -7,9 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4B054C862E6FEB58004DDB99 /* TorrentExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B054C852E6FEB58004DDB99 /* TorrentExtensions.swift */; };
 		4B1DADDF295E6C440037E9FB /* BitDreamApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */; };
-		4B1DADE1295E6C440037E9FB /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADE0295E6C440037E9FB /* Persistence.swift */; };
+		4B1DADE1295E6C440037E9FB /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADE0295E6C440037E9FB /* PersistenceController.swift */; };
 		4B1DADE6295E6C440037E9FB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADE5295E6C440037E9FB /* ContentView.swift */; };
 		4B1DADE8295E6C450037E9FB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4B1DADE7295E6C450037E9FB /* Assets.xcassets */; };
 		4B1DADEC295E6C450037E9FB /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4B1DADEB295E6C450037E9FB /* Preview Assets.xcassets */; };
@@ -21,7 +20,7 @@
 		4B1DAE0A295E6FE10037E9FB /* ServerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */; };
 		4B1DAE0C295E6FEF0037E9FB /* ServerList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0B295E6FEF0037E9FB /* ServerList.swift */; };
 		4B1DAE0E295E6FFB0037E9FB /* ErrorDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */; };
-		4B1DAE10295E702B0037E9FB /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0F295E702B0037E9FB /* Store.swift */; };
+		4B1DAE10295E702B0037E9FB /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE0F295E702B0037E9FB /* AppStore.swift */; };
 		4B4E4C1B2E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4B4E4C182E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon */; };
 		4B4E4C1C2E8A1F6E00418FD7 /* BitDreamAppIconDefault.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4B4E4C192E8A1F6E00418FD7 /* BitDreamAppIconDefault.icon */; };
 		4B4E4C8A2E8A2B4D00418FD7 /* AppIconCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4E4C892E8A2B4D00418FD7 /* AppIconCatalog.swift */; };
@@ -80,9 +79,11 @@
 		4C1000153A00000000A1B2C3 /* MenuBarStatusItemBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1000053A00000000A1B2C3 /* MenuBarStatusItemBridge.swift */; };
 		4D1000013B00000000B1C2D3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 4D1000073B00000000B1C2D3 /* Sparkle */; };
 		4D1000023B00000000B1C2D3 /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D1000033B00000000B1C2D3 /* AppUpdater.swift */; };
-		4D3A00023C00000000E1F1A1 /* KeychainPasswordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3A00043C00000000E1F1A1 /* KeychainPasswordStore.swift */; };
+		4D3A00023C00000000E1F1A1 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3A00043C00000000E1F1A1 /* KeychainService.swift */; };
 		4D3A00053C00000000E1F1A1 /* Host.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3A00063C00000000E1F1A1 /* Host.swift */; };
 		4D4A00123D00000000E2F2A2 /* HostRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D4A00113D00000000E2F2A2 /* HostRepository.swift */; };
+		4D5A00233E00000000F3F3A3 /* TorrentParsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5A00223E00000000F3F3A3 /* TorrentParsing.swift */; };
+		4D5A00243E00000000F3F3A3 /* TorrentSorting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5A00253E00000000F3F3A3 /* TorrentSorting.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -108,10 +109,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		4B054C852E6FEB58004DDB99 /* TorrentExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentExtensions.swift; sourceTree = "<group>"; };
 		4B1DADDB295E6C440037E9FB /* BitDream.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BitDream.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BitDreamApp.swift; sourceTree = "<group>"; };
-		4B1DADE0295E6C440037E9FB /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
+		4B1DADE0295E6C440037E9FB /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		4B1DADE5295E6C440037E9FB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		4B1DADE7295E6C450037E9FB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4B1DADE9295E6C450037E9FB /* BitDream.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BitDream.entitlements; sourceTree = "<group>"; };
@@ -124,7 +124,7 @@
 		4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerDetail.swift; sourceTree = "<group>"; };
 		4B1DAE0B295E6FEF0037E9FB /* ServerList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerList.swift; sourceTree = "<group>"; };
 		4B1DAE0D295E6FFB0037E9FB /* ErrorDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorDialog.swift; sourceTree = "<group>"; };
-		4B1DAE0F295E702B0037E9FB /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
+		4B1DAE0F295E702B0037E9FB /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
 		4B4E4C182E8A1F6E00418FD7 /* BitDreamAppIconBlue.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIconBlue.icon; sourceTree = "<group>"; };
 		4B4E4C192E8A1F6E00418FD7 /* BitDreamAppIconDefault.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIconDefault.icon; sourceTree = "<group>"; };
 		4B4E4C892E8A2B4D00418FD7 /* AppIconCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconCatalog.swift; sourceTree = "<group>"; };
@@ -182,9 +182,11 @@
 		4D1000033B00000000B1C2D3 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
 		4D2000013B10000000C3D4E5 /* BuildSettings.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildSettings.xcconfig; sourceTree = "<group>"; };
 		4D2000023B10000000C3D4E5 /* BuildSettings.example.local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildSettings.example.local.xcconfig; sourceTree = "<group>"; };
-		4D3A00043C00000000E1F1A1 /* KeychainPasswordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainPasswordStore.swift; sourceTree = "<group>"; };
+		4D3A00043C00000000E1F1A1 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		4D3A00063C00000000E1F1A1 /* Host.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Host.swift; sourceTree = "<group>"; };
 		4D4A00113D00000000E2F2A2 /* HostRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostRepository.swift; sourceTree = "<group>"; };
+		4D5A00223E00000000F3F3A3 /* TorrentParsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentParsing.swift; sourceTree = "<group>"; };
+		4D5A00253E00000000F3F3A3 /* TorrentSorting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentSorting.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -265,18 +267,17 @@
 			children = (
 				4B908AED2E6EBAC700C2DA5C /* Info.plist */,
 				4B7EF5702E6E9F0C00C1C281 /* AppConfig.swift */,
+				4B1DAE0F295E702B0037E9FB /* AppStore.swift */,
 				4D1000033B00000000B1C2D3 /* AppUpdater.swift */,
 				4B1DADDE295E6C440037E9FB /* BitDreamApp.swift */,
-				4D3A00043C00000000E1F1A1 /* KeychainPasswordStore.swift */,
-				4B1DADE0295E6C440037E9FB /* Persistence.swift */,
-				4D4A00103D00000000E2F2A2 /* Persistence */,
-				4B1DAE0F295E702B0037E9FB /* Store.swift */,
+				4D3A00043C00000000E1F1A1 /* KeychainService.swift */,
 				4BD938E92D82AF6F006CE97C /* ThemeManager.swift */,
-				4B054C852E6FEB58004DDB99 /* TorrentExtensions.swift */,
 				4B1DADF8295E6EBA0037E9FB /* Utilities.swift */,
 				4B0349D52F56EB81008ED58D /* AppIcon */,
 				4B73985B2E70097C00D06E5D /* Delegates */,
 				4D3A00073C00000000E1F1A1 /* Models */,
+				4D4A00103D00000000E2F2A2 /* Persistence */,
+				4D5A00213E00000000F3F3A3 /* Torrent */,
 				4B1DADFC295E6F0F0037E9FB /* Transmission */,
 				4BDACD532E73DBBE0074F714 /* Widgets */,
 				4B1DADFA295E6EE10037E9FB /* Views */,
@@ -446,9 +447,19 @@
 		4D4A00103D00000000E2F2A2 /* Persistence */ = {
 			isa = PBXGroup;
 			children = (
+				4B1DADE0295E6C440037E9FB /* PersistenceController.swift */,
 				4D4A00113D00000000E2F2A2 /* HostRepository.swift */,
 			);
 			path = Persistence;
+			sourceTree = "<group>";
+		};
+		4D5A00213E00000000F3F3A3 /* Torrent */ = {
+			isa = PBXGroup;
+			children = (
+				4D5A00253E00000000F3F3A3 /* TorrentSorting.swift */,
+				4D5A00223E00000000F3F3A3 /* TorrentParsing.swift */,
+			);
+			path = Torrent;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -565,17 +576,18 @@
 				4B1DADDF295E6C440037E9FB /* BitDreamApp.swift in Sources */,
 				4D1000023B00000000B1C2D3 /* AppUpdater.swift in Sources */,
 				4D3A00053C00000000E1F1A1 /* Host.swift in Sources */,
-				4B1DADE1295E6C440037E9FB /* Persistence.swift in Sources */,
+				4B1DADE1295E6C440037E9FB /* PersistenceController.swift in Sources */,
 				4D4A00123D00000000E2F2A2 /* HostRepository.swift in Sources */,
-				4B1DAE10295E702B0037E9FB /* Store.swift in Sources */,
+				4B1DAE10295E702B0037E9FB /* AppStore.swift in Sources */,
 				4B4E4C8A2E8A2B4D00418FD7 /* AppIconCatalog.swift in Sources */,
 				4BF593BB2E89C8C400A8C1FC /* iOSTorrentPeerDetail.swift in Sources */,
+				4D5A00233E00000000F3F3A3 /* TorrentParsing.swift in Sources */,
+				4D5A00243E00000000F3F3A3 /* TorrentSorting.swift in Sources */,
 				4B1DADF9295E6EBA0037E9FB /* Utilities.swift in Sources */,
-				4D3A00023C00000000E1F1A1 /* KeychainPasswordStore.swift in Sources */,
+				4D3A00023C00000000E1F1A1 /* KeychainService.swift in Sources */,
 				4B6F1EB02D82D340003D8F6E /* iOSSettingsView.swift in Sources */,
 				4BC6F24B2E89F8510037DFDF /* PiecesGridView.swift in Sources */,
 				4B6F1EBC2D86C908003D8F6E /* macOSTorrentFileDetail.swift in Sources */,
-				4B054C862E6FEB58004DDB99 /* TorrentExtensions.swift in Sources */,
 				4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */,
 				4BDE147F2F0B015C00FF6A46 /* AppIconManager.swift in Sources */,
 				4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */,

@@ -4,7 +4,7 @@ import SwiftUI
 #if os(macOS)
 
 struct TorrentActionsToolbarMenu: View {
-    let store: Store
+    let store: AppStore
     let selectedTorrents: Set<Torrent>
 
     // Shared state used by the context menu builder
@@ -177,7 +177,7 @@ struct TorrentActionsToolbarMenu: View {
 // MARK: - Shared Presenters for Sheets/Alerts
 
 struct LabelEditSheetContent: View {
-    let store: Store
+    let store: AppStore
     let selectedTorrents: Set<Torrent>
     @Binding var labelInput: String
     @Binding var shouldSave: Bool
@@ -215,7 +215,7 @@ struct LabelEditSheetContent: View {
 }
 
 struct RenameSheetContent: View {
-    let store: Store
+    let store: AppStore
     let selectedTorrents: Set<Torrent>
     @Binding var renameInput: String
     @Binding var renameTargetId: Int?
@@ -264,7 +264,7 @@ extension View {
     func torrentDeleteAlert(
         isPresented: Binding<Bool>,
         selectedTorrents: @escaping () -> Set<Torrent>,
-        store: Store,
+        store: AppStore,
         showingError: Binding<Bool>,
         errorMessage: Binding<String>
     ) -> some View {

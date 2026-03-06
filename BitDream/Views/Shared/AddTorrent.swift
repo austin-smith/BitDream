@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 /// Platform-agnostic wrapper for AddTorrent view
 /// This view simply delegates to the appropriate platform-specific implementation
 struct AddTorrent: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     var body: some View {
         #if os(iOS)
@@ -30,7 +30,7 @@ func handleAddTorrentError(_ message: String, errorMessage: Binding<String?>, sh
 func addTorrentAction(
     alertInput: String,
     downloadDir: String,
-    store: Store,
+    store: AppStore,
     errorMessage: Binding<String?>,
     showingError: Binding<Bool>,
     onSuccess: (@MainActor () -> Void)? = nil
@@ -70,7 +70,7 @@ extension UTType {
 
 /// Adds a torrent by sending a base64-encoded .torrent file to Transmission without presenting UI
 @MainActor
-func addTorrentFromFileData(_ fileData: Data, store: Store) {
+func addTorrentFromFileData(_ fileData: Data, store: AppStore) {
     // Ensure server is configured; surface an error instead of silently returning
     guard store.host != nil else {
         #if os(macOS)

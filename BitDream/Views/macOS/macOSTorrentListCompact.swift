@@ -60,7 +60,7 @@ struct macOSTorrentListCompact: View {
     @Binding var sortProperty: SortProperty
     @Binding var sortOrder: SortOrder
     @State private var tableSortOrder = [KeyPathComparator(\TorrentTableRow.name)]
-    let store: Store
+    let store: AppStore
     let showContentTypeIcons: Bool
 
     @State private var deleteDialog: Bool = false
@@ -446,7 +446,7 @@ struct macOSTorrentListCompact: View {
     @Binding var selection: Set<Int>
     @Binding var sortProperty: SortProperty
     @Binding var sortOrder: SortOrder
-    let store: Store
+    let store: AppStore
     let showContentTypeIcons: Bool
 
     var body: some View {

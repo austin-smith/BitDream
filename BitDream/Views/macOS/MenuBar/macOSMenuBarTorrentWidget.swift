@@ -2,7 +2,7 @@ import SwiftUI
 
 #if os(macOS)
 struct macOSMenuBarTorrentWidget: View {
-    @EnvironmentObject private var store: Store
+    @EnvironmentObject private var store: AppStore
     @State private var torrentRowsHeight: CGFloat = 0
     @AppStorage(UserDefaultsKeys.menuBarSortMode) private var menuBarSortModeRaw: String = AppDefaults.menuBarSortMode.rawValue
     let onOpenMainWindow: () -> Void

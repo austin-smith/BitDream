@@ -135,6 +135,15 @@ public struct Torrent: Codable, Hashable, Identifiable, Sendable {
         }
     }
 
+    var isActiveTransfer: Bool {
+        switch statusCalc {
+        case .downloading, .retrievingMetadata, .seeding, .verifyingLocalData:
+            return true
+        default:
+            return false
+        }
+    }
+
     enum CodingKeys: String, CodingKey {
         case activityDate
         case addedDate

@@ -6,7 +6,7 @@ struct macOSTorrentDetail: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) var colorScheme
 
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     var torrent: Torrent
 
     @State public var files: [TorrentFile] = []
@@ -367,7 +367,7 @@ struct macOSSectionHeader: View {
 #else
 // Empty struct for iOS to reference - this won't be compiled on iOS but provides the type
 struct macOSTorrentDetail: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     var torrent: Torrent
 
     var body: some View {

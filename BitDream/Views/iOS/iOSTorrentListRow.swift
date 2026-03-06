@@ -4,7 +4,7 @@ import SwiftUI
 #if os(iOS)
 struct iOSTorrentListRow: View {
     var torrent: Torrent
-    var store: Store
+    var store: AppStore
     var selectedTorrents: Set<Torrent>
     var showContentTypeIcons: Bool
 
@@ -476,10 +476,10 @@ struct iOSLabelEditView: View {
     @State private var newTagInput: String = ""
     @FocusState private var isInputFocused: Bool
     @Environment(\.dismiss) private var dismiss
-    var store: Store
+    var store: AppStore
     var torrentId: Int
 
-    init(labelInput: Binding<String>, existingLabels: [String], store: Store, torrentId: Int) {
+    init(labelInput: Binding<String>, existingLabels: [String], store: AppStore, torrentId: Int) {
         self._labelInput = labelInput
         self.existingLabels = existingLabels
         self._workingLabels = State(initialValue: Set(existingLabels))
@@ -590,7 +590,7 @@ struct iOSLabelEditView: View {
 // Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
 struct iOSTorrentListRow: View {
     var torrent: Torrent
-    var store: Store
+    var store: AppStore
     var selectedTorrents: Set<Torrent>
     var showContentTypeIcons: Bool
 

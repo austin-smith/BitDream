@@ -8,7 +8,7 @@ struct macOSSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appUpdater: AppUpdater
     @State private var showingThemeSettings = false
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     @StateObject private var editModel = SessionSettingsEditModel()
 
     // Use ThemeManager instead of direct AppStorage
@@ -408,13 +408,13 @@ func seedingSection(config: TransmissionSessionResponseArguments, editModel: Ses
 }
 
 #Preview {
-    macOSSettingsView(store: Store())
+    macOSSettingsView(store: AppStore())
         .environmentObject(AppUpdater())
 }
 #else
 // Empty struct for iOS to reference - this won't be compiled on macOS but provides the type
 struct macOSSettingsView: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     var body: some View {
         EmptyView()

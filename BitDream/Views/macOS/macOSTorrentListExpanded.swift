@@ -4,7 +4,7 @@ import SwiftUI
 #if os(macOS)
 struct macOSTorrentListExpanded: View {
     var torrent: Torrent
-    var store: Store
+    var store: AppStore
     var selectedTorrents: Set<Torrent>
     var showContentTypeIcons: Bool
 
@@ -81,7 +81,7 @@ struct macOSTorrentListExpanded: View {
 // Empty struct for iOS to reference
 struct macOSTorrentListExpanded: View {
     var torrent: Torrent
-    var store: Store
+    var store: AppStore
     var selectedTorrents: Set<Torrent>
     var showContentTypeIcons: Bool
 

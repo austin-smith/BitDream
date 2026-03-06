@@ -7,7 +7,7 @@ struct iOSServerList: View {
     @Environment(\.dismiss) private var dismiss
     let modelContext: ModelContext
     let hosts: [Host]
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     @State private var showingAddServer = false
 
@@ -93,9 +93,9 @@ struct iOSServerList: View {
 struct iOSServerList: View {
     let modelContext: ModelContext
     let hosts: [Host]
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
-    init(store: Store, modelContext: ModelContext, hosts: [Host]) {
+    init(store: AppStore, modelContext: ModelContext, hosts: [Host]) {
         self.modelContext = modelContext
         self.hosts = hosts
         self.store = store

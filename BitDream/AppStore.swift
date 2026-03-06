@@ -16,7 +16,7 @@ struct Server {
 }
 
 @MainActor
-final class Store: NSObject, ObservableObject {
+final class AppStore: NSObject, ObservableObject {
     @Published var torrents: [Torrent] = []
     @Published var sessionStats: SessionStats?
     @Published var setup: Bool = false
@@ -173,10 +173,10 @@ final class Store: NSObject, ObservableObject {
     }
 
     func readPassword(for host: Host) -> String {
-        guard let credentialKey = KeychainPasswordStore.credentialKeyIfPresent(for: host) else {
+        guard let credentialKey = KeychainService.credentialKeyIfPresent(for: host) else {
             return ""
         }
-        return KeychainPasswordStore.readPassword(credentialKey: credentialKey)
+        return KeychainService.readPassword(credentialKey: credentialKey)
     }
 
     func startTimer() {

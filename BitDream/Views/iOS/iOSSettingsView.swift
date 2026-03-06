@@ -7,7 +7,7 @@ typealias PlatformSettingsView = iOSSettingsView
 
 struct iOSSettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     @ObservedObject private var themeManager = ThemeManager.shared
     @StateObject private var appIconManager = AppIconManager.shared
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = AppDefaults.showContentTypeIcons
@@ -251,7 +251,7 @@ private struct CurrentAppIconPreview: View {
 // MARK: - iOS Server Settings Pages (reuse shared content)
 
 private struct iOSTorrentsSettingsPage: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     @StateObject private var editModel = SessionSettingsEditModel()
 
     var body: some View {
@@ -418,7 +418,7 @@ private struct iOSTorrentsSettingsPage: View {
 }
 
 private struct iOSSpeedLimitsSettingsPage: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     @StateObject private var editModel = SessionSettingsEditModel()
 
     var body: some View {
@@ -563,7 +563,7 @@ private struct iOSSpeedLimitsSettingsPage: View {
 }
 
 private struct iOSNetworkSettingsPage: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     @StateObject private var editModel = SessionSettingsEditModel()
 
     var body: some View {
@@ -725,12 +725,12 @@ private struct iOSNetworkSettingsPage: View {
 }
 
 #Preview {
-    iOSSettingsView(store: Store())
+    iOSSettingsView(store: AppStore())
 }
 #else
 // Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
 struct iOSSettingsView: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     var body: some View {
         EmptyView()

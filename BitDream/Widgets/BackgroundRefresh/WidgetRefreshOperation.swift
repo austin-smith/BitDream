@@ -122,7 +122,7 @@ private enum WidgetRefreshRunner {
         config.scheme = host.isSSL ? "https" : "http"
 
         let username = host.username
-        let password = KeychainPasswordStore.readPassword(credentialKey: host.credentialKey)
+        let password = KeychainService.readPassword(credentialKey: host.credentialKey)
         let auth = TransmissionAuth(username: username, password: password)
 
         let group = DispatchGroup()

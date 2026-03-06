@@ -5,7 +5,7 @@ import SwiftUI
 struct iOSTorrentDetail: View {
     @Environment(\.dismiss) private var dismiss
 
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     var torrent: Torrent
 
     @State public var files: [TorrentFile] = []
@@ -260,7 +260,7 @@ struct DetailViewLabelTag: View {
 #else
 // Empty struct for macOS to reference - this won't be compiled on iOS but provides the type
 struct iOSTorrentDetail: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     var torrent: Torrent
 
     var body: some View {
