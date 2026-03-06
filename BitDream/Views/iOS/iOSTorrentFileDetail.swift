@@ -125,118 +125,14 @@ struct iOSTorrentFileDetail: View {
         return sortFiles(filtered, by: sortProperty, order: sortOrder)
     }
 
-    @Environment(\.editMode) private var editMode
-
     var body: some View {
         List(selection: isEditing ? $selectedFileIds : .constant(Set<String>())) {
             ForEach(filteredAndSortedFileRows, id: \.id) { row in
-                VStack {
-                        HStack {
-                            Text(row.displayName)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.leading)
-
-                            Spacer()
-                        }
-                    .padding(.bottom, 4)
-
-                    ProgressView(value: row.percentDone)
-                        .progressViewStyle(.linear)
-                        .tint(row.percentDone >= 1.0 ? .green : .blue)
-
-                    HStack {
-                        Text("\(formatByteCount(row.bytesCompleted)) / \(formatByteCount(row.size)) (\(String(format: "%.1f%%", row.percentDone * 100)))")
-                            .font(.system(.caption2, design: .monospaced))
-                            .foregroundColor(.secondary)
-
-                        Spacer()
-
-                        if row.wanted {
-                            let priority = FilePriority(rawValue: row.priority) ?? .normal
-                            PriorityBadge(priority: priority)
-                        } else {
-                            StatusBadge(wanted: false)
-                        }
-
-                        FileTypeChip(filename: row.name)
-                    }
-                }
-                .opacity(row.wanted ? 1.0 : 0.5)
-                .swipeActions(edge: .trailing) {
-                    // Priority menu (flag) - appears on the right
-                    Menu {
-                        Section("Priority") {
-                            Button("High Priority") {
-                                setFilePriority(row, priority: .high)
-                            }
-
-                            Button("Normal Priority") {
-                                setFilePriority(row, priority: .normal)
-                            }
-
-                            Button("Low Priority") {
-                                setFilePriority(row, priority: .low)
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "flag")
-                    }
-                    .tint(.orange)
-
-                    // All actions menu (three dots) - appears on the left
-                    Menu {
-                        Section("Status") {
-                            Button("Download") {
-                                setFileWanted(row, wanted: true)
-                            }
-
-                            Button("Don't Download") {
-                                setFileWanted(row, wanted: false)
-                            }
-                        }
-
-                        Section("Priority") {
-                            Button("High Priority") {
-                                setFilePriority(row, priority: .high)
-                            }
-
-                            Button("Normal Priority") {
-                                setFilePriority(row, priority: .normal)
-                            }
-
-                            Button("Low Priority") {
-                                setFilePriority(row, priority: .low)
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
-                }
-                .contextMenu {
-                    Section("Status") {
-                        Button("Download") {
-                            setFileWanted(row, wanted: true)
-                        }
-
-                        Button("Don't Download") {
-                            setFileWanted(row, wanted: false)
-                        }
-                    }
-
-                    Section("Priority") {
-                        Button("High Priority") {
-                            setFilePriority(row, priority: .high)
-                        }
-
-                        Button("Normal Priority") {
-                            setFilePriority(row, priority: .normal)
-                        }
-
-                        Button("Low Priority") {
-                            setFilePriority(row, priority: .low)
-                        }
-                    }
-                }
+                iOSTorrentFileRow(
+                    row: row,
+                    setFileWanted: setFileWanted,
+                    setFilePriority: setFilePriority
+                )
             }
 
             // File count footer as a List section
