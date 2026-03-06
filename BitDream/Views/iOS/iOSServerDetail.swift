@@ -152,16 +152,18 @@ struct iOSServerDetail: View {
                     ToolbarItem (placement: .automatic) {
                         Button("Save") {
                             if validateFields() {
-                                saveNewServer(
-                                    nameInput: nameInput,
-                                    hostInput: hostInput,
-                                    portInput: portInput,
-                                    userInput: userInput,
-                                    passInput: passInput,
-                                    isDefault: isDefault,
+                                let draft = HostDraft(
+                                    name: nameInput,
+                                    server: hostInput,
+                                    port: portInput,
+                                    username: userInput,
                                     isSSL: isSSL,
+                                    isDefault: isDefault,
+                                    password: passInput
+                                )
+                                saveNewServer(
+                                    draft: draft,
                                     modelContext: modelContext,
-                                    hosts: hosts,
                                     store: store
                                 ) {
                                     dismiss()
@@ -177,17 +179,18 @@ struct iOSServerDetail: View {
                         Button("Save") {
                             if validateFields() {
                                 if let host = host {
+                                    let draft = HostDraft(
+                                        name: nameInput,
+                                        server: hostInput,
+                                        port: portInput,
+                                        username: userInput,
+                                        isSSL: isSSL,
+                                        isDefault: isDefault,
+                                        password: passInput
+                                    )
                                     updateExistingServer(
                                         host: host,
-                                        nameInput: nameInput,
-                                        hostInput: hostInput,
-                                        portInput: portInput,
-                                        userInput: userInput,
-                                        passInput: passInput,
-                                        isDefault: isDefault,
-                                        isSSL: isSSL,
-                                        modelContext: modelContext,
-                                        hosts: hosts
+                                        draft: draft
                                     ) {
                                         dismiss()
                                     } onError: { message in

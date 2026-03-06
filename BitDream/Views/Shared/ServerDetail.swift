@@ -50,35 +50,18 @@ private func userFacingHostPersistenceMessage(_ error: Error) -> String {
 /// Saves a new server through the host repository
 @MainActor
 func saveNewServer(
-    nameInput: String,
-    hostInput: String,
-    portInput: Int,
-    userInput: String,
-    passInput: String,
-    isDefault: Bool,
-    isSSL: Bool,
+    draft: HostDraft,
     modelContext: ModelContext,
-    hosts _: [Host],
     store: AppStore,
     completion: @MainActor @escaping () -> Void,
     onError: @MainActor @escaping (String) -> Void = { _ in }
 ) {
     // Validate required fields
-    guard !hostInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-    guard portInput >= 1 && portInput <= 65535 else { return }
+    guard !draft.server.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+    guard draft.port >= 1 && draft.port <= 65535 else { return }
 
     Task { @MainActor in
         do {
-            let draft = HostDraft(
-                name: nameInput,
-                server: hostInput,
-                port: portInput,
-                username: userInput,
-                isSSL: isSSL,
-                isDefault: isDefault,
-                password: passInput
-            )
-
             let host = try await HostRepository.shared.create(draft: draft)
             if store.host == nil {
                 store.setHost(host: host)
@@ -102,30 +85,12 @@ func saveNewServer(
 @MainActor
 func updateExistingServer(
     host: Host,
-    nameInput: String,
-    hostInput: String,
-    portInput: Int,
-    userInput: String,
-    passInput: String,
-    isDefault: Bool,
-    isSSL: Bool,
-    modelContext _: ModelContext,
-    hosts _: [Host],
+    draft: HostDraft,
     completion: @MainActor @escaping () -> Void,
     onError: @MainActor @escaping (String) -> Void = { _ in }
 ) {
     Task { @MainActor in
         do {
-            let draft = HostDraft(
-                name: nameInput,
-                server: hostInput,
-                port: portInput,
-                username: userInput,
-                isSSL: isSSL,
-                isDefault: isDefault,
-                password: passInput
-            )
-
             _ = try await HostRepository.shared.update(serverID: host.serverID, draft: draft)
             completion()
         } catch {
