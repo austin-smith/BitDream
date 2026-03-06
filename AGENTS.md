@@ -42,7 +42,7 @@ When adding new code:
 
 When in doubt, choose the simplest modern SwiftUI-first solution and preserve the macOS/iOS/shared split.
 
-## Build Workflow
+## Building
 
 From repo root (`/Users/austinsmith/Developer/Repos/BitDream`), build with:
 
@@ -65,4 +65,12 @@ For iOS build (compile check without signing):
   -destination 'generic/platform=iOS' \
   CODE_SIGNING_ALLOWED=NO \
   build
+```
+
+## Linting
+
+From repo root (`/Users/austinsmith/Developer/Repos/BitDream`), run:
+
+```bash
+swiftlint lint --quiet
 ```
