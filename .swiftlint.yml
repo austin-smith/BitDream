@@ -1,0 +1,7 @@
+excluded:
+  - build
+
+type_name:
+  excluded:
+    - "^iOS[A-Z].*$"
+    - "^macOS[A-Z].*$"
