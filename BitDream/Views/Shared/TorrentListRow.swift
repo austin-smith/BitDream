@@ -28,20 +28,6 @@ extension Collection where Element == Torrent {
     }
 }
 
-// Shared function to handle re-announce action
-@MainActor
-func reAnnounceToTrackers(torrent: Torrent, store: AppStore, onResponse: @MainActor @escaping (TransmissionResponse) -> Void = { _ in }) {
-    let info = makeConfig(store: store)
-    reAnnounceTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: onResponse)
-}
-
-// Shared function to handle "Resume Now" action
-@MainActor
-func resumeTorrentNow(torrent: Torrent, store: AppStore, onResponse: @MainActor @escaping (TransmissionResponse) -> Void = { _ in }) {
-    let info = makeConfig(store: store)
-    startTorrentNow(torrent: torrent, config: info.config, auth: info.auth, onResponse: onResponse)
-}
-
 enum TorrentStatusPresentationStyle {
     case standard
 }

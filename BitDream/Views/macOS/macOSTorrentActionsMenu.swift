@@ -139,11 +139,7 @@ struct TorrentContextMenu: View {
     }
 
     private var reannounceButton: some View {
-        Button(action: {
-            for torrent in torrents {
-                reAnnounceToTrackers(torrent: torrent, store: store)
-            }
-        }, label: {
+        Button(action: reannounceTorrentsAction, label: {
             Label("Ask For More Peers", systemImage: "arrow.left.arrow.right")
         })
     }
@@ -163,22 +159,20 @@ struct TorrentContextMenu: View {
     }
 
     private func pauseTorrentsAction() {
-        let info = makeConfig(store: store)
-        pauseTorrents(ids: torrentIDs, info: info) { response in
-            handleResponse(response)
+        TorrentActionExecutor.pause(ids: torrentIDs, store: store) { error in
+            dialogState.presentError(error)
         }
     }
 
     private func resumeTorrentsAction() {
-        let info = makeConfig(store: store)
-        resumeTorrents(ids: torrentIDs, info: info) { response in
-            handleResponse(response)
+        TorrentActionExecutor.resume(ids: torrentIDs, store: store) { error in
+            dialogState.presentError(error)
         }
     }
 
     private func resumeNowAction() {
-        for torrent in torrents {
-            resumeTorrentNow(torrent: torrent, store: store)
+        TorrentActionExecutor.resumeNow(torrents: Array(torrents), store: store) { error in
+            dialogState.presentError(error)
         }
     }
 
@@ -192,30 +186,26 @@ struct TorrentContextMenu: View {
     }
 
     private func queueMoveTopAction() {
-        let info = makeConfig(store: store)
-        queueMoveTop(ids: torrentIDs, info: info) { response in
-            handleResponse(response)
+        TorrentActionExecutor.moveInQueue(.top, ids: torrentIDs, store: store) { error in
+            dialogState.presentError(error)
         }
     }
 
     private func queueMoveUpAction() {
-        let info = makeConfig(store: store)
-        queueMoveUp(ids: torrentIDs, info: info) { response in
-            handleResponse(response)
+        TorrentActionExecutor.moveInQueue(.upward, ids: torrentIDs, store: store) { error in
+            dialogState.presentError(error)
         }
     }
 
     private func queueMoveDownAction() {
-        let info = makeConfig(store: store)
-        queueMoveDown(ids: torrentIDs, info: info) { response in
-            handleResponse(response)
+        TorrentActionExecutor.moveInQueue(.downward, ids: torrentIDs, store: store) { error in
+            dialogState.presentError(error)
         }
     }
 
     private func queueMoveBottomAction() {
-        let info = makeConfig(store: store)
-        queueMoveBottom(ids: torrentIDs, info: info) { response in
-            handleResponse(response)
+        TorrentActionExecutor.moveInQueue(.bottom, ids: torrentIDs, store: store) { error in
+            dialogState.presentError(error)
         }
     }
 
@@ -234,22 +224,15 @@ struct TorrentContextMenu: View {
     }
 
     private func verifyTorrentsAction() {
-        let info = makeConfig(store: store)
-        for torrent in torrents {
-            verifyTorrent(torrent: torrent, config: info.config, auth: info.auth) { response in
-                handleResponse(response)
-            }
+        TorrentActionExecutor.verify(torrents: Array(torrents), store: store) { error in
+            dialogState.presentError(error)
         }
     }
 
-    private func handleResponse(_ response: TransmissionResponse) {
-        handleTransmissionResponse(
-            response,
-            onSuccess: {},
-            onError: { error in
-                dialogState.presentError(error)
-            }
-        )
+    private func reannounceTorrentsAction() {
+        TorrentActionExecutor.reannounce(torrents: Array(torrents), store: store) { error in
+            dialogState.presentError(error)
+        }
     }
 }
 

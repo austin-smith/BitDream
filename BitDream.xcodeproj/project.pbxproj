@@ -35,6 +35,7 @@
 		4B6F1EB02D82D340003D8F6E /* iOSSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EAF2D82D340003D8F6E /* iOSSettingsView.swift */; };
 		4B6F1EB22D82DB21003D8F6E /* TorrentListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EB12D82DB21003D8F6E /* TorrentListRow.swift */; };
 		4B6F1EB42D82DB2D003D8F6E /* iOSTorrentListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EB32D82DB2D003D8F6E /* iOSTorrentListRow.swift */; };
+		4FA9A0024100000000A1B2C3 /* TorrentActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA9A0014100000000A1B2C3 /* TorrentActionExecutor.swift */; };
 		4B6F1EBC2D86C908003D8F6E /* macOSTorrentFileDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EBB2D86C908003D8F6E /* macOSTorrentFileDetail.swift */; };
 		4B6F1EBE2D86C926003D8F6E /* iOSTorrentFileDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EBD2D86C926003D8F6E /* iOSTorrentFileDetail.swift */; };
 		4B6F1EC02D86D52A003D8F6E /* TorrentFileDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EBF2D86D52A003D8F6E /* TorrentFileDetail.swift */; };
@@ -155,6 +156,7 @@
 		4B6F1EAF2D82D340003D8F6E /* iOSSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSSettingsView.swift; sourceTree = "<group>"; };
 		4B6F1EB12D82DB21003D8F6E /* TorrentListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentListRow.swift; sourceTree = "<group>"; };
 		4B6F1EB32D82DB2D003D8F6E /* iOSTorrentListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentListRow.swift; sourceTree = "<group>"; };
+		4FA9A0014100000000A1B2C3 /* TorrentActionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentActionExecutor.swift; sourceTree = "<group>"; };
 		4B6F1EBB2D86C908003D8F6E /* macOSTorrentFileDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentFileDetail.swift; sourceTree = "<group>"; };
 		4B6F1EBD2D86C926003D8F6E /* iOSTorrentFileDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentFileDetail.swift; sourceTree = "<group>"; };
 		4B6F1EBF2D86D52A003D8F6E /* TorrentFileDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentFileDetail.swift; sourceTree = "<group>"; };
@@ -418,6 +420,7 @@
 				4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */,
 				4B1DAE0B295E6FEF0037E9FB /* ServerList.swift */,
 				4B1DAE05295E6FC80037E9FB /* TorrentDetail.swift */,
+				4FA9A0014100000000A1B2C3 /* TorrentActionExecutor.swift */,
 				4B6F1EBF2D86D52A003D8F6E /* TorrentFileDetail.swift */,
 				4B6F1EB12D82DB21003D8F6E /* TorrentListRow.swift */,
 				4BF593B82E89BF6300A8C1FC /* TorrentPeerDetail.swift */,
@@ -674,6 +677,7 @@
 				4B1DAE0C295E6FEF0037E9FB /* ServerList.swift in Sources */,
 				4E2000024000000000C1D2E3 /* NetworkSettings.swift in Sources */,
 				4E2000014000000000C1D2E3 /* SpeedLimitsSettings.swift in Sources */,
+				4FA9A0024100000000A1B2C3 /* TorrentActionExecutor.swift in Sources */,
 				4B6F1EB22D82DB21003D8F6E /* TorrentListRow.swift in Sources */,
 				4B1DAE06295E6FC80037E9FB /* TorrentDetail.swift in Sources */,
 				4E2000034000000000C1D2E3 /* TorrentSettings.swift in Sources */,
