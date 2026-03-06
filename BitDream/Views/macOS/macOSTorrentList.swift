@@ -673,13 +673,7 @@ struct MoveSheetContent: View {
             Toggle(isOn: $moveShouldMove) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Move files on disk")
-                    Text(
-                        """
-                        When enabled, physically moves/renames the torrent's data into this folder \
-                        on the server. When disabled, does not move files, and instead simply links \
-                        this torrent to files already in the selected folder.
-                        """
-                    )
+                    Text("When enabled, physically moves/renames the torrent's data into this folder on the server. When disabled, does not move files, and instead simply links this torrent to files already in the selected folder.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
