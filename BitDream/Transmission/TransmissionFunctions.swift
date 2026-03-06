@@ -288,7 +288,7 @@ private func executeStatusOnlyRequest<T: Codable>(
         return
     }
 
-    sendRPCRequest(method: method, requestData: requestData, config: config, auth: auth, retrying: retrying) { (data, resp, error) in
+    sendRPCRequest(method: method, requestData: requestData, config: config, auth: auth, retrying: retrying) { (_, resp, error) in
         if error != nil {
             return completion(TransmissionResponse.configError)
         }

@@ -601,13 +601,13 @@ struct LabelEditView: View {
                 .frame(width: 360, alignment: .leading)
             }
         }
-        .onChange(of: shouldSave) { oldValue, newValue in
+        .onChange(of: shouldSave) { _, newValue in
             if newValue {
                 saveAndDismiss()
                 shouldSave = false
             }
         }
-        .onChange(of: newTagInput) { oldValue, newValue in
+        .onChange(of: newTagInput) { _, newValue in
             if newValue.contains(",") {
                 // Remove the comma and add the tag
                 newTagInput = newValue.replacingOccurrences(of: ",", with: "")

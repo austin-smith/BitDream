@@ -53,10 +53,10 @@ struct iOSContentView: View {
                 actionToolbarItems
                 bottomToolbarItems
             }
-            .onChange(of: sortProperty) { oldValue, newValue in
+            .onChange(of: sortProperty) { _, newValue in
                 UserDefaults.standard.sortProperty = newValue
             }
-            .onChange(of: sortOrder) { oldValue, newValue in
+            .onChange(of: sortOrder) { _, newValue in
                 UserDefaults.standard.sortOrder = newValue
             }
             .alert("Connection Error", isPresented: $store.showConnectionErrorAlert) {
@@ -238,7 +238,7 @@ struct iOSContentView: View {
                 Divider()
 
                 Button(action: {
-                    playPauseAllTorrents(start: false, info: makeConfig(store: store), onResponse: { response in
+                    playPauseAllTorrents(start: false, info: makeConfig(store: store), onResponse: { _ in
                         refreshTransmissionData(store: store)
                     })
                 }) {
@@ -246,7 +246,7 @@ struct iOSContentView: View {
                 }
 
                 Button(action: {
-                    playPauseAllTorrents(start: true, info: makeConfig(store: store), onResponse: { response in
+                    playPauseAllTorrents(start: true, info: makeConfig(store: store), onResponse: { _ in
                         refreshTransmissionData(store: store)
                     })
                 }) {

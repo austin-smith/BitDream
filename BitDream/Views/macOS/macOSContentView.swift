@@ -260,7 +260,7 @@ struct macOSContentView: View {
     // View with basic event handlers
     private var viewWithHandlers: some View {
         viewWithSheets
-        .onChange(of: sidebarSelection) { oldValue, newValue in
+        .onChange(of: sidebarSelection) { _, newValue in
             // Update the filter
             filterBySelection = newValue.filter
 
@@ -421,11 +421,11 @@ struct macOSContentView: View {
     // Enhanced view (state changes + search + toolbar)
     private var enhancedView: some View {
         viewWithHandlers
-        .onChange(of: columnVisibility) { oldValue, newValue in
+        .onChange(of: columnVisibility) { _, newValue in
             UserDefaults.standard.sidebarVisibility = newValue
             focusedTarget = .contentList
         }
-        .onChange(of: isInspectorVisible) { oldValue, newValue in
+        .onChange(of: isInspectorVisible) { _, newValue in
             UserDefaults.standard.inspectorVisibility = newValue
             // Defer state change to avoid publishing during view update
             Task { @MainActor in
@@ -433,13 +433,13 @@ struct macOSContentView: View {
             }
             focusedTarget = .contentList
         }
-        .onChange(of: sortProperty) { oldValue, newValue in
+        .onChange(of: sortProperty) { _, newValue in
             UserDefaults.standard.sortProperty = newValue
         }
-        .onChange(of: sortOrder) { oldValue, newValue in
+        .onChange(of: sortOrder) { _, newValue in
             UserDefaults.standard.sortOrder = newValue
         }
-        .onChange(of: store.shouldActivateSearch) { oldValue, newValue in
+        .onChange(of: store.shouldActivateSearch) { _, newValue in
             if newValue {
                 isSearchPresented = true
                 // Defer state change to avoid publishing during view update
@@ -448,7 +448,7 @@ struct macOSContentView: View {
                 }
             }
         }
-        .onChange(of: store.shouldToggleInspector) { oldValue, newValue in
+        .onChange(of: store.shouldToggleInspector) { _, newValue in
             if newValue {
                 withAnimation {
                     isInspectorVisible.toggle()
@@ -709,7 +709,7 @@ struct macOSContentView: View {
                 }
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isDropTargeted)
             )
-            .onChange(of: isDropTargeted) { oldValue, newValue in
+            .onChange(of: isDropTargeted) { _, newValue in
                 if !newValue {
                     // Clear dragged files when drag ends
                     draggedTorrentInfo = []

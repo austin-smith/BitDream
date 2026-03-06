@@ -261,7 +261,7 @@ struct BitDreamApp: App {
                     ensureStartupConnectionBehaviorApplied(store: store, modelContext: persistenceController.container.mainContext)
                     BackgroundRefreshManager.schedule()
                 }
-                .onChange(of: scenePhase) { oldPhase, newPhase in
+                .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .background {
                         BackgroundRefreshManager.schedule()
                     }

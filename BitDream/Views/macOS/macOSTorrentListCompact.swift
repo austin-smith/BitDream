@@ -320,7 +320,7 @@ struct macOSTorrentListCompact: View {
         .onChange(of: tableSortOrder) { _, newValue in
             syncMenuSortState(from: newValue)
         }
-        .onChange(of: columnCustomization) { oldValue, newValue in
+        .onChange(of: columnCustomization) { _, newValue in
             do {
                 let encoded = try JSONEncoder().encode(newValue)
                 columnCustomizationData = encoded

@@ -567,7 +567,7 @@ struct iOSLabelEditView: View {
                 }
             }
         }
-        .onChange(of: newTagInput) { oldValue, newValue in
+        .onChange(of: newTagInput) { _, newValue in
             if newValue.contains(",") {
                 // Remove the comma and add the tag
                 newTagInput = newValue.replacingOccurrences(of: ",", with: "")
