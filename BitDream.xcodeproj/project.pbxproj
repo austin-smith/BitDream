@@ -81,6 +81,9 @@
 		4C2000063C00000000A1B2C3 /* macOSTorrentSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2000023C00000000A1B2C3 /* macOSTorrentSettingsTab.swift */; };
 		4C2000073C00000000A1B2C3 /* macOSSpeedLimitsSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2000033C00000000A1B2C3 /* macOSSpeedLimitsSettingsTab.swift */; };
 		4C2000083C00000000A1B2C3 /* macOSNetworkSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2000043C00000000A1B2C3 /* macOSNetworkSettingsTab.swift */; };
+		4C3000073C10000000A1B2C3 /* iOSTorrentsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C3000033C10000000A1B2C3 /* iOSTorrentsSettingsView.swift */; };
+		4C3000083C10000000A1B2C3 /* iOSSpeedLimitsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C3000043C10000000A1B2C3 /* iOSSpeedLimitsSettingsView.swift */; };
+		4C3000093C10000000A1B2C3 /* iOSNetworkSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C3000053C10000000A1B2C3 /* iOSNetworkSettingsView.swift */; };
 		4D1000013B00000000B1C2D3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 4D1000073B00000000B1C2D3 /* Sparkle */; };
 		4D1000023B00000000B1C2D3 /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D1000033B00000000B1C2D3 /* AppUpdater.swift */; };
 		4D3A00023C00000000E1F1A1 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3A00043C00000000E1F1A1 /* KeychainService.swift */; };
@@ -188,6 +191,9 @@
 		4C2000023C00000000A1B2C3 /* macOSTorrentSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentSettingsTab.swift; sourceTree = "<group>"; };
 		4C2000033C00000000A1B2C3 /* macOSSpeedLimitsSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSSpeedLimitsSettingsTab.swift; sourceTree = "<group>"; };
 		4C2000043C00000000A1B2C3 /* macOSNetworkSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSNetworkSettingsTab.swift; sourceTree = "<group>"; };
+		4C3000033C10000000A1B2C3 /* iOSTorrentsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentsSettingsView.swift; sourceTree = "<group>"; };
+		4C3000043C10000000A1B2C3 /* iOSSpeedLimitsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSSpeedLimitsSettingsView.swift; sourceTree = "<group>"; };
+		4C3000053C10000000A1B2C3 /* iOSNetworkSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSNetworkSettingsView.swift; sourceTree = "<group>"; };
 		4D1000033B00000000B1C2D3 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
 		4D2000013B10000000C3D4E5 /* BuildSettings.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildSettings.xcconfig; sourceTree = "<group>"; };
 		4D2000023B10000000C3D4E5 /* BuildSettings.example.local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildSettings.example.local.xcconfig; sourceTree = "<group>"; };
@@ -339,11 +345,11 @@
 		4B642D752D7E1D4C003CEADC /* iOS */ = {
 			isa = PBXGroup;
 			children = (
+				4C3000013C10000000A1B2C3 /* Settings */,
 				4B9CAC552D7E83460094CD03 /* iOSAddTorrent.swift */,
 				4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */,
 				4B642D6A2D7E151A003CEADC /* iOSServerDetail.swift */,
 				4B642D7A2D7E1EF6003CEADC /* iOSServerList.swift */,
-				4B6F1EAF2D82D340003D8F6E /* iOSSettingsView.swift */,
 				4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */,
 				4B6F1EBD2D86C926003D8F6E /* iOSTorrentFileDetail.swift */,
 				4B6F1EB32D82DB2D003D8F6E /* iOSTorrentListRow.swift */,
@@ -446,6 +452,17 @@
 				4C2000043C00000000A1B2C3 /* macOSNetworkSettingsTab.swift */,
 				4C2000033C00000000A1B2C3 /* macOSSpeedLimitsSettingsTab.swift */,
 				4C2000023C00000000A1B2C3 /* macOSTorrentSettingsTab.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		4C3000013C10000000A1B2C3 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				4B6F1EAF2D82D340003D8F6E /* iOSSettingsView.swift */,
+				4C3000053C10000000A1B2C3 /* iOSNetworkSettingsView.swift */,
+				4C3000043C10000000A1B2C3 /* iOSSpeedLimitsSettingsView.swift */,
+				4C3000033C10000000A1B2C3 /* iOSTorrentsSettingsView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -637,6 +654,9 @@
 				4BDACD572E73DBBE0074F714 /* AppGroup.swift in Sources */,
 				4B7398602E7029BD00D06E5D /* macOSAboutView.swift in Sources */,
 				4B642D7B2D7E1EF6003CEADC /* iOSServerList.swift in Sources */,
+				4C3000093C10000000A1B2C3 /* iOSNetworkSettingsView.swift in Sources */,
+				4C3000083C10000000A1B2C3 /* iOSSpeedLimitsSettingsView.swift in Sources */,
+				4C3000073C10000000A1B2C3 /* iOSTorrentsSettingsView.swift in Sources */,
 				4B6F1EC02D86D52A003D8F6E /* TorrentFileDetail.swift in Sources */,
 				4BC2C92A2E6E22B800011971 /* macOSTorrentList.swift in Sources */,
 				4BC2C92B2E6E22B800011971 /* macOSTorrentListExpanded.swift in Sources */,

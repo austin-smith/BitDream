@@ -821,7 +821,7 @@ struct TorrentDropDelegate: DropDelegate {
     @Binding var isDropTargeted: Bool
     @Binding var draggedTorrentInfo: [TorrentInfo]
     let store: AppStore
-    private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "ui")
+    private nonisolated static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "ui")
 
     private nonisolated static func readTorrentData(from url: URL) async throws -> Data {
         try await Task.detached(priority: .userInitiated) {
