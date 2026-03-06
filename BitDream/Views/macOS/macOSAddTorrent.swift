@@ -360,18 +360,4 @@ struct macOSAddTorrent: View {
 #Preview("Add Torrent") {
     macOSAddTorrent(store: AppStore())
 }
-
-#else
-// Empty struct for iOS to reference - this won't be compiled on iOS but provides the type
-struct macOSAddTorrent: View {
-    @ObservedObject var store: AppStore
-
-    init(store: AppStore) {
-        self.store = store
-    }
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

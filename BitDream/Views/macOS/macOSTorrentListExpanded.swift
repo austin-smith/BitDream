@@ -75,17 +75,4 @@ struct macOSTorrentListExpanded: View {
         ))
     }
 }
-
-#else
-// Empty struct for iOS to reference
-struct macOSTorrentListExpanded: View {
-    var torrent: Torrent
-    var store: AppStore
-    var selectedTorrents: Set<Torrent>
-    var showContentTypeIcons: Bool
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

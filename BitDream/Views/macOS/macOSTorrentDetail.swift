@@ -363,14 +363,4 @@ struct macOSSectionHeader: View {
         .padding(.bottom, 8)
     }
 }
-#else
-// Empty struct for iOS to reference - this won't be compiled on iOS but provides the type
-struct macOSTorrentDetail: View {
-    @ObservedObject var store: AppStore
-    var torrent: Torrent
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

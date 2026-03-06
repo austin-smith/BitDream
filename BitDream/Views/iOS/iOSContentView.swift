@@ -284,22 +284,4 @@ struct iOSContentView: View {
         }
     }
 }
-#else
-// Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
-struct iOSContentView: View {
-    let modelContext: ModelContext
-    let hosts: [Host]
-    @ObservedObject var store: AppStore
-
-    // Add explicit initializer with internal access level
-    init(modelContext: ModelContext, hosts: [Host], store: AppStore) {
-        self.modelContext = modelContext
-        self.hosts = hosts
-        self.store = store
-    }
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

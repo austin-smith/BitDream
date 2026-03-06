@@ -203,21 +203,4 @@ struct macOSServerList: View {
         .frame(maxWidth: .infinity)
     }
 }
-#else
-// Empty struct for iOS to reference - this won't be compiled on macOS but provides the type
-struct macOSServerList: View {
-    let modelContext: ModelContext
-    let hosts: [Host]
-    @ObservedObject var store: AppStore
-
-    init(store: AppStore, modelContext: ModelContext, hosts: [Host]) {
-        self.modelContext = modelContext
-        self.hosts = hosts
-        self.store = store
-    }
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

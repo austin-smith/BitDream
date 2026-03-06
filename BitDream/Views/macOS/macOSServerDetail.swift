@@ -275,25 +275,4 @@ struct macOSServerDetail: View {
         }
     }
 }
-#else
-// Empty struct for iOS to reference - this won't be compiled on macOS but provides the type
-struct macOSServerDetail: View {
-    @ObservedObject var store: AppStore
-    let modelContext: ModelContext
-    let hosts: [Host]
-    @State var host: Host?
-    var isAddNew: Bool
-
-    init(store: AppStore, modelContext: ModelContext, hosts: [Host], host: Host? = nil, isAddNew: Bool) {
-        self.store = store
-        self.modelContext = modelContext
-        self.hosts = hosts
-        self.host = host
-        self.isAddNew = isAddNew
-    }
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

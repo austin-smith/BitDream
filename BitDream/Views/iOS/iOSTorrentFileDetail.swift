@@ -672,16 +672,4 @@ struct FilterSheet: View {
     }
 }
 
-#else
-// Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
-struct iOSTorrentFileDetail: View {
-    let files: [TorrentFile]
-    let fileStats: [TorrentFileStats]
-    let torrentId: Int
-    let store: AppStore
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

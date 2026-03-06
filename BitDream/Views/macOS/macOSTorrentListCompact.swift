@@ -444,19 +444,4 @@ struct macOSTorrentListCompact: View {
     }
 
 }
-
-#else
-// Empty struct for iOS to reference
-struct macOSTorrentListCompact: View {
-    let torrents: [Torrent]
-    @Binding var selection: Set<Int>
-    @Binding var sortProperty: SortProperty
-    @Binding var sortOrder: SortOrder
-    let store: AppStore
-    let showContentTypeIcons: Bool
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

@@ -727,13 +727,4 @@ private struct iOSNetworkSettingsPage: View {
 #Preview {
     iOSSettingsView(store: AppStore())
 }
-#else
-// Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
-struct iOSSettingsView: View {
-    @ObservedObject var store: AppStore
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

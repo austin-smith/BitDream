@@ -999,16 +999,4 @@ struct LabelFilterChip: View {
         .help(isIncluded ? "Click to exclude '\(label)'" : isExcluded ? "Click to clear filter" : "Click to include '\(label)'")
     }
 }
-
-#else
-// Empty struct for iOS to reference - this won't be compiled on iOS but provides the type
-struct macOSContentView: View {
-    let modelContext: ModelContext
-    let hosts: [Host]
-    @ObservedObject var store: AppStore
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

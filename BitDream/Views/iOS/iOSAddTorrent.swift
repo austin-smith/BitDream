@@ -87,17 +87,4 @@ struct iOSAddTorrent: View {
     // MARK: - Actions
     // Using shared implementations from AddTorrent.swift
 }
-#else
-// Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
-struct iOSAddTorrent: View {
-    @ObservedObject var store: AppStore
-
-    init(store: AppStore) {
-        self.store = store
-    }
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

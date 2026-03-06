@@ -411,13 +411,4 @@ func seedingSection(config: TransmissionSessionResponseArguments, editModel: Ses
     macOSSettingsView(store: AppStore())
         .environmentObject(AppUpdater())
 }
-#else
-// Empty struct for iOS to reference - this won't be compiled on macOS but provides the type
-struct macOSSettingsView: View {
-    @ObservedObject var store: AppStore
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

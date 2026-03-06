@@ -454,16 +454,4 @@ struct FooterView: View {
     .frame(width: 1000, height: 700)
 }
 
-#else
-// Empty struct for iOS to reference
-struct macOSTorrentFileDetail: View {
-    let files: [TorrentFile]
-    let fileStats: [TorrentFileStats]
-    let torrentId: Int
-    let store: AppStore
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif
