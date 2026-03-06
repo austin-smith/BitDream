@@ -466,6 +466,8 @@ func getSessionStatsForWidgetRefresh(config: TransmissionConfig, auth: Transmiss
     }
 }
 
+// TODO: Revisit this signature and reduce parameter count.
+// swiftlint:disable function_parameter_count
 /// Makes a request to the server containing either a base64 representation of a .torrent file or a magnet link
 /// - Parameter fileUrl: Either a magnet link or base64 encoded file
 /// - Parameter auth: A `TransmissionAuth` containing username and password for the server
@@ -503,6 +505,7 @@ public func addTorrent(
         }
     }
 }
+// swiftlint:enable function_parameter_count
 
 /// Gets the list of files in a torrent
 /// - Parameter transferId: The ID of the torrent to get files for
@@ -762,6 +765,8 @@ public func setTorrentLocation(
     )
 }
 
+// TODO: Revisit this signature and reduce parameter count.
+// swiftlint:disable function_parameter_count
 /// Rename a path (file or folder) within a torrent
 /// - Parameters:
 ///   - torrentId: The torrent ID (Transmission expects exactly one id)
@@ -794,6 +799,7 @@ public func renameTorrentPath(
         }
     )
 }
+// swiftlint:enable function_parameter_count
 
 /// Set priority for specific files in a torrent
 public func setFilePriority(

@@ -251,8 +251,10 @@ final class HostRepository: HostPersisting {
             logger.error("Catalog sync failed: \(error.localizedDescription)")
         }
     }
+}
 
-    private func syncCatalogInternal() async throws {
+private extension HostRepository {
+    func syncCatalogInternal() async throws {
         let hosts = try ensureCredentialKeysAndSaveIfNeeded(hosts: fetchHosts())
 
         let records = hosts.map { host in
@@ -280,7 +282,7 @@ final class HostRepository: HostPersisting {
         writeServersIndex(servers: summaries)
     }
 
-    private func syncCatalogAfterUserMutation() async throws {
+    func syncCatalogAfterUserMutation() async throws {
         do {
             try await syncCatalogInternal()
         } catch {
@@ -289,7 +291,7 @@ final class HostRepository: HostPersisting {
         }
     }
 
-    private func fetchHosts() throws -> [Host] {
+    func fetchHosts() throws -> [Host] {
         let descriptor = FetchDescriptor<Host>(
             sortBy: [Foundation.SortDescriptor(\Host.name)]
         )
@@ -297,7 +299,7 @@ final class HostRepository: HostPersisting {
         return try modelContext.fetch(descriptor)
     }
 
-    private func fetchHost(serverID: String) throws -> Host? {
+    func fetchHost(serverID: String) throws -> Host? {
         let targetServerID = serverID
         let descriptor = FetchDescriptor<Host>(
             predicate: #Predicate<Host> { host in
@@ -307,7 +309,7 @@ final class HostRepository: HostPersisting {
         return try modelContext.fetch(descriptor).first
     }
 
-    private func validatedDraft(_ draft: HostDraft) throws -> HostDraft {
+    func validatedDraft(_ draft: HostDraft) throws -> HostDraft {
         let trimmedServer = draft.server.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedServer.isEmpty else {
             throw HostPersistenceError.validation("Hostname is required.")
@@ -331,13 +333,13 @@ final class HostRepository: HostPersisting {
         )
     }
 
-    private func clearDefault(except serverID: String?) throws {
+    func clearDefault(except serverID: String?) throws {
         for host in try fetchHosts() where host.isDefault && host.serverID != serverID {
             host.isDefault = false
         }
     }
 
-    private func ensureCredentialKeysAndSaveIfNeeded(hosts: [Host]) throws -> [Host] {
+    func ensureCredentialKeysAndSaveIfNeeded(hosts: [Host]) throws -> [Host] {
         var changed = false
 
         for host in hosts {
@@ -355,19 +357,19 @@ final class HostRepository: HostPersisting {
         return hosts
     }
 
-    private func saveIfNeeded() throws {
+    func saveIfNeeded() throws {
         if modelContext.hasChanges {
             try modelContext.save()
         }
     }
 
-    private func rollbackChangesIfNeeded() {
+    func rollbackChangesIfNeeded() {
         if modelContext.hasChanges {
             modelContext.rollback()
         }
     }
 
-    private func catalogSyncFailure(from error: Error) -> HostPersistenceError {
+    func catalogSyncFailure(from error: Error) -> HostPersistenceError {
         if let persistenceError = error as? HostPersistenceError,
            case .catalogSyncFailure = persistenceError {
             return persistenceError
@@ -376,7 +378,7 @@ final class HostRepository: HostPersisting {
         return HostPersistenceError.catalogSyncFailure(error.localizedDescription)
     }
 
-    private func restoreKeychainAfterFailedSave(
+    func restoreKeychainAfterFailedSave(
         previousCredentialKey: String?,
         previousPassword: String?,
         attemptedCredentialKey: String
