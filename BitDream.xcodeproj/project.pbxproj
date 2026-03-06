@@ -13,8 +13,9 @@
 		4B1DADE8295E6C450037E9FB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4B1DADE7295E6C450037E9FB /* Assets.xcassets */; };
 		4B1DADEC295E6C450037E9FB /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4B1DADEB295E6C450037E9FB /* Preview Assets.xcassets */; };
 		4B1DADF9295E6EBA0037E9FB /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADF8295E6EBA0037E9FB /* Utilities.swift */; };
-		4B1DADFE295E6F390037E9FB /* TransmissionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADFD295E6F390037E9FB /* TransmissionModels.swift */; };
+		4B1DADFE295E6F390037E9FB /* TransmissionTorrentModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADFD295E6F390037E9FB /* TransmissionTorrentModels.swift */; };
 		4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */; };
+		4D6A00213F00000000A1B2C3 /* TransmissionSessionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6A00203F00000000A1B2C3 /* TransmissionSessionModels.swift */; };
 		4B1DAE02295E6FA30037E9FB /* AddTorrent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE01295E6FA30037E9FB /* AddTorrent.swift */; };
 		4B1DAE06295E6FC80037E9FB /* TorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE05295E6FC80037E9FB /* TorrentDetail.swift */; };
 		4B1DAE0A295E6FE10037E9FB /* ServerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */; };
@@ -129,8 +130,9 @@
 		4B1DADE9295E6C450037E9FB /* BitDream.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BitDream.entitlements; sourceTree = "<group>"; };
 		4B1DADEB295E6C450037E9FB /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		4B1DADF8295E6EBA0037E9FB /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
-		4B1DADFD295E6F390037E9FB /* TransmissionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionModels.swift; sourceTree = "<group>"; };
+		4B1DADFD295E6F390037E9FB /* TransmissionTorrentModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionTorrentModels.swift; sourceTree = "<group>"; };
 		4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionFunctions.swift; sourceTree = "<group>"; };
+		4D6A00203F00000000A1B2C3 /* TransmissionSessionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionSessionModels.swift; sourceTree = "<group>"; };
 		4B1DAE01295E6FA30037E9FB /* AddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTorrent.swift; sourceTree = "<group>"; };
 		4B1DAE05295E6FC80037E9FB /* TorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentDetail.swift; sourceTree = "<group>"; };
 		4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerDetail.swift; sourceTree = "<group>"; };
@@ -334,7 +336,8 @@
 			isa = PBXGroup;
 			children = (
 				4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */,
-				4B1DADFD295E6F390037E9FB /* TransmissionModels.swift */,
+				4B1DADFD295E6F390037E9FB /* TransmissionTorrentModels.swift */,
+				4D6A00203F00000000A1B2C3 /* TransmissionSessionModels.swift */,
 			);
 			path = Transmission;
 			sourceTree = "<group>";
@@ -651,7 +654,8 @@
 				4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */,
 				4BDE147F2F0B015C00FF6A46 /* AppIconManager.swift in Sources */,
 				4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */,
-				4B1DADFE295E6F390037E9FB /* TransmissionModels.swift in Sources */,
+				4B1DADFE295E6F390037E9FB /* TransmissionTorrentModels.swift in Sources */,
+				4D6A00213F00000000A1B2C3 /* TransmissionSessionModels.swift in Sources */,
 				4B1DAE02295E6FA30037E9FB /* AddTorrent.swift in Sources */,
 				4C1000143A00000000A1B2C3 /* ConnectionStatus.swift in Sources */,
 				4B1DADE6295E6C440037E9FB /* ContentView.swift in Sources */,
