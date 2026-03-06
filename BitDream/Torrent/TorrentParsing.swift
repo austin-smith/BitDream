@@ -351,10 +351,30 @@ private func decodeBencodeString(
     let valueBuffer = UnsafeBufferPointer(start: valuePointer, count: range.count)
 
     if allowLossyUTF8 {
-        return String(decoding: valueBuffer, as: UTF8.self)
+        return decodeLossyUTF8(valueBuffer)
     }
 
     return String(bytes: valueBuffer, encoding: .utf8)
+}
+
+private func decodeLossyUTF8(_ bytes: UnsafeBufferPointer<UInt8>) -> String {
+    var iterator = bytes.makeIterator()
+    var decoder = UTF8()
+    var result = String()
+    var isDecoding = true
+
+    while isDecoding {
+        switch decoder.decode(&iterator) {
+        case .scalarValue(let scalar):
+            result.unicodeScalars.append(scalar)
+        case .emptyInput:
+            isDecoding = false
+        case .error:
+            result.unicodeScalars.append("\u{FFFD}")
+        }
+    }
+
+    return result
 }
 
 private func readBencodeInteger(
