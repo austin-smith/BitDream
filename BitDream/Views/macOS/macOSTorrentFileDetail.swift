@@ -249,8 +249,8 @@ struct macOSTorrentFileDetail: View {
                 wanted: wanted
             )
             if response != .success {
-                for (idx, old) in previousStats {
-                    if idx < mutableFileStats.count { mutableFileStats[idx] = old }
+                for (idx, old) in previousStats where idx < mutableFileStats.count {
+                    mutableFileStats[idx] = old
                 }
                 recomputeRows()
             }
@@ -277,8 +277,8 @@ struct macOSTorrentFileDetail: View {
                 priority: priority
             )
             if response != .success {
-                for (idx, old) in previousStats {
-                    if idx < mutableFileStats.count { mutableFileStats[idx] = old }
+                for (idx, old) in previousStats where idx < mutableFileStats.count {
+                    mutableFileStats[idx] = old
                 }
                 recomputeRows()
             }

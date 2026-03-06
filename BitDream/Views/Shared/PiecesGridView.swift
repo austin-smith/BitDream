@@ -72,8 +72,8 @@ func bucketize(bitset: [Bool], totalBuckets: Int) -> [Double] {
         let end = ((bucket + 1) * totalPieces) / totalBuckets
         if end <= start { continue }
         var have = 0
-        for pieceIndex in start..<end {
-            if bitset[pieceIndex] { have += 1 }
+        for pieceIndex in start..<end where bitset[pieceIndex] {
+            have += 1
         }
         let count = max(1, end - start)
         fractions[bucket] = Double(have) / Double(count)

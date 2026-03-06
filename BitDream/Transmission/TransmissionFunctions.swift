@@ -210,7 +210,7 @@ private func decodeRPCResponse<R: Codable & Sendable>(
             return .failure(error)
         }
     default:
-        let errorMessage = data.map { String(decoding: $0, as: UTF8.self) } ?? "Unknown error"
+        let errorMessage = data.flatMap { String(bytes: $0, encoding: .utf8) } ?? "Unknown error"
         return .failure(
             NSError(
                 domain: RuntimeDomain.transmission,

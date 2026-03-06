@@ -842,33 +842,31 @@ struct TorrentDropDelegate: DropDelegate {
         let parsedInfos = TorrentInfoAccumulator()
         let group = DispatchGroup()
 
-        for provider in providers {
-            if provider.canLoadObject(ofClass: URL.self) {
-                group.enter()
-                _ = provider.loadObject(ofClass: URL.self) { url, loadError in
-                    defer { group.leave() }
-                    guard let url else {
-                        if let loadError {
-                            Self.logger.error("Failed to load dropped file URL: \(loadError.localizedDescription)")
-                        }
-                        return
+        for provider in providers where provider.canLoadObject(ofClass: URL.self) {
+            group.enter()
+            _ = provider.loadObject(ofClass: URL.self) { url, loadError in
+                defer { group.leave() }
+                guard let url else {
+                    if let loadError {
+                        Self.logger.error("Failed to load dropped file URL: \(loadError.localizedDescription)")
                     }
-                    guard url.pathExtension.lowercased() == "torrent" else { return }
+                    return
+                }
+                guard url.pathExtension.lowercased() == "torrent" else { return }
 
-                    do {
-                        var didAccess = false
-                        if url.isFileURL {
-                            didAccess = url.startAccessingSecurityScopedResource()
-                        }
-                        defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
-
-                        let data = try Data(contentsOf: url)
-                        if let torrentInfo = parseTorrentInfo(from: data) {
-                            parsedInfos.append(torrentInfo)
-                        }
-                    } catch {
-                        Self.logger.error("Failed to parse dropped torrent metadata from \(url.lastPathComponent): \(error.localizedDescription)")
+                do {
+                    var didAccess = false
+                    if url.isFileURL {
+                        didAccess = url.startAccessingSecurityScopedResource()
                     }
+                    defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
+
+                    let data = try Data(contentsOf: url)
+                    if let torrentInfo = parseTorrentInfo(from: data) {
+                        parsedInfos.append(torrentInfo)
+                    }
+                } catch {
+                    Self.logger.error("Failed to parse dropped torrent metadata from \(url.lastPathComponent): \(error.localizedDescription)")
                 }
             }
         }
@@ -887,23 +885,21 @@ struct TorrentDropDelegate: DropDelegate {
     func performDrop(info: DropInfo) -> Bool {
         isDropTargeted = false
 
-        for provider in info.itemProviders(for: [.fileURL]) {
-            if provider.canLoadObject(ofClass: URL.self) {
-                _ = provider.loadObject(ofClass: URL.self) { url, loadError in
-                    guard let url else {
-                        if let loadError {
-                            Self.logger.error("Failed to load dropped file URL: \(loadError.localizedDescription)")
-                        }
-                        return
+        for provider in info.itemProviders(for: [.fileURL]) where provider.canLoadObject(ofClass: URL.self) {
+            _ = provider.loadObject(ofClass: URL.self) { url, loadError in
+                guard let url else {
+                    if let loadError {
+                        Self.logger.error("Failed to load dropped file URL: \(loadError.localizedDescription)")
                     }
-                    guard url.pathExtension.lowercased() == "torrent" else { return }
-                    Task { @MainActor in
-                        do {
-                            let data = try await Self.readTorrentData(from: url)
-                            addTorrentFromFileData(data, store: store)
-                        } catch {
-                            Self.logger.error("Failed to read dropped torrent file \(url.lastPathComponent): \(error.localizedDescription)")
-                        }
+                    return
+                }
+                guard url.pathExtension.lowercased() == "torrent" else { return }
+                Task { @MainActor in
+                    do {
+                        let data = try await Self.readTorrentData(from: url)
+                        addTorrentFromFileData(data, store: store)
+                    } catch {
+                        Self.logger.error("Failed to read dropped torrent file \(url.lastPathComponent): \(error.localizedDescription)")
                     }
                 }
             }

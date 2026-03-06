@@ -108,60 +108,110 @@ private func readBencodeDecimalNumber(_ bytes: UnsafeBufferPointer<UInt8>, start
 
 /// Skip a single bencode value and return the index just AFTER the value
 private func skipBencodeValue(_ bytes: UnsafeBufferPointer<UInt8>, startIndex: Int, upperBound: Int) -> Int? {
-    var idx = startIndex
-    guard idx < upperBound else { return nil }
-    let tag = bytes[idx]
+    guard startIndex < upperBound else { return nil }
 
-    // Integer: i<digits>e
-    if tag == UInt8(ascii: "i") {
-        idx &+= 1
-        if idx < upperBound, bytes[idx] == UInt8(ascii: "-") { idx &+= 1 }
-        while idx < upperBound {
-            let byte = bytes[idx]
-            if byte == UInt8(ascii: "e") { return idx + 1 }
-            if byte < UInt8(ascii: "0") || byte > UInt8(ascii: "9") { return nil }
-            idx &+= 1
-        }
+    switch classifyBencodeValue(bytes[startIndex]) {
+    case .integer:
+        return skipBencodeInteger(bytes, startIndex: startIndex, upperBound: upperBound)
+    case .list:
+        return skipBencodeList(bytes, startIndex: startIndex, upperBound: upperBound)
+    case .dictionary:
+        return skipBencodeDictionary(bytes, startIndex: startIndex, upperBound: upperBound)
+    case .string:
+        return skipBencodeString(bytes, startIndex: startIndex, upperBound: upperBound)
+    case .invalid:
         return nil
     }
+}
 
-    // List: l<value>...e
-    if tag == UInt8(ascii: "l") {
+private enum BencodeValueKind {
+    case integer
+    case list
+    case dictionary
+    case string
+    case invalid
+}
+
+private func classifyBencodeValue(_ tag: UInt8) -> BencodeValueKind {
+    switch tag {
+    case UInt8(ascii: "i"):
+        return .integer
+    case UInt8(ascii: "l"):
+        return .list
+    case UInt8(ascii: "d"):
+        return .dictionary
+    case UInt8(ascii: "0")...UInt8(ascii: "9"):
+        return .string
+    default:
+        return .invalid
+    }
+}
+
+private func skipBencodeInteger(
+    _ bytes: UnsafeBufferPointer<UInt8>,
+    startIndex: Int,
+    upperBound: Int
+) -> Int? {
+    var idx = startIndex + 1
+    if idx < upperBound, bytes[idx] == UInt8(ascii: "-") {
         idx &+= 1
-        while idx < upperBound, bytes[idx] != UInt8(ascii: "e") {
-            guard let next = skipBencodeValue(bytes, startIndex: idx, upperBound: upperBound) else { return nil }
-            idx = next
-        }
-        return (idx < upperBound) ? idx + 1 : nil
     }
 
-    // Dict: d<key><value>...e
-    if tag == UInt8(ascii: "d") {
+    while idx < upperBound {
+        let byte = bytes[idx]
+        if byte == UInt8(ascii: "e") { return idx + 1 }
+        if byte < UInt8(ascii: "0") || byte > UInt8(ascii: "9") { return nil }
         idx &+= 1
-        while idx < upperBound, bytes[idx] != UInt8(ascii: "e") {
-            // key (string)
-            guard let (kLen, afterLen) = readBencodeDecimalNumber(bytes, startIndex: idx, upperBound: upperBound) else { return nil }
-            guard afterLen < upperBound, bytes[afterLen] == UInt8(ascii: ":") else { return nil }
-            let keyEnd = afterLen + 1 + kLen
-            guard keyEnd <= upperBound else { return nil }
-            idx = keyEnd
-            // value
-            guard let next = skipBencodeValue(bytes, startIndex: idx, upperBound: upperBound) else { return nil }
-            idx = next
-        }
-        return (idx < upperBound) ? idx + 1 : nil
-    }
-
-    // String: <len>:<bytes>
-    if tag >= UInt8(ascii: "0") && tag <= UInt8(ascii: "9") {
-        guard let (len, afterLen) = readBencodeDecimalNumber(bytes, startIndex: idx, upperBound: upperBound) else { return nil }
-        let valueStart = afterLen + 1 // skip ':'
-        let valueEnd = valueStart + len
-        guard afterLen < upperBound, bytes[afterLen] == UInt8(ascii: ":"), valueEnd <= upperBound else { return nil }
-        return valueEnd
     }
 
     return nil
+}
+
+private func skipBencodeList(
+    _ bytes: UnsafeBufferPointer<UInt8>,
+    startIndex: Int,
+    upperBound: Int
+) -> Int? {
+    var idx = startIndex + 1
+    while idx < upperBound, bytes[idx] != UInt8(ascii: "e") {
+        guard let next = skipBencodeValue(bytes, startIndex: idx, upperBound: upperBound) else { return nil }
+        idx = next
+    }
+    return (idx < upperBound) ? idx + 1 : nil
+}
+
+private func skipBencodeDictionary(
+    _ bytes: UnsafeBufferPointer<UInt8>,
+    startIndex: Int,
+    upperBound: Int
+) -> Int? {
+    var idx = startIndex + 1
+    while idx < upperBound, bytes[idx] != UInt8(ascii: "e") {
+        guard let keyEnd = skipBencodeString(bytes, startIndex: idx, upperBound: upperBound) else { return nil }
+        idx = keyEnd
+        guard let next = skipBencodeValue(bytes, startIndex: idx, upperBound: upperBound) else { return nil }
+        idx = next
+    }
+    return (idx < upperBound) ? idx + 1 : nil
+}
+
+private func skipBencodeString(
+    _ bytes: UnsafeBufferPointer<UInt8>,
+    startIndex: Int,
+    upperBound: Int
+) -> Int? {
+    guard let (length, afterLength) = readBencodeDecimalNumber(
+        bytes,
+        startIndex: startIndex,
+        upperBound: upperBound
+    ) else {
+        return nil
+    }
+
+    let valueStart = afterLength + 1
+    let valueEnd = valueStart + length
+    guard afterLength < upperBound, bytes[afterLength] == UInt8(ascii: ":"), valueEnd <= upperBound else { return nil }
+    return valueEnd
 }
 
 /// Compare a bencode key without allocating strings
@@ -290,7 +340,8 @@ private func readBencodeString(
 
     let valuePointer = base.advanced(by: valueStart)
     let valueBuffer = UnsafeBufferPointer(start: valuePointer, count: length)
-    return (String(decoding: valueBuffer, as: UTF8.self), valueEnd)
+    guard let value = String(bytes: valueBuffer, encoding: .utf8) else { return nil }
+    return (value, valueEnd)
 }
 
 private func readBencodeInteger(
@@ -388,17 +439,23 @@ private func parseFileDictionary(
     return (fileLength, idx + 1)
 }
 
+private struct FilesListParseResult {
+    let totalSize: Int64
+    let fileCount: Int
+    let nextIndex: Int
+}
+
 private func parseFilesList(
     _ bytes: UnsafeBufferPointer<UInt8>,
     startIndex: Int,
     endIndex: Int
-) -> (totalSize: Int64, fileCount: Int, nextIndex: Int)? {
+) -> FilesListParseResult? {
     guard startIndex < endIndex else { return nil }
     guard bytes[startIndex] == UInt8(ascii: "l") else {
         guard let nextIndex = skipBencodeValue(bytes, startIndex: startIndex, upperBound: endIndex) else {
             return nil
         }
-        return (0, 0, nextIndex)
+        return FilesListParseResult(totalSize: 0, fileCount: 0, nextIndex: nextIndex)
     }
 
     var idx = startIndex + 1
@@ -423,7 +480,7 @@ private func parseFilesList(
     }
 
     guard idx < endIndex, bytes[idx] == UInt8(ascii: "e") else { return nil }
-    return (totalSize, fileCount, idx + 1)
+    return FilesListParseResult(totalSize: totalSize, fileCount: fileCount, nextIndex: idx + 1)
 }
 
 private func applyInfoDictionaryEntry(
