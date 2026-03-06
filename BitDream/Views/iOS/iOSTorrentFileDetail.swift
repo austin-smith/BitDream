@@ -43,7 +43,7 @@ struct iOSTorrentFileDetail: View {
     let files: [TorrentFile]
     let fileStats: [TorrentFileStats]
     let torrentId: Int
-    let store: Store
+    let store: AppStore
 
     @State private var mutableFileStats: [TorrentFileStats] = []
     @State private var searchText = ""
@@ -368,7 +368,7 @@ struct BulkActionToolbar: View {
     @Binding var selectedFileIds: Set<String>
     let allFileRows: [TorrentFileRow]
     let torrentId: Int
-    let store: Store
+    let store: AppStore
     let updateFileStatus: (Int, Bool) -> Void
     let updateFilePriority: (Int, FilePriority) -> Void
     let revertData: () -> Void
@@ -667,21 +667,9 @@ struct FilterSheet: View {
             files: TorrentFilePreviewData.sampleFiles,
             fileStats: TorrentFilePreviewData.sampleFileStats,
             torrentId: 1,
-            store: Store()
+            store: AppStore()
         )
     }
 }
 
-#else
-// Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
-struct iOSTorrentFileDetail: View {
-    let files: [TorrentFile]
-    let fileStats: [TorrentFileStats]
-    let torrentId: Int
-    let store: Store
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

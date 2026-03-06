@@ -28,14 +28,13 @@ class FileTableViewModel: ObservableObject {
     @Published var showOther = true
 }
 
-
 // MARK: - Main View
 
 struct macOSTorrentFileDetail: View {
     let files: [TorrentFile]
     let fileStats: [TorrentFileStats]
     let torrentId: Int
-    let store: Store
+    let store: AppStore
 
     @StateObject private var viewModel = FileTableViewModel()
     @State private var columnVisibility = Set<String>(["name", "size", "progress", "downloaded", "priority", "status"])
@@ -250,8 +249,8 @@ struct macOSTorrentFileDetail: View {
                 wanted: wanted
             )
             if response != .success {
-                for (idx, old) in previousStats {
-                    if idx < mutableFileStats.count { mutableFileStats[idx] = old }
+                for (idx, old) in previousStats where idx < mutableFileStats.count {
+                    mutableFileStats[idx] = old
                 }
                 recomputeRows()
             }
@@ -278,8 +277,8 @@ struct macOSTorrentFileDetail: View {
                 priority: priority
             )
             if response != .success {
-                for (idx, old) in previousStats {
-                    if idx < mutableFileStats.count { mutableFileStats[idx] = old }
+                for (idx, old) in previousStats where idx < mutableFileStats.count {
+                    mutableFileStats[idx] = old
                 }
                 recomputeRows()
             }
@@ -450,21 +449,9 @@ struct FooterView: View {
         files: TorrentFilePreviewData.sampleFiles,
         fileStats: TorrentFilePreviewData.sampleFileStats,
         torrentId: 1,
-        store: Store()
+        store: AppStore()
     )
     .frame(width: 1000, height: 700)
 }
 
-#else
-// Empty struct for iOS to reference
-struct macOSTorrentFileDetail: View {
-    let files: [TorrentFile]
-    let fileStats: [TorrentFileStats]
-    let torrentId: Int
-    let store: Store
-
-    var body: some View {
-        EmptyView()
-    }
-}
 #endif

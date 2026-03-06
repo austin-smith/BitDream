@@ -55,16 +55,16 @@ public enum ContentTypeIconMapper {
     // MARK: - UTType Mapping (for files)
 
     private static func symbolForUTType(_ utType: UTType) -> String {
-        if utType.conforms(to: .image)        { return "photo" }
-        if utType.conforms(to: .movie)        { return "film" }
-        if utType.conforms(to: .audio)        { return "waveform" }
-        if utType.conforms(to: .archive)      { return "zipper.page" }
-        if utType.conforms(to: .pdf)          { return "richtext.page" }
-        if utType.conforms(to: .spreadsheet)  { return "tablecells" }
+        if utType.conforms(to: .image) { return "photo" }
+        if utType.conforms(to: .movie) { return "film" }
+        if utType.conforms(to: .audio) { return "waveform" }
+        if utType.conforms(to: .archive) { return "zipper.page" }
+        if utType.conforms(to: .pdf) { return "richtext.page" }
+        if utType.conforms(to: .spreadsheet) { return "tablecells" }
         if utType.conforms(to: .presentation) { return "rectangle.on.rectangle" }
-        if utType.conforms(to: .sourceCode)   { return "chevron.left.forwardslash.chevron.right" }
-        if utType.conforms(to: .text)         { return "doc.text" }
-        if utType.conforms(to: .executable)   { return "document" }
+        if utType.conforms(to: .sourceCode) { return "chevron.left.forwardslash.chevron.right" }
+        if utType.conforms(to: .text) { return "doc.text" }
+        if utType.conforms(to: .executable) { return "document" }
         return defaultIcon
     }
 
@@ -97,7 +97,7 @@ public enum ContentTypeIconMapper {
 
         // Disk images
         "application/x-iso9660-image": "opticaldiscdrive",
-        "application/x-apple-diskimage": "opticaldiscdrive",
+        "application/x-apple-diskimage": "opticaldiscdrive"
     ]
 
     /// MIME type category to icon mapping
@@ -107,7 +107,7 @@ public enum ContentTypeIconMapper {
         "image": "photo",
         "text": "doc.text",
         "application": "doc",
-        "font": "textformat",
+        "font": "textformat"
     ]
 
     // MARK: - Default Icon

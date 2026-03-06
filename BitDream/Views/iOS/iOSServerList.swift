@@ -7,7 +7,7 @@ struct iOSServerList: View {
     @Environment(\.dismiss) private var dismiss
     let modelContext: ModelContext
     let hosts: [Host]
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     @State private var showingAddServer = false
 
@@ -86,23 +86,6 @@ struct iOSServerList: View {
             Spacer()
         }
         .frame(maxWidth: .infinity)
-    }
-}
-#else
-// Empty struct for macOS to reference - this won't be compiled on iOS but provides the type
-struct iOSServerList: View {
-    let modelContext: ModelContext
-    let hosts: [Host]
-    @ObservedObject var store: Store
-
-    init(store: Store, modelContext: ModelContext, hosts: [Host]) {
-        self.modelContext = modelContext
-        self.hosts = hosts
-        self.store = store
-    }
-
-    var body: some View {
-        EmptyView()
     }
 }
 #endif

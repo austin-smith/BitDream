@@ -60,7 +60,7 @@ struct macOSTorrentListCompact: View {
     @Binding var sortProperty: SortProperty
     @Binding var sortOrder: SortOrder
     @State private var tableSortOrder = [KeyPathComparator(\TorrentTableRow.name)]
-    let store: Store
+    let store: AppStore
     let showContentTypeIcons: Bool
 
     @State private var deleteDialog: Bool = false
@@ -69,7 +69,7 @@ struct macOSTorrentListCompact: View {
     @State private var shouldSave: Bool = false
     @State private var renameDialog: Bool = false
     @State private var renameInput: String = ""
-    @State private var renameTargetId: Int? = nil
+    @State private var renameTargetId: Int?
     @State private var showingError = false
     @State private var errorMessage = ""
     @State private var moveDialog: Bool = false
@@ -79,7 +79,6 @@ struct macOSTorrentListCompact: View {
     private static let columnCustomizationKey = "mac.compact.columns.v1"
     private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "persistence")
     @AppStorage(Self.columnCustomizationKey) private var columnCustomizationData: Data?
-
 
     private var rows: [TorrentTableRow] {
         torrents.map { TorrentTableRow(torrent: $0) }
@@ -97,6 +96,22 @@ struct macOSTorrentListCompact: View {
         Set(selection.compactMap { id in
             store.torrents.first { $0.id == id }
         })
+    }
+
+    private var dialogState: TorrentActionDialogState {
+        TorrentActionDialogState(
+            labelInput: $labelInput,
+            labelDialog: $labelDialog,
+            deleteDialog: $deleteDialog,
+            renameInput: $renameInput,
+            renameDialog: $renameDialog,
+            renameTargetId: $renameTargetId,
+            movePath: $movePath,
+            moveDialog: $moveDialog,
+            moveShouldMove: $moveShouldMove,
+            showingError: $showingError,
+            errorMessage: $errorMessage
+        )
     }
 
     var body: some View {
@@ -149,7 +164,7 @@ struct macOSTorrentListCompact: View {
 
             // Status text column
             TableColumn("Status", value: \.status) { row in
-                if row.torrent.error != TorrentError.ok.rawValue {
+                if row.torrent.error != TorrentError.none.rawValue {
                     Text("Error")
                         .font(.system(size: 10))
                         .foregroundColor(.red)
@@ -320,7 +335,7 @@ struct macOSTorrentListCompact: View {
         .onChange(of: tableSortOrder) { _, newValue in
             syncMenuSortState(from: newValue)
         }
-        .onChange(of: columnCustomization) { oldValue, newValue in
+        .onChange(of: columnCustomization) { _, newValue in
             do {
                 let encoded = try JSONEncoder().encode(newValue)
                 columnCustomizationData = encoded
@@ -420,38 +435,13 @@ struct macOSTorrentListCompact: View {
                 self.selection = Set(rows.map { $0.id })
             }
         } else {
-            createTorrentContextMenu(
+            TorrentContextMenu(
                 torrents: Set(selectedTorrents),
                 store: store,
-                labelInput: $labelInput,
-                labelDialog: $labelDialog,
-                deleteDialog: $deleteDialog,
-                renameInput: $renameInput,
-                renameDialog: $renameDialog,
-                renameTargetId: $renameTargetId,
-                movePath: $movePath,
-                moveDialog: $moveDialog,
-                moveShouldMove: $moveShouldMove,
-                showingError: $showingError,
-                errorMessage: $errorMessage
+                dialogState: dialogState
             )
         }
     }
 
-}
-
-#else
-// Empty struct for iOS to reference
-struct macOSTorrentListCompact: View {
-    let torrents: [Torrent]
-    @Binding var selection: Set<Int>
-    @Binding var sortProperty: SortProperty
-    @Binding var sortOrder: SortOrder
-    let store: Store
-    let showContentTypeIcons: Bool
-
-    var body: some View {
-        EmptyView()
-    }
 }
 #endif

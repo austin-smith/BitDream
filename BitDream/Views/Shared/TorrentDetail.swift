@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 struct TorrentDetail: View {
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     var torrent: Torrent
 
     var body: some View {
@@ -20,24 +20,20 @@ struct TorrentDetail: View {
 func statusColor(for torrent: Torrent) -> Color {
     if torrent.statusCalc == TorrentStatusCalc.complete || torrent.statusCalc == TorrentStatusCalc.seeding {
         return .green.opacity(0.9)
-    }
-    else if torrent.statusCalc == TorrentStatusCalc.paused {
+    } else if torrent.statusCalc == TorrentStatusCalc.paused {
         return .gray
-    }
-    else if torrent.statusCalc == TorrentStatusCalc.retrievingMetadata {
+    } else if torrent.statusCalc == TorrentStatusCalc.retrievingMetadata {
         return .red.opacity(0.9)
-    }
-    else if torrent.statusCalc == TorrentStatusCalc.stalled {
+    } else if torrent.statusCalc == TorrentStatusCalc.stalled {
         return .orange.opacity(0.9)
-    }
-    else {
+    } else {
         return .blue.opacity(0.9)
     }
 }
 
 // Shared function to fetch torrent files
 @MainActor
-func fetchTorrentFiles(transferId: Int, store: Store, completion: @escaping ([TorrentFile], [TorrentFileStats]) -> Void) {
+func fetchTorrentFiles(transferId: Int, store: AppStore, completion: @escaping ([TorrentFile], [TorrentFileStats]) -> Void) {
     let info = makeConfig(store: store)
 
     getTorrentFiles(transferId: transferId, info: info, onReceived: { files, fileStats in
@@ -47,7 +43,7 @@ func fetchTorrentFiles(transferId: Int, store: Store, completion: @escaping ([To
 
 // Shared function to fetch torrent peers
 @MainActor
-func fetchTorrentPeers(transferId: Int, store: Store, completion: @escaping ([Peer], PeersFrom?) -> Void) {
+func fetchTorrentPeers(transferId: Int, store: AppStore, completion: @escaping ([Peer], PeersFrom?) -> Void) {
     let info = makeConfig(store: store)
 
     getTorrentPeers(transferId: transferId, info: info, onReceived: { peers, peersFrom in
@@ -57,7 +53,7 @@ func fetchTorrentPeers(transferId: Int, store: Store, completion: @escaping ([Pe
 
 // Shared function to play/pause a torrent
 @MainActor
-func toggleTorrentPlayPause(torrent: Torrent, store: Store, completion: @escaping () -> Void = {}) {
+func toggleTorrentPlayPause(torrent: Torrent, store: AppStore, completion: @escaping () -> Void = {}) {
     let info = makeConfig(store: store)
     playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
         handleTransmissionResponse(response,
@@ -73,8 +69,19 @@ func toggleTorrentPlayPause(torrent: Torrent, store: Store, completion: @escapin
     })
 }
 
+struct TorrentDetailsDisplay {
+    let percentComplete: String
+    let percentAvailable: String
+    let downloadedFormatted: String
+    let sizeWhenDoneFormatted: String
+    let uploadedFormatted: String
+    let uploadRatio: String
+    let activityDate: String
+    let addedDate: String
+}
+
 // Shared function to format torrent details
-func formatTorrentDetails(torrent: Torrent) -> (percentComplete: String, percentAvailable: String, downloadedFormatted: String, sizeWhenDoneFormatted: String, uploadedFormatted: String, uploadRatio: String, activityDate: String, addedDate: String) {
+func formatTorrentDetails(torrent: Torrent) -> TorrentDetailsDisplay {
 
     let percentComplete = String(format: "%.1f%%", torrent.percentDone * 100)
     let percentAvailable = String(format: "%.1f%%", ((Double(torrent.haveUnchecked + torrent.haveValid + torrent.desiredAvailable) / Double(torrent.sizeWhenDone))) * 100)
@@ -86,7 +93,16 @@ func formatTorrentDetails(torrent: Torrent) -> (percentComplete: String, percent
     let activityDate = formatTorrentDetailDate(torrent.activityDate)
     let addedDate = formatTorrentDetailDate(torrent.addedDate)
 
-    return (percentComplete, percentAvailable, downloadedFormatted, sizeWhenDoneFormatted, uploadedFormatted, uploadRatio, activityDate, addedDate)
+    return TorrentDetailsDisplay(
+        percentComplete: percentComplete,
+        percentAvailable: percentAvailable,
+        downloadedFormatted: downloadedFormatted,
+        sizeWhenDoneFormatted: sizeWhenDoneFormatted,
+        uploadedFormatted: uploadedFormatted,
+        uploadRatio: uploadRatio,
+        activityDate: activityDate,
+        addedDate: addedDate
+    )
 }
 
 // Shared header view for both platforms
@@ -126,7 +142,7 @@ struct TorrentDetailHeaderView: View {
 // Shared toolbar menu for both platforms
 struct TorrentDetailToolbar: ToolbarContent {
     var torrent: Torrent
-    var store: Store
+    var store: AppStore
 
     var body: some ToolbarContent {
         #if os(macOS)

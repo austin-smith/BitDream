@@ -1,0 +1,22 @@
+disabled_rules:
+  - line_length
+  - todo
+
+excluded:
+  - build
+  # TODO: Refactor this file and remove the temporary lint exclusion.
+  - BitDream/Transmission/TransmissionFunctions.swift
+
+type_name:
+  excluded:
+    - "^iOS[A-Z].*$"
+    - "^macOS[A-Z].*$"
+
+identifier_name:
+  excluded:
+    - "^xt$"
+    - "^id$"
+
+file_length:
+  warning: 600
+  error: 1000

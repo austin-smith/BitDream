@@ -108,7 +108,7 @@ final class HostRepository: HostPersisting {
         )
 
         let credentialKey = host.ensureCredentialKey()
-        guard KeychainPasswordStore.savePassword(normalizedDraft.password, credentialKey: credentialKey) else {
+        guard KeychainService.savePassword(normalizedDraft.password, credentialKey: credentialKey) else {
             rollbackChangesIfNeeded()
             throw HostPersistenceError.keychainFailure("Failed to write credentials")
         }
@@ -118,7 +118,7 @@ final class HostRepository: HostPersisting {
             try saveIfNeeded()
         } catch {
             rollbackChangesIfNeeded()
-            _ = KeychainPasswordStore.deletePassword(credentialKey: credentialKey)
+            _ = KeychainService.deletePassword(credentialKey: credentialKey)
             throw HostPersistenceError.saveFailure(error.localizedDescription)
         }
 
@@ -132,8 +132,8 @@ final class HostRepository: HostPersisting {
             throw HostPersistenceError.notFound(serverID)
         }
 
-        let previousCredentialKey = KeychainPasswordStore.credentialKeyIfPresent(for: host)
-        let previousPassword = previousCredentialKey.map { KeychainPasswordStore.readPassword(credentialKey: $0) }
+        let previousCredentialKey = KeychainService.credentialKeyIfPresent(for: host)
+        let previousPassword = previousCredentialKey.map { KeychainService.readPassword(credentialKey: $0) }
 
         if normalizedDraft.isDefault {
             do {
@@ -152,7 +152,7 @@ final class HostRepository: HostPersisting {
         host.isDefault = normalizedDraft.isDefault
 
         let credentialKey = host.ensureCredentialKey()
-        guard KeychainPasswordStore.savePassword(normalizedDraft.password, credentialKey: credentialKey) else {
+        guard KeychainService.savePassword(normalizedDraft.password, credentialKey: credentialKey) else {
             rollbackChangesIfNeeded()
             throw HostPersistenceError.keychainFailure("Failed to write credentials")
         }
@@ -178,7 +178,7 @@ final class HostRepository: HostPersisting {
             throw HostPersistenceError.notFound(serverID)
         }
 
-        let credentialKey = KeychainPasswordStore.credentialKeyIfPresent(for: host)
+        let credentialKey = KeychainService.credentialKeyIfPresent(for: host)
         modelContext.delete(host)
 
         do {
@@ -188,7 +188,7 @@ final class HostRepository: HostPersisting {
             throw HostPersistenceError.saveFailure(error.localizedDescription)
         }
 
-        if let credentialKey, !KeychainPasswordStore.deletePassword(credentialKey: credentialKey) {
+        if let credentialKey, !KeychainService.deletePassword(credentialKey: credentialKey) {
             logger.error("Failed to remove credentials for deleted server ID: \(serverID)")
         }
 
@@ -251,8 +251,10 @@ final class HostRepository: HostPersisting {
             logger.error("Catalog sync failed: \(error.localizedDescription)")
         }
     }
+}
 
-    private func syncCatalogInternal() async throws {
+private extension HostRepository {
+    func syncCatalogInternal() async throws {
         let hosts = try ensureCredentialKeysAndSaveIfNeeded(hosts: fetchHosts())
 
         let records = hosts.map { host in
@@ -280,7 +282,7 @@ final class HostRepository: HostPersisting {
         writeServersIndex(servers: summaries)
     }
 
-    private func syncCatalogAfterUserMutation() async throws {
+    func syncCatalogAfterUserMutation() async throws {
         do {
             try await syncCatalogInternal()
         } catch {
@@ -289,7 +291,7 @@ final class HostRepository: HostPersisting {
         }
     }
 
-    private func fetchHosts() throws -> [Host] {
+    func fetchHosts() throws -> [Host] {
         let descriptor = FetchDescriptor<Host>(
             sortBy: [Foundation.SortDescriptor(\Host.name)]
         )
@@ -297,7 +299,7 @@ final class HostRepository: HostPersisting {
         return try modelContext.fetch(descriptor)
     }
 
-    private func fetchHost(serverID: String) throws -> Host? {
+    func fetchHost(serverID: String) throws -> Host? {
         let targetServerID = serverID
         let descriptor = FetchDescriptor<Host>(
             predicate: #Predicate<Host> { host in
@@ -307,7 +309,7 @@ final class HostRepository: HostPersisting {
         return try modelContext.fetch(descriptor).first
     }
 
-    private func validatedDraft(_ draft: HostDraft) throws -> HostDraft {
+    func validatedDraft(_ draft: HostDraft) throws -> HostDraft {
         let trimmedServer = draft.server.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedServer.isEmpty else {
             throw HostPersistenceError.validation("Hostname is required.")
@@ -331,13 +333,13 @@ final class HostRepository: HostPersisting {
         )
     }
 
-    private func clearDefault(except serverID: String?) throws {
+    func clearDefault(except serverID: String?) throws {
         for host in try fetchHosts() where host.isDefault && host.serverID != serverID {
             host.isDefault = false
         }
     }
 
-    private func ensureCredentialKeysAndSaveIfNeeded(hosts: [Host]) throws -> [Host] {
+    func ensureCredentialKeysAndSaveIfNeeded(hosts: [Host]) throws -> [Host] {
         var changed = false
 
         for host in hosts {
@@ -355,19 +357,19 @@ final class HostRepository: HostPersisting {
         return hosts
     }
 
-    private func saveIfNeeded() throws {
+    func saveIfNeeded() throws {
         if modelContext.hasChanges {
             try modelContext.save()
         }
     }
 
-    private func rollbackChangesIfNeeded() {
+    func rollbackChangesIfNeeded() {
         if modelContext.hasChanges {
             modelContext.rollback()
         }
     }
 
-    private func catalogSyncFailure(from error: Error) -> HostPersistenceError {
+    func catalogSyncFailure(from error: Error) -> HostPersistenceError {
         if let persistenceError = error as? HostPersistenceError,
            case .catalogSyncFailure = persistenceError {
             return persistenceError
@@ -376,21 +378,21 @@ final class HostRepository: HostPersisting {
         return HostPersistenceError.catalogSyncFailure(error.localizedDescription)
     }
 
-    private func restoreKeychainAfterFailedSave(
+    func restoreKeychainAfterFailedSave(
         previousCredentialKey: String?,
         previousPassword: String?,
         attemptedCredentialKey: String
     ) {
         if let previousCredentialKey {
             if let previousPassword {
-                _ = KeychainPasswordStore.savePassword(previousPassword, credentialKey: previousCredentialKey)
+                _ = KeychainService.savePassword(previousPassword, credentialKey: previousCredentialKey)
             }
             if previousCredentialKey != attemptedCredentialKey {
-                _ = KeychainPasswordStore.deletePassword(credentialKey: attemptedCredentialKey)
+                _ = KeychainService.deletePassword(credentialKey: attemptedCredentialKey)
             }
             return
         }
 
-        _ = KeychainPasswordStore.deletePassword(credentialKey: attemptedCredentialKey)
+        _ = KeychainService.deletePassword(credentialKey: attemptedCredentialKey)
     }
 }

@@ -9,16 +9,15 @@ import SwiftUI
 
 #if os(macOS)
 struct macOSStatisticsView: View {
-    @EnvironmentObject var store: Store
+    @EnvironmentObject var store: AppStore
 
     private let durationFormatter: DateComponentsFormatter = {
-        let f = DateComponentsFormatter()
-        f.allowedUnits = [.day, .hour, .minute, .second]
-        f.unitsStyle = .abbreviated
-        f.zeroFormattingBehavior = .dropLeading
-        return f
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.day, .hour, .minute, .second]
+        formatter.unitsStyle = .abbreviated
+        formatter.zeroFormattingBehavior = .dropLeading
+        return formatter
     }()
-
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {

@@ -72,8 +72,8 @@ func bucketize(bitset: [Bool], totalBuckets: Int) -> [Double] {
         let end = ((bucket + 1) * totalPieces) / totalBuckets
         if end <= start { continue }
         var have = 0
-        for i in start..<end {
-            if bitset[i] { have += 1 }
+        for pieceIndex in start..<end where bitset[pieceIndex] {
+            have += 1
         }
         let count = max(1, end - start)
         fractions[bucket] = Double(have) / Double(count)
@@ -81,9 +81,9 @@ func bucketize(bitset: [Bool], totalBuckets: Int) -> [Double] {
     return fractions
 }
 
-func colorForFraction(_ f: Double) -> Color {
-    if f <= 0 { return Color.secondary.opacity(0.25) }
-    let clamped = max(0.0, min(1.0, f))
+func colorForFraction(_ fraction: Double) -> Color {
+    if fraction <= 0 { return Color.secondary.opacity(0.25) }
+    let clamped = max(0.0, min(1.0, fraction))
     // Continuous accent opacity from 0.2 to 1.0 based on completion fraction
     let minOpacity = 0.2
     let opacity = minOpacity + clamped * (1.0 - minOpacity)

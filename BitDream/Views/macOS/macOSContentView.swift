@@ -15,7 +15,7 @@ struct macOSContentView: View {
     @State private var showingThemeSettings = false
     let modelContext: ModelContext
     let hosts: [Host]
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     // Add ThemeManager to access accent color
     @ObservedObject private var themeManager = ThemeManager.shared
@@ -239,28 +239,28 @@ struct macOSContentView: View {
     // View with just sheet modifiers
     private var viewWithSheets: some View {
         baseView
-        .sheet(isPresented: $store.setup) {
+        .sheet(isPresented: $store.setup, content: {
             ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)
-        }
-        .sheet(isPresented: $store.editServers) {
+        })
+        .sheet(isPresented: $store.editServers, content: {
             ServerList(store: store, modelContext: modelContext, hosts: hosts)
-        }
+        })
         .sheet(isPresented: $store.isShowingAddAlert, onDismiss: {
             // Advance queued magnet links when the sheet closes
             store.advanceMagnetQueue()
-        }) {
+        }, content: {
             AddTorrent(store: store)
-        }
-        .sheet(isPresented: $store.isError) {
+        })
+        .sheet(isPresented: $store.isError, content: {
             ErrorDialog(store: store)
                 .frame(width: 400, height: 400)
-        }
+        })
     }
 
     // View with basic event handlers
     private var viewWithHandlers: some View {
         viewWithSheets
-        .onChange(of: sidebarSelection) { oldValue, newValue in
+        .onChange(of: sidebarSelection) { _, newValue in
             // Update the filter
             filterBySelection = newValue.filter
 
@@ -299,9 +299,9 @@ struct macOSContentView: View {
                     get: { sortProperty == property },
                     set: { if $0 { sortProperty = property } }
                 )
-                Toggle(isOn: isSelected) {
+                Toggle(isOn: isSelected, label: {
                     Text(property.rawValue)
-                }
+                })
             }
 
             Divider()
@@ -310,17 +310,17 @@ struct macOSContentView: View {
                 get: { sortOrder == .ascending },
                 set: { if $0 { sortOrder = .ascending } }
             )
-            Toggle(isOn: isAscending) {
+            Toggle(isOn: isAscending, label: {
                 Text("Ascending")
-            }
+            })
 
             let isDescending = Binding<Bool>(
                 get: { sortOrder == .descending },
                 set: { if $0 { sortOrder = .descending } }
             )
-            Toggle(isOn: isDescending) {
+            Toggle(isOn: isDescending, label: {
                 Text("Descending")
-            }
+            })
         }
     }
 
@@ -345,7 +345,7 @@ struct macOSContentView: View {
                             } else {
                                 includedLabels.insert(label)
                             }
-                        }) {
+                        }, label: {
                             HStack {
                                 Image(systemName: includedLabels.contains(label) ? "checkmark.circle.fill" : excludedLabels.contains(label) ? "minus.circle.fill" : "circle")
                                     .foregroundColor(includedLabels.contains(label) ? themeManager.accentColor : excludedLabels.contains(label) ? .red : .secondary)
@@ -360,7 +360,7 @@ struct macOSContentView: View {
                                     .foregroundColor(.secondary)
                             }
                             .contentShape(Rectangle())
-                        }
+                        })
                         .buttonStyle(.plain)
                     }
 
@@ -375,7 +375,7 @@ struct macOSContentView: View {
                         includedLabels.removeAll()
                         excludedLabels.removeAll()
                     }
-                }) {
+                }, label: {
                     HStack {
                         Image(systemName: showOnlyNoLabels ? "checkmark.circle.fill" : "circle")
                             .foregroundColor(showOnlyNoLabels ? themeManager.accentColor : .secondary)
@@ -391,7 +391,7 @@ struct macOSContentView: View {
                             .foregroundColor(.secondary)
                     }
                     .contentShape(Rectangle())
-                }
+                })
                 .buttonStyle(.plain)
             }
 
@@ -421,11 +421,11 @@ struct macOSContentView: View {
     // Enhanced view (state changes + search + toolbar)
     private var enhancedView: some View {
         viewWithHandlers
-        .onChange(of: columnVisibility) { oldValue, newValue in
+        .onChange(of: columnVisibility) { _, newValue in
             UserDefaults.standard.sidebarVisibility = newValue
             focusedTarget = .contentList
         }
-        .onChange(of: isInspectorVisible) { oldValue, newValue in
+        .onChange(of: isInspectorVisible) { _, newValue in
             UserDefaults.standard.inspectorVisibility = newValue
             // Defer state change to avoid publishing during view update
             Task { @MainActor in
@@ -433,13 +433,13 @@ struct macOSContentView: View {
             }
             focusedTarget = .contentList
         }
-        .onChange(of: sortProperty) { oldValue, newValue in
+        .onChange(of: sortProperty) { _, newValue in
             UserDefaults.standard.sortProperty = newValue
         }
-        .onChange(of: sortOrder) { oldValue, newValue in
+        .onChange(of: sortOrder) { _, newValue in
             UserDefaults.standard.sortOrder = newValue
         }
-        .onChange(of: store.shouldActivateSearch) { oldValue, newValue in
+        .onChange(of: store.shouldActivateSearch) { _, newValue in
             if newValue {
                 isSearchPresented = true
                 // Defer state change to avoid publishing during view update
@@ -448,7 +448,7 @@ struct macOSContentView: View {
                 }
             }
         }
-        .onChange(of: store.shouldToggleInspector) { oldValue, newValue in
+        .onChange(of: store.shouldToggleInspector) { _, newValue in
             if newValue {
                 withAnimation {
                     isInspectorVisible.toggle()
@@ -478,12 +478,12 @@ struct macOSContentView: View {
             ToolbarItem(placement: .automatic) {
                 Button(action: {
                     showingFilterPopover.toggle()
-                }) {
+                }, label: {
                     Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
                         .if(hasActiveFilters) { view in
                             view.foregroundColor(themeManager.accentColor)
                         }
-                }
+                })
                 .help(hasActiveFilters ? "Active filters (\(activeFilterCount))" : "Filter torrents")
                 .popover(isPresented: $showingFilterPopover, arrowEdge: .bottom) {
                     VStack(alignment: .leading, spacing: 12) {
@@ -498,9 +498,9 @@ struct macOSContentView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: {
                     store.isShowingAddAlert.toggle()
-                }) {
+                }, label: {
                     Label("Add Torrent", systemImage: "plus")
-                }
+                })
                 .help("Add torrent")
             }
 
@@ -510,12 +510,12 @@ struct macOSContentView: View {
                     withAnimation {
                         isCompactMode.toggle()
                     }
-                }) {
+                }, label: {
                     Label(
                         isCompactMode ? "Expanded View" : "Compact View",
                         systemImage: isCompactMode ? "rectangle.grid.1x2" : "list.bullet"
                     )
-                }
+                })
                 .help(isCompactMode ? "Expanded view" : "Compact view")
             }
 
@@ -526,9 +526,9 @@ struct macOSContentView: View {
                     withAnimation {
                         isInspectorVisible.toggle()
                     }
-                }) {
+                }, label: {
                     Label("Inspector", systemImage: "sidebar.right")
-                }
+                })
                 .help(isInspectorVisible ? "Hide inspector" : "Show inspector")
             }
         }
@@ -610,7 +610,7 @@ struct macOSContentView: View {
         VStack(spacing: 0) {
             StatsHeaderView(store: store)
 
-            if store.connectionStatus == Store.ConnectionStatus.reconnecting {
+            if store.connectionStatus == AppStore.ConnectionStatus.reconnecting {
                 ConnectionBannerView(status: store.connectionStatus, retryAt: store.nextRetryAt)
             }
 
@@ -709,7 +709,7 @@ struct macOSContentView: View {
                 }
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isDropTargeted)
             )
-            .onChange(of: isDropTargeted) { oldValue, newValue in
+            .onChange(of: isDropTargeted) { _, newValue in
                 if !newValue {
                     // Clear dragged files when drag ends
                     draggedTorrentInfo = []
@@ -769,7 +769,7 @@ struct macOSContentView: View {
 private struct ConnectionBannerView: View {
     @Environment(\.openWindow) private var openWindow
 
-    let status: Store.ConnectionStatus
+    let status: AppStore.ConnectionStatus
     let retryAt: Date?
 
     var body: some View {
@@ -820,8 +820,8 @@ private final class TorrentInfoAccumulator: Sendable {
 struct TorrentDropDelegate: DropDelegate {
     @Binding var isDropTargeted: Bool
     @Binding var draggedTorrentInfo: [TorrentInfo]
-    let store: Store
-    private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "ui")
+    let store: AppStore
+    private nonisolated static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "ui")
 
     private nonisolated static func readTorrentData(from url: URL) async throws -> Data {
         try await Task.detached(priority: .userInitiated) {
@@ -842,33 +842,31 @@ struct TorrentDropDelegate: DropDelegate {
         let parsedInfos = TorrentInfoAccumulator()
         let group = DispatchGroup()
 
-        for provider in providers {
-            if provider.canLoadObject(ofClass: URL.self) {
-                group.enter()
-                _ = provider.loadObject(ofClass: URL.self) { url, loadError in
-                    defer { group.leave() }
-                    guard let url else {
-                        if let loadError {
-                            Self.logger.error("Failed to load dropped file URL: \(loadError.localizedDescription)")
-                        }
-                        return
+        for provider in providers where provider.canLoadObject(ofClass: URL.self) {
+            group.enter()
+            _ = provider.loadObject(ofClass: URL.self) { url, loadError in
+                defer { group.leave() }
+                guard let url else {
+                    if let loadError {
+                        Self.logger.error("Failed to load dropped file URL: \(loadError.localizedDescription)")
                     }
-                    guard url.pathExtension.lowercased() == "torrent" else { return }
+                    return
+                }
+                guard url.pathExtension.lowercased() == "torrent" else { return }
 
-                    do {
-                        var didAccess = false
-                        if url.isFileURL {
-                            didAccess = url.startAccessingSecurityScopedResource()
-                        }
-                        defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
-
-                        let data = try Data(contentsOf: url)
-                        if let torrentInfo = parseTorrentInfo(from: data) {
-                            parsedInfos.append(torrentInfo)
-                        }
-                    } catch {
-                        Self.logger.error("Failed to parse dropped torrent metadata from \(url.lastPathComponent): \(error.localizedDescription)")
+                do {
+                    var didAccess = false
+                    if url.isFileURL {
+                        didAccess = url.startAccessingSecurityScopedResource()
                     }
+                    defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
+
+                    let data = try Data(contentsOf: url)
+                    if let torrentInfo = parseTorrentInfo(from: data) {
+                        parsedInfos.append(torrentInfo)
+                    }
+                } catch {
+                    Self.logger.error("Failed to parse dropped torrent metadata from \(url.lastPathComponent): \(error.localizedDescription)")
                 }
             }
         }
@@ -887,23 +885,21 @@ struct TorrentDropDelegate: DropDelegate {
     func performDrop(info: DropInfo) -> Bool {
         isDropTargeted = false
 
-        for provider in info.itemProviders(for: [.fileURL]) {
-            if provider.canLoadObject(ofClass: URL.self) {
-                _ = provider.loadObject(ofClass: URL.self) { url, loadError in
-                    guard let url else {
-                        if let loadError {
-                            Self.logger.error("Failed to load dropped file URL: \(loadError.localizedDescription)")
-                        }
-                        return
+        for provider in info.itemProviders(for: [.fileURL]) where provider.canLoadObject(ofClass: URL.self) {
+            _ = provider.loadObject(ofClass: URL.self) { url, loadError in
+                guard let url else {
+                    if let loadError {
+                        Self.logger.error("Failed to load dropped file URL: \(loadError.localizedDescription)")
                     }
-                    guard url.pathExtension.lowercased() == "torrent" else { return }
-                    Task { @MainActor in
-                        do {
-                            let data = try await Self.readTorrentData(from: url)
-                            addTorrentFromFileData(data, store: store)
-                        } catch {
-                            Self.logger.error("Failed to read dropped torrent file \(url.lastPathComponent): \(error.localizedDescription)")
-                        }
+                    return
+                }
+                guard url.pathExtension.lowercased() == "torrent" else { return }
+                Task { @MainActor in
+                    do {
+                        let data = try await Self.readTorrentData(from: url)
+                        addTorrentFromFileData(data, store: store)
+                    } catch {
+                        Self.logger.error("Failed to read dropped torrent file \(url.lastPathComponent): \(error.localizedDescription)")
                     }
                 }
             }
@@ -970,7 +966,7 @@ struct LabelFilterChip: View {
             } else {
                 onAction(.include)
             }
-        }) {
+        }, label: {
             HStack(spacing: 4) {
                 Image(systemName: "tag.fill")
                     .font(.caption2)
@@ -990,6 +986,7 @@ struct LabelFilterChip: View {
                         .foregroundColor(.red)
                 }
             }
+        })
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(backgroundColor)
@@ -998,21 +995,8 @@ struct LabelFilterChip: View {
                     .stroke(borderColor, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
         .buttonStyle(.plain)
         .help(isIncluded ? "Click to exclude '\(label)'" : isExcluded ? "Click to clear filter" : "Click to include '\(label)'")
-    }
-}
-
-#else
-// Empty struct for iOS to reference - this won't be compiled on iOS but provides the type
-struct macOSContentView: View {
-    let modelContext: ModelContext
-    let hosts: [Host]
-    @ObservedObject var store: Store
-
-    var body: some View {
-        EmptyView()
     }
 }
 #endif

@@ -122,7 +122,7 @@ private enum WidgetRefreshRunner {
         config.scheme = host.isSSL ? "https" : "http"
 
         let username = host.username
-        let password = KeychainPasswordStore.readPassword(credentialKey: host.credentialKey)
+        let password = KeychainService.readPassword(credentialKey: host.credentialKey)
         let auth = TransmissionAuth(username: username, password: password)
 
         let group = DispatchGroup()
@@ -131,21 +131,21 @@ private enum WidgetRefreshRunner {
         // Fetch session stats
         group.enter()
         // Widget refresh intentionally uses a non-@MainActor path to avoid pumping through the main actor.
-        getSessionStatsForWidgetRefresh(config: config, auth: auth) { s, errorMessage in
+        getSessionStatsForWidgetRefresh(config: config, auth: auth) { sessionStats, errorMessage in
             if let errorMessage {
                 logger.error("Background refresh session stats request failed for host \(hostIdentifier): \(errorMessage)")
             }
-            results.setStats(s)
+            results.setStats(sessionStats)
             group.leave()
         }
 
         // Fetch torrent list for status breakdown
         group.enter()
-        getTorrentsForWidgetRefresh(config: config, auth: auth) { t, errorMessage in
+        getTorrentsForWidgetRefresh(config: config, auth: auth) { torrents, errorMessage in
             if let errorMessage {
                 logger.notice("Background refresh torrent list request failed for host \(hostIdentifier): \(errorMessage)")
             }
-            results.setTorrents(t ?? [])
+            results.setTorrents(torrents ?? [])
             group.leave()
         }
 

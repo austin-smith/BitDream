@@ -210,7 +210,7 @@ private func decodeRPCResponse<R: Codable & Sendable>(
             return .failure(error)
         }
     default:
-        let errorMessage = data.map { String(decoding: $0, as: UTF8.self) } ?? "Unknown error"
+        let errorMessage = data.flatMap { String(bytes: $0, encoding: .utf8) } ?? "Unknown error"
         return .failure(
             NSError(
                 domain: RuntimeDomain.transmission,
@@ -288,7 +288,7 @@ private func executeStatusOnlyRequest<T: Codable>(
         return
     }
 
-    sendRPCRequest(method: method, requestData: requestData, config: config, auth: auth, retrying: retrying) { (data, resp, error) in
+    sendRPCRequest(method: method, requestData: requestData, config: config, auth: auth, retrying: retrying) { (_, resp, error) in
         if error != nil {
             return completion(TransmissionResponse.configError)
         }
@@ -382,7 +382,7 @@ private func executeTorrentAction(actionMethod: String, torrentId: Int, config: 
 // MARK: - API Functions
 
 /// Makes a request to the server for a list of the currently running torrents
-public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping ([Torrent]?, String?) -> Void) -> Void {
+public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping ([Torrent]?, String?) -> Void) {
     let fields: [String] = [
         "activityDate", "addedDate", "desiredAvailable", "error", "errorString",
         "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled",
@@ -408,7 +408,7 @@ public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onRe
     }
 }
 
-func getTorrentsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping ([Torrent]?, String?) -> Void) -> Void {
+func getTorrentsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping ([Torrent]?, String?) -> Void) {
     let fields: [String] = [
         "activityDate", "addedDate", "desiredAvailable", "error", "errorString",
         "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled",
@@ -434,7 +434,7 @@ func getTorrentsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionA
     }
 }
 
-public func getSessionStats(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping (SessionStats?, String?) -> Void) -> Void {
+public func getSessionStats(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping (SessionStats?, String?) -> Void) {
     performTransmissionDataRequest(
         method: "session-stats",
         args: EmptyArguments(),
@@ -450,7 +450,7 @@ public func getSessionStats(config: TransmissionConfig, auth: TransmissionAuth, 
     }
 }
 
-func getSessionStatsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping (SessionStats?, String?) -> Void) -> Void {
+func getSessionStatsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping (SessionStats?, String?) -> Void) {
     performTransmissionDataRequestInBackground(
         method: "session-stats",
         args: EmptyArguments(),
@@ -466,13 +466,22 @@ func getSessionStatsForWidgetRefresh(config: TransmissionConfig, auth: Transmiss
     }
 }
 
+// TODO: Revisit this signature and reduce parameter count.
+// swiftlint:disable function_parameter_count
 /// Makes a request to the server containing either a base64 representation of a .torrent file or a magnet link
 /// - Parameter fileUrl: Either a magnet link or base64 encoded file
 /// - Parameter auth: A `TransmissionAuth` containing username and password for the server
 /// - Parameter file: A boolean value; true if `fileUrl` is a base64 encoded file and false if `fileUrl` is a magnet link
 /// - Parameter config: A `TransmissionConfig` containing the server's address and port
 /// - Parameter onAdd: An escaping function that receives the servers response code represented as a `TransmissionResponse`
-public func addTorrent(fileUrl: String, saveLocation: String, auth: TransmissionAuth, file: Bool, config: TransmissionConfig, onAdd: @MainActor @escaping ((response: TransmissionResponse, transferId: Int)) -> Void) -> Void {
+public func addTorrent(
+    fileUrl: String,
+    saveLocation: String,
+    auth: TransmissionAuth,
+    file: Bool,
+    config: TransmissionConfig,
+    onAdd: @MainActor @escaping ((response: TransmissionResponse, transferId: Int)) -> Void
+) {
     // Create the torrent body based on the value of `fileUrl` and `file`
     let args: [String: String] = file ?
         ["metainfo": fileUrl, "download-dir": saveLocation] :
@@ -491,17 +500,18 @@ public func addTorrent(fileUrl: String, saveLocation: String, auth: Transmission
             } else {
                 onAdd((TransmissionResponse.failed, 0))
             }
-        case .failure(_):
+        case .failure:
             onAdd((TransmissionResponse.failed, 0))
         }
     }
 }
+// swiftlint:enable function_parameter_count
 
 /// Gets the list of files in a torrent
 /// - Parameter transferId: The ID of the torrent to get files for
 /// - Parameter info: A tuple containing the server config and auth info
 /// - Parameter onReceived: A callback that receives the list of files and their stats
-public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, auth: TransmissionAuth), onReceived: @MainActor @escaping ([TorrentFile], [TorrentFileStats])->(Void)) {
+public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, auth: TransmissionAuth), onReceived: @MainActor @escaping ([TorrentFile], [TorrentFileStats]) -> Void) {
     let args = TorrentFilesRequestArgs(
         fields: ["files", "fileStats"],
         ids: [transferId]
@@ -521,7 +531,7 @@ public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, 
             } else {
                 onReceived([], [])
             }
-        case .failure(_):
+        case .failure:
             onReceived([], [])
         }
     }
@@ -533,7 +543,7 @@ public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, 
 /// - Parameter config: A `TransmissionConfig` containing the server's address and port
 /// - Parameter auth: A `TransmissionAuth` containing username and password for the server
 /// - Parameter onDel: An escaping function that receives the server's response code as a `TransmissionResponse`
-public func deleteTorrent(torrent: Torrent, erase: Bool, config: TransmissionConfig, auth: TransmissionAuth, onDel: @MainActor @escaping (TransmissionResponse) -> Void) -> Void {
+public func deleteTorrent(torrent: Torrent, erase: Bool, config: TransmissionConfig, auth: TransmissionAuth, onDel: @MainActor @escaping (TransmissionResponse) -> Void) {
     let args = TransmissionRemoveRequestArgs(
         ids: [torrent.id],
         deleteLocalData: erase
@@ -563,7 +573,12 @@ public struct SessionInfo {
 /// - Parameter config: The server's config
 /// - Parameter auth: The username and password for the server
 /// - Parameter onResponse: An escaping function that receives session information from the server
-public func getSession(config: TransmissionConfig, auth: TransmissionAuth, onResponse: @MainActor @escaping (TransmissionSessionResponseArguments) -> Void, onError: @MainActor @escaping (String) -> Void) {
+public func getSession(
+    config: TransmissionConfig,
+    auth: TransmissionAuth,
+    onResponse: @MainActor @escaping (TransmissionSessionResponseArguments) -> Void,
+    onError: @MainActor @escaping (String) -> Void
+) {
     let fields = [
         // Existing fields
         "download-dir",
@@ -750,6 +765,8 @@ public func setTorrentLocation(
     )
 }
 
+// TODO: Revisit this signature and reduce parameter count.
+// swiftlint:disable function_parameter_count
 /// Rename a path (file or folder) within a torrent
 /// - Parameters:
 ///   - torrentId: The torrent ID (Transmission expects exactly one id)
@@ -782,6 +799,7 @@ public func renameTorrentPath(
         }
     )
 }
+// swiftlint:enable function_parameter_count
 
 /// Set priority for specific files in a torrent
 public func setFilePriority(
@@ -1015,7 +1033,7 @@ public func getTorrentPeers(
             } else {
                 onReceived([], nil)
             }
-        case .failure(_):
+        case .failure:
             onReceived([], nil)
         }
     }
@@ -1051,7 +1069,7 @@ public func getTorrentPieces(
             } else {
                 onReceived(0, 0, "")
             }
-        case .failure(_):
+        case .failure:
             onReceived(0, 0, "")
         }
     }

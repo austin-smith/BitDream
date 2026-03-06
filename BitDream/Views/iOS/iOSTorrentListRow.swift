@@ -4,13 +4,12 @@ import SwiftUI
 #if os(iOS)
 struct iOSTorrentListRow: View {
     var torrent: Torrent
-    var store: Store
-    var selectedTorrents: Set<Torrent>
+    var store: AppStore
     var showContentTypeIcons: Bool
 
-    @State var deleteDialog: Bool = false
-    @State var labelDialog: Bool = false
-    @State var labelInput: String = ""
+    @State private var deleteDialog: Bool = false
+    @State private var labelDialog: Bool = false
+    @State private var labelInput: String = ""
     @State private var renameDialog: Bool = false
     @State private var renameInput: String = ""
     @State private var moveDialog: Bool = false
@@ -18,258 +17,61 @@ struct iOSTorrentListRow: View {
     @State private var moveShouldMove: Bool = true
     @State private var showingError = false
     @State private var errorMessage = ""
-    @Environment(\.colorScheme) var colorScheme
-
-    // MARK: - Rename validation helpers
-    private var trimmedRenameInput: String {
-        renameInput.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var isRenameValid: Bool {
-        validateNewName(renameInput, current: torrent.name) == nil && trimmedRenameInput != torrent.name
-    }
-
-    // Create reusable torrent actions view
-    @ViewBuilder
-    private func torrentActionsMenu() -> some View {
-        // Play/Pause Button
-        Button(action: {
-            let info = makeConfig(store: store)
-            playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
-                handleTransmissionResponse(response,
-                    onSuccess: {
-                        // Success - torrent state will update automatically
-                    },
-                    onError: { error in
-                        errorMessage = error
-                        showingError = true
-                    }
-                )
-            })
-        }) {
-            Label(torrent.status == TorrentStatus.stopped.rawValue ? "Resume" : "Pause",
-                  systemImage: torrent.status == TorrentStatus.stopped.rawValue ? "play" : "pause")
-        }
-
-        // Resume Now Button (only show for stopped torrents)
-        if torrent.status == TorrentStatus.stopped.rawValue {
-            Button(action: {
-                resumeTorrentNow(torrent: torrent, store: store)
-            }) {
-                Label("Resume Now", systemImage: "play.fill")
-            }
-        }
-
-        Divider()
-
-        // MARK: - Priority & Queue Section
-
-        // Priority Menu
-        Menu {
-            Button(action: {
-                let info = makeConfig(store: store)
-                updateTorrent(
-                    args: TorrentSetRequestArgs(
-                        ids: [torrent.id],
-                        priority: .high
-                    ),
-                    info: info,
-                    onComplete: { r in }
-                )
-            }) {
-                Label("High", systemImage: "arrow.up")
-            }
-            Button(action: {
-                let info = makeConfig(store: store)
-                updateTorrent(
-                    args: TorrentSetRequestArgs(
-                        ids: [torrent.id],
-                        priority: .normal
-                    ),
-                    info: info,
-                    onComplete: { r in }
-                )
-            }) {
-                Label("Normal", systemImage: "minus")
-            }
-            Button(action: {
-                let info = makeConfig(store: store)
-                updateTorrent(
-                    args: TorrentSetRequestArgs(
-                        ids: [torrent.id],
-                        priority: .low
-                    ),
-                    info: info,
-                    onComplete: { r in }
-                )
-            }) {
-                Label("Low", systemImage: "arrow.down")
-            }
-        } label: {
-            Label("Update Priority", systemImage: "flag.badge.ellipsis")
-        }
-
-        // Queue Position Menu
-        Menu {
-            Button(action: {
-                let info = makeConfig(store: store)
-                queueMoveTop(ids: [torrent.id], info: info) { response in
-                    handleTransmissionResponse(response,
-                        onSuccess: {},
-                        onError: { error in
-                            errorMessage = error
-                            showingError = true
-                        }
-                    )
-                }
-            }) {
-                Label("Move to Front", systemImage: "arrow.up.to.line")
-            }
-            Button(action: {
-                let info = makeConfig(store: store)
-                queueMoveUp(ids: [torrent.id], info: info) { response in
-                    handleTransmissionResponse(response,
-                        onSuccess: {},
-                        onError: { error in
-                            errorMessage = error
-                            showingError = true
-                        }
-                    )
-                }
-            }) {
-                Label("Move Up", systemImage: "arrow.up")
-            }
-            Button(action: {
-                let info = makeConfig(store: store)
-                queueMoveDown(ids: [torrent.id], info: info) { response in
-                    handleTransmissionResponse(response,
-                        onSuccess: {},
-                        onError: { error in
-                            errorMessage = error
-                            showingError = true
-                        }
-                    )
-                }
-            }) {
-                Label("Move Down", systemImage: "arrow.down")
-            }
-            Button(action: {
-                let info = makeConfig(store: store)
-                queueMoveBottom(ids: [torrent.id], info: info) { response in
-                    handleTransmissionResponse(response,
-                        onSuccess: {},
-                        onError: { error in
-                            errorMessage = error
-                            showingError = true
-                        }
-                    )
-                }
-            }) {
-                Label("Move to Back", systemImage: "arrow.down.to.line")
-            }
-        } label: {
-            Label("Move in Queue", systemImage: "line.3.horizontal")
-        }
-
-        Divider()
-
-        // Set Location… (single torrent on iOS)
-        Button(action: {
-            movePath = store.defaultDownloadDir
-            moveDialog = true
-        }) {
-            Label("Set Location…", systemImage: "folder.badge.gearshape")
-        }
-
-        // Rename
-        Button(action: {
-            renameInput = torrent.name
-            renameDialog = true
-        }) {
-            Label("Rename…", systemImage: "pencil")
-        }
-
-        Button(action: {
-            labelDialog.toggle()
-        }) {
-            Label("Edit Labels…", systemImage: "tag")
-        }
-
-        Divider()
-
-        // Copy Magnet Link Button
-        Button(action: {
-            copyMagnetLinkToClipboard(torrent.magnetLink)
-        }) {
-            Label("Copy Magnet Link", systemImage: "document.on.document")
-        }
-
-        Divider()
-
-        // Re-announce Button
-        Button(action: {
-            reAnnounceToTrackers(torrent: torrent, store: store)
-        }) {
-            Label("Ask For More Peers", systemImage: "arrow.left.arrow.right")
-        }
-
-        // Verify Button
-        Button(action: {
-            let info = makeConfig(store: store)
-            verifyTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
-                handleTransmissionResponse(response,
-                    onSuccess: {
-                        // Success - verification started
-                    },
-                    onError: { error in
-                        errorMessage = error
-                        showingError = true
-                    }
-                )
-            })
-        }) {
-            Label("Verify Local Data", systemImage: "checkmark.arrow.trianglehead.counterclockwise")
-        }
-
-        Divider()
-
-        // Delete Button
-        Button(role: .destructive, action: {
-            deleteDialog.toggle()
-        }) {
-            Label("Delete", systemImage: "trash")
-        }
-    }
 
     var body: some View {
-         HStack(spacing: 12) {
-             // Icon column (conditional) - spans full row height
-             if showContentTypeIcons {
-                 Image(systemName: ContentTypeIconMapper.symbolForTorrent(mimeType: torrent.primaryMimeType))
-                     .font(.system(size: 16))
-                     .foregroundColor(.secondary.opacity(0.6))
-                     .frame(width: 20, height: 20)
-             }
+        rowContent
+            .contentShape(Rectangle())
+            .padding(10)
+            .swipeActions(edge: .trailing) {
+                swipeActions
+            }
+            .contextMenu { actionsMenu }
+            .id(torrent.id)
+            .confirmationDialog(
+                "Delete Torrent",
+                isPresented: $deleteDialog,
+                titleVisibility: .visible
+            ) {
+                Button("Delete file(s)", role: .destructive) {
+                    performDelete(erase: true)
+                }
+                Button("Remove from list only") {
+                    performDelete(erase: false)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Do you want to delete the file(s) from the disk?")
+            }
+            .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
+            .sheet(isPresented: $renameDialog, content: renameSheet)
+            .sheet(isPresented: $moveDialog, content: moveSheet)
+            .sheet(isPresented: $labelDialog, content: labelSheet)
+    }
 
-             // Content column - all the text content
-             VStack(spacing: 4) {
-                 HStack(spacing: 8) {
-                     Text(torrent.name)
+    private var rowContent: some View {
+        HStack(spacing: 12) {
+            if showContentTypeIcons {
+                Image(systemName: ContentTypeIconMapper.symbolForTorrent(mimeType: torrent.primaryMimeType))
+                    .font(.system(size: 16))
+                    .foregroundColor(.secondary.opacity(0.6))
+                    .frame(width: 20, height: 20)
+            }
+
+            VStack(spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(torrent.name)
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .layoutPriority(1)
 
-                     // Use shared label tags view
-                     createLabelTagsView(for: torrent)
-                 }
+                    createLabelTagsView(for: torrent)
+                }
 
                 createStatusView(for: torrent)
                     .font(.custom("sub", size: 10))
                     .frame(maxWidth: .infinity, alignment: .topLeading)
                     .foregroundColor(.secondary)
 
-                // Logic here is kind of funky, but we are going to fill up the entire progress bar if the
-                // torrent is still retrieving metadata (as the bar will be colored red)
                 ProgressView(value: torrent.metadataPercentComplete < 1 ? 1 : torrent.percentDone)
                     .tint(progressColorForTorrent(torrent))
 
@@ -280,185 +82,360 @@ struct iOSTorrentListRow: View {
                     .foregroundColor(.secondary)
             }
         }
-        .contentShape(Rectangle())
-        .padding([.top, .bottom, .leading, .trailing], 10)
-        .swipeActions(edge: .trailing) {
-            // Play/Pause action (rightmost when swiping)
-            Button {
-                let info = makeConfig(store: store)
-                playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
-                    handleTransmissionResponse(response,
-                        onSuccess: {
-                            // Success - torrent state will update automatically
-                        },
-                        onError: { error in
-                            errorMessage = error
-                            showingError = true
-                        }
-                    )
-                })
-            } label: {
-                Image(systemName: torrent.status == TorrentStatus.stopped.rawValue ? "play.fill" : "pause.fill")
-            }
-            .tint(torrent.status == TorrentStatus.stopped.rawValue ? .blue : .orange)
+    }
 
-            // Three-dot menu with all actions (leftmost when swiping)
-            Menu {
-                torrentActionsMenu()
-            } label: {
-                Image(systemName: "ellipsis.circle")
-            }
+    private var actionsMenu: some View {
+        IOSTorrentActionsMenu(
+            torrent: torrent,
+            store: store,
+            onShowMove: showMoveDialog,
+            onShowRename: showRenameDialog,
+            onShowLabels: { labelDialog = true },
+            onShowDelete: { deleteDialog = true },
+            onError: presentError
+        )
+    }
+
+    @ViewBuilder
+    private var swipeActions: some View {
+        Button(action: togglePlayback) {
+            Image(systemName: torrent.status == TorrentStatus.stopped.rawValue ? "play.fill" : "pause.fill")
         }
-        .contextMenu {
-            torrentActionsMenu()
+        .tint(torrent.status == TorrentStatus.stopped.rawValue ? .blue : .orange)
+
+        Menu {
+            actionsMenu
+        } label: {
+            Image(systemName: "ellipsis.circle")
         }
-        .id(torrent.id)
-        .confirmationDialog(
-            "Delete Torrent",
-            isPresented: $deleteDialog,
-            titleVisibility: .visible
-        ) {
-            Button("Delete file(s)", role: .destructive) {
-                let info = makeConfig(store: store)
-                deleteTorrent(torrent: torrent, erase: true, config: info.config, auth: info.auth, onDel: { response in
-                    handleTransmissionResponse(response,
-                        onSuccess: {
-                            // Success - torrent deleted
-                        },
-                        onError: { error in
-                            errorMessage = error
-                            showingError = true
-                        }
-                    )
-                })
-            }
-            Button("Remove from list only") {
-                let info = makeConfig(store: store)
-                deleteTorrent(torrent: torrent, erase: false, config: info.config, auth: info.auth, onDel: { response in
-                    handleTransmissionResponse(response,
-                        onSuccess: {
-                            // Success - torrent removed from list
-                        },
-                        onError: { error in
-                            errorMessage = error
-                            showingError = true
-                        }
-                    )
-                })
-            }
-            Button("Cancel", role: .cancel) { }
-        } message: {
-            Text("Do you want to delete the file(s) from the disk?")
+    }
+
+    private func renameSheet() -> some View {
+        NavigationView {
+            IOSTorrentRenameSheet(
+                torrent: torrent,
+                store: store,
+                renameInput: $renameInput,
+                isPresented: $renameDialog,
+                onError: presentError
+            )
         }
-        .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
-        .sheet(isPresented: $renameDialog) {
-            NavigationView {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Rename Torrent")
-                        .font(.headline)
-                        .padding(.top)
-                    TextField("Name", text: $renameInput)
-                        .textFieldStyle(.roundedBorder)
-                        .submitLabel(.done)
-                        .onSubmit {
-                            if isRenameValid {
-                                let nameToSave = trimmedRenameInput
-                                renameTorrentRoot(torrent: torrent, to: nameToSave, store: store) { err in
-                                    if let err = err {
-                                        errorMessage = err
-                                        showingError = true
-                                    } else {
-                                        renameDialog = false
-                                    }
-                                }
-                            }
-                        }
-                    Spacer()
-                }
-                .padding()
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { renameDialog = false }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        let disabled = !isRenameValid
-                        Button("Save") {
-                            let nameToSave = trimmedRenameInput
-                            renameTorrentRoot(torrent: torrent, to: nameToSave, store: store) { err in
-                                if let err = err {
-                                    errorMessage = err
-                                    showingError = true
-                                } else {
-                                    renameDialog = false
-                                }
-                            }
-                        }
-                        .disabled(disabled)
-                    }
-                }
-            }
-            // focus handled on TextField onAppear
+    }
+
+    private func moveSheet() -> some View {
+        NavigationView {
+            IOSTorrentMoveSheet(
+                torrent: torrent,
+                store: store,
+                movePath: $movePath,
+                moveShouldMove: $moveShouldMove,
+                isPresented: $moveDialog,
+                onError: presentError
+            )
         }
-        .sheet(isPresented: $moveDialog) {
-            NavigationView {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Set Files Location")
-                        .font(.headline)
-                        .padding(.top)
-                    if let path = torrent.downloadDir {
-                        Text("Current: \(path)")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                            .textSelection(.disabled)
-                    }
-                    TextField("Destination path", text: $movePath)
-                        .textFieldStyle(.roundedBorder)
-                    Toggle(isOn: $moveShouldMove) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Move files on disk")
-                            Text("When enabled, physically moves/renames the torrent's data into this folder on the server. When disabled, does not move files, and instead simply links this torrent to files already in the selected folder.")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    Spacer()
-                }
-                .padding()
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { moveDialog = false }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        let disabled = movePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                        Button("Set Location") {
-                            let info = makeConfig(store: store)
-                            let args = TorrentSetLocationRequestArgs(ids: [torrent.id], location: movePath.trimmingCharacters(in: .whitespacesAndNewlines), move: moveShouldMove)
-                            setTorrentLocation(args: args, info: info) { response in
-                                handleTransmissionResponse(response,
-                                    onSuccess: {
-                                        refreshTransmissionData(store: store)
-                                        moveDialog = false
-                                    },
-                                    onError: { error in
-                                        errorMessage = error
-                                        showingError = true
-                                    }
-                                )
-                            }
-                        }
-                        .disabled(disabled)
-                    }
+    }
+
+    private func labelSheet() -> some View {
+        NavigationView {
+            iOSLabelEditView(
+                labelInput: $labelInput,
+                existingLabels: torrent.labels,
+                store: store,
+                torrentId: torrent.id
+            )
+        }
+    }
+
+    private func togglePlayback() {
+        let info = makeConfig(store: store)
+        playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth) { response in
+            handleTransmissionResponse(response, onSuccess: {}, onError: presentError)
+        }
+    }
+
+    private func performDelete(erase: Bool) {
+        let info = makeConfig(store: store)
+        deleteTorrent(torrent: torrent, erase: erase, config: info.config, auth: info.auth) { response in
+            handleTransmissionResponse(response, onSuccess: {}, onError: presentError)
+        }
+    }
+
+    private func showRenameDialog() {
+        renameInput = torrent.name
+        renameDialog = true
+    }
+
+    private func showMoveDialog() {
+        movePath = store.defaultDownloadDir
+        moveDialog = true
+    }
+
+    private func presentError(_ error: String) {
+        errorMessage = error
+        showingError = true
+    }
+}
+
+@MainActor
+private struct IOSTorrentActionsMenu: View {
+    let torrent: Torrent
+    let store: AppStore
+    let onShowMove: () -> Void
+    let onShowRename: () -> Void
+    let onShowLabels: () -> Void
+    let onShowDelete: () -> Void
+    let onError: (String) -> Void
+
+    var body: some View {
+        playbackSection
+        Divider()
+        prioritySection
+        queueSection
+        Divider()
+        Button("Set Location…", systemImage: "folder.badge.gearshape", action: onShowMove)
+        Button("Rename…", systemImage: "pencil", action: onShowRename)
+        Button("Edit Labels…", systemImage: "tag", action: onShowLabels)
+        Divider()
+        Button("Copy Magnet Link", systemImage: "document.on.document") {
+            copyMagnetLinkToClipboard(torrent.magnetLink)
+        }
+        Divider()
+        Button("Ask For More Peers", systemImage: "arrow.left.arrow.right") {
+            reAnnounceToTrackers(torrent: torrent, store: store)
+        }
+        Button("Verify Local Data", systemImage: "checkmark.arrow.trianglehead.counterclockwise") {
+            verifyTorrentAction()
+        }
+        Divider()
+        Button("Delete", systemImage: "trash", role: .destructive, action: onShowDelete)
+    }
+
+    private var playbackSection: some View {
+        Group {
+            Button(
+                torrent.status == TorrentStatus.stopped.rawValue ? "Resume" : "Pause",
+                systemImage: torrent.status == TorrentStatus.stopped.rawValue ? "play" : "pause"
+            ) {
+                togglePlayback()
+            }
+
+            if torrent.status == TorrentStatus.stopped.rawValue {
+                Button("Resume Now", systemImage: "play.fill") {
+                    resumeTorrentNow(torrent: torrent, store: store)
                 }
             }
         }
-        .sheet(isPresented: $labelDialog) {
-            NavigationView {
-                iOSLabelEditView(labelInput: $labelInput, existingLabels: torrent.labels, store: store, torrentId: torrent.id)
+    }
+
+    private var prioritySection: some View {
+        Menu("Update Priority", systemImage: "flag.badge.ellipsis") {
+            Button("High", systemImage: "arrow.up") {
+                updatePriority(.high)
             }
+            Button("Normal", systemImage: "minus") {
+                updatePriority(.normal)
+            }
+            Button("Low", systemImage: "arrow.down") {
+                updatePriority(.low)
+            }
+        }
+    }
+
+    private var queueSection: some View {
+        Menu("Move in Queue", systemImage: "line.3.horizontal") {
+            Button("Move to Front", systemImage: "arrow.up.to.line") {
+                queueMoveTopAction()
+            }
+            Button("Move Up", systemImage: "arrow.up") {
+                queueMoveUpAction()
+            }
+            Button("Move Down", systemImage: "arrow.down") {
+                queueMoveDownAction()
+            }
+            Button("Move to Back", systemImage: "arrow.down.to.line") {
+                queueMoveBottomAction()
+            }
+        }
+    }
+
+    private func togglePlayback() {
+        let info = makeConfig(store: store)
+        playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth) { response in
+            handleResponse(response)
+        }
+    }
+
+    private func updatePriority(_ priority: TorrentPriority) {
+        let info = makeConfig(store: store)
+        updateTorrent(
+            args: TorrentSetRequestArgs(ids: [torrent.id], priority: priority),
+            info: info,
+            onComplete: { _ in }
+        )
+    }
+
+    private func queueMoveTopAction() {
+        let info = makeConfig(store: store)
+        queueMoveTop(ids: [torrent.id], info: info) { response in
+            handleResponse(response)
+        }
+    }
+
+    private func queueMoveUpAction() {
+        let info = makeConfig(store: store)
+        queueMoveUp(ids: [torrent.id], info: info) { response in
+            handleResponse(response)
+        }
+    }
+
+    private func queueMoveDownAction() {
+        let info = makeConfig(store: store)
+        queueMoveDown(ids: [torrent.id], info: info) { response in
+            handleResponse(response)
+        }
+    }
+
+    private func queueMoveBottomAction() {
+        let info = makeConfig(store: store)
+        queueMoveBottom(ids: [torrent.id], info: info) { response in
+            handleResponse(response)
+        }
+    }
+
+    private func verifyTorrentAction() {
+        let info = makeConfig(store: store)
+        verifyTorrent(torrent: torrent, config: info.config, auth: info.auth) { response in
+            handleResponse(response)
+        }
+    }
+
+    private func handleResponse(_ response: TransmissionResponse) {
+        handleTransmissionResponse(response, onSuccess: {}, onError: onError)
+    }
+}
+
+@MainActor
+private struct IOSTorrentRenameSheet: View {
+    let torrent: Torrent
+    let store: AppStore
+    @Binding var renameInput: String
+    @Binding var isPresented: Bool
+    let onError: (String) -> Void
+
+    private var trimmedRenameInput: String {
+        renameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isRenameValid: Bool {
+        validateNewName(renameInput, current: torrent.name) == nil && trimmedRenameInput != torrent.name
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Rename Torrent")
+                .font(.headline)
+                .padding(.top)
+            TextField("Name", text: $renameInput)
+                .textFieldStyle(.roundedBorder)
+                .submitLabel(.done)
+                .onSubmit {
+                    saveRename()
+                }
+            Spacer()
+        }
+        .padding()
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") { isPresented = false }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    saveRename()
+                }
+                .disabled(!isRenameValid)
+            }
+        }
+    }
+
+    private func saveRename() {
+        guard isRenameValid else { return }
+        let nameToSave = trimmedRenameInput
+        renameTorrentRoot(torrent: torrent, to: nameToSave, store: store) { error in
+            if let error {
+                onError(error)
+            } else {
+                isPresented = false
+            }
+        }
+    }
+}
+
+@MainActor
+private struct IOSTorrentMoveSheet: View {
+    let torrent: Torrent
+    let store: AppStore
+    @Binding var movePath: String
+    @Binding var moveShouldMove: Bool
+    @Binding var isPresented: Bool
+    let onError: (String) -> Void
+
+    private var isMoveDisabled: Bool {
+        movePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Set Files Location")
+                .font(.headline)
+                .padding(.top)
+            if let path = torrent.downloadDir {
+                Text("Current: \(path)")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .textSelection(.disabled)
+            }
+            TextField("Destination path", text: $movePath)
+                .textFieldStyle(.roundedBorder)
+            Toggle(isOn: $moveShouldMove) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Move files on disk")
+                    Text("When enabled, physically moves/renames the torrent's data into this folder on the server. When disabled, does not move files, and instead simply links this torrent to files already in the selected folder.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            Spacer()
+        }
+        .padding()
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") { isPresented = false }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Set Location") {
+                    setLocation()
+                }
+                .disabled(isMoveDisabled)
+            }
+        }
+    }
+
+    private func setLocation() {
+        let info = makeConfig(store: store)
+        let args = TorrentSetLocationRequestArgs(
+            ids: [torrent.id],
+            location: movePath.trimmingCharacters(in: .whitespacesAndNewlines),
+            move: moveShouldMove
+        )
+        setTorrentLocation(args: args, info: info) { response in
+            handleTransmissionResponse(response, onSuccess: {
+                refreshTransmissionData(store: store)
+                isPresented = false
+            }, onError: onError)
         }
     }
 }
@@ -470,10 +447,10 @@ struct iOSLabelEditView: View {
     @State private var newTagInput: String = ""
     @FocusState private var isInputFocused: Bool
     @Environment(\.dismiss) private var dismiss
-    var store: Store
+    var store: AppStore
     var torrentId: Int
 
-    init(labelInput: Binding<String>, existingLabels: [String], store: Store, torrentId: Int) {
+    init(labelInput: Binding<String>, existingLabels: [String], store: AppStore, torrentId: Int) {
         self._labelInput = labelInput
         self.existingLabels = existingLabels
         self._workingLabels = State(initialValue: Set(existingLabels))
@@ -488,15 +465,12 @@ struct iOSLabelEditView: View {
     }
 
     private func saveAndDismiss() {
-        // First add any pending tag
         if addNewTag(from: &newTagInput, to: &workingLabels) {
             labelInput = workingLabels.joined(separator: ", ")
         }
 
-        // Update the binding
         labelInput = workingLabels.joined(separator: ", ")
 
-        // Save to server and refresh
         saveTorrentLabels(torrentId: torrentId, labels: workingLabels, store: store) {
             dismiss()
         }
@@ -537,10 +511,10 @@ struct iOSLabelEditView: View {
                                 if addNewTag(from: &newTagInput, to: &workingLabels) {
                                     labelInput = workingLabels.joined(separator: ", ")
                                 }
-                            }) {
+                            }, label: {
                                 Image(systemName: "plus.circle.fill")
                                     .foregroundColor(.accentColor)
-                            }
+                            })
                         }
                     }
                     .padding(.horizontal)
@@ -567,9 +541,8 @@ struct iOSLabelEditView: View {
                 }
             }
         }
-        .onChange(of: newTagInput) { oldValue, newValue in
+        .onChange(of: newTagInput) { _, newValue in
             if newValue.contains(",") {
-                // Remove the comma and add the tag
                 newTagInput = newValue.replacingOccurrences(of: ",", with: "")
                 if addNewTag(from: &newTagInput, to: &workingLabels) {
                     labelInput = workingLabels.joined(separator: ", ")
@@ -577,15 +550,12 @@ struct iOSLabelEditView: View {
             }
         }
     }
-
 }
 
 #else
-// Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
 struct iOSTorrentListRow: View {
     var torrent: Torrent
-    var store: Store
-    var selectedTorrents: Set<Torrent>
+    var store: AppStore
     var showContentTypeIcons: Bool
 
     var body: some View {

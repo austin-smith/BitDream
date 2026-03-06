@@ -3,13 +3,13 @@ import SwiftUI
 
 struct TorrentListRow: View {
     var torrent: Torrent
-    var store: Store
+    var store: AppStore
     var selectedTorrents: Set<Torrent>
     var showContentTypeIcons: Bool
 
     var body: some View {
         #if os(iOS)
-        iOSTorrentListRow(torrent: torrent, store: store, selectedTorrents: selectedTorrents, showContentTypeIcons: showContentTypeIcons)
+        iOSTorrentListRow(torrent: torrent, store: store, showContentTypeIcons: showContentTypeIcons)
         #elseif os(macOS)
         macOSTorrentListExpanded(torrent: torrent, store: store, selectedTorrents: selectedTorrents, showContentTypeIcons: showContentTypeIcons)
         #endif
@@ -18,39 +18,26 @@ struct TorrentListRow: View {
 
 // MARK: - Shared Helpers
 
-struct EtaSortKey: Comparable {
-    let priority: Int
-    let eta: Int
-
-    static func < (lhs: EtaSortKey, rhs: EtaSortKey) -> Bool {
-        if lhs.priority != rhs.priority {
-            return lhs.priority < rhs.priority
-        }
-        return lhs.eta < rhs.eta
+extension Collection where Element == Torrent {
+    var shouldDisablePause: Bool {
+        return isEmpty || (count == 1 && first?.status == TorrentStatus.stopped.rawValue)
     }
-}
 
-func makeEtaSortKey(for torrent: Torrent) -> EtaSortKey {
-    let priority: Int
-    if torrent.statusCalc == .complete { priority = 5 }
-    else if torrent.statusCalc == .seeding { priority = 4 }
-    else if torrent.statusCalc == .paused { priority = 3 }
-    else if torrent.statusCalc == .stalled { priority = 2 }
-    else if torrent.eta <= 0 { priority = 1 }
-    else { priority = 0 }
-    return EtaSortKey(priority: priority, eta: torrent.eta)
+    var shouldDisableResume: Bool {
+        return isEmpty || (count == 1 && first?.status != TorrentStatus.stopped.rawValue)
+    }
 }
 
 // Shared function to handle re-announce action
 @MainActor
-func reAnnounceToTrackers(torrent: Torrent, store: Store, onResponse: @MainActor @escaping (TransmissionResponse) -> Void = { _ in }) {
+func reAnnounceToTrackers(torrent: Torrent, store: AppStore, onResponse: @MainActor @escaping (TransmissionResponse) -> Void = { _ in }) {
     let info = makeConfig(store: store)
     reAnnounceTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: onResponse)
 }
 
 // Shared function to handle "Resume Now" action
 @MainActor
-func resumeTorrentNow(torrent: Torrent, store: Store, onResponse: @MainActor @escaping (TransmissionResponse) -> Void = { _ in }) {
+func resumeTorrentNow(torrent: Torrent, store: AppStore, onResponse: @MainActor @escaping (TransmissionResponse) -> Void = { _ in }) {
     let info = makeConfig(store: store)
     startTorrentNow(torrent: torrent, config: info.config, auth: info.auth, onResponse: onResponse)
 }
@@ -62,7 +49,7 @@ enum TorrentStatusPresentationStyle {
 func torrentStatusSymbol(for torrent: Torrent, style: TorrentStatusPresentationStyle = .standard) -> String {
     switch style {
     case .standard:
-        if torrent.error != TorrentError.ok.rawValue {
+        if torrent.error != TorrentError.none.rawValue {
             return "exclamationmark.triangle.fill"
         }
 
@@ -88,7 +75,7 @@ func torrentStatusSymbol(for torrent: Torrent, style: TorrentStatusPresentationS
 }
 
 func torrentStatusTint(for torrent: Torrent) -> Color {
-    if torrent.error != TorrentError.ok.rawValue {
+    if torrent.error != TorrentError.none.rawValue {
         return .red
     }
 
@@ -151,11 +138,10 @@ func createStatusView(for torrent: Torrent) -> some View {
     let rateUploadFormatted = formatByteCount(torrent.rateUpload)
 
     return Group {
-        if (torrent.error != TorrentError.ok.rawValue) {
+        if torrent.error != TorrentError.none.rawValue {
             Text("Tracker returned error: \(torrent.errorString)")
                 .foregroundColor(.red)
-        }
-        else {
+        } else {
             switch torrent.statusCalc {
             case .downloading, .retrievingMetadata:
                 HStack(spacing: 4) {
@@ -202,7 +188,7 @@ func copyMagnetLinkToClipboard(_ magnetLink: String) {
 
 // Shared function to save labels and refresh torrent data
 @MainActor
-func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: Store, onComplete: @escaping () -> Void = {}) {
+func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: AppStore, onComplete: @escaping () -> Void = {}) {
     let info = makeConfig(store: store)
     let sortedLabels = Array(labels).sorted()
 
@@ -290,21 +276,21 @@ struct FlowLayout: Layout {
         let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
         var height: CGFloat = 0
         var width: CGFloat = 0
-        var x: CGFloat = 0
-        var y: CGFloat = 0
+        var currentX: CGFloat = 0
+        var currentY: CGFloat = 0
         var maxHeight: CGFloat = 0
 
         for size in sizes {
-            if x + size.width > (proposal.width ?? .infinity) {
-                y += maxHeight + spacing
-                x = 0
+            if currentX + size.width > (proposal.width ?? .infinity) {
+                currentY += maxHeight + spacing
+                currentX = 0
                 maxHeight = 0
             }
 
-            x += size.width + spacing
-            width = max(width, x)
+            currentX += size.width + spacing
+            width = max(width, currentX)
             maxHeight = max(maxHeight, size.height)
-            height = y + maxHeight
+            height = currentY + maxHeight
         }
 
         return CGSize(width: width, height: height)
@@ -312,23 +298,23 @@ struct FlowLayout: Layout {
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
-        var x = bounds.minX
-        var y = bounds.minY
+        var currentX = bounds.minX
+        var currentY = bounds.minY
         var maxHeight: CGFloat = 0
 
         for (index, size) in sizes.enumerated() {
-            if x + size.width > bounds.maxX {
-                y += maxHeight + spacing
-                x = bounds.minX
+            if currentX + size.width > bounds.maxX {
+                currentY += maxHeight + spacing
+                currentX = bounds.minX
                 maxHeight = 0
             }
 
             subviews[index].place(
-                at: CGPoint(x: x, y: y),
+                at: CGPoint(x: currentX, y: currentY),
                 proposal: ProposedViewSize(size)
             )
 
-            x += size.width + spacing
+            currentX += size.width + spacing
             maxHeight = max(maxHeight, size.height)
         }
     }
@@ -359,7 +345,7 @@ func validateNewName(_ name: String, current: String) -> String? {
 ///   - store: App store for config/auth and refresh
 ///   - onComplete: Called with nil on success, or an error message on failure
 @MainActor
-func renameTorrentRoot(torrent: Torrent, to newName: String, store: Store, onComplete: @escaping (String?) -> Void) {
+func renameTorrentRoot(torrent: Torrent, to newName: String, store: AppStore, onComplete: @escaping (String?) -> Void) {
     let info = makeConfig(store: store)
     // For root rename, Transmission expects the current root path (the torrent's name)
     renameTorrentPath(
@@ -370,7 +356,7 @@ func renameTorrentRoot(torrent: Torrent, to newName: String, store: Store, onCom
         auth: info.auth
     ) { result in
         switch result {
-        case .success(_):
+        case .success:
             // Refresh to pick up updated name and files
             refreshTransmissionData(store: store)
             onComplete(nil)

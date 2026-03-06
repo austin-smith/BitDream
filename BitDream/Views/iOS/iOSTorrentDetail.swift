@@ -5,14 +5,14 @@ import SwiftUI
 struct iOSTorrentDetail: View {
     @Environment(\.dismiss) private var dismiss
 
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     var torrent: Torrent
 
     @State public var files: [TorrentFile] = []
     @State public var fileStats: [TorrentFileStats] = []
     @State private var isShowingFilesSheet = false
     @State private var peers: [Peer] = []
-    @State private var peersFrom: PeersFrom? = nil
+    @State private var peersFrom: PeersFrom?
     @State private var isShowingPeersSheet = false
     @State private var pieceCount: Int = 0
     @State private var pieceSize: Int64 = 0
@@ -160,7 +160,7 @@ struct iOSTorrentDetail: View {
                         showingDeleteConfirmation = true
                     }, label: {
                         HStack {
-                            HStack{
+                            HStack {
                                 Image(systemName: "trash")
                                 Text("Delete…")
                                 Spacer()
@@ -232,7 +232,6 @@ struct iOSTorrentDetail: View {
             .transmissionErrorAlert(isPresented: $showingDeleteError, message: deleteErrorMessage)
         }
 
-
     }
 }
 
@@ -256,16 +255,6 @@ struct DetailViewLabelTag: View {
                     .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
             )
             .foregroundColor(.primary)
-    }
-}
-#else
-// Empty struct for macOS to reference - this won't be compiled on iOS but provides the type
-struct iOSTorrentDetail: View {
-    @ObservedObject var store: Store
-    var torrent: Torrent
-
-    var body: some View {
-        EmptyView()
     }
 }
 #endif

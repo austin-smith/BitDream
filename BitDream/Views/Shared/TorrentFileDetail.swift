@@ -73,9 +73,9 @@ func calculateCommonPrefix(_ filenames: [String]) -> String {
     let shortestPath = filenames.min(by: { $0.count < $1.count }) ?? ""
     var commonPrefix = ""
 
-    for i in shortestPath.indices {
-        let char = shortestPath[i]
-        if filenames.allSatisfy({ $0.indices.contains(i) && $0[i] == char }) {
+    for index in shortestPath.indices {
+        let char = shortestPath[index]
+        if filenames.allSatisfy({ $0.indices.contains(index) && $0[index] == char }) {
             commonPrefix.append(char)
         } else {
             break
@@ -96,13 +96,25 @@ func stripCommonPrefix(_ filename: String, prefix: String) -> String {
     return String(filename.dropFirst(prefix.count))
 }
 
+struct ProcessedTorrentFile {
+    let file: TorrentFile
+    let stats: TorrentFileStats
+    let displayName: String
+    let fileIndex: Int
+}
+
 /// Process all files with smart display names (calculates prefix once)
-func processFilesForDisplay(_ files: [TorrentFile], stats: [TorrentFileStats]) -> [(file: TorrentFile, stats: TorrentFileStats, displayName: String, fileIndex: Int)] {
+func processFilesForDisplay(_ files: [TorrentFile], stats: [TorrentFileStats]) -> [ProcessedTorrentFile] {
     let filenames = files.map { $0.name }
     let commonPrefix = calculateCommonPrefix(filenames)
 
     return zip(files, stats).enumerated().map { index, pair in
-        (file: pair.0, stats: pair.1, displayName: stripCommonPrefix(pair.0.name, prefix: commonPrefix), fileIndex: index)
+        ProcessedTorrentFile(
+            file: pair.0,
+            stats: pair.1,
+            displayName: stripCommonPrefix(pair.0.name, prefix: commonPrefix),
+            fileIndex: index
+        )
     }
 }
 
@@ -119,7 +131,7 @@ struct TorrentFileDetail: View {
     let files: [TorrentFile]
     let fileStats: [TorrentFileStats]
     let torrentId: Int
-    let store: Store
+    let store: AppStore
 
     var body: some View {
         #if os(iOS)
@@ -281,7 +293,7 @@ enum FileActionExecutor {
     static func setWanted(
         torrentId: Int,
         fileIndices: [Int],
-        store: Store,
+        store: AppStore,
         wanted: Bool
     ) async -> TransmissionResponse {
         let info = makeConfig(store: store)
@@ -302,7 +314,7 @@ enum FileActionExecutor {
     static func setPriority(
         torrentId: Int,
         fileIndices: [Int],
-        store: Store,
+        store: AppStore,
         priority: FilePriority
     ) async -> TransmissionResponse {
         let info = makeConfig(store: store)

@@ -6,16 +6,16 @@ import SwiftData
 struct iOSContentView: View {
     let modelContext: ModelContext
     let hosts: [Host]
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     // Add explicit initializer with internal access level
-    init(modelContext: ModelContext, hosts: [Host], store: Store) {
+    init(modelContext: ModelContext, hosts: [Host], store: AppStore) {
         self.modelContext = modelContext
         self.hosts = hosts
         self.store = store
     }
 
-    // Store the selected torrent IDs
+    // AppStore the selected torrent IDs
     @State private var selectedTorrentIds: Set<Int> = []
 
     // Computed property to get the selected torrents from the IDs
@@ -53,10 +53,10 @@ struct iOSContentView: View {
                 actionToolbarItems
                 bottomToolbarItems
             }
-            .onChange(of: sortProperty) { oldValue, newValue in
+            .onChange(of: sortProperty) { _, newValue in
                 UserDefaults.standard.sortProperty = newValue
             }
-            .onChange(of: sortOrder) { oldValue, newValue in
+            .onChange(of: sortOrder) { _, newValue in
                 UserDefaults.standard.sortOrder = newValue
             }
             .alert("Connection Error", isPresented: $store.showConnectionErrorAlert) {
@@ -77,23 +77,23 @@ struct iOSContentView: View {
                 Text("Select a Dream")
             }
         }
-        .sheet(isPresented: $store.setup) {
+        .sheet(isPresented: $store.setup, content: {
             ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)
-        }
-        .sheet(isPresented: $store.editServers) {
+        })
+        .sheet(isPresented: $store.editServers, content: {
             ServerList(store: store, modelContext: modelContext, hosts: hosts)
                 .toolbar {}
-        }
-        .sheet(isPresented: $store.isShowingAddAlert) {
+        })
+        .sheet(isPresented: $store.isShowingAddAlert, content: {
             AddTorrent(store: store)
-        }
-        .sheet(isPresented: $store.isError) {
+        })
+        .sheet(isPresented: $store.isError, content: {
             ErrorDialog(store: store)
                 .frame(width: 400, height: 400)
-        }
-        .sheet(isPresented: $store.showSettings) {
+        })
+        .sheet(isPresented: $store.showSettings, content: {
             SettingsView(store: store)
-        }
+        })
     }
 
     // MARK: - iOS Views
@@ -149,12 +149,12 @@ struct iOSContentView: View {
                     Label("Server", systemImage: "arrow.triangle.2.circlepath")
                 }
                 Divider()
-                Button(action: {store.setup.toggle()}) {
+                Button(action: {store.setup.toggle()}, label: {
                     Label("Add", systemImage: "plus")
-                }
-                Button(action: {store.editServers.toggle()}) {
+                })
+                Button(action: {store.editServers.toggle()}, label: {
                     Label("Edit", systemImage: "square.and.pencil")
-                }
+                })
             } label: {
                 Image(systemName: "server.rack")
             }
@@ -238,28 +238,28 @@ struct iOSContentView: View {
                 Divider()
 
                 Button(action: {
-                    playPauseAllTorrents(start: false, info: makeConfig(store: store), onResponse: { response in
+                    playPauseAllTorrents(start: false, info: makeConfig(store: store), onResponse: { _ in
                         refreshTransmissionData(store: store)
                     })
-                }) {
+                }, label: {
                     Label("Pause All", systemImage: "pause")
-                }
+                })
 
                 Button(action: {
-                    playPauseAllTorrents(start: true, info: makeConfig(store: store), onResponse: { response in
+                    playPauseAllTorrents(start: true, info: makeConfig(store: store), onResponse: { _ in
                         refreshTransmissionData(store: store)
                     })
-                }) {
+                }, label: {
                     Label("Resume All", systemImage: "play")
-                }
+                })
 
                 Divider()
 
                 Button(action: {
                     store.showSettings.toggle()
-                }) {
+                }, label: {
                     Label("Settings", systemImage: "gear")
-                }
+                })
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
@@ -276,30 +276,12 @@ struct iOSContentView: View {
             ToolbarItem(placement: .bottomBar) {
                 Button(action: {
                     store.isShowingAddAlert.toggle()
-                }) {
+                }, label: {
                     Label("Add Torrent", systemImage: "plus")
-                }
+                })
                 .foregroundStyle(.tint)
             }
         }
-    }
-}
-#else
-// Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
-struct iOSContentView: View {
-    let modelContext: ModelContext
-    let hosts: [Host]
-    @ObservedObject var store: Store
-
-    // Add explicit initializer with internal access level
-    init(modelContext: ModelContext, hosts: [Host], store: Store) {
-        self.modelContext = modelContext
-        self.hosts = hosts
-        self.store = store
-    }
-
-    var body: some View {
-        EmptyView()
     }
 }
 #endif

@@ -6,6 +6,8 @@ import SwiftData
 struct ValidationTextFieldStyle: TextFieldStyle {
     var isInvalid: Bool
 
+    // SwiftUI's TextFieldStyle protocol requires this underscored witness name.
+    // swiftlint:disable:next identifier_name
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
             .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -19,7 +21,7 @@ struct ValidationTextFieldStyle: TextFieldStyle {
 
 struct macOSServerDetail: View {
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     let modelContext: ModelContext
     let hosts: [Host]
     @State var host: Host?
@@ -147,17 +149,17 @@ struct macOSServerDetail: View {
                     }
 
                     // Delete button (if editing)
-                    if (!isAddNew) {
+                    if !isAddNew {
                         Button(action: {
                             showingDeleteConfirmation = true
-                        }) {
+                        }, label: {
                             HStack {
                                 Image(systemName: "trash")
                                 Text("Delete Server")
                             }
                             .foregroundColor(.red)
                             .padding(.vertical, 4)
-                        }
+                        })
                         .buttonStyle(PlainButtonStyle())
                     }
                 }
@@ -178,18 +180,20 @@ struct macOSServerDetail: View {
                 .keyboardShortcut(.escape)
 
                 Button("Save") {
-                    if (isAddNew) {
+                    if isAddNew {
                         if validateFields() {
-                            saveNewServer(
-                                nameInput: nameInput,
-                                hostInput: hostInput,
-                                portInput: portInput,
-                                userInput: userInput,
-                                passInput: passInput,
-                                isDefault: isDefault,
+                            let draft = HostDraft(
+                                name: nameInput,
+                                server: hostInput,
+                                port: portInput,
+                                username: userInput,
                                 isSSL: isSSL,
+                                isDefault: isDefault,
+                                password: passInput
+                            )
+                            saveNewServer(
+                                draft: draft,
                                 modelContext: modelContext,
-                                hosts: hosts,
                                 store: store
                             ) {
                                 dismiss()
@@ -202,17 +206,18 @@ struct macOSServerDetail: View {
                     } else {
                         if validateFields() {
                             if let host = host {
+                                let draft = HostDraft(
+                                    name: nameInput,
+                                    server: hostInput,
+                                    port: portInput,
+                                    username: userInput,
+                                    isSSL: isSSL,
+                                    isDefault: isDefault,
+                                    password: passInput
+                                )
                                 updateExistingServer(
                                     host: host,
-                                    nameInput: nameInput,
-                                    hostInput: hostInput,
-                                    portInput: portInput,
-                                    userInput: userInput,
-                                    passInput: passInput,
-                                    isDefault: isDefault,
-                                    isSSL: isSSL,
-                                    modelContext: modelContext,
-                                    hosts: hosts
+                                    draft: draft
                                 ) {
                                     dismiss()
                                 } onError: { message in
@@ -250,7 +255,7 @@ struct macOSServerDetail: View {
             Text("Are you sure you want to delete this server? This action cannot be undone.")
         }
         .onAppear {
-            if (!isAddNew) {
+            if !isAddNew {
                 if let host = host {
                     loadServerData(host: host) { name, def, hostIn, port, ssl, user, pass in
                         nameInput = name
@@ -264,31 +269,10 @@ struct macOSServerDetail: View {
                 }
             }
 
-            if (store.host == nil) {
+            if store.host == nil {
                 isDefault = true
             }
         }
-    }
-}
-#else
-// Empty struct for iOS to reference - this won't be compiled on macOS but provides the type
-struct macOSServerDetail: View {
-    @ObservedObject var store: Store
-    let modelContext: ModelContext
-    let hosts: [Host]
-    @State var host: Host?
-    var isAddNew: Bool
-
-    init(store: Store, modelContext: ModelContext, hosts: [Host], host: Host? = nil, isAddNew: Bool) {
-        self.store = store
-        self.modelContext = modelContext
-        self.hosts = hosts
-        self.host = host
-        self.isAddNew = isAddNew
-    }
-
-    var body: some View {
-        EmptyView()
     }
 }
 #endif

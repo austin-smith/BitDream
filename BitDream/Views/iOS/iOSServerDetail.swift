@@ -5,7 +5,7 @@ import SwiftData
 #if os(iOS)
 struct iOSServerDetail: View {
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
     let modelContext: ModelContext
     let hosts: [Host]
     @State var host: Host?
@@ -53,7 +53,7 @@ struct iOSServerDetail: View {
                         .multilineTextAlignment(.trailing)
                 }
 
-                Section (footer: Text("Automatically connect to this server on app startup.")) {
+                Section(footer: Text("Automatically connect to this server on app startup.")) {
                     Toggle("Default", isOn: $isDefault)
                         // disable the "Default" toggle if this is the only server
                         // it is either the first server being added, or the only one that exists
@@ -77,7 +77,7 @@ struct iOSServerDetail: View {
 
                     Toggle("Use SSL", isOn: $isSSL)
                         .onAppear {
-                            if (store.host == nil) {
+                            if store.host == nil {
                                 isDefault = true
                             }
                         }
@@ -99,7 +99,7 @@ struct iOSServerDetail: View {
                     }
                 }
 
-                if (!isAddNew) {
+                if !isAddNew {
                     Button(role: .destructive, action: {
                         showingDeleteConfirmation = true
                     }, label: {
@@ -112,7 +112,7 @@ struct iOSServerDetail: View {
                 }
             }
             .onAppear {
-                if (!isAddNew) {
+                if !isAddNew {
                     if let host = host {
                         loadServerData(host: host) { name, def, hostIn, port, ssl, user, pass in
                             nameInput = name
@@ -148,20 +148,22 @@ struct iOSServerDetail: View {
             }
             .navigationBarTitle(Text(isAddNew ? "Add Server" : "Edit Server"), displayMode: .inline)
             .toolbar {
-                if (isAddNew) {
-                    ToolbarItem (placement: .automatic) {
+                if isAddNew {
+                    ToolbarItem(placement: .automatic) {
                         Button("Save") {
                             if validateFields() {
-                                saveNewServer(
-                                    nameInput: nameInput,
-                                    hostInput: hostInput,
-                                    portInput: portInput,
-                                    userInput: userInput,
-                                    passInput: passInput,
-                                    isDefault: isDefault,
+                                let draft = HostDraft(
+                                    name: nameInput,
+                                    server: hostInput,
+                                    port: portInput,
+                                    username: userInput,
                                     isSSL: isSSL,
+                                    isDefault: isDefault,
+                                    password: passInput
+                                )
+                                saveNewServer(
+                                    draft: draft,
                                     modelContext: modelContext,
-                                    hosts: hosts,
                                     store: store
                                 ) {
                                     dismiss()
@@ -172,23 +174,23 @@ struct iOSServerDetail: View {
                             }
                         }
                     }
-                }
-                else {
-                    ToolbarItem (placement: .automatic) {
+                } else {
+                    ToolbarItem(placement: .automatic) {
                         Button("Save") {
                             if validateFields() {
                                 if let host = host {
+                                    let draft = HostDraft(
+                                        name: nameInput,
+                                        server: hostInput,
+                                        port: portInput,
+                                        username: userInput,
+                                        isSSL: isSSL,
+                                        isDefault: isDefault,
+                                        password: passInput
+                                    )
                                     updateExistingServer(
                                         host: host,
-                                        nameInput: nameInput,
-                                        hostInput: hostInput,
-                                        portInput: portInput,
-                                        userInput: userInput,
-                                        passInput: passInput,
-                                        isDefault: isDefault,
-                                        isSSL: isSSL,
-                                        modelContext: modelContext,
-                                        hosts: hosts
+                                        draft: draft
                                     ) {
                                         dismiss()
                                     } onError: { message in
@@ -202,27 +204,6 @@ struct iOSServerDetail: View {
                 }
             }
         }
-    }
-}
-#else
-// Empty struct for macOS to reference - this won't be compiled on iOS but provides the type
-struct iOSServerDetail: View {
-    @ObservedObject var store: Store
-    let modelContext: ModelContext
-    let hosts: [Host]
-    @State var host: Host?
-    var isAddNew: Bool
-
-    init(store: Store, modelContext: ModelContext, hosts: [Host], host: Host? = nil, isAddNew: Bool) {
-        self.store = store
-        self.modelContext = modelContext
-        self.hosts = hosts
-        self.host = host
-        self.isAddNew = isAddNew
-    }
-
-    var body: some View {
-        EmptyView()
     }
 }
 #endif

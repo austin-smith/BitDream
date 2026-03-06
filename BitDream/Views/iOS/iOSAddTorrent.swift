@@ -6,11 +6,11 @@ import UniformTypeIdentifiers
 struct iOSAddTorrent: View {
     // MARK: - Properties
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     @State private var alertInput: String = ""
     @State private var downloadDir: String = ""
-    @State private var errorMessage: String? = nil
+    @State private var errorMessage: String?
     @State private var showingError = false
 
     // MARK: - Body
@@ -86,18 +86,5 @@ struct iOSAddTorrent: View {
 
     // MARK: - Actions
     // Using shared implementations from AddTorrent.swift
-}
-#else
-// Empty struct for macOS to reference - this won't be compiled on macOS but provides the type
-struct iOSAddTorrent: View {
-    @ObservedObject var store: Store
-
-    init(store: Store) {
-        self.store = store
-    }
-
-    var body: some View {
-        EmptyView()
-    }
 }
 #endif

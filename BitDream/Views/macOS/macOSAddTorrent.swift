@@ -6,19 +6,19 @@ import UniformTypeIdentifiers
 struct macOSAddTorrent: View {
     // MARK: - Properties
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var store: Store
+    @ObservedObject var store: AppStore
 
     @State private var inputMethod: TorrentInputMethod = .magnetLink
     @State private var alertInput: String = ""
     @State private var downloadDir: String = ""
-    @State private var errorMessage: String? = nil
+    @State private var errorMessage: String?
     @State private var showingError = false
     @State private var selectedTorrentFiles: [(name: String, data: Data)] = []
     private enum ActiveImporter {
         case torrentFiles
         case downloadFolder
     }
-    @State private var activeImporter: ActiveImporter? = nil
+    @State private var activeImporter: ActiveImporter?
     @State private var isShowingImporter: Bool = false
 
     enum TorrentInputMethod: String, CaseIterable, Identifiable {
@@ -145,7 +145,7 @@ struct macOSAddTorrent: View {
                     Button(action: {
                         inputMethod = .magnetLink
                         selectedTorrentFiles = []
-                    }) {
+                    }, label: {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Image(systemName: "link")
@@ -180,7 +180,7 @@ struct macOSAddTorrent: View {
                                 .stroke(inputMethod == .magnetLink ? Color.accentColor : Color.gray.opacity(0.3), lineWidth: 1)
                         )
                         .foregroundColor(inputMethod == .magnetLink ? .accentColor : .primary)
-                    }
+                    })
                     .buttonStyle(PlainButtonStyle())
                     .frame(maxWidth: .infinity)
 
@@ -188,7 +188,7 @@ struct macOSAddTorrent: View {
                     Button(action: {
                         inputMethod = .torrentFile
                         alertInput = ""
-                    }) {
+                    }, label: {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Image(systemName: "doc")
@@ -223,7 +223,7 @@ struct macOSAddTorrent: View {
                                 .stroke(inputMethod == .torrentFile ? Color.accentColor : Color.gray.opacity(0.3), lineWidth: 1)
                         )
                         .foregroundColor(inputMethod == .torrentFile ? .accentColor : .primary)
-                    }
+                    })
                     .buttonStyle(PlainButtonStyle())
                     .frame(maxWidth: .infinity)
                 }
@@ -302,9 +302,9 @@ struct macOSAddTorrent: View {
                     Button(action: {
                         activeImporter = .downloadFolder
                         isShowingImporter = true
-                    }) {
+                    }, label: {
                         Image(systemName: "folder")
-                    }
+                    })
                     .buttonStyle(.borderless)
                     .help("Choose download location")
                 }
@@ -358,20 +358,6 @@ struct macOSAddTorrent: View {
 
 // MARK: - Preview
 #Preview("Add Torrent") {
-    macOSAddTorrent(store: Store())
-}
-
-#else
-// Empty struct for iOS to reference - this won't be compiled on iOS but provides the type
-struct macOSAddTorrent: View {
-    @ObservedObject var store: Store
-
-    init(store: Store) {
-        self.store = store
-    }
-
-    var body: some View {
-        EmptyView()
-    }
+    macOSAddTorrent(store: AppStore())
 }
 #endif

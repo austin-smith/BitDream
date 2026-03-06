@@ -34,7 +34,7 @@ public enum TorrentStatus: Int {
 
 public enum TorrentError: Int {
     /// everything's fine
-    case ok = 0
+    case none = 0
     /// when we announced to the tracker, we got a warning in the response
     case trackerWarning = 1
     /// when we announced to the tracker, we got an error in the response
@@ -113,33 +113,34 @@ public struct Torrent: Codable, Hashable, Identifiable, Sendable {
     var statusCalc: TorrentStatusCalc {
         if status == TorrentStatus.stopped.rawValue && percentDone == 1 {
             return TorrentStatusCalc.complete
-        }
-        else if status == TorrentStatus.stopped.rawValue {
+        } else if status == TorrentStatus.stopped.rawValue {
             return TorrentStatusCalc.paused
-        }
-        else if status == TorrentStatus.queuedToVerify.rawValue
+        } else if status == TorrentStatus.queuedToVerify.rawValue
             || status == TorrentStatus.queuedToDownload.rawValue
             || status == TorrentStatus.queuedToSeed.rawValue {
 
             return TorrentStatusCalc.queued
-        }
-        else if status == TorrentStatus.verifying.rawValue {
+        } else if status == TorrentStatus.verifying.rawValue {
             return TorrentStatusCalc.verifyingLocalData
-        }
-        else if status == TorrentStatus.downloading.rawValue && metadataPercentComplete < 1 {
+        } else if status == TorrentStatus.downloading.rawValue && metadataPercentComplete < 1 {
             return TorrentStatusCalc.retrievingMetadata
-        }
-        else if status == TorrentStatus.downloading.rawValue && isStalled {
+        } else if status == TorrentStatus.downloading.rawValue && isStalled {
             return TorrentStatusCalc.stalled
-        }
-        else if status == TorrentStatus.downloading.rawValue {
+        } else if status == TorrentStatus.downloading.rawValue {
             return TorrentStatusCalc.downloading
-        }
-        else if status == TorrentStatus.seeding.rawValue {
+        } else if status == TorrentStatus.seeding.rawValue {
             return TorrentStatusCalc.seeding
-        }
-        else {
+        } else {
             return TorrentStatusCalc.unknown
+        }
+    }
+
+    var isActiveTransfer: Bool {
+        switch statusCalc {
+        case .downloading, .retrievingMetadata, .seeding, .verifyingLocalData:
+            return true
+        default:
+            return false
         }
     }
 

@@ -2,7 +2,7 @@ import SwiftUI
 
 #if os(macOS)
 struct macOSConnectionInfoView: View {
-    @EnvironmentObject var store: Store
+    @EnvironmentObject var store: AppStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -27,13 +27,16 @@ struct macOSConnectionInfoView: View {
         HStack(spacing: 12) {
             Text("Connection")
             Spacer(minLength: 16)
-            if store.connectionStatus == Store.ConnectionStatus.reconnecting {
-                Button(action: {
-                    store.retryNow()
-                }) {
-                    Image(systemName: "arrow.clockwise")
-                        .imageScale(.small)
-                }
+            if store.connectionStatus == AppStore.ConnectionStatus.reconnecting {
+                Button(
+                    action: {
+                        store.retryNow()
+                    },
+                    label: {
+                        Image(systemName: "arrow.clockwise")
+                            .imageScale(.small)
+                    }
+                )
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 .help("Retry now")
@@ -76,7 +79,6 @@ struct macOSConnectionInfoView: View {
             }
         }
     }
-
 
     @ViewBuilder
     private func keyValueRow(_ key: String, _ value: String) -> some View {

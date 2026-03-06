@@ -4,7 +4,7 @@ import SwiftUI
 #if os(macOS)
 struct macOSTorrentListExpanded: View {
     var torrent: Torrent
-    var store: Store
+    var store: AppStore
     var selectedTorrents: Set<Torrent>
     var showContentTypeIcons: Bool
 
@@ -14,10 +14,9 @@ struct macOSTorrentListExpanded: View {
     @State private var shouldSave: Bool = false
     @State private var renameDialog: Bool = false
     @State private var renameInput: String = ""
-    @State private var renameTargetId: Int? = nil
+    @State private var renameTargetId: Int?
     @State private var showingError = false
     @State private var errorMessage = ""
-    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         HStack(spacing: 12) {
@@ -74,19 +73,6 @@ struct macOSTorrentListExpanded: View {
             renameInput: $renameInput,
             renameTargetId: $renameTargetId
         ))
-    }
-}
-
-#else
-// Empty struct for iOS to reference
-struct macOSTorrentListExpanded: View {
-    var torrent: Torrent
-    var store: Store
-    var selectedTorrents: Set<Torrent>
-    var showContentTypeIcons: Bool
-
-    var body: some View {
-        EmptyView()
     }
 }
 #endif
