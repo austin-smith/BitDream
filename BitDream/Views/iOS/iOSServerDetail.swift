@@ -77,7 +77,7 @@ struct iOSServerDetail: View {
 
                     Toggle("Use SSL", isOn: $isSSL)
                         .onAppear {
-                            if (store.host == nil) {
+                            if store.host == nil {
                                 isDefault = true
                             }
                         }
@@ -99,7 +99,7 @@ struct iOSServerDetail: View {
                     }
                 }
 
-                if (!isAddNew) {
+                if !isAddNew {
                     Button(role: .destructive, action: {
                         showingDeleteConfirmation = true
                     }, label: {
@@ -112,7 +112,7 @@ struct iOSServerDetail: View {
                 }
             }
             .onAppear {
-                if (!isAddNew) {
+                if !isAddNew {
                     if let host = host {
                         loadServerData(host: host) { name, def, hostIn, port, ssl, user, pass in
                             nameInput = name
@@ -148,7 +148,7 @@ struct iOSServerDetail: View {
             }
             .navigationBarTitle(Text(isAddNew ? "Add Server" : "Edit Server"), displayMode: .inline)
             .toolbar {
-                if (isAddNew) {
+                if isAddNew {
                     ToolbarItem (placement: .automatic) {
                         Button("Save") {
                             if validateFields() {

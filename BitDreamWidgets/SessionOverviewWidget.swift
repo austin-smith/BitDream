@@ -102,8 +102,6 @@ struct SessionOverviewWidget: Widget {
     }
 }
 
-
-
 // MARK: - Background overlay with banner and bottom speed chips
 private struct SessionOverviewBackground: View {
     let entry: SessionOverviewEntry

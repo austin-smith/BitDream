@@ -83,7 +83,6 @@ struct ContentView: View {
     }
 }
 
-
 // Helper function to set up the host
 @MainActor
 func applyStartupConnectionBehavior(hosts: [Host], store: Store) {

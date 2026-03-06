@@ -77,7 +77,6 @@ struct macOSConnectionInfoView: View {
         }
     }
 
-
     @ViewBuilder
     private func keyValueRow(_ key: String, _ value: String) -> some View {
         HStack {

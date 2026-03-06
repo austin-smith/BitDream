@@ -652,7 +652,6 @@ struct MoveSheetContent: View {
     @Binding var showingError: Bool
     @Binding var errorMessage: String
 
-
     private var isMoveEnabled: Bool {
         !movePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }

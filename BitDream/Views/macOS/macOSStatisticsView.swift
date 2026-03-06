@@ -19,7 +19,6 @@ struct macOSStatisticsView: View {
         return formatter
     }()
 
-
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             if let stats = store.sessionStats {

@@ -57,7 +57,6 @@ extension Sequence {
     }
 }
 
-
 extension Sequence {
     func sortedAscending(using descriptors: SortDescriptor<Element>...) -> [Element] {
         sorted(using: descriptors, order: .ascending)

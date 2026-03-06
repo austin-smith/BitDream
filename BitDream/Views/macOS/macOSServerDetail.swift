@@ -149,7 +149,7 @@ struct macOSServerDetail: View {
                     }
 
                     // Delete button (if editing)
-                    if (!isAddNew) {
+                    if !isAddNew {
                         Button(action: {
                             showingDeleteConfirmation = true
                         }) {
@@ -180,7 +180,7 @@ struct macOSServerDetail: View {
                 .keyboardShortcut(.escape)
 
                 Button("Save") {
-                    if (isAddNew) {
+                    if isAddNew {
                         if validateFields() {
                             saveNewServer(
                                 nameInput: nameInput,
@@ -252,7 +252,7 @@ struct macOSServerDetail: View {
             Text("Are you sure you want to delete this server? This action cannot be undone.")
         }
         .onAppear {
-            if (!isAddNew) {
+            if !isAddNew {
                 if let host = host {
                     loadServerData(host: host) { name, def, hostIn, port, ssl, user, pass in
                         nameInput = name
@@ -266,7 +266,7 @@ struct macOSServerDetail: View {
                 }
             }
 
-            if (store.host == nil) {
+            if store.host == nil {
                 isDefault = true
             }
         }

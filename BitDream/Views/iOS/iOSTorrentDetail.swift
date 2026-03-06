@@ -160,7 +160,7 @@ struct iOSTorrentDetail: View {
                         showingDeleteConfirmation = true
                     }, label: {
                         HStack {
-                            HStack{
+                            HStack {
                                 Image(systemName: "trash")
                                 Text("Delete…")
                                 Spacer()
@@ -231,7 +231,6 @@ struct iOSTorrentDetail: View {
             }
             .transmissionErrorAlert(isPresented: $showingDeleteError, message: deleteErrorMessage)
         }
-
 
     }
 }

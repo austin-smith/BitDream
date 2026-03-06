@@ -28,7 +28,6 @@ class FileTableViewModel: ObservableObject {
     @Published var showOther = true
 }
 
-
 // MARK: - Main View
 
 struct macOSTorrentFileDetail: View {

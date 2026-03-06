@@ -158,7 +158,7 @@ func createStatusView(for torrent: Torrent) -> some View {
     let rateUploadFormatted = formatByteCount(torrent.rateUpload)
 
     return Group {
-        if (torrent.error != TorrentError.none.rawValue) {
+        if torrent.error != TorrentError.none.rawValue {
             Text("Tracker returned error: \(torrent.errorString)")
                 .foregroundColor(.red)
         } else {

@@ -80,7 +80,6 @@ struct macOSTorrentListCompact: View {
     private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "persistence")
     @AppStorage(Self.columnCustomizationKey) private var columnCustomizationData: Data?
 
-
     private var rows: [TorrentTableRow] {
         torrents.map { TorrentTableRow(torrent: $0) }
     }

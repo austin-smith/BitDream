@@ -649,14 +649,12 @@ struct FileManagementContent: View {
                     set: { editModel.setValue("downloadDir", $0, original: config.downloadDir) }
                 ))
 
-
                 Button("Check Space") {
                     checkDirectoryFreeSpace(
                         path: editModel.getValue("downloadDir", fallback: config.downloadDir),
                         editModel: editModel
                     )
                 }
-
 
                 if let freeSpaceInfo = editModel.freeSpaceInfo {
                     HStack(spacing: 6) {
