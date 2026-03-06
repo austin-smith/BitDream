@@ -16,7 +16,20 @@ public struct SessionOverviewSnapshot: Codable, Equatable {
     public let ratio: Double
     public let timestamp: Date
 
-    public init(serverId: String, serverName: String, active: Int, paused: Int, total: Int, totalCount: Int, downloadingCount: Int, completedCount: Int, downloadSpeed: Int64, uploadSpeed: Int64, ratio: Double, timestamp: Date) {
+    public init(
+        serverId: String,
+        serverName: String,
+        active: Int,
+        paused: Int,
+        total: Int,
+        totalCount: Int,
+        downloadingCount: Int,
+        completedCount: Int,
+        downloadSpeed: Int64,
+        uploadSpeed: Int64,
+        ratio: Double,
+        timestamp: Date
+    ) {
         self.serverId = serverId
         self.serverName = serverName
         self.active = active

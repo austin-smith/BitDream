@@ -472,7 +472,14 @@ func getSessionStatsForWidgetRefresh(config: TransmissionConfig, auth: Transmiss
 /// - Parameter file: A boolean value; true if `fileUrl` is a base64 encoded file and false if `fileUrl` is a magnet link
 /// - Parameter config: A `TransmissionConfig` containing the server's address and port
 /// - Parameter onAdd: An escaping function that receives the servers response code represented as a `TransmissionResponse`
-public func addTorrent(fileUrl: String, saveLocation: String, auth: TransmissionAuth, file: Bool, config: TransmissionConfig, onAdd: @MainActor @escaping ((response: TransmissionResponse, transferId: Int)) -> Void) -> Void {
+public func addTorrent(
+    fileUrl: String,
+    saveLocation: String,
+    auth: TransmissionAuth,
+    file: Bool,
+    config: TransmissionConfig,
+    onAdd: @MainActor @escaping ((response: TransmissionResponse, transferId: Int)) -> Void
+) -> Void {
     // Create the torrent body based on the value of `fileUrl` and `file`
     let args: [String: String] = file ?
         ["metainfo": fileUrl, "download-dir": saveLocation] :
@@ -563,7 +570,12 @@ public struct SessionInfo {
 /// - Parameter config: The server's config
 /// - Parameter auth: The username and password for the server
 /// - Parameter onResponse: An escaping function that receives session information from the server
-public func getSession(config: TransmissionConfig, auth: TransmissionAuth, onResponse: @MainActor @escaping (TransmissionSessionResponseArguments) -> Void, onError: @MainActor @escaping (String) -> Void) {
+public func getSession(
+    config: TransmissionConfig,
+    auth: TransmissionAuth,
+    onResponse: @MainActor @escaping (TransmissionSessionResponseArguments) -> Void,
+    onError: @MainActor @escaping (String) -> Void
+) {
     let fields = [
         // Existing fields
         "download-dir",
