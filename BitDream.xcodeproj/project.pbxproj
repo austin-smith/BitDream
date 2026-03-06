@@ -50,16 +50,19 @@
 		4BC2C92B2E6E22B800011971 /* macOSTorrentListExpanded.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC2C9292E6E22B800011971 /* macOSTorrentListExpanded.swift */; };
 		4BC2C92C2E6E22B800011971 /* macOSTorrentListCompact.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC2C9282E6E22B800011971 /* macOSTorrentListCompact.swift */; };
 		4BC4A4BA2E7248A300578D08 /* macOSMenuCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC4A4B92E7248A300578D08 /* macOSMenuCommands.swift */; };
-		4BC5C2AA2D7D20B500D80AB4 /* iOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */; };
-		4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */; };
-		4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */; };
-		4BC5C2B42D7D415100D80AB4 /* iOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */; };
-		4BC6F24B2E89F8510037DFDF /* PiecesGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC6F24A2E89F8510037DFDF /* PiecesGridView.swift */; };
-		4BCF274F2E774EDC00F6BF76 /* DataWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274E2E774EDC00F6BF76 /* DataWriter.swift */; };
-		4BCF27502E774EDC00F6BF76 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274D2E774EDC00F6BF76 /* DataModels.swift */; };
-		4BCF27512E774F3E00F6BF76 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274D2E774EDC00F6BF76 /* DataModels.swift */; };
-		4BD8554A2E77424B00606224 /* WidgetKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD855492E77424B00606224 /* WidgetKitBridge.swift */; };
-		4BD8554B2E77424B00606224 /* WidgetKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD855492E77424B00606224 /* WidgetKitBridge.swift */; };
+			4BC5C2AA2D7D20B500D80AB4 /* iOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */; };
+			4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */; };
+			4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */; };
+			4BC5C2B42D7D415100D80AB4 /* iOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */; };
+			4BC6F24B2E89F8510037DFDF /* PiecesGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC6F24A2E89F8510037DFDF /* PiecesGridView.swift */; };
+			4BCF274F2E774EDC00F6BF76 /* DataWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274E2E774EDC00F6BF76 /* DataWriter.swift */; };
+			4BCF27502E774EDC00F6BF76 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274D2E774EDC00F6BF76 /* DataModels.swift */; };
+			4BCF27512E774F3E00F6BF76 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274D2E774EDC00F6BF76 /* DataModels.swift */; };
+			4F8000044000000000A1B2C3 /* macOSContentSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8000014000000000A1B2C3 /* macOSContentSidebar.swift */; };
+			4F8000054000000000A1B2C3 /* macOSContentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8000024000000000A1B2C3 /* macOSContentDetail.swift */; };
+			4F8000064000000000A1B2C3 /* macOSContentToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8000034000000000A1B2C3 /* macOSContentToolbar.swift */; };
+			4BD8554A2E77424B00606224 /* WidgetKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD855492E77424B00606224 /* WidgetKitBridge.swift */; };
+			4BD8554B2E77424B00606224 /* WidgetKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD855492E77424B00606224 /* WidgetKitBridge.swift */; };
 		4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD938E92D82AF6F006CE97C /* ThemeManager.swift */; };
 		4BDA6AA92E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4BDA6AA82E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon */; };
 		4BDACD172E73DB220074F714 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4BDACD162E73DB220074F714 /* WidgetKit.framework */; };
@@ -167,15 +170,18 @@
 		4BC2C9282E6E22B800011971 /* macOSTorrentListCompact.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentListCompact.swift; sourceTree = "<group>"; };
 		4BC2C9292E6E22B800011971 /* macOSTorrentListExpanded.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentListExpanded.swift; sourceTree = "<group>"; };
 		4BC4A4B92E7248A300578D08 /* macOSMenuCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSMenuCommands.swift; sourceTree = "<group>"; };
-		4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSContentView.swift; sourceTree = "<group>"; };
-		4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentView.swift; sourceTree = "<group>"; };
-		4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentDetail.swift; sourceTree = "<group>"; };
-		4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentDetail.swift; sourceTree = "<group>"; };
-		4BC6F24A2E89F8510037DFDF /* PiecesGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiecesGridView.swift; sourceTree = "<group>"; };
-		4BCF274D2E774EDC00F6BF76 /* DataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataModels.swift; sourceTree = "<group>"; };
-		4BCF274E2E774EDC00F6BF76 /* DataWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataWriter.swift; sourceTree = "<group>"; };
-		4BD855492E77424B00606224 /* WidgetKitBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetKitBridge.swift; sourceTree = "<group>"; };
-		4BD938E92D82AF6F006CE97C /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+			4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSContentView.swift; sourceTree = "<group>"; };
+			4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentView.swift; sourceTree = "<group>"; };
+			4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentDetail.swift; sourceTree = "<group>"; };
+			4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentDetail.swift; sourceTree = "<group>"; };
+			4BC6F24A2E89F8510037DFDF /* PiecesGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiecesGridView.swift; sourceTree = "<group>"; };
+			4BCF274D2E774EDC00F6BF76 /* DataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataModels.swift; sourceTree = "<group>"; };
+			4BCF274E2E774EDC00F6BF76 /* DataWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataWriter.swift; sourceTree = "<group>"; };
+			4F8000014000000000A1B2C3 /* macOSContentSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentSidebar.swift; sourceTree = "<group>"; };
+			4F8000024000000000A1B2C3 /* macOSContentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentDetail.swift; sourceTree = "<group>"; };
+			4F8000034000000000A1B2C3 /* macOSContentToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentToolbar.swift; sourceTree = "<group>"; };
+			4BD855492E77424B00606224 /* WidgetKitBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetKitBridge.swift; sourceTree = "<group>"; };
+			4BD938E92D82AF6F006CE97C /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		4BDA6AA82E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIconPixelyClouds.icon; sourceTree = "<group>"; };
 		4BDACD142E73DB220074F714 /* BitDreamWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BitDreamWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4BDACD162E73DB220074F714 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -375,12 +381,15 @@
 			children = (
 				4C1000003A00000000A1B2C3 /* MenuBar */,
 				4C2000003C00000000A1B2C3 /* Settings */,
-				4B73985F2E7029BD00D06E5D /* macOSAboutView.swift */,
-				4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */,
-				4B73986B2F1A112200D06E5D /* macOSConnectionInfoView.swift */,
-				4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */,
-				4BC4A4B92E7248A300578D08 /* macOSMenuCommands.swift */,
-				4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */,
+					4B73985F2E7029BD00D06E5D /* macOSAboutView.swift */,
+					4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */,
+					4B73986B2F1A112200D06E5D /* macOSConnectionInfoView.swift */,
+					4F8000024000000000A1B2C3 /* macOSContentDetail.swift */,
+					4F8000014000000000A1B2C3 /* macOSContentSidebar.swift */,
+					4F8000034000000000A1B2C3 /* macOSContentToolbar.swift */,
+					4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */,
+					4BC4A4B92E7248A300578D08 /* macOSMenuCommands.swift */,
+					4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */,
 				4B642D782D7E1EED003CEADC /* macOSServerList.swift */,
 				4B73985D2E70181D00D06E5D /* macOSStatisticsView.swift */,
 				4BFFAA002E7F000000000001 /* macOSTorrentActionsMenu.swift */,
@@ -694,11 +703,14 @@
 				4C2000053C00000000A1B2C3 /* macOSGeneralSettingsTab.swift in Sources */,
 				4C2000083C00000000A1B2C3 /* macOSNetworkSettingsTab.swift in Sources */,
 				4B6F1EAE2D82D337003D8F6E /* macOSSettingsView.swift in Sources */,
-				4C2000073C00000000A1B2C3 /* macOSSpeedLimitsSettingsTab.swift in Sources */,
-				4C2000063C00000000A1B2C3 /* macOSTorrentSettingsTab.swift in Sources */,
-				4BD8554B2E77424B00606224 /* WidgetKitBridge.swift in Sources */,
-				4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */,
-				4B73985E2E70181D00D06E5D /* macOSStatisticsView.swift in Sources */,
+					4C2000073C00000000A1B2C3 /* macOSSpeedLimitsSettingsTab.swift in Sources */,
+					4C2000063C00000000A1B2C3 /* macOSTorrentSettingsTab.swift in Sources */,
+					4BD8554B2E77424B00606224 /* WidgetKitBridge.swift in Sources */,
+					4F8000054000000000A1B2C3 /* macOSContentDetail.swift in Sources */,
+					4F8000044000000000A1B2C3 /* macOSContentSidebar.swift in Sources */,
+					4F8000064000000000A1B2C3 /* macOSContentToolbar.swift in Sources */,
+					4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */,
+					4B73985E2E70181D00D06E5D /* macOSStatisticsView.swift in Sources */,
 				4B73986C2F1A112200D06E5D /* macOSConnectionInfoView.swift in Sources */,
 				4B642D6C2D7E151A003CEADC /* macOSServerDetail.swift in Sources */,
 				4B642D792D7E1EED003CEADC /* macOSServerList.swift in Sources */,
