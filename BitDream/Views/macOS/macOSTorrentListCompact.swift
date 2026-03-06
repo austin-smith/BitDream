@@ -80,25 +80,33 @@ struct macOSTorrentListCompact: View {
     private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "persistence")
     @AppStorage(Self.columnCustomizationKey) private var columnCustomizationData: Data?
 
-    private var rows: [TorrentTableRow] {
+    var body: some View {
+        tableView
+    }
+}
+
+private extension macOSTorrentListCompact {
+    // MARK: - Derived State
+
+    var rows: [TorrentTableRow] {
         torrents.map { TorrentTableRow(torrent: $0) }
     }
 
-    private var sortedRows: [TorrentTableRow] {
+    var sortedRows: [TorrentTableRow] {
         rows.sorted(using: tableSortOrder)
     }
 
-    private var desiredTableSortOrder: [KeyPathComparator<TorrentTableRow>] {
+    var desiredTableSortOrder: [KeyPathComparator<TorrentTableRow>] {
         [tableSortComparator(for: sortProperty, order: sortOrder)]
     }
 
-    private var selectedTorrentsSet: Set<Torrent> {
+    var selectedTorrentsSet: Set<Torrent> {
         Set(selection.compactMap { id in
             store.torrents.first { $0.id == id }
         })
     }
 
-    private var dialogState: TorrentActionDialogState {
+    var dialogState: TorrentActionDialogState {
         TorrentActionDialogState(
             labelInput: $labelInput,
             labelDialog: $labelDialog,
@@ -114,7 +122,9 @@ struct macOSTorrentListCompact: View {
         )
     }
 
-    var body: some View {
+    // MARK: - View
+
+    var tableView: some View {
         Table(sortedRows, selection: $selection, sortOrder: $tableSortOrder, columnCustomization: $columnCustomization, columns: {
             // Status icon column
             TableColumn("") { row in
@@ -256,76 +266,19 @@ struct macOSTorrentListCompact: View {
         .contextMenu(forSelectionType: TorrentTableRow.ID.self) { selection in
             torrentContextMenu(for: selection)
         }
-        .sheet(isPresented: $renameDialog) {
-            let selectedTorrentsSet = Set(selection.compactMap { id in
-                store.torrents.first { $0.id == id }
-            })
-            RenameSheetContent(
-                store: store,
-                selectedTorrents: selectedTorrentsSet,
-                renameInput: $renameInput,
-                renameTargetId: $renameTargetId,
-                isPresented: $renameDialog,
-                showingError: $showingError,
-                errorMessage: $errorMessage
-            )
-            .frame(width: 420)
-            .padding()
-        }
-        .sheet(isPresented: $labelDialog) {
-            let selectedTorrentsSet = Set(selection.compactMap { id in
-                store.torrents.first { $0.id == id }
-            })
-            LabelEditSheetContent(
-                store: store,
-                selectedTorrents: selectedTorrentsSet,
-                labelInput: $labelInput,
-                shouldSave: $shouldSave,
-                isPresented: $labelDialog
-            )
-            .frame(width: 400)
-        }
-        .sheet(isPresented: $moveDialog) {
-            let selectedTorrentsSet = Set(selection.compactMap { id in
-                store.torrents.first { $0.id == id }
-            })
-            MoveSheetContent(
-                store: store,
-                selectedTorrents: selectedTorrentsSet,
-                movePath: $movePath,
-                moveShouldMove: $moveShouldMove,
-                isPresented: $moveDialog,
-                showingError: $showingError,
-                errorMessage: $errorMessage
-            )
-            .frame(width: 480)
-            .padding()
-        }
+        .sheet(isPresented: $renameDialog, content: renameSheet)
+        .sheet(isPresented: $labelDialog, content: labelSheet)
+        .sheet(isPresented: $moveDialog, content: moveSheet)
         .torrentDeleteAlert(
             isPresented: $deleteDialog,
-            selectedTorrents: {
-                Set(selection.compactMap { id in
-                    store.torrents.first { $0.id == id }
-                })
-            },
+            selectedTorrents: { selectedTorrentsSet },
             store: store,
             showingError: $showingError,
             errorMessage: $errorMessage
         )
-            .interactiveDismissDisabled(false)
+        .interactiveDismissDisabled(false)
         .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
-        .onAppear {
-            syncTableSortOrder()
-            if let data = columnCustomizationData {
-                do {
-                    let decoded = try JSONDecoder().decode(TableColumnCustomization<TorrentTableRow>.self, from: data)
-                    columnCustomization = decoded
-                } catch {
-                    Self.logger.notice("Failed to decode saved table column customization; resetting to defaults: \(error.localizedDescription)")
-                    columnCustomization = TableColumnCustomization<TorrentTableRow>()
-                }
-            }
-        }
+        .onAppear(perform: handleAppear)
         .onChange(of: sortProperty) { _, _ in
             syncTableSortOrder()
         }
@@ -336,23 +289,84 @@ struct macOSTorrentListCompact: View {
             syncMenuSortState(from: newValue)
         }
         .onChange(of: columnCustomization) { _, newValue in
-            do {
-                let encoded = try JSONEncoder().encode(newValue)
-                columnCustomizationData = encoded
-            } catch {
-                Self.logger.error("Failed to encode table column customization: \(error.localizedDescription)")
-            }
+            persistColumnCustomization(newValue)
         }
     }
 
-    private func syncTableSortOrder() {
+    func labelSheet() -> some View {
+        LabelEditSheetContent(
+            store: store,
+            selectedTorrents: selectedTorrentsSet,
+            labelInput: $labelInput,
+            shouldSave: $shouldSave,
+            isPresented: $labelDialog
+        )
+        .frame(width: 400)
+    }
+
+    func renameSheet() -> some View {
+        RenameSheetContent(
+            store: store,
+            selectedTorrents: selectedTorrentsSet,
+            renameInput: $renameInput,
+            renameTargetId: $renameTargetId,
+            isPresented: $renameDialog,
+            showingError: $showingError,
+            errorMessage: $errorMessage
+        )
+        .frame(width: 420)
+        .padding()
+    }
+
+    func moveSheet() -> some View {
+        MoveSheetContent(
+            store: store,
+            selectedTorrents: selectedTorrentsSet,
+            movePath: $movePath,
+            moveShouldMove: $moveShouldMove,
+            isPresented: $moveDialog,
+            showingError: $showingError,
+            errorMessage: $errorMessage
+        )
+        .frame(width: 480)
+        .padding()
+    }
+
+    // MARK: - Actions
+
+    func handleAppear() {
+        syncTableSortOrder()
+
+        guard let data = columnCustomizationData else {
+            return
+        }
+
+        do {
+            let decoded = try JSONDecoder().decode(TableColumnCustomization<TorrentTableRow>.self, from: data)
+            columnCustomization = decoded
+        } catch {
+            Self.logger.notice("Failed to decode saved table column customization; resetting to defaults: \(error.localizedDescription)")
+            columnCustomization = TableColumnCustomization<TorrentTableRow>()
+        }
+    }
+
+    func persistColumnCustomization(_ newValue: TableColumnCustomization<TorrentTableRow>) {
+        do {
+            let encoded = try JSONEncoder().encode(newValue)
+            columnCustomizationData = encoded
+        } catch {
+            Self.logger.error("Failed to encode table column customization: \(error.localizedDescription)")
+        }
+    }
+
+    func syncTableSortOrder() {
         let desired = desiredTableSortOrder
         if !isSameSortOrder(tableSortOrder, desired) {
             tableSortOrder = desired
         }
     }
 
-    private func syncMenuSortState(from newValue: [KeyPathComparator<TorrentTableRow>]) {
+    func syncMenuSortState(from newValue: [KeyPathComparator<TorrentTableRow>]) {
         guard let comparator = newValue.first,
               let property = sortProperty(from: comparator) else {
             return
@@ -366,7 +380,9 @@ struct macOSTorrentListCompact: View {
         }
     }
 
-    private func tableSortComparator(for property: SortProperty, order: SortOrder) -> KeyPathComparator<TorrentTableRow> {
+    // MARK: - Sorting
+
+    func tableSortComparator(for property: SortProperty, order: SortOrder) -> KeyPathComparator<TorrentTableRow> {
         let comparatorOrder: SwiftUI.SortOrder = order == .ascending ? .forward : .reverse
         switch property {
         case .name:
@@ -382,7 +398,7 @@ struct macOSTorrentListCompact: View {
         }
     }
 
-    private func sortProperty(from comparator: KeyPathComparator<TorrentTableRow>) -> SortProperty? {
+    func sortProperty(from comparator: KeyPathComparator<TorrentTableRow>) -> SortProperty? {
         if comparator.keyPath == \TorrentTableRow.name {
             return .name
         }
@@ -401,18 +417,20 @@ struct macOSTorrentListCompact: View {
         return nil
     }
 
-    private func appSortOrder(from order: SwiftUI.SortOrder) -> SortOrder {
+    func appSortOrder(from order: SwiftUI.SortOrder) -> SortOrder {
         order == .forward ? .ascending : .descending
     }
 
-    private func isSameSortOrder(_ lhs: [KeyPathComparator<TorrentTableRow>], _ rhs: [KeyPathComparator<TorrentTableRow>]) -> Bool {
+    func isSameSortOrder(_ lhs: [KeyPathComparator<TorrentTableRow>], _ rhs: [KeyPathComparator<TorrentTableRow>]) -> Bool {
         guard let left = lhs.first, let right = rhs.first else {
             return lhs.isEmpty && rhs.isEmpty
         }
         return left.keyPath == right.keyPath && left.order == right.order
     }
 
-    private func etaText(for row: TorrentTableRow) -> String {
+    // MARK: - Helpers
+
+    func etaText(for row: TorrentTableRow) -> String {
         guard row.torrent.statusCalc == .downloading && row.eta >= 0 else {
             return "—"
         }
@@ -426,7 +444,7 @@ struct macOSTorrentListCompact: View {
     }
 
     @ViewBuilder
-    private func torrentContextMenu(for selection: Set<TorrentTableRow.ID>) -> some View {
+    func torrentContextMenu(for selection: Set<TorrentTableRow.ID>) -> some View {
         let selectedRows = rows.filter { selection.contains($0.id) }
         let selectedTorrents = selectedRows.map { $0.torrent }
 
@@ -442,6 +460,5 @@ struct macOSTorrentListCompact: View {
             )
         }
     }
-
 }
 #endif
