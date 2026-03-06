@@ -1,5 +1,6 @@
 disabled_rules:
   - line_length
+  - todo
 
 excluded:
   - build
@@ -12,3 +13,4 @@ type_name:
 identifier_name:
   excluded:
     - "^xt$"
+    - "^id$"
