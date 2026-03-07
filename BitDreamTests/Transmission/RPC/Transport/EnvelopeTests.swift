@@ -52,6 +52,23 @@ final class TransportEnvelopeTests: XCTestCase {
         }
     }
 
+    func testSendEnvelopeMapsRPCFailureBeforeDecodingSuccessArguments() async {
+        let sender = QueueSender(steps: [
+            .http(statusCode: 200, body: #"{"result":"server busy","arguments":{}}"#)
+        ])
+        let transport = TransmissionRPCTransport(sender: sender, tokenStore: TransmissionSessionTokenStore())
+
+        await assertThrowsTransmissionError(.rpcFailure(expectedResult: "server busy")) {
+            _ = try await transport.sendEnvelope(
+                method: "session-stats",
+                arguments: EmptyArguments(),
+                config: makeConfig(),
+                auth: makeAuth(),
+                responseType: SessionStats.self
+            )
+        }
+    }
+
     func testSendEnvelopeMapsMissingResultToInvalidResponse() async {
         let sender = QueueSender(steps: [
             .http(statusCode: 200, body: #"{"arguments":{"torrentCount":4}}"#)
