@@ -247,18 +247,12 @@ func handleTransmissionResponse(
     onSuccess: @escaping () -> Void,
     onError: @escaping (String) -> Void
 ) {
-    switch response {
-    case .success:
+    guard let presentation = TransmissionLegacyCompatibility.presentation(for: response) else {
         onSuccess()
-    case .failed:
-        onError("Operation failed. Please try again.")
-    case .unauthorized:
-        onError("Authentication failed. Please check your server credentials.")
-    case .configError:
-        onError("Connection error. Please check your server settings.")
-    @unknown default:
-        onError("An unexpected error occurred. Please try again.")
+        return
     }
+
+    onError(presentation.message)
 }
 
 /// SwiftUI View modifier for displaying transmission error alerts

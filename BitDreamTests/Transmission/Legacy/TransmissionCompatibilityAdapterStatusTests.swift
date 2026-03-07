@@ -1,10 +1,10 @@
 import XCTest
 @testable import BitDream
 
-// TODO: Remove this suite when the temporary compatibility adapter is deleted.
-final class TransmissionCompatibilityAdapterTests: XCTestCase {
+// TODO: Remove these suites when the temporary compatibility adapter is deleted.
+final class TransmissionAdapterStatusTests: XCTestCase {
     func testStatusRequestMapsRPCFailureToFailed() async {
-        let adapter = makeAdapter(steps: [
+        let adapter = makeLegacyAdapter(steps: [
             .http(statusCode: 200, body: #"{"result":"queue move failed","arguments":{}}"#)
         ])
 
@@ -19,7 +19,7 @@ final class TransmissionCompatibilityAdapterTests: XCTestCase {
     }
 
     func testStatusRequestMapsUnauthorizedToUnauthorized() async {
-        let adapter = makeAdapter(steps: [
+        let adapter = makeLegacyAdapter(steps: [
             .http(statusCode: 401, body: "")
         ])
 
@@ -37,7 +37,7 @@ final class TransmissionCompatibilityAdapterTests: XCTestCase {
         var config = makeConfig()
         config.host = "bad host"
 
-        let adapter = makeAdapter(steps: [])
+        let adapter = makeLegacyAdapter(steps: [])
         let response = await adapter.performStatusRequest(
             method: "torrent-stop",
             args: EmptyArguments(),
@@ -49,7 +49,7 @@ final class TransmissionCompatibilityAdapterTests: XCTestCase {
     }
 
     func testStatusRequestMapsTimeoutToConfigError() async {
-        let adapter = makeAdapter(steps: [
+        let adapter = makeLegacyAdapter(steps: [
             .error(URLError(.timedOut))
         ])
 
@@ -64,7 +64,7 @@ final class TransmissionCompatibilityAdapterTests: XCTestCase {
     }
 
     func testStatusRequestInherits409RetryBehaviorFromTransport() async {
-        let adapter = makeAdapter(steps: [
+        let adapter = makeLegacyAdapter(steps: [
             .http(statusCode: 409, body: "", headers: [transmissionSessionTokenHeader: "fresh-token"]),
             .http(statusCode: 200, body: successEmptyBody)
         ])
@@ -80,7 +80,7 @@ final class TransmissionCompatibilityAdapterTests: XCTestCase {
     }
 
     func testTorrentAddAddedOutcomeReturnsSuccessAndID() async {
-        let adapter = makeAdapter(steps: [
+        let adapter = makeLegacyAdapter(steps: [
             .http(
                 statusCode: 200,
                 body: """
@@ -109,7 +109,7 @@ final class TransmissionCompatibilityAdapterTests: XCTestCase {
     }
 
     func testTorrentAddDuplicateOutcomeReturnsSuccessAndID() async {
-        let adapter = makeAdapter(steps: [
+        let adapter = makeLegacyAdapter(steps: [
             .http(
                 statusCode: 200,
                 body: """
@@ -138,7 +138,7 @@ final class TransmissionCompatibilityAdapterTests: XCTestCase {
     }
 
     func testTorrentAddMalformedSuccessPayloadFails() async {
-        let adapter = makeAdapter(steps: [
+        let adapter = makeLegacyAdapter(steps: [
             .http(statusCode: 200, body: #"{"result":"success","arguments":{}}"#)
         ])
 
@@ -153,7 +153,7 @@ final class TransmissionCompatibilityAdapterTests: XCTestCase {
     }
 
     func testDataRequestReturnsDecodedArguments() async throws {
-        let adapter = makeAdapter(steps: [
+        let adapter = makeLegacyAdapter(steps: [
             .http(statusCode: 200, body: successStatsBody)
         ])
 
@@ -174,7 +174,7 @@ final class TransmissionCompatibilityAdapterTests: XCTestCase {
     }
 
     func testDataRequestWrapsFailuresInCompatibilityError() async {
-        let adapter = makeAdapter(steps: [
+        let adapter = makeLegacyAdapter(steps: [
             .http(statusCode: 200, body: #"{"result":"server busy","arguments":{}}"#)
         ])
 
@@ -195,12 +195,4 @@ final class TransmissionCompatibilityAdapterTests: XCTestCase {
             XCTAssertEqual(error.localizedDescription, "server busy")
         }
     }
-
-    private func makeAdapter(steps: [QueueSender.Step]) -> TransmissionLegacyAdapter {
-        TransmissionLegacyAdapter(
-            transport: TransmissionTransport(sender: QueueSender(steps: steps))
-        )
-    }
 }
-
-private let successEmptyBody = #"{"result":"success","arguments":{}}"#

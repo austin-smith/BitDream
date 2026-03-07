@@ -1,65 +1,20 @@
 import Foundation
 
-internal struct TransmissionLegacyCompatibilityError: LocalizedError, Sendable {
-    let transmissionError: TransmissionError
-
-    var errorDescription: String? {
-        switch transmissionError {
-        case .invalidEndpointConfiguration:
-            return "Connection error. Please check your server settings."
-        case .unauthorized:
-            return "Authentication failed. Please check your server credentials."
-        case .transport(let underlyingDescription):
-            return underlyingDescription
-        case .timeout:
-            return "The request timed out."
-        case .cancelled:
-            return "The request was cancelled."
-        case .httpStatus(let code, let body):
-            if let body, !body.isEmpty {
-                return body
-            }
-            return "Server returned HTTP \(code)."
-        case .rpcFailure(let result):
-            return result
-        case .invalidResponse:
-            return "The server returned an invalid response."
-        case .decoding:
-            return "Failed to decode the server response."
-        }
-    }
-}
-
-private actor TransmissionLegacyConnectionCache {
-    private struct Key: Hashable, Sendable {
-        let endpoint: TransmissionEndpoint
-        let auth: TransmissionAuth
-    }
-
-    private let transport: TransmissionTransport
-    private var connections: [Key: TransmissionConnection] = [:]
-
-    init(transport: TransmissionTransport) {
-        self.transport = transport
-    }
-
-    func connection(endpoint: TransmissionEndpoint, auth: TransmissionAuth) -> TransmissionConnection {
-        let key = Key(endpoint: endpoint, auth: auth)
-        if let existing = connections[key] {
-            return existing
-        }
-
-        let connection = TransmissionConnection(endpoint: endpoint, auth: auth, transport: transport)
-        connections[key] = connection
-        return connection
-    }
-}
-
 internal struct TransmissionLegacyAdapter: Sendable {
-    private let connectionCache: TransmissionLegacyConnectionCache
+    private let factory: TransmissionConnectionFactory
 
-    init(transport: TransmissionTransport = TransmissionTransport()) {
-        self.connectionCache = TransmissionLegacyConnectionCache(transport: transport)
+    init(factory: TransmissionConnectionFactory = TransmissionConnectionFactory()) {
+        self.factory = factory
+    }
+
+    init(
+        transport: TransmissionTransport = TransmissionTransport(),
+        credentialResolver: TransmissionCredentialResolver = .live
+    ) {
+        self.factory = TransmissionConnectionFactory(
+            transport: transport,
+            credentialResolver: credentialResolver
+        )
     }
 
     func performDataRequest<Args: Codable & Sendable, ResponseData: Codable & Sendable>(
@@ -78,7 +33,7 @@ internal struct TransmissionLegacyAdapter: Sendable {
             )
             return .success(responseData)
         } catch {
-            return .failure(Self.compatibilityError(from: error))
+            return .failure(TransmissionLegacyCompatibility.localizedError(from: error))
         }
     }
 
@@ -96,7 +51,7 @@ internal struct TransmissionLegacyAdapter: Sendable {
             )
             return .success
         } catch {
-            return Self.compatibilityResponse(from: error)
+            return TransmissionLegacyCompatibility.response(from: error)
         }
     }
 
@@ -114,47 +69,94 @@ internal struct TransmissionLegacyAdapter: Sendable {
                 return (.success, torrent.id)
             }
         } catch {
-            return (Self.compatibilityResponse(from: error), 0)
+            return (TransmissionLegacyCompatibility.response(from: error), 0)
         }
     }
 
-    static func compatibilityResponse(from error: Error) -> TransmissionResponse {
-        switch compatibilityTransmissionError(from: error) {
-        case .unauthorized:
-            return .unauthorized
-        case .invalidEndpointConfiguration, .transport, .timeout:
-            return .configError
-        case .rpcFailure, .httpStatus, .invalidResponse, .decoding, .cancelled:
-            return .failed
+    func fetchTorrentSummary(
+        config: TransmissionConfig,
+        auth: TransmissionAuth
+    ) async -> Result<[Torrent], Error> {
+        await performQuery(config: config, auth: auth) { connection in
+            try await connection.fetchTorrentSummary()
         }
     }
 
-    static func compatibilityError(from error: Error) -> Error {
-        TransmissionLegacyCompatibilityError(transmissionError: compatibilityTransmissionError(from: error))
+    func fetchWidgetSummary(
+        config: TransmissionConfig,
+        auth: TransmissionAuth
+    ) async -> Result<[Torrent], Error> {
+        await performQuery(config: config, auth: auth) { connection in
+            try await connection.fetchWidgetSummary()
+        }
+    }
+
+    func fetchTorrentFiles(
+        transferID: Int,
+        config: TransmissionConfig,
+        auth: TransmissionAuth
+    ) async -> Result<TorrentFilesResponseData, Error> {
+        await performQuery(config: config, auth: auth) { connection in
+            try await connection.fetchTorrentFiles(id: transferID)
+        }
+    }
+
+    func fetchTorrentPeers(
+        transferID: Int,
+        config: TransmissionConfig,
+        auth: TransmissionAuth
+    ) async -> Result<TorrentPeersResponseData, Error> {
+        await performQuery(config: config, auth: auth) { connection in
+            try await connection.fetchTorrentPeers(id: transferID)
+        }
+    }
+
+    func fetchTorrentPieces(
+        transferID: Int,
+        config: TransmissionConfig,
+        auth: TransmissionAuth
+    ) async -> Result<TorrentPiecesResponseData, Error> {
+        await performQuery(config: config, auth: auth) { connection in
+            try await connection.fetchTorrentPieces(id: transferID)
+        }
+    }
+
+    func fetchSessionStats(
+        config: TransmissionConfig,
+        auth: TransmissionAuth
+    ) async -> Result<SessionStats, Error> {
+        await performQuery(config: config, auth: auth) { connection in
+            try await connection.fetchSessionStats()
+        }
+    }
+
+    func fetchSessionSettings(
+        config: TransmissionConfig,
+        auth: TransmissionAuth
+    ) async -> Result<TransmissionSessionResponseArguments, Error> {
+        await performQuery(config: config, auth: auth) { connection in
+            try await connection.fetchSessionSettings()
+        }
     }
 
     private func connection(
         for config: TransmissionConfig,
         auth: TransmissionAuth
     ) async throws -> TransmissionConnection {
-        let endpoint = try TransmissionEndpoint(config: config)
-        return await connectionCache.connection(endpoint: endpoint, auth: auth)
+        try await factory.connection(for: TransmissionConnectionDescriptor(config: config, auth: auth))
     }
 
-    private static func compatibilityTransmissionError(from error: Error) -> TransmissionError {
-        if let compatibilityError = error as? TransmissionLegacyCompatibilityError {
-            return compatibilityError.transmissionError
+    private func performQuery<Success: Sendable>(
+        config: TransmissionConfig,
+        auth: TransmissionAuth,
+        operation: (TransmissionConnection) async throws -> Success
+    ) async -> Result<Success, Error> {
+        do {
+            let connection = try await connection(for: config, auth: auth)
+            return .success(try await operation(connection))
+        } catch {
+            return .failure(TransmissionLegacyCompatibility.localizedError(from: error))
         }
-
-        if let transmissionError = error as? TransmissionError {
-            return transmissionError
-        }
-
-        if let transportFailure = error as? TransmissionTransportFailure {
-            return transportFailure.transmissionError
-        }
-
-        return .transport(underlyingDescription: error.localizedDescription)
     }
 }
 
@@ -179,25 +181,6 @@ public func performTransmissionDataRequest<Args: Codable & Sendable, ResponseDat
             responseType: ResponseData.self
         )
         await completion(result)
-    }
-}
-
-private func performTransmissionDataRequestInBackground<Args: Codable & Sendable, ResponseData: Codable & Sendable>(
-    method: String,
-    args: Args,
-    config: TransmissionConfig,
-    auth: TransmissionAuth,
-    completion: @Sendable @escaping (Result<ResponseData, Error>) -> Void
-) {
-    Task {
-        let result = await legacyTransmissionAdapter.performDataRequest(
-            method: method,
-            args: args,
-            config: config,
-            auth: auth,
-            responseType: ResponseData.self
-        )
-        completion(result)
     }
 }
 
@@ -243,51 +226,25 @@ private func executeTorrentAction(actionMethod: String, torrentId: Int, config: 
 
 /// Makes a request to the server for a list of the currently running torrents
 public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping ([Torrent]?, String?) -> Void) {
-    let fields: [String] = [
-        "activityDate", "addedDate", "desiredAvailable", "error", "errorString",
-        "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled",
-        "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete",
-        "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs",
-        "percentDone", "primary-mime-type", "downloadDir", "queuePosition",
-        "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status",
-        "uploadRatio", "uploadedEver", "downloadedEver"
-    ]
+    Task {
+        let result = await legacyTransmissionAdapter.fetchTorrentSummary(config: config, auth: auth)
 
-    performTransmissionDataRequest(
-        method: "torrent-get",
-        args: ["fields": fields] as StringListArguments,
-        config: config,
-        auth: auth
-    ) { (result: Result<[String: [Torrent]], Error>) in
         switch result {
-        case .success(let response):
-            onReceived(response["torrents"], nil)
+        case .success(let torrents):
+            await onReceived(torrents, nil)
         case .failure(let error):
-            onReceived(nil, error.localizedDescription)
+            await onReceived(nil, error.localizedDescription)
         }
     }
 }
 
 func getTorrentsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping ([Torrent]?, String?) -> Void) {
-    let fields: [String] = [
-        "activityDate", "addedDate", "desiredAvailable", "error", "errorString",
-        "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled",
-        "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete",
-        "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs",
-        "percentDone", "primary-mime-type", "downloadDir", "queuePosition",
-        "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status",
-        "uploadRatio", "uploadedEver", "downloadedEver"
-    ]
+    Task {
+        let result = await legacyTransmissionAdapter.fetchWidgetSummary(config: config, auth: auth)
 
-    performTransmissionDataRequestInBackground(
-        method: "torrent-get",
-        args: ["fields": fields] as StringListArguments,
-        config: config,
-        auth: auth
-    ) { (result: Result<[String: [Torrent]], Error>) in
         switch result {
-        case .success(let response):
-            onReceived(response["torrents"], nil)
+        case .success(let torrents):
+            onReceived(torrents, nil)
         case .failure(let error):
             onReceived(nil, error.localizedDescription)
         }
@@ -295,28 +252,22 @@ func getTorrentsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionA
 }
 
 public func getSessionStats(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping (SessionStats?, String?) -> Void) {
-    performTransmissionDataRequest(
-        method: "session-stats",
-        args: EmptyArguments(),
-        config: config,
-        auth: auth
-    ) { (result: Result<SessionStats, Error>) in
+    Task {
+        let result = await legacyTransmissionAdapter.fetchSessionStats(config: config, auth: auth)
+
         switch result {
         case .success(let response):
-            onReceived(response, nil)
+            await onReceived(response, nil)
         case .failure(let error):
-            onReceived(nil, error.localizedDescription)
+            await onReceived(nil, error.localizedDescription)
         }
     }
 }
 
 func getSessionStatsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping (SessionStats?, String?) -> Void) {
-    performTransmissionDataRequestInBackground(
-        method: "session-stats",
-        args: EmptyArguments(),
-        config: config,
-        auth: auth
-    ) { (result: Result<SessionStats, Error>) in
+    Task {
+        let result = await legacyTransmissionAdapter.fetchSessionStats(config: config, auth: auth)
+
         switch result {
         case .success(let response):
             onReceived(response, nil)
@@ -363,27 +314,18 @@ public func addTorrent(
 /// - Parameter info: A tuple containing the server config and auth info
 /// - Parameter onReceived: A callback that receives the list of files and their stats
 public func getTorrentFiles(transferId: Int, info: (config: TransmissionConfig, auth: TransmissionAuth), onReceived: @MainActor @escaping ([TorrentFile], [TorrentFileStats]) -> Void) {
-    let args = TorrentFilesRequestArgs(
-        fields: ["files", "fileStats"],
-        ids: [transferId]
-    )
+    Task {
+        let result = await legacyTransmissionAdapter.fetchTorrentFiles(
+            transferID: transferId,
+            config: info.config,
+            auth: info.auth
+        )
 
-    performTransmissionDataRequest(
-        method: "torrent-get",
-        args: args,
-        config: info.config,
-        auth: info.auth
-    ) { (result: Result<TorrentFilesResponseTorrents, Error>) in
         switch result {
         case .success(let response):
-            if let responseFiles = response.torrents.first?.files,
-               let responseStats = response.torrents.first?.fileStats {
-                onReceived(responseFiles, responseStats)
-            } else {
-                onReceived([], [])
-            }
+            await onReceived(response.files, response.fileStats)
         case .failure:
-            onReceived([], [])
+            await onReceived([], [])
         }
     }
 }
@@ -430,70 +372,14 @@ public func getSession(
     onResponse: @MainActor @escaping (TransmissionSessionResponseArguments) -> Void,
     onError: @MainActor @escaping (String) -> Void
 ) {
-    let fields = [
-        // Existing fields
-        "download-dir",
-        "version",
-        // Speed & Bandwidth
-        "speed-limit-down",
-        "speed-limit-down-enabled",
-        "speed-limit-up",
-        "speed-limit-up-enabled",
-        "alt-speed-down",
-        "alt-speed-up",
-        "alt-speed-enabled",
-        "alt-speed-time-begin",
-        "alt-speed-time-end",
-        "alt-speed-time-enabled",
-        "alt-speed-time-day",
-        // File Management
-        "incomplete-dir",
-        "incomplete-dir-enabled",
-        "start-added-torrents",
-        "trash-original-torrent-files",
-        "rename-partial-files",
-        // Queue Management
-        "download-queue-enabled",
-        "download-queue-size",
-        // Seeding
-        "seed-queue-enabled",
-        "seed-queue-size",
-        "seedRatioLimited",
-        "seedRatioLimit",
-        "idle-seeding-limit",
-        "idle-seeding-limit-enabled",
-        "queue-stalled-enabled",
-        "queue-stalled-minutes",
-        // Network Settings
-        "peer-port",
-        "peer-port-random-on-start",
-        "port-forwarding-enabled",
-        "dht-enabled",
-        "pex-enabled",
-        "lpd-enabled",
-        "encryption",
-        "utp-enabled",
-        "peer-limit-global",
-        "peer-limit-per-torrent",
-        // Blocklist
-        "blocklist-enabled",
-        "blocklist-size",
-        "blocklist-url",
-        // Default Trackers
-        "default-trackers"
-    ]
+    Task {
+        let result = await legacyTransmissionAdapter.fetchSessionSettings(config: config, auth: auth)
 
-    performTransmissionDataRequest(
-        method: "session-get",
-        args: ["fields": fields] as StringListArguments,
-        config: config,
-        auth: auth
-    ) { (result: Result<TransmissionSessionResponseArguments, Error>) in
         switch result {
         case .success(let response):
-            onResponse(response)
+            await onResponse(response)
         case .failure(let error):
-            onError(error.localizedDescription)
+            await onError(error.localizedDescription)
         }
     }
 }
@@ -866,26 +752,18 @@ public func getTorrentPeers(
     info: (config: TransmissionConfig, auth: TransmissionAuth),
     onReceived: @MainActor @escaping (_ peers: [Peer], _ peersFrom: PeersFrom?) -> Void
 ) {
-    let args = TorrentFilesRequestArgs(
-        fields: ["peers", "peersFrom"],
-        ids: [transferId]
-    )
+    Task {
+        let result = await legacyTransmissionAdapter.fetchTorrentPeers(
+            transferID: transferId,
+            config: info.config,
+            auth: info.auth
+        )
 
-    performTransmissionDataRequest(
-        method: "torrent-get",
-        args: args,
-        config: info.config,
-        auth: info.auth
-    ) { (result: Result<TorrentPeersResponseTorrents, Error>) in
         switch result {
         case .success(let response):
-            if let peersData = response.torrents.first {
-                onReceived(peersData.peers, peersData.peersFrom)
-            } else {
-                onReceived([], nil)
-            }
+            await onReceived(response.peers, response.peersFrom)
         case .failure:
-            onReceived([], nil)
+            await onReceived([], nil)
         }
     }
 }
@@ -902,26 +780,18 @@ public func getTorrentPieces(
     info: (config: TransmissionConfig, auth: TransmissionAuth),
     onReceived: @MainActor @escaping (_ pieceCount: Int, _ pieceSize: Int64, _ piecesBitfieldBase64: String) -> Void
 ) {
-    let args = TorrentFilesRequestArgs(
-        fields: ["pieceCount", "pieceSize", "pieces"],
-        ids: [transferId]
-    )
+    Task {
+        let result = await legacyTransmissionAdapter.fetchTorrentPieces(
+            transferID: transferId,
+            config: info.config,
+            auth: info.auth
+        )
 
-    performTransmissionDataRequest(
-        method: "torrent-get",
-        args: args,
-        config: info.config,
-        auth: info.auth
-    ) { (result: Result<TorrentPiecesResponseTorrents, Error>) in
         switch result {
         case .success(let response):
-            if let piecesData = response.torrents.first {
-                onReceived(piecesData.pieceCount, piecesData.pieceSize, piecesData.pieces)
-            } else {
-                onReceived(0, 0, "")
-            }
+            await onReceived(response.pieceCount, response.pieceSize, response.pieces)
         case .failure:
-            onReceived(0, 0, "")
+            await onReceived(0, 0, "")
         }
     }
 }

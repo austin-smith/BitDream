@@ -2,6 +2,47 @@ import Foundation
 
 public typealias TransmissionConfig = URLComponents
 
+internal enum TransmissionCredentialSource: Hashable, Sendable {
+    case resolvedPassword(String)
+    case keychainCredential(String)
+}
+
+internal struct TransmissionConnectionDescriptor: Hashable, Sendable {
+    let scheme: String
+    let host: String
+    let port: Int
+    let username: String
+    let credentialSource: TransmissionCredentialSource
+
+    init(
+        scheme: String,
+        host: String,
+        port: Int,
+        username: String,
+        credentialSource: TransmissionCredentialSource
+    ) {
+        self.scheme = scheme
+        self.host = host
+        self.port = port
+        self.username = username
+        self.credentialSource = credentialSource
+    }
+
+    init(config: TransmissionConfig, auth: TransmissionAuth) {
+        self.init(
+            scheme: config.scheme ?? "",
+            host: config.host ?? "",
+            port: config.port ?? 0,
+            username: auth.username,
+            credentialSource: .resolvedPassword(auth.password)
+        )
+    }
+
+    init(info: (config: TransmissionConfig, auth: TransmissionAuth)) {
+        self.init(config: info.config, auth: info.auth)
+    }
+}
+
 internal struct TransmissionEndpoint: Hashable, Sendable {
     let scheme: String
     let host: String

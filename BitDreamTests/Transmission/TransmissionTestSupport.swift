@@ -204,6 +204,28 @@ struct CapturedRequest: Sendable {
     }
 }
 
+func capturedRequestFields(_ request: CapturedRequest) throws -> [String] {
+    let body = try XCTUnwrap(request.body)
+    let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+    let arguments = try XCTUnwrap(object["arguments"] as? [String: Any])
+    return try XCTUnwrap(arguments["fields"] as? [String])
+}
+
+func loadTransmissionFixture(named fileName: String) throws -> String {
+    let testFileURL = URL(fileURLWithPath: #filePath)
+    let fixturesURL = testFileURL
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .appendingPathComponent("BitDream")
+        .appendingPathComponent("Transmission")
+        .appendingPathComponent("TransmissionRPC")
+        .appendingPathComponent("Examples")
+        .appendingPathComponent(fileName)
+
+    return try String(contentsOf: fixturesURL, encoding: .utf8)
+}
+
 enum TestError: Error {
     case offline
     case unexpectedRequest

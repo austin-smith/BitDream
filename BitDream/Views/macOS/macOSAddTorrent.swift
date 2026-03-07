@@ -365,9 +365,9 @@ private extension macOSAddTorrent {
             file: true,
             config: info.config,
             onAdd: { response in
-                if response.response != TransmissionResponse.success {
+                if let presentation = TransmissionLegacyCompatibility.presentation(for: response.response) {
                     handleAddTorrentError(
-                        "Failed to add torrent: \(response.response)",
+                        "Failed to add torrent: \(presentation.message)",
                         errorMessage: $errorMessage,
                         showingError: $showingError
                     )
