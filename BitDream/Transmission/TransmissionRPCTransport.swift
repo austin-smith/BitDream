@@ -42,6 +42,11 @@ internal struct TransmissionRPCEnvelope<Arguments: Codable & Sendable>: Codable,
     }
 }
 
+private struct TransmissionRPCEnvelopeHeader: Decodable, Sendable {
+    let result: String
+    let tag: Int?
+}
+
 internal enum TransmissionError: Error, Sendable {
     case invalidEndpointConfiguration
     case unauthorized
@@ -172,11 +177,12 @@ internal struct TransmissionRPCTransport: Sendable {
                 await tokenStore.setToken(refreshedToken, for: endpoint)
             }
 
-            let envelope = try decodeEnvelope(data, as: responseType)
-            guard envelope.result == "success" else {
-                throw TransmissionError.rpcFailure(result: envelope.result)
+            let envelopeHeader = try decodeEnvelopeHeader(data)
+            guard envelopeHeader.result == "success" else {
+                throw TransmissionError.rpcFailure(result: envelopeHeader.result)
             }
 
+            let envelope = try decodeEnvelope(data, as: responseType)
             return envelope
         case 401:
             await tokenStore.clearToken(ifMatching: currentToken, for: endpoint)
@@ -249,6 +255,20 @@ internal struct TransmissionRPCTransport: Sendable {
     ) throws -> TransmissionRPCEnvelope<ResponseArgs> {
         do {
             return try JSONDecoder().decode(TransmissionRPCEnvelope<ResponseArgs>.self, from: data)
+        } catch let error as DecodingError {
+            if case .keyNotFound(let key, _) = error, key.stringValue == "result" {
+                throw TransmissionError.invalidResponse
+            }
+
+            throw TransmissionError.decoding(underlyingDescription: String(describing: error))
+        } catch {
+            throw TransmissionError.decoding(underlyingDescription: error.localizedDescription)
+        }
+    }
+
+    private func decodeEnvelopeHeader(_ data: Data) throws -> TransmissionRPCEnvelopeHeader {
+        do {
+            return try JSONDecoder().decode(TransmissionRPCEnvelopeHeader.self, from: data)
         } catch let error as DecodingError {
             if case .keyNotFound(let key, _) = error, key.stringValue == "result" {
                 throw TransmissionError.invalidResponse

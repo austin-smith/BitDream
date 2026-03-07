@@ -210,7 +210,7 @@ public struct FreeSpaceResponse: Codable, Sendable {
 
 /// Request arguments for session-set method
 /// Contains all mutable session properties that can be modified
-public struct TransmissionSessionSetRequestArgs: Codable {
+public struct TransmissionSessionSetRequestArgs: Codable, Sendable {
     // Speed & Bandwidth
     public var speedLimitDown: Int64?
     public var speedLimitDownEnabled: Bool?
@@ -330,7 +330,7 @@ public struct TransmissionSessionSetRequestArgs: Codable {
 // MARK: - Port Test Models
 
 /// Request arguments for port-test method
-public struct PortTestRequestArgs: Codable {
+public struct PortTestRequestArgs: Codable, Sendable {
     public var ipProtocol: String?
 
     public init(ipProtocol: String? = nil) {

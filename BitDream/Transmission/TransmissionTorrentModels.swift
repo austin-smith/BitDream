@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Enums
 
-public enum TransmissionResponse: Sendable {
+public enum TransmissionResponse: Sendable, Equatable {
     case success
     case unauthorized
     case configError
@@ -67,13 +67,6 @@ public struct TransmissionGenericRequest<T: Codable>: Codable {
         self.arguments = arguments
     }
 }
-
-/// Generic response struct for all Transmission RPC methods
-public struct TransmissionGenericResponse<T: Codable>: Codable {
-    public let arguments: T
-}
-
-extension TransmissionGenericResponse: Sendable where T: Sendable {}
 
 // MARK: - Domain Models
 
@@ -230,12 +223,12 @@ public typealias StringArguments = [String: String]
 public typealias StringListArguments = [String: [String]]
 
 /// Empty arguments for requests that don't need any
-public struct EmptyArguments: Codable {
+public struct EmptyArguments: Codable, Sendable {
     public init() {}
 }
 
 /// Torrent ID list arguments
-public struct TorrentIDsArgument: Codable {
+public struct TorrentIDsArgument: Codable, Sendable {
     public var ids: [Int]
 
     public init(ids: [Int]) {
@@ -243,7 +236,7 @@ public struct TorrentIDsArgument: Codable {
     }
 }
 
-public struct TorrentFilesRequestArgs: Codable {
+public struct TorrentFilesRequestArgs: Codable, Sendable {
     public var fields: [String]
     public var ids: [Int]
 
@@ -254,7 +247,7 @@ public struct TorrentFilesRequestArgs: Codable {
 }
 
 /// Request arguments for torrent-rename-path
-public struct TorrentRenameRequestArgs: Codable {
+public struct TorrentRenameRequestArgs: Codable, Sendable {
     public var ids: [Int]
     public var path: String
     public var name: String
@@ -267,7 +260,7 @@ public struct TorrentRenameRequestArgs: Codable {
 }
 
 /// Request arguments for torrent-set-location
-public struct TorrentSetLocationRequestArgs: Codable {
+public struct TorrentSetLocationRequestArgs: Codable, Sendable {
     public var ids: [Int]
     public var location: String
     public var move: Bool
@@ -280,7 +273,7 @@ public struct TorrentSetLocationRequestArgs: Codable {
 }
 
 /// The remove body has delete-local-data argument with hyphens
-public struct TransmissionRemoveRequestArgs: Codable {
+public struct TransmissionRemoveRequestArgs: Codable, Sendable {
     public var ids: [Int]
     public var deleteLocalData: Bool
 
@@ -296,7 +289,7 @@ public struct TransmissionRemoveRequestArgs: Codable {
 }
 
 /// Generic request arguments for torrent-set method
-public struct TorrentSetRequestArgs: Codable {
+public struct TorrentSetRequestArgs: Codable, Sendable {
     public var ids: [Int]
     public var labels: [String]?
     public var bandwidthPriority: Int?
