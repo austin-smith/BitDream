@@ -61,14 +61,48 @@ jobs:
 
       - name: Build and test app (macOS)
         run: |
+          RESULT_BUNDLE="$RUNNER_TEMP/BitDream.xcresult"
+          rm -rf "$RESULT_BUNDLE"
+
           /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test \
             -project BitDream.xcodeproj \
             -scheme BitDream \
             -configuration Debug \
             -destination "platform=macOS,arch=arm64" \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -resultBundlePath "$RESULT_BUNDLE" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
+
+      - name: Print macOS test failure summary
+        if: failure()
+        run: |
+          RESULT_BUNDLE="$RUNNER_TEMP/BitDream.xcresult"
+
+          if [[ ! -d "$RESULT_BUNDLE" ]]; then
+            echo "No xcresult bundle found at $RESULT_BUNDLE"
+            exit 0
+          fi
+
+          echo "::group::macOS test summary"
+          xcrun xcresulttool get test-results summary --path "$RESULT_BUNDLE" --compact || true
+          echo "::endgroup::"
+
+          echo "::group::macOS test results"
+          xcrun xcresulttool get test-results tests --path "$RESULT_BUNDLE" --compact || true
+          echo "::endgroup::"
+
+          echo "::group::macOS build results"
+          xcrun xcresulttool get build-results --path "$RESULT_BUNDLE" --compact || true
+          echo "::endgroup::"
+
+      - name: Upload macOS xcresult bundle
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-xcresult
+          path: ${{ runner.temp }}/BitDream.xcresult
+          if-no-files-found: ignore
 
   ios-build:
     name: iOS Build
