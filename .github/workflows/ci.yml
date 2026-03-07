@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   lint:
-    name: SwiftLint
+    name: Lint
     runs-on: macos-26
 
     steps:
