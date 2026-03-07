@@ -47,10 +47,14 @@ func addTorrentAction(
         file: false,
         config: info.config,
         onAdd: { response in
-            if response.response == TransmissionResponse.success {
-                onSuccess?()
+            if let presentation = TransmissionLegacyCompatibility.presentation(for: response.response) {
+                handleAddTorrentError(
+                    "Failed to add torrent: \(presentation.message)",
+                    errorMessage: errorMessage,
+                    showingError: showingError
+                )
             } else {
-                handleAddTorrentError("Failed to add torrent: \(response.response)", errorMessage: errorMessage, showingError: showingError)
+                onSuccess?()
             }
         }
     )

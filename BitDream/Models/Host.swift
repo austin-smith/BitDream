@@ -49,3 +49,15 @@ final class Host {
         return generated
     }
 }
+
+extension TransmissionConnectionDescriptor {
+    init(host: Host) {
+        self.init(
+            scheme: host.isSSL ? "https" : "http",
+            host: host.server ?? "",
+            port: Int(host.port),
+            username: host.username ?? "",
+            credentialSource: .keychainCredential(KeychainService.credentialKeyIfPresent(for: host) ?? "")
+        )
+    }
+}

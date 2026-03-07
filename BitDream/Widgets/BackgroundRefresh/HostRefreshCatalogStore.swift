@@ -163,3 +163,15 @@ actor HostRefreshCatalogStore {
         return base.appendingPathComponent(bundleID, isDirectory: true)
     }
 }
+
+extension TransmissionConnectionDescriptor {
+    init(record: HostRefreshRecord) {
+        self.init(
+            scheme: record.isSSL ? "https" : "http",
+            host: record.server,
+            port: record.port,
+            username: record.username,
+            credentialSource: .keychainCredential(record.credentialKey)
+        )
+    }
+}
