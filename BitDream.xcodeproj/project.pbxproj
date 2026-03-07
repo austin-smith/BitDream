@@ -101,7 +101,9 @@
 		4F8000054000000000A1B2C3 /* macOSContentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8000024000000000A1B2C3 /* macOSContentDetail.swift */; };
 		4F8000064000000000A1B2C3 /* macOSContentToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8000034000000000A1B2C3 /* macOSContentToolbar.swift */; };
 		4FA9A0024100000000A1B2C3 /* TorrentActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA9A0014100000000A1B2C3 /* TorrentActionExecutor.swift */; };
-		5A1000014100000000A1B2C3 /* TransmissionRPCTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1000064100000000A1B2C3 /* TransmissionRPCTransport.swift */; };
+		5A1000014100000000A1B2C3 /* TransmissionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1000064100000000A1B2C3 /* TransmissionModels.swift */; };
+		5A1000214100000000A1B2C3 /* TransmissionTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1000224100000000A1B2C3 /* TransmissionTransport.swift */; };
+		5A1000234100000000A1B2C3 /* TransmissionConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1000244100000000A1B2C3 /* TransmissionConnection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -229,8 +231,10 @@
 		4F8000024000000000A1B2C3 /* macOSContentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentDetail.swift; sourceTree = "<group>"; };
 		4F8000034000000000A1B2C3 /* macOSContentToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentToolbar.swift; sourceTree = "<group>"; };
 		4FA9A0014100000000A1B2C3 /* TorrentActionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentActionExecutor.swift; sourceTree = "<group>"; };
-		5A1000064100000000A1B2C3 /* TransmissionRPCTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionRPCTransport.swift; sourceTree = "<group>"; };
+		5A1000064100000000A1B2C3 /* TransmissionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionModels.swift; sourceTree = "<group>"; };
 		5A1000074100000000A1B2C3 /* BitDreamTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BitDreamTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5A1000224100000000A1B2C3 /* TransmissionTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionTransport.swift; sourceTree = "<group>"; };
+		5A1000244100000000A1B2C3 /* TransmissionConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionConnection.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -366,7 +370,9 @@
 			isa = PBXGroup;
 			children = (
 				4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */,
-				5A1000064100000000A1B2C3 /* TransmissionRPCTransport.swift */,
+				5A1000064100000000A1B2C3 /* TransmissionModels.swift */,
+				5A1000224100000000A1B2C3 /* TransmissionTransport.swift */,
+				5A1000244100000000A1B2C3 /* TransmissionConnection.swift */,
 				4D6A00203F00000000A1B2C3 /* TransmissionSessionModels.swift */,
 				4B1DADFD295E6F390037E9FB /* TransmissionTorrentModels.swift */,
 			);
@@ -718,7 +724,9 @@
 				4BC6F24B2E89F8510037DFDF /* PiecesGridView.swift in Sources */,
 				4B6F1EBC2D86C908003D8F6E /* macOSTorrentFileDetail.swift in Sources */,
 				4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */,
-				5A1000014100000000A1B2C3 /* TransmissionRPCTransport.swift in Sources */,
+				5A1000014100000000A1B2C3 /* TransmissionModels.swift in Sources */,
+				5A1000214100000000A1B2C3 /* TransmissionTransport.swift in Sources */,
+				5A1000234100000000A1B2C3 /* TransmissionConnection.swift in Sources */,
 				4BDE147F2F0B015C00FF6A46 /* AppIconManager.swift in Sources */,
 				4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */,
 				4B1DADFE295E6F390037E9FB /* TransmissionTorrentModels.swift in Sources */,

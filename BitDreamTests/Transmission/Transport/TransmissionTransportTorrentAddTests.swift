@@ -1,7 +1,7 @@
 import XCTest
 @testable import BitDream
 
-final class TransportTorrentAddTests: XCTestCase {
+final class TransmissionTransportTorrentAddTests: XCTestCase {
     func testTorrentAddAddedOutcomeIsSuccessful() async throws {
         let sender = QueueSender(steps: [
             .http(
@@ -20,15 +20,15 @@ final class TransportTorrentAddTests: XCTestCase {
                 """
             )
         ])
-        let transport = TransmissionRPCTransport(sender: sender, tokenStore: TransmissionSessionTokenStore())
+        let transport = TransmissionTransport(sender: sender)
 
         let arguments = try await transport.sendRequiredArguments(
             method: "torrent-add",
             arguments: ["filename": "magnet:?xt=urn:btih:test"] as StringArguments,
-            config: makeConfig(),
+            endpoint: try makeEndpoint(),
             auth: makeAuth(),
             responseType: [String: TorrentAddResponseArgs].self
-        )
+        ).envelope.requireArguments()
         let outcome = try TransmissionTorrentAddOutcome(arguments: arguments)
 
         guard case .added(let torrent) = outcome else {
@@ -57,15 +57,15 @@ final class TransportTorrentAddTests: XCTestCase {
                 """
             )
         ])
-        let transport = TransmissionRPCTransport(sender: sender, tokenStore: TransmissionSessionTokenStore())
+        let transport = TransmissionTransport(sender: sender)
 
         let arguments = try await transport.sendRequiredArguments(
             method: "torrent-add",
             arguments: ["filename": "magnet:?xt=urn:btih:test"] as StringArguments,
-            config: makeConfig(),
+            endpoint: try makeEndpoint(),
             auth: makeAuth(),
             responseType: [String: TorrentAddResponseArgs].self
-        )
+        ).envelope.requireArguments()
         let outcome = try TransmissionTorrentAddOutcome(arguments: arguments)
 
         guard case .duplicate(let torrent) = outcome else {

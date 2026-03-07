@@ -1,12 +1,5 @@
 import Foundation
 
-public typealias TransmissionConfig = URLComponents
-
-public struct TransmissionAuth: Sendable {
-    let username: String
-    let password: String
-}
-
 internal struct TransmissionLegacyCompatibilityError: LocalizedError, Sendable {
     let transmissionError: TransmissionError
 
@@ -37,11 +30,36 @@ internal struct TransmissionLegacyCompatibilityError: LocalizedError, Sendable {
     }
 }
 
-internal struct TransmissionLegacyAdapter: Sendable {
-    private let transport: TransmissionRPCTransport
+private actor TransmissionLegacyConnectionCache {
+    private struct Key: Hashable, Sendable {
+        let endpoint: TransmissionEndpoint
+        let auth: TransmissionAuth
+    }
 
-    init(transport: TransmissionRPCTransport = TransmissionRPCTransport()) {
+    private let transport: TransmissionTransport
+    private var connections: [Key: TransmissionConnection] = [:]
+
+    init(transport: TransmissionTransport) {
         self.transport = transport
+    }
+
+    func connection(endpoint: TransmissionEndpoint, auth: TransmissionAuth) -> TransmissionConnection {
+        let key = Key(endpoint: endpoint, auth: auth)
+        if let existing = connections[key] {
+            return existing
+        }
+
+        let connection = TransmissionConnection(endpoint: endpoint, auth: auth, transport: transport)
+        connections[key] = connection
+        return connection
+    }
+}
+
+internal struct TransmissionLegacyAdapter: Sendable {
+    private let connectionCache: TransmissionLegacyConnectionCache
+
+    init(transport: TransmissionTransport = TransmissionTransport()) {
+        self.connectionCache = TransmissionLegacyConnectionCache(transport: transport)
     }
 
     func performDataRequest<Args: Codable & Sendable, ResponseData: Codable & Sendable>(
@@ -52,11 +70,10 @@ internal struct TransmissionLegacyAdapter: Sendable {
         responseType: ResponseData.Type = ResponseData.self
     ) async -> Result<ResponseData, Error> {
         do {
-            let responseData = try await transport.sendRequiredArguments(
+            let connection = try await connection(for: config, auth: auth)
+            let responseData = try await connection.sendRequiredArguments(
                 method: method,
                 arguments: args,
-                config: config,
-                auth: auth,
                 responseType: responseType
             )
             return .success(responseData)
@@ -72,12 +89,10 @@ internal struct TransmissionLegacyAdapter: Sendable {
         auth: TransmissionAuth
     ) async -> TransmissionResponse {
         do {
-            _ = try await transport.sendEnvelope(
+            let connection = try await connection(for: config, auth: auth)
+            try await connection.sendStatusRequest(
                 method: method,
-                arguments: args,
-                config: config,
-                auth: auth,
-                responseType: EmptyArguments.self
+                arguments: args
             )
             return .success
         } catch {
@@ -91,14 +106,8 @@ internal struct TransmissionLegacyAdapter: Sendable {
         auth: TransmissionAuth
     ) async -> (response: TransmissionResponse, transferId: Int) {
         do {
-            let arguments = try await transport.sendRequiredArguments(
-                method: "torrent-add",
-                arguments: args,
-                config: config,
-                auth: auth,
-                responseType: [String: TorrentAddResponseArgs].self
-            )
-            let outcome = try TransmissionTorrentAddOutcome(arguments: arguments)
+            let connection = try await connection(for: config, auth: auth)
+            let outcome = try await connection.sendTorrentAdd(arguments: args)
 
             switch outcome {
             case .added(let torrent), .duplicate(let torrent):
@@ -124,6 +133,14 @@ internal struct TransmissionLegacyAdapter: Sendable {
         TransmissionLegacyCompatibilityError(transmissionError: compatibilityTransmissionError(from: error))
     }
 
+    private func connection(
+        for config: TransmissionConfig,
+        auth: TransmissionAuth
+    ) async throws -> TransmissionConnection {
+        let endpoint = try TransmissionEndpoint(config: config)
+        return await connectionCache.connection(endpoint: endpoint, auth: auth)
+    }
+
     private static func compatibilityTransmissionError(from error: Error) -> TransmissionError {
         if let compatibilityError = error as? TransmissionLegacyCompatibilityError {
             return compatibilityError.transmissionError
@@ -131,6 +148,10 @@ internal struct TransmissionLegacyAdapter: Sendable {
 
         if let transmissionError = error as? TransmissionError {
             return transmissionError
+        }
+
+        if let transportFailure = error as? TransmissionTransportFailure {
+            return transportFailure.transmissionError
         }
 
         return .transport(underlyingDescription: error.localizedDescription)

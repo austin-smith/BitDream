@@ -1,7 +1,7 @@
 import XCTest
 @testable import BitDream
 
-final class TransportEnvelopeTests: XCTestCase {
+final class TransmissionTransportEnvelopeTests: XCTestCase {
     func testSendEnvelopeDecodesSuccessfulResponseAndPreservesTag() async throws {
         let sender = QueueSender(steps: [
             .http(
@@ -21,15 +21,15 @@ final class TransportEnvelopeTests: XCTestCase {
                 """
             )
         ])
-        let transport = TransmissionRPCTransport(sender: sender, tokenStore: TransmissionSessionTokenStore())
+        let transport = TransmissionTransport(sender: sender)
 
         let envelope = try await transport.sendEnvelope(
             method: "session-stats",
             arguments: EmptyArguments(),
-            config: makeConfig(),
+            endpoint: try makeEndpoint(),
             auth: makeAuth(),
             responseType: SessionStats.self
-        )
+        ).envelope
 
         XCTAssertEqual(envelope.tag, 42)
         XCTAssertEqual(try envelope.requireArguments().torrentCount, 4)
@@ -39,13 +39,13 @@ final class TransportEnvelopeTests: XCTestCase {
         let sender = QueueSender(steps: [
             .http(statusCode: 200, body: #"{"result":"duplicate torrent","arguments":{}}"#)
         ])
-        let transport = TransmissionRPCTransport(sender: sender, tokenStore: TransmissionSessionTokenStore())
+        let transport = TransmissionTransport(sender: sender)
 
         await assertThrowsTransmissionError(.rpcFailure(expectedResult: "duplicate torrent")) {
             _ = try await transport.sendEnvelope(
                 method: "torrent-add",
                 arguments: ["filename": "magnet:?xt=urn:btih:test"] as StringArguments,
-                config: makeConfig(),
+                endpoint: try makeEndpoint(),
                 auth: makeAuth(),
                 responseType: [String: TorrentAddResponseArgs].self
             )
@@ -56,13 +56,13 @@ final class TransportEnvelopeTests: XCTestCase {
         let sender = QueueSender(steps: [
             .http(statusCode: 200, body: #"{"result":"server busy","arguments":{}}"#)
         ])
-        let transport = TransmissionRPCTransport(sender: sender, tokenStore: TransmissionSessionTokenStore())
+        let transport = TransmissionTransport(sender: sender)
 
         await assertThrowsTransmissionError(.rpcFailure(expectedResult: "server busy")) {
             _ = try await transport.sendEnvelope(
                 method: "session-stats",
                 arguments: EmptyArguments(),
-                config: makeConfig(),
+                endpoint: try makeEndpoint(),
                 auth: makeAuth(),
                 responseType: SessionStats.self
             )
@@ -73,13 +73,13 @@ final class TransportEnvelopeTests: XCTestCase {
         let sender = QueueSender(steps: [
             .http(statusCode: 200, body: #"{"arguments":{"torrentCount":4}}"#)
         ])
-        let transport = TransmissionRPCTransport(sender: sender, tokenStore: TransmissionSessionTokenStore())
+        let transport = TransmissionTransport(sender: sender)
 
         await assertThrowsTransmissionError(.invalidResponse) {
             _ = try await transport.sendEnvelope(
                 method: "session-stats",
                 arguments: EmptyArguments(),
-                config: makeConfig(),
+                endpoint: try makeEndpoint(),
                 auth: makeAuth(),
                 responseType: SessionStats.self
             )
@@ -100,13 +100,13 @@ final class TransportEnvelopeTests: XCTestCase {
                 """
             )
         ])
-        let transport = TransmissionRPCTransport(sender: sender, tokenStore: TransmissionSessionTokenStore())
+        let transport = TransmissionTransport(sender: sender)
 
         await assertThrowsTransmissionError(.decoding) {
             _ = try await transport.sendEnvelope(
                 method: "session-stats",
                 arguments: EmptyArguments(),
-                config: makeConfig(),
+                endpoint: try makeEndpoint(),
                 auth: makeAuth(),
                 responseType: SessionStats.self
             )
@@ -117,13 +117,13 @@ final class TransportEnvelopeTests: XCTestCase {
         let sender = QueueSender(steps: [
             .http(statusCode: 200, body: #"{"result":"success"}"#)
         ])
-        let transport = TransmissionRPCTransport(sender: sender, tokenStore: TransmissionSessionTokenStore())
+        let transport = TransmissionTransport(sender: sender)
 
         await assertThrowsTransmissionError(.invalidResponse) {
             _ = try await transport.sendRequiredArguments(
                 method: "session-stats",
                 arguments: EmptyArguments(),
-                config: makeConfig(),
+                endpoint: try makeEndpoint(),
                 auth: makeAuth(),
                 responseType: SessionStats.self
             )

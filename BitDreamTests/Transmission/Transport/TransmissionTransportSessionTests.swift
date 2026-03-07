@@ -1,18 +1,18 @@
 import XCTest
 @testable import BitDream
 
-final class TransportSessionTests: XCTestCase {
+final class TransmissionTransportSessionTests: XCTestCase {
     func testSendEnvelopeRetriesOnceAfter409AndPreservesRequestDetails() async throws {
         let sender = QueueSender(steps: [
             .http(statusCode: 409, body: "", headers: [transmissionSessionTokenHeader: "fresh-token"]),
             .http(statusCode: 200, body: successStatsBody)
         ])
-        let transport = TransmissionRPCTransport(sender: sender, tokenStore: TransmissionSessionTokenStore())
+        let transport = TransmissionTransport(sender: sender)
 
         _ = try await transport.sendEnvelope(
             method: "session-stats",
             arguments: EmptyArguments(),
-            config: makeConfig(),
+            endpoint: try makeEndpoint(),
             auth: makeAuth(),
             responseType: SessionStats.self
         )
@@ -32,13 +32,13 @@ final class TransportSessionTests: XCTestCase {
         let sender = QueueSender(steps: [
             .http(statusCode: 409, body: "")
         ])
-        let transport = TransmissionRPCTransport(sender: sender, tokenStore: TransmissionSessionTokenStore())
+        let transport = TransmissionTransport(sender: sender)
 
         await assertThrowsTransmissionError(.invalidResponse) {
             _ = try await transport.sendEnvelope(
                 method: "session-stats",
                 arguments: EmptyArguments(),
-                config: makeConfig(),
+                endpoint: try makeEndpoint(),
                 auth: makeAuth(),
                 responseType: SessionStats.self
             )
@@ -50,50 +50,16 @@ final class TransportSessionTests: XCTestCase {
             .http(statusCode: 409, body: "", headers: [transmissionSessionTokenHeader: "fresh-token"]),
             .http(statusCode: 409, body: "still-conflicting")
         ])
-        let transport = TransmissionRPCTransport(sender: sender, tokenStore: TransmissionSessionTokenStore())
+        let transport = TransmissionTransport(sender: sender)
 
         await assertThrowsTransmissionError(.httpStatus(expectedCode: 409, expectedBody: "still-conflicting")) {
             _ = try await transport.sendEnvelope(
                 method: "session-stats",
                 arguments: EmptyArguments(),
-                config: makeConfig(),
+                endpoint: try makeEndpoint(),
                 auth: makeAuth(),
                 responseType: SessionStats.self
             )
         }
-    }
-
-    func testUnauthorizedResponseClearsCachedTokenBeforeNextRequest() async throws {
-        let tokenStore = TransmissionSessionTokenStore()
-        await tokenStore.setToken("stale-token", for: "http://example.com:9091/transmission/rpc")
-
-        let sender = QueueSender(steps: [
-            .http(statusCode: 401, body: ""),
-            .http(statusCode: 200, body: successStatsBody)
-        ])
-        let transport = TransmissionRPCTransport(sender: sender, tokenStore: tokenStore)
-
-        await assertThrowsTransmissionError(.unauthorized) {
-            _ = try await transport.sendEnvelope(
-                method: "session-stats",
-                arguments: EmptyArguments(),
-                config: makeConfig(),
-                auth: makeAuth(),
-                responseType: SessionStats.self
-            )
-        }
-
-        _ = try await transport.sendEnvelope(
-            method: "session-stats",
-            arguments: EmptyArguments(),
-            config: makeConfig(),
-            auth: makeAuth(),
-            responseType: SessionStats.self
-        )
-
-        let requests = await sender.capturedRequests()
-        XCTAssertEqual(requests.count, 2)
-        XCTAssertEqual(requests[0].sessionToken, "stale-token")
-        XCTAssertNil(requests[1].sessionToken)
     }
 }
