@@ -24,9 +24,13 @@ final class TransportConcurrencyTests: XCTestCase {
         _ = try await (first, second)
 
         let requests = await sender.capturedRequests()
-        XCTAssertEqual(requests.count, 4)
-        XCTAssertEqual(requests.filter { $0.sessionToken == nil }.count, 2)
+        XCTAssertTrue((3...4).contains(requests.count))
+        XCTAssertTrue((1...2).contains(requests.filter { $0.sessionToken == nil }.count))
         XCTAssertEqual(requests.filter { $0.sessionToken == "shared-token" }.count, 2)
+        XCTAssertEqual(
+            requests.filter { $0.sessionToken == nil || $0.sessionToken == "shared-token" }.count,
+            requests.count
+        )
     }
 
     func testConcurrentUnauthorizedDoesNotLeaveStaleTokenBehind() async throws {

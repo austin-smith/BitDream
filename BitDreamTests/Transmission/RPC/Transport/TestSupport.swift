@@ -49,6 +49,7 @@ func requestOutcome(transport: TransmissionRPCTransport) async -> RequestOutcome
 }
 
 enum ErrorExpectation {
+    case invalidEndpointConfiguration
     case invalidResponse
     case unauthorized
     case timeout
@@ -60,7 +61,8 @@ enum ErrorExpectation {
 
     func assertMatches(_ error: TransmissionError, file: StaticString, line: UInt) {
         switch (self, error) {
-        case (.invalidResponse, .invalidResponse),
+        case (.invalidEndpointConfiguration, .invalidEndpointConfiguration),
+             (.invalidResponse, .invalidResponse),
              (.unauthorized, .unauthorized),
              (.timeout, .timeout),
              (.cancelled, .cancelled):

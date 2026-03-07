@@ -2,6 +2,26 @@ import XCTest
 @testable import BitDream
 
 final class TransportErrorTests: XCTestCase {
+    func testInvalidEndpointConfigurationMapsToInvalidEndpointConfiguration() async {
+        var config = makeConfig()
+        config.host = "bad host"
+
+        let transport = TransmissionRPCTransport(
+            sender: QueueSender(steps: []),
+            tokenStore: TransmissionSessionTokenStore()
+        )
+
+        await assertThrowsTransmissionError(.invalidEndpointConfiguration) {
+            _ = try await transport.sendEnvelope(
+                method: "session-stats",
+                arguments: EmptyArguments(),
+                config: config,
+                auth: makeAuth(),
+                responseType: SessionStats.self
+            )
+        }
+    }
+
     func testTransportFailureMapsToTransportError() async {
         let sender = QueueSender(steps: [
             .error(TestError.offline)
