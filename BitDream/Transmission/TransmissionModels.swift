@@ -47,10 +47,14 @@ internal struct TransmissionEndpoint: Hashable, Sendable {
     }
 
     init(config: TransmissionConfig) throws {
+        guard let port = config.port else {
+            throw TransmissionError.invalidEndpointConfiguration
+        }
+
         try self.init(
             scheme: config.scheme ?? "",
             host: config.host ?? "",
-            port: config.port ?? 0
+            port: port
         )
     }
 }

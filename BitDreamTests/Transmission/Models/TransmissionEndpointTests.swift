@@ -30,6 +30,16 @@ final class TransmissionEndpointTests: XCTestCase {
         }
     }
 
+    func testEndpointRejectsMissingPortFromConfig() async {
+        var config = TransmissionConfig()
+        config.scheme = "http"
+        config.host = "example.com"
+
+        await assertThrowsTransmissionError(.invalidEndpointConfiguration) {
+            _ = try TransmissionEndpoint(config: config)
+        }
+    }
+
     func testEndpointAlwaysUsesDefaultRPCPath() throws {
         var config = makeConfig()
         config.path = "/custom/path"
