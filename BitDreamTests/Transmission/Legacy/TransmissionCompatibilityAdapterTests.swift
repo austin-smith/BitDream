@@ -2,7 +2,7 @@ import XCTest
 @testable import BitDream
 
 // TODO: Remove this suite when the temporary compatibility adapter is deleted.
-final class CompatibilityAdapterTests: XCTestCase {
+final class TransmissionCompatibilityAdapterTests: XCTestCase {
     func testStatusRequestMapsRPCFailureToFailed() async {
         let adapter = makeAdapter(steps: [
             .http(statusCode: 200, body: #"{"result":"queue move failed","arguments":{}}"#)
@@ -198,10 +198,7 @@ final class CompatibilityAdapterTests: XCTestCase {
 
     private func makeAdapter(steps: [QueueSender.Step]) -> TransmissionLegacyAdapter {
         TransmissionLegacyAdapter(
-            transport: TransmissionRPCTransport(
-                sender: QueueSender(steps: steps),
-                tokenStore: TransmissionSessionTokenStore()
-            )
+            transport: TransmissionTransport(sender: QueueSender(steps: steps))
         )
     }
 }

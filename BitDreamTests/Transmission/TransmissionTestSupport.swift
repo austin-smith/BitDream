@@ -23,17 +23,19 @@ func makeConfig() -> TransmissionConfig {
     return config
 }
 
+func makeEndpoint() throws -> TransmissionEndpoint {
+    try TransmissionEndpoint(config: makeConfig())
+}
+
 func makeAuth() -> TransmissionAuth {
     TransmissionAuth(username: "demo", password: "secret")
 }
 
-func requestOutcome(transport: TransmissionRPCTransport) async -> RequestOutcome {
+func requestOutcome(connection: TransmissionConnection) async -> RequestOutcome {
     do {
-        _ = try await transport.sendEnvelope(
+        _ = try await connection.sendEnvelope(
             method: "session-stats",
             arguments: EmptyArguments(),
-            config: makeConfig(),
-            auth: makeAuth(),
             responseType: SessionStats.self
         )
         return .success
@@ -232,6 +234,8 @@ extension XCTestCase {
         do {
             _ = try await operation()
             XCTFail("Expected TransmissionError")
+        } catch let error as TransmissionTransportFailure {
+            expectation.assertMatches(error.transmissionError, file: #filePath, line: #line)
         } catch let error as TransmissionError {
             expectation.assertMatches(error, file: #filePath, line: #line)
         } catch {
