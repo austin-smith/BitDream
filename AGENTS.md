@@ -67,6 +67,21 @@ For iOS build (compile check without signing):
   build
 ```
 
+## Testing
+
+From repo root (`/Users/austinsmith/Developer/Repos/BitDream`), run macOS tests with:
+
+```bash
+/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild \
+  -project BitDream.xcodeproj \
+  -scheme BitDream \
+  -configuration Debug \
+  -destination 'platform=macOS,arch=arm64' \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
+  test
+```
+
 ## Linting
 
 From repo root (`/Users/austinsmith/Developer/Repos/BitDream`), run:

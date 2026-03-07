@@ -30,8 +30,8 @@ jobs:
       - name: Run SwiftLint
         run: swiftlint lint --strict --reporter github-actions-logging
 
-  macos-build:
-    name: macOS Build
+  macos-build-and-test:
+    name: macOS Build + Test
     needs: lint
     runs-on: macos-26
 
@@ -59,13 +59,13 @@ jobs:
           SPARKLE_PUBLIC_KEY = $SPARKLE_PUBLIC_KEY
           EOF
 
-      - name: Build app (macOS)
+      - name: Build and test app (macOS)
         run: |
-          xcodebuild build \
+          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test \
             -project BitDream.xcodeproj \
             -scheme BitDream \
             -configuration Debug \
-            -destination "generic/platform=macOS" \
+            -destination "platform=macOS,arch=arm64" \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
@@ -101,7 +101,7 @@ jobs:
 
       - name: Build app (iOS)
         run: |
-          xcodebuild build \
+          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild build \
             -project BitDream.xcodeproj \
             -scheme BitDream \
             -configuration Debug \

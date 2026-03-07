@@ -1,28 +1,10 @@
 import Foundation
 
 public typealias TransmissionConfig = URLComponents
-private let sessionTokenHeader = "X-Transmission-Session-Id"
 
 public struct TransmissionAuth: Sendable {
     let username: String
     let password: String
-}
-
-private actor TransmissionSessionTokenStore {
-    static let shared = TransmissionSessionTokenStore()
-    private var tokens: [String: String] = [:]
-
-    func token(for endpoint: String) -> String? {
-        tokens[endpoint]
-    }
-
-    func setToken(_ token: String, for endpoint: String) {
-        tokens[endpoint] = token
-    }
-
-    func clearToken(for endpoint: String) {
-        tokens.removeValue(forKey: endpoint)
-    }
 }
 
 // MARK: - Core Request Functions
@@ -36,7 +18,7 @@ private func rpcURL(from config: TransmissionConfig) -> URL? {
 private func extractSessionToken(from response: HTTPURLResponse) -> String? {
     for (key, value) in response.allHeaderFields {
         let header = String(describing: key)
-        if header.compare(sessionTokenHeader, options: .caseInsensitive) == .orderedSame {
+        if header.compare(transmissionSessionTokenHeader, options: .caseInsensitive) == .orderedSame {
             return value as? String
         }
     }
@@ -54,7 +36,7 @@ private func buildRequest(
     req.httpBody = requestData
     req.setValue("application/json", forHTTPHeaderField: "Content-Type")
     if let sessionToken {
-        req.setValue(sessionToken, forHTTPHeaderField: sessionTokenHeader)
+        req.setValue(sessionToken, forHTTPHeaderField: transmissionSessionTokenHeader)
     }
     let loginString = "\(auth.username):\(auth.password)"
     let loginData = loginString.data(using: .utf8) ?? Data()
