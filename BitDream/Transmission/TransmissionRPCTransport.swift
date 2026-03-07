@@ -19,7 +19,11 @@ internal actor TransmissionSessionTokenStore {
         tokens[endpoint] = token
     }
 
-    func clearToken(for endpoint: String) {
+    func clearToken(ifMatching token: String?, for endpoint: String) {
+        guard tokens[endpoint] == token else {
+            return
+        }
+
         tokens.removeValue(forKey: endpoint)
     }
 }
@@ -175,7 +179,7 @@ internal struct TransmissionRPCTransport: Sendable {
 
             return envelope
         case 401:
-            await tokenStore.clearToken(for: endpoint)
+            await tokenStore.clearToken(ifMatching: currentToken, for: endpoint)
             throw TransmissionError.unauthorized
         case 409:
             guard !retrying else {

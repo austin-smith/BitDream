@@ -367,8 +367,8 @@
 			children = (
 				4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */,
 				5A1000064100000000A1B2C3 /* TransmissionRPCTransport.swift */,
-				4B1DADFD295E6F390037E9FB /* TransmissionTorrentModels.swift */,
 				4D6A00203F00000000A1B2C3 /* TransmissionSessionModels.swift */,
+				4B1DADFD295E6F390037E9FB /* TransmissionTorrentModels.swift */,
 			);
 			path = Transmission;
 			sourceTree = "<group>";

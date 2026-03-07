@@ -106,7 +106,10 @@ private func sendRPCRequestInBackground(
                 let httpResp = resp as? HTTPURLResponse
                 if httpResp?.statusCode == 401 {
                     Task {
-                        await TransmissionSessionTokenStore.shared.clearToken(for: endpoint)
+                        await TransmissionSessionTokenStore.shared.clearToken(
+                            ifMatching: resolvedToken,
+                            for: endpoint
+                        )
                     }
                 }
                 responseHandler(nil, httpResp, error)
@@ -148,7 +151,10 @@ private func sendRPCRequestInBackground(
                     }
                 } else if httpResp?.statusCode == 401 {
                     Task {
-                        await TransmissionSessionTokenStore.shared.clearToken(for: endpoint)
+                        await TransmissionSessionTokenStore.shared.clearToken(
+                            ifMatching: resolvedToken,
+                            for: endpoint
+                        )
                     }
                 }
 
