@@ -15,7 +15,6 @@
 		4B1DADF9295E6EBA0037E9FB /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADF8295E6EBA0037E9FB /* Utilities.swift */; };
 		4B1DADFE295E6F390037E9FB /* TransmissionTorrentModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADFD295E6F390037E9FB /* TransmissionTorrentModels.swift */; };
 		4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */; };
-		4D6A00213F00000000A1B2C3 /* TransmissionSessionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6A00203F00000000A1B2C3 /* TransmissionSessionModels.swift */; };
 		4B1DAE02295E6FA30037E9FB /* AddTorrent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE01295E6FA30037E9FB /* AddTorrent.swift */; };
 		4B1DAE06295E6FC80037E9FB /* TorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE05295E6FC80037E9FB /* TorrentDetail.swift */; };
 		4B1DAE0A295E6FE10037E9FB /* ServerDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */; };
@@ -35,7 +34,6 @@
 		4B6F1EB02D82D340003D8F6E /* iOSSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EAF2D82D340003D8F6E /* iOSSettingsView.swift */; };
 		4B6F1EB22D82DB21003D8F6E /* TorrentListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EB12D82DB21003D8F6E /* TorrentListRow.swift */; };
 		4B6F1EB42D82DB2D003D8F6E /* iOSTorrentListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EB32D82DB2D003D8F6E /* iOSTorrentListRow.swift */; };
-		4FA9A0024100000000A1B2C3 /* TorrentActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA9A0014100000000A1B2C3 /* TorrentActionExecutor.swift */; };
 		4B6F1EBC2D86C908003D8F6E /* macOSTorrentFileDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EBB2D86C908003D8F6E /* macOSTorrentFileDetail.swift */; };
 		4B6F1EBE2D86C926003D8F6E /* iOSTorrentFileDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EBD2D86C926003D8F6E /* iOSTorrentFileDetail.swift */; };
 		4B6F1EC02D86D52A003D8F6E /* TorrentFileDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6F1EBF2D86D52A003D8F6E /* TorrentFileDetail.swift */; };
@@ -51,19 +49,16 @@
 		4BC2C92B2E6E22B800011971 /* macOSTorrentListExpanded.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC2C9292E6E22B800011971 /* macOSTorrentListExpanded.swift */; };
 		4BC2C92C2E6E22B800011971 /* macOSTorrentListCompact.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC2C9282E6E22B800011971 /* macOSTorrentListCompact.swift */; };
 		4BC4A4BA2E7248A300578D08 /* macOSMenuCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC4A4B92E7248A300578D08 /* macOSMenuCommands.swift */; };
-			4BC5C2AA2D7D20B500D80AB4 /* iOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */; };
-			4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */; };
-			4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */; };
-			4BC5C2B42D7D415100D80AB4 /* iOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */; };
-			4BC6F24B2E89F8510037DFDF /* PiecesGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC6F24A2E89F8510037DFDF /* PiecesGridView.swift */; };
-			4BCF274F2E774EDC00F6BF76 /* DataWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274E2E774EDC00F6BF76 /* DataWriter.swift */; };
-			4BCF27502E774EDC00F6BF76 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274D2E774EDC00F6BF76 /* DataModels.swift */; };
-			4BCF27512E774F3E00F6BF76 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274D2E774EDC00F6BF76 /* DataModels.swift */; };
-			4F8000044000000000A1B2C3 /* macOSContentSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8000014000000000A1B2C3 /* macOSContentSidebar.swift */; };
-			4F8000054000000000A1B2C3 /* macOSContentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8000024000000000A1B2C3 /* macOSContentDetail.swift */; };
-			4F8000064000000000A1B2C3 /* macOSContentToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8000034000000000A1B2C3 /* macOSContentToolbar.swift */; };
-			4BD8554A2E77424B00606224 /* WidgetKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD855492E77424B00606224 /* WidgetKitBridge.swift */; };
-			4BD8554B2E77424B00606224 /* WidgetKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD855492E77424B00606224 /* WidgetKitBridge.swift */; };
+		4BC5C2AA2D7D20B500D80AB4 /* iOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */; };
+		4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */; };
+		4BC5C2B32D7D415100D80AB4 /* macOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */; };
+		4BC5C2B42D7D415100D80AB4 /* iOSTorrentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */; };
+		4BC6F24B2E89F8510037DFDF /* PiecesGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC6F24A2E89F8510037DFDF /* PiecesGridView.swift */; };
+		4BCF274F2E774EDC00F6BF76 /* DataWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274E2E774EDC00F6BF76 /* DataWriter.swift */; };
+		4BCF27502E774EDC00F6BF76 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274D2E774EDC00F6BF76 /* DataModels.swift */; };
+		4BCF27512E774F3E00F6BF76 /* DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274D2E774EDC00F6BF76 /* DataModels.swift */; };
+		4BD8554A2E77424B00606224 /* WidgetKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD855492E77424B00606224 /* WidgetKitBridge.swift */; };
+		4BD8554B2E77424B00606224 /* WidgetKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD855492E77424B00606224 /* WidgetKitBridge.swift */; };
 		4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD938E92D82AF6F006CE97C /* ThemeManager.swift */; };
 		4BDA6AA92E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4BDA6AA82E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon */; };
 		4BDACD172E73DB220074F714 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4BDACD162E73DB220074F714 /* WidgetKit.framework */; };
@@ -96,11 +91,17 @@
 		4D4A00123D00000000E2F2A2 /* HostRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D4A00113D00000000E2F2A2 /* HostRepository.swift */; };
 		4D5A00233E00000000F3F3A3 /* TorrentParsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5A00223E00000000F3F3A3 /* TorrentParsing.swift */; };
 		4D5A00243E00000000F3F3A3 /* TorrentSorting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5A00253E00000000F3F3A3 /* TorrentSorting.swift */; };
+		4D6A00213F00000000A1B2C3 /* TransmissionSessionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6A00203F00000000A1B2C3 /* TransmissionSessionModels.swift */; };
 		4E1000043F00000000A1B2C4 /* macOSTorrentEdit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E1000023F00000000A1B2C4 /* macOSTorrentEdit.swift */; };
 		4E2000014000000000C1D2E3 /* SpeedLimitsSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E2000044000000000C1D2E3 /* SpeedLimitsSettings.swift */; };
 		4E2000024000000000C1D2E3 /* NetworkSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E2000054000000000C1D2E3 /* NetworkSettings.swift */; };
 		4E2000034000000000C1D2E3 /* TorrentSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E2000064000000000C1D2E3 /* TorrentSettings.swift */; };
 		4F7000024000000000A1B2C3 /* iOSTorrentFileRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7000014000000000A1B2C3 /* iOSTorrentFileRow.swift */; };
+		4F8000044000000000A1B2C3 /* macOSContentSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8000014000000000A1B2C3 /* macOSContentSidebar.swift */; };
+		4F8000054000000000A1B2C3 /* macOSContentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8000024000000000A1B2C3 /* macOSContentDetail.swift */; };
+		4F8000064000000000A1B2C3 /* macOSContentToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8000034000000000A1B2C3 /* macOSContentToolbar.swift */; };
+		4FA9A0024100000000A1B2C3 /* TorrentActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA9A0014100000000A1B2C3 /* TorrentActionExecutor.swift */; };
+		5A1000014100000000A1B2C3 /* TransmissionRPCTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1000064100000000A1B2C3 /* TransmissionRPCTransport.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -110,6 +111,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 4BDACD132E73DB220074F714;
 			remoteInfo = BitDreamWidgetsExtension;
+		};
+		5A1000044100000000A1B2C3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4B1DADD3295E6C440037E9FB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4B1DADDA295E6C440037E9FB;
+			remoteInfo = BitDream;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -136,7 +144,6 @@
 		4B1DADF8295E6EBA0037E9FB /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
 		4B1DADFD295E6F390037E9FB /* TransmissionTorrentModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionTorrentModels.swift; sourceTree = "<group>"; };
 		4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionFunctions.swift; sourceTree = "<group>"; };
-		4D6A00203F00000000A1B2C3 /* TransmissionSessionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionSessionModels.swift; sourceTree = "<group>"; };
 		4B1DAE01295E6FA30037E9FB /* AddTorrent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTorrent.swift; sourceTree = "<group>"; };
 		4B1DAE05295E6FC80037E9FB /* TorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentDetail.swift; sourceTree = "<group>"; };
 		4B1DAE09295E6FE10037E9FB /* ServerDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerDetail.swift; sourceTree = "<group>"; };
@@ -156,7 +163,6 @@
 		4B6F1EAF2D82D340003D8F6E /* iOSSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSSettingsView.swift; sourceTree = "<group>"; };
 		4B6F1EB12D82DB21003D8F6E /* TorrentListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentListRow.swift; sourceTree = "<group>"; };
 		4B6F1EB32D82DB2D003D8F6E /* iOSTorrentListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentListRow.swift; sourceTree = "<group>"; };
-		4FA9A0014100000000A1B2C3 /* TorrentActionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentActionExecutor.swift; sourceTree = "<group>"; };
 		4B6F1EBB2D86C908003D8F6E /* macOSTorrentFileDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentFileDetail.swift; sourceTree = "<group>"; };
 		4B6F1EBD2D86C926003D8F6E /* iOSTorrentFileDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentFileDetail.swift; sourceTree = "<group>"; };
 		4B6F1EBF2D86D52A003D8F6E /* TorrentFileDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentFileDetail.swift; sourceTree = "<group>"; };
@@ -172,18 +178,15 @@
 		4BC2C9282E6E22B800011971 /* macOSTorrentListCompact.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentListCompact.swift; sourceTree = "<group>"; };
 		4BC2C9292E6E22B800011971 /* macOSTorrentListExpanded.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentListExpanded.swift; sourceTree = "<group>"; };
 		4BC4A4B92E7248A300578D08 /* macOSMenuCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSMenuCommands.swift; sourceTree = "<group>"; };
-			4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSContentView.swift; sourceTree = "<group>"; };
-			4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentView.swift; sourceTree = "<group>"; };
-			4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentDetail.swift; sourceTree = "<group>"; };
-			4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentDetail.swift; sourceTree = "<group>"; };
-			4BC6F24A2E89F8510037DFDF /* PiecesGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiecesGridView.swift; sourceTree = "<group>"; };
-			4BCF274D2E774EDC00F6BF76 /* DataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataModels.swift; sourceTree = "<group>"; };
-			4BCF274E2E774EDC00F6BF76 /* DataWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataWriter.swift; sourceTree = "<group>"; };
-			4F8000014000000000A1B2C3 /* macOSContentSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentSidebar.swift; sourceTree = "<group>"; };
-			4F8000024000000000A1B2C3 /* macOSContentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentDetail.swift; sourceTree = "<group>"; };
-			4F8000034000000000A1B2C3 /* macOSContentToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentToolbar.swift; sourceTree = "<group>"; };
-			4BD855492E77424B00606224 /* WidgetKitBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetKitBridge.swift; sourceTree = "<group>"; };
-			4BD938E92D82AF6F006CE97C /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		4BC5C2A72D7D20B500D80AB4 /* iOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSContentView.swift; sourceTree = "<group>"; };
+		4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentView.swift; sourceTree = "<group>"; };
+		4BC5C2B12D7D415100D80AB4 /* iOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentDetail.swift; sourceTree = "<group>"; };
+		4BC5C2B22D7D415100D80AB4 /* macOSTorrentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentDetail.swift; sourceTree = "<group>"; };
+		4BC6F24A2E89F8510037DFDF /* PiecesGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiecesGridView.swift; sourceTree = "<group>"; };
+		4BCF274D2E774EDC00F6BF76 /* DataModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataModels.swift; sourceTree = "<group>"; };
+		4BCF274E2E774EDC00F6BF76 /* DataWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataWriter.swift; sourceTree = "<group>"; };
+		4BD855492E77424B00606224 /* WidgetKitBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetKitBridge.swift; sourceTree = "<group>"; };
+		4BD938E92D82AF6F006CE97C /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		4BDA6AA82E8AD06D009E6098 /* BitDreamAppIconPixelyClouds.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = BitDreamAppIconPixelyClouds.icon; sourceTree = "<group>"; };
 		4BDACD142E73DB220074F714 /* BitDreamWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BitDreamWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4BDACD162E73DB220074F714 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -216,11 +219,18 @@
 		4D4A00113D00000000E2F2A2 /* HostRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostRepository.swift; sourceTree = "<group>"; };
 		4D5A00223E00000000F3F3A3 /* TorrentParsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentParsing.swift; sourceTree = "<group>"; };
 		4D5A00253E00000000F3F3A3 /* TorrentSorting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentSorting.swift; sourceTree = "<group>"; };
+		4D6A00203F00000000A1B2C3 /* TransmissionSessionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionSessionModels.swift; sourceTree = "<group>"; };
 		4E1000023F00000000A1B2C4 /* macOSTorrentEdit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSTorrentEdit.swift; sourceTree = "<group>"; };
 		4E2000044000000000C1D2E3 /* SpeedLimitsSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedLimitsSettings.swift; sourceTree = "<group>"; };
 		4E2000054000000000C1D2E3 /* NetworkSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkSettings.swift; sourceTree = "<group>"; };
 		4E2000064000000000C1D2E3 /* TorrentSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentSettings.swift; sourceTree = "<group>"; };
 		4F7000014000000000A1B2C3 /* iOSTorrentFileRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentFileRow.swift; sourceTree = "<group>"; };
+		4F8000014000000000A1B2C3 /* macOSContentSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentSidebar.swift; sourceTree = "<group>"; };
+		4F8000024000000000A1B2C3 /* macOSContentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentDetail.swift; sourceTree = "<group>"; };
+		4F8000034000000000A1B2C3 /* macOSContentToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentToolbar.swift; sourceTree = "<group>"; };
+		4FA9A0014100000000A1B2C3 /* TorrentActionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentActionExecutor.swift; sourceTree = "<group>"; };
+		5A1000064100000000A1B2C3 /* TransmissionRPCTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransmissionRPCTransport.swift; sourceTree = "<group>"; };
+		5A1000074100000000A1B2C3 /* BitDreamTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BitDreamTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -247,6 +257,11 @@
 			path = BitDreamWidgets;
 			sourceTree = "<group>";
 		};
+		5A10000A4100000000A1B2C3 /* BitDreamTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BitDreamTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -261,6 +276,11 @@
 			files = (
 				4BDACD192E73DB220074F714 /* SwiftUI.framework in Frameworks */,
 				4BDACD172E73DB220074F714 /* WidgetKit.framework in Frameworks */,
+			);
+		};
+		5A10000C4100000000A1B2C3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -281,6 +301,7 @@
 				4B4E4C1A2E8A1F6E00418FD7 /* AppIcons */,
 				4D2000033B10000000C3D4E5 /* Config */,
 				4B1DADDD295E6C440037E9FB /* BitDream */,
+				5A10000A4100000000A1B2C3 /* BitDreamTests */,
 				4BDACD1A2E73DB220074F714 /* BitDreamWidgets */,
 				4BDACD152E73DB220074F714 /* Frameworks */,
 				4B1DADDC295E6C440037E9FB /* Products */,
@@ -291,6 +312,7 @@
 			isa = PBXGroup;
 			children = (
 				4B1DADDB295E6C440037E9FB /* BitDream.app */,
+				5A1000074100000000A1B2C3 /* BitDreamTests.xctest */,
 				4BDACD142E73DB220074F714 /* BitDreamWidgetsExtension.appex */,
 			);
 			name = Products;
@@ -344,8 +366,9 @@
 			isa = PBXGroup;
 			children = (
 				4B1DADFF295E6F600037E9FB /* TransmissionFunctions.swift */,
-				4B1DADFD295E6F390037E9FB /* TransmissionTorrentModels.swift */,
+				5A1000064100000000A1B2C3 /* TransmissionRPCTransport.swift */,
 				4D6A00203F00000000A1B2C3 /* TransmissionSessionModels.swift */,
+				4B1DADFD295E6F390037E9FB /* TransmissionTorrentModels.swift */,
 			);
 			path = Transmission;
 			sourceTree = "<group>";
@@ -383,15 +406,15 @@
 			children = (
 				4C1000003A00000000A1B2C3 /* MenuBar */,
 				4C2000003C00000000A1B2C3 /* Settings */,
-					4B73985F2E7029BD00D06E5D /* macOSAboutView.swift */,
-					4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */,
-					4B73986B2F1A112200D06E5D /* macOSConnectionInfoView.swift */,
-					4F8000024000000000A1B2C3 /* macOSContentDetail.swift */,
-					4F8000014000000000A1B2C3 /* macOSContentSidebar.swift */,
-					4F8000034000000000A1B2C3 /* macOSContentToolbar.swift */,
-					4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */,
-					4BC4A4B92E7248A300578D08 /* macOSMenuCommands.swift */,
-					4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */,
+				4B73985F2E7029BD00D06E5D /* macOSAboutView.swift */,
+				4B9CAC532D7E833A0094CD03 /* macOSAddTorrent.swift */,
+				4B73986B2F1A112200D06E5D /* macOSConnectionInfoView.swift */,
+				4F8000024000000000A1B2C3 /* macOSContentDetail.swift */,
+				4F8000014000000000A1B2C3 /* macOSContentSidebar.swift */,
+				4F8000034000000000A1B2C3 /* macOSContentToolbar.swift */,
+				4BC5C2A82D7D20B500D80AB4 /* macOSContentView.swift */,
+				4BC4A4B92E7248A300578D08 /* macOSMenuCommands.swift */,
+				4B642D6B2D7E151A003CEADC /* macOSServerDetail.swift */,
 				4B642D782D7E1EED003CEADC /* macOSServerList.swift */,
 				4B73985D2E70181D00D06E5D /* macOSStatisticsView.swift */,
 				4BFFAA002E7F000000000001 /* macOSTorrentActionsMenu.swift */,
@@ -583,6 +606,27 @@
 			productReference = 4BDACD142E73DB220074F714 /* BitDreamWidgetsExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		5A10000F4100000000A1B2C3 /* BitDreamTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5A1000124100000000A1B2C3 /* Build configuration list for PBXNativeTarget "BitDreamTests" */;
+			buildPhases = (
+				5A10000E4100000000A1B2C3 /* Sources */,
+				5A10000C4100000000A1B2C3 /* Frameworks */,
+				5A10000D4100000000A1B2C3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5A1000054100000000A1B2C3 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				5A10000A4100000000A1B2C3 /* BitDreamTests */,
+			);
+			name = BitDreamTests;
+			productName = BitDreamTests;
+			productReference = 5A1000074100000000A1B2C3 /* BitDreamTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -598,6 +642,10 @@
 					};
 					4BDACD132E73DB220074F714 = {
 						CreatedOnToolsVersion = 16.4;
+					};
+					5A10000F4100000000A1B2C3 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 4B1DADDA295E6C440037E9FB;
 					};
 				};
 			};
@@ -618,6 +666,7 @@
 			projectRoot = "";
 			targets = (
 				4B1DADDA295E6C440037E9FB /* BitDream */,
+				5A10000F4100000000A1B2C3 /* BitDreamTests */,
 				4BDACD132E73DB220074F714 /* BitDreamWidgetsExtension */,
 			);
 		};
@@ -636,6 +685,11 @@
 			);
 		};
 		4BDACD122E73DB220074F714 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		5A10000D4100000000A1B2C3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -664,6 +718,7 @@
 				4BC6F24B2E89F8510037DFDF /* PiecesGridView.swift in Sources */,
 				4B6F1EBC2D86C908003D8F6E /* macOSTorrentFileDetail.swift in Sources */,
 				4B1DAE00295E6F600037E9FB /* TransmissionFunctions.swift in Sources */,
+				5A1000014100000000A1B2C3 /* TransmissionRPCTransport.swift in Sources */,
 				4BDE147F2F0B015C00FF6A46 /* AppIconManager.swift in Sources */,
 				4BD938EB2D82AF6F006CE97C /* ThemeManager.swift in Sources */,
 				4B1DADFE295E6F390037E9FB /* TransmissionTorrentModels.swift in Sources */,
@@ -707,14 +762,14 @@
 				4C2000053C00000000A1B2C3 /* macOSGeneralSettingsTab.swift in Sources */,
 				4C2000083C00000000A1B2C3 /* macOSNetworkSettingsTab.swift in Sources */,
 				4B6F1EAE2D82D337003D8F6E /* macOSSettingsView.swift in Sources */,
-					4C2000073C00000000A1B2C3 /* macOSSpeedLimitsSettingsTab.swift in Sources */,
-					4C2000063C00000000A1B2C3 /* macOSTorrentSettingsTab.swift in Sources */,
-					4BD8554B2E77424B00606224 /* WidgetKitBridge.swift in Sources */,
-					4F8000054000000000A1B2C3 /* macOSContentDetail.swift in Sources */,
-					4F8000044000000000A1B2C3 /* macOSContentSidebar.swift in Sources */,
-					4F8000064000000000A1B2C3 /* macOSContentToolbar.swift in Sources */,
-					4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */,
-					4B73985E2E70181D00D06E5D /* macOSStatisticsView.swift in Sources */,
+				4C2000073C00000000A1B2C3 /* macOSSpeedLimitsSettingsTab.swift in Sources */,
+				4C2000063C00000000A1B2C3 /* macOSTorrentSettingsTab.swift in Sources */,
+				4BD8554B2E77424B00606224 /* WidgetKitBridge.swift in Sources */,
+				4F8000054000000000A1B2C3 /* macOSContentDetail.swift in Sources */,
+				4F8000044000000000A1B2C3 /* macOSContentSidebar.swift in Sources */,
+				4F8000064000000000A1B2C3 /* macOSContentToolbar.swift in Sources */,
+				4BC5C2AC2D7D20B500D80AB4 /* macOSContentView.swift in Sources */,
+				4B73985E2E70181D00D06E5D /* macOSStatisticsView.swift in Sources */,
 				4B73986C2F1A112200D06E5D /* macOSConnectionInfoView.swift in Sources */,
 				4B642D6C2D7E151A003CEADC /* macOSServerDetail.swift in Sources */,
 				4B642D792D7E1EED003CEADC /* macOSServerList.swift in Sources */,
@@ -737,6 +792,11 @@
 				4BCF27512E774F3E00F6BF76 /* DataModels.swift in Sources */,
 			);
 		};
+		5A10000E4100000000A1B2C3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -744,6 +804,11 @@
 			isa = PBXTargetDependency;
 			target = 4BDACD132E73DB220074F714 /* BitDreamWidgetsExtension */;
 			targetProxy = 4BDACD282E73DB230074F714 /* PBXContainerItemProxy */;
+		};
+		5A1000054100000000A1B2C3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4B1DADDA295E6C440037E9FB /* BitDream */;
+			targetProxy = 5A1000044100000000A1B2C3 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1052,6 +1117,57 @@
 			};
 			name = Release;
 		};
+		5A1000104100000000A1B2C3 /* Debug configuration for PBXNativeTarget "BitDreamTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+					"@loader_path/../../../../MacOS",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDreamTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BitDream.app/Contents/MacOS/BitDream";
+				TEST_TARGET_NAME = BitDream;
+			};
+			name = Debug;
+		};
+		5A1000114100000000A1B2C3 /* Release configuration for PBXNativeTarget "BitDreamTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+					"@loader_path/../../../../MacOS",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = crapshack.BitDreamTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BitDream.app/Contents/MacOS/BitDream";
+				TEST_TARGET_NAME = BitDream;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1076,6 +1192,14 @@
 			buildConfigurations = (
 				4BDACD2D2E73DB230074F714 /* Debug configuration for PBXNativeTarget "BitDreamWidgetsExtension" */,
 				4BDACD2E2E73DB230074F714 /* Release configuration for PBXNativeTarget "BitDreamWidgetsExtension" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		5A1000124100000000A1B2C3 /* Build configuration list for PBXNativeTarget "BitDreamTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5A1000104100000000A1B2C3 /* Debug configuration for PBXNativeTarget "BitDreamTests" */,
+				5A1000114100000000A1B2C3 /* Release configuration for PBXNativeTarget "BitDreamTests" */,
 			);
 			defaultConfigurationName = Release;
 		};
