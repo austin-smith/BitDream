@@ -106,15 +106,6 @@ internal struct TransmissionLegacyAdapter: Sendable {
         }
     }
 
-    func fetchSessionSettings(
-        config: TransmissionConfig,
-        auth: TransmissionAuth
-    ) async -> Result<TransmissionSessionResponseArguments, Error> {
-        await performQuery(config: config, auth: auth) { connection in
-            try await connection.fetchSessionSettings()
-        }
-    }
-
     private func connection(
         for config: TransmissionConfig,
         auth: TransmissionAuth
@@ -272,39 +263,6 @@ public func deleteTorrent(torrent: Torrent, erase: Bool, config: TransmissionCon
         auth: auth,
         completion: onDel
     )
-}
-
-/// Model representing session information from the server
-public struct SessionInfo {
-    let downloadDir: String
-    let version: String
-
-    init(downloadDir: String = "unknown", version: String = "unknown") {
-        self.downloadDir = downloadDir
-        self.version = version
-    }
-}
-
-/// Get the server's session configuration and information
-/// - Parameter config: The server's config
-/// - Parameter auth: The username and password for the server
-/// - Parameter onResponse: An escaping function that receives session information from the server
-public func getSession(
-    config: TransmissionConfig,
-    auth: TransmissionAuth,
-    onResponse: @MainActor @escaping (TransmissionSessionResponseArguments) -> Void,
-    onError: @MainActor @escaping (String) -> Void
-) {
-    Task {
-        let result = await legacyTransmissionAdapter.fetchSessionSettings(config: config, auth: auth)
-
-        switch result {
-        case .success(let response):
-            await onResponse(response)
-        case .failure(let error):
-            await onError(error.localizedDescription)
-        }
-    }
 }
 
 public func playPauseTorrent(torrent: Torrent, config: TransmissionConfig, auth: TransmissionAuth, onResponse: @MainActor @escaping (TransmissionResponse) -> Void) {
@@ -556,111 +514,6 @@ public func queueMoveBottom(
         auth: info.auth,
         completion: completion
     )
-}
-
-// MARK: - Session Configuration Functions
-
-/// Update session configuration settings using the session-set method
-/// - Parameters:
-///   - args: TransmissionSessionSetRequestArgs containing the properties to update
-///   - config: Server configuration
-///   - auth: Authentication credentials
-///   - completion: Called when the server's response is received
-public func setSession(
-    args: TransmissionSessionSetRequestArgs,
-    config: TransmissionConfig,
-    auth: TransmissionAuth,
-    completion: @MainActor @escaping (TransmissionResponse) -> Void
-) {
-    performTransmissionStatusRequest(
-        method: "session-set",
-        args: args,
-        config: config,
-        auth: auth,
-        completion: completion
-    )
-}
-
-// MARK: - Utility Functions
-
-/// Check free space available in a directory
-/// - Parameters:
-///   - path: The directory path to check
-///   - config: Server configuration
-///   - auth: Authentication credentials
-///   - completion: Result containing free space info or error
-public func checkFreeSpace(
-    path: String,
-    config: TransmissionConfig,
-    auth: TransmissionAuth,
-    completion: @MainActor @escaping (Result<FreeSpaceResponse, Error>) -> Void
-) {
-    performTransmissionDataRequest(
-        method: "free-space",
-        args: ["path": path] as [String: String],
-        config: config,
-        auth: auth
-    ) { (result: Result<FreeSpaceResponse, Error>) in
-        switch result {
-        case .success(let response):
-            completion(.success(response))
-        case .failure(let error):
-            completion(.failure(error))
-        }
-    }
-}
-
-/// Test if the peer listening port is accessible from the outside world
-/// - Parameters:
-///   - ipProtocol: Optional IP protocol to test ("ipv4" or "ipv6"). If nil, uses OS default.
-///   - config: Server configuration
-///   - auth: Authentication credentials
-///   - completion: Result containing port test response or error
-public func testPort(
-    ipProtocol: String? = nil,
-    config: TransmissionConfig,
-    auth: TransmissionAuth,
-    completion: @MainActor @escaping (Result<PortTestResponse, Error>) -> Void
-) {
-    let args = PortTestRequestArgs(ipProtocol: ipProtocol)
-    performTransmissionDataRequest(
-        method: "port-test",
-        args: args,
-        config: config,
-        auth: auth
-    ) { (result: Result<PortTestResponse, Error>) in
-        switch result {
-        case .success(let response):
-            completion(.success(response))
-        case .failure(let error):
-            completion(.failure(error))
-        }
-    }
-}
-
-/// Update the blocklist from the configured blocklist URL
-/// - Parameters:
-///   - config: Server configuration
-///   - auth: Authentication credentials
-///   - completion: Result containing the new blocklist size or error
-public func updateBlocklist(
-    config: TransmissionConfig,
-    auth: TransmissionAuth,
-    completion: @MainActor @escaping (Result<BlocklistUpdateResponse, Error>) -> Void
-) {
-    performTransmissionDataRequest(
-        method: "blocklist-update",
-        args: EmptyArguments(),
-        config: config,
-        auth: auth
-    ) { (result: Result<BlocklistUpdateResponse, Error>) in
-        switch result {
-        case .success(let response):
-            completion(.success(response))
-        case .failure(let error):
-            completion(.failure(error))
-        }
-    }
 }
 
 // MARK: - Peer Queries

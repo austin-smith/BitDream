@@ -96,6 +96,7 @@ final class TransmissionStore: NSObject, ObservableObject {
     @Published var showConnectionErrorAlert: Bool = false
 
     @Published var sessionConfiguration: TransmissionSessionResponseArguments?
+    @Published private(set) var settingsConnectionGeneration = UUID()
 
     @Published var pollInterval: Double = AppDefaults.pollInterval // Default poll interval in seconds
     @Published var shouldActivateSearch: Bool = false
@@ -125,7 +126,6 @@ final class TransmissionStore: NSObject, ObservableObject {
     private let sleep: @Sendable (TimeInterval) async throws -> Void
     private let persistVersion: @MainActor @Sendable (String, String) async -> Void
 
-    private var legacyContext: LegacyTransmissionContext?
     private var activeConnection: ActiveConnection?
     private var currentConnectionGeneration = UUID()
     private var activationTask: Task<Void, Never>?
@@ -239,12 +239,6 @@ extension TransmissionStore {
         replaceConnection(for: host, trigger: .manualReconnect)
     }
 
-    // Computed property to provide current server info for session-set calls
-    var currentServerInfo: (config: TransmissionConfig, auth: TransmissionAuth)? {
-        guard let legacyContext else { return nil }
-        return (config: legacyContext.config, auth: legacyContext.auth)
-    }
-
     // Method to refresh session configuration after settings changes
     func refreshSessionConfiguration() {
         guard let activeConnection else { return }
@@ -258,6 +252,35 @@ extension TransmissionStore {
             defer { self.sessionRefreshTask = nil }
             await self.performSessionOnlyRefresh(for: activeConnection)
         }
+    }
+
+    func applySessionSettings(_ args: TransmissionSessionSetRequestArgs) async throws -> TransmissionSessionResponseArguments {
+        let connectionState = try requireActiveConnection()
+        try await connectionState.connection.setSession(args)
+        try ensureCurrent(connectionState)
+        return try await refreshSessionConfiguration(for: connectionState)
+    }
+
+    func checkFreeSpace(path: String) async throws -> FreeSpaceResponse {
+        let connectionState = try requireActiveConnection()
+        let response = try await connectionState.connection.checkFreeSpace(path: path)
+        try ensureCurrent(connectionState)
+        return response
+    }
+
+    func testPort(ipProtocol: String? = nil) async throws -> PortTestResponse {
+        let connectionState = try requireActiveConnection()
+        let response = try await connectionState.connection.testPort(ipProtocol: ipProtocol)
+        try ensureCurrent(connectionState)
+        return response
+    }
+
+    func updateBlocklist() async throws -> BlocklistUpdateResponse {
+        let connectionState = try requireActiveConnection()
+        let response = try await connectionState.connection.updateBlocklist()
+        try ensureCurrent(connectionState)
+        _ = try await refreshSessionConfiguration(for: connectionState)
+        return response
     }
 
     func clearReconnectPresentationState() {
@@ -357,10 +380,10 @@ extension TransmissionStore {
 
     func clearSelectedHost() {
         currentConnectionGeneration = UUID()
+        settingsConnectionGeneration = currentConnectionGeneration
         cancelRefreshLifecycle()
         resetReconnectState()
 
-        legacyContext = nil
         host = nil
         activeConnection = nil
 
@@ -426,10 +449,10 @@ extension TransmissionStore {
 
         let generation = UUID()
         currentConnectionGeneration = generation
+        settingsConnectionGeneration = generation
 
         cancelRefreshLifecycle()
         markConnecting()
-        legacyContext = buildLegacyContext(for: host)
         self.host = host
         activeConnection = nil
         UserDefaults.standard.set(host.serverID, forKey: UserDefaultsKeys.selectedHost)
@@ -500,13 +523,7 @@ extension TransmissionStore {
 
     private func performSessionOnlyRefresh(for connectionState: ActiveConnection) async {
         do {
-            let sessionSettings = try await connectionState.connection.fetchSessionSettings()
-            guard isCurrentGeneration(connectionState.generation, hostID: connectionState.hostID) else {
-                return
-            }
-
-            sessionConfiguration = sessionSettings
-            defaultDownloadDir = sessionSettings.downloadDir
+            _ = try await refreshSessionConfiguration(for: connectionState)
         } catch {
             guard isCurrentGeneration(connectionState.generation, hostID: connectionState.hostID) else {
                 return
@@ -522,12 +539,7 @@ extension TransmissionStore {
         apply(snapshot: snapshot.polling, for: connectionState)
         switch snapshot.sessionSettingsResult {
         case .success(let sessionSettings):
-            sessionConfiguration = sessionSettings
-            defaultDownloadDir = sessionSettings.downloadDir
-
-            Task {
-                await persistVersion(connectionState.hostID, sessionSettings.version)
-            }
+            apply(sessionSettings: sessionSettings, for: connectionState)
         case .failure(let error):
             let presentation = TransmissionErrorPresenter.presentation(for: error)
             logger.error("Failed to refresh session configuration during full refresh: \(presentation.message, privacy: .public)")
@@ -634,21 +646,38 @@ extension TransmissionStore {
         retryTask = nil
     }
 
-    private func buildLegacyContext(for host: Host) -> LegacyTransmissionContext {
-        var config = TransmissionConfig()
-        config.host = host.server
-        config.port = Int(host.port)
-        config.scheme = host.isSSL ? "https" : "http"
-
-        let auth = TransmissionAuth(
-            username: host.username ?? "",
-            password: readPassword(for: host)
-        )
-        return LegacyTransmissionContext(config: config, auth: auth)
-    }
-
     private func isCurrentGeneration(_ generation: UUID, hostID: String) -> Bool {
         currentConnectionGeneration == generation && host?.serverID == hostID
+    }
+
+    private func requireActiveConnection() throws -> ActiveConnection {
+        guard let activeConnection else {
+            throw CancellationError()
+        }
+
+        return activeConnection
+    }
+
+    private func ensureCurrent(_ connectionState: ActiveConnection) throws {
+        guard isCurrentGeneration(connectionState.generation, hostID: connectionState.hostID) else {
+            throw CancellationError()
+        }
+    }
+
+    private func refreshSessionConfiguration(for connectionState: ActiveConnection) async throws -> TransmissionSessionResponseArguments {
+        let sessionSettings = try await connectionState.connection.fetchSessionSettings()
+        try ensureCurrent(connectionState)
+        apply(sessionSettings: sessionSettings, for: connectionState)
+        return sessionSettings
+    }
+
+    private func apply(sessionSettings: TransmissionSessionResponseArguments, for connectionState: ActiveConnection) {
+        sessionConfiguration = sessionSettings
+        defaultDownloadDir = sessionSettings.downloadDir
+
+        Task {
+            await persistVersion(connectionState.hostID, sessionSettings.version)
+        }
     }
 
     private static func liveSleep(seconds: TimeInterval) async throws {

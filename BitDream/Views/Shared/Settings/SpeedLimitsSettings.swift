@@ -3,7 +3,7 @@ import Foundation
 
 struct SpeedLimitsContent: View {
     let config: TransmissionSessionResponseArguments
-    @ObservedObject var editModel: SessionSettingsEditModel
+    @ObservedObject var editModel: SettingsViewModel
     var showHeadings: Bool = true
 
     var body: some View {
@@ -17,17 +17,17 @@ struct SpeedLimitsContent: View {
                 }
 
                 Toggle("Download limit", isOn: Binding(
-                    get: { editModel.getValue("speedLimitDownEnabled", fallback: config.speedLimitDownEnabled) },
-                    set: { editModel.setValue("speedLimitDownEnabled", $0, original: config.speedLimitDownEnabled) }
+                    get: { editModel.value(for: \.speedLimitDownEnabled, fallback: config.speedLimitDownEnabled) },
+                    set: { editModel.setValue(\.speedLimitDownEnabled, $0, original: config.speedLimitDownEnabled) }
                 ))
 
-                if editModel.getValue("speedLimitDownEnabled", fallback: config.speedLimitDownEnabled) {
+                if editModel.value(for: \.speedLimitDownEnabled, fallback: config.speedLimitDownEnabled) {
                     HStack {
                         Text("Download speed")
                         Spacer()
                         TextField("KB/s", value: Binding(
-                            get: { editModel.getValue("speedLimitDown", fallback: config.speedLimitDown) },
-                            set: { editModel.setValue("speedLimitDown", $0, original: config.speedLimitDown) }
+                            get: { editModel.value(for: \.speedLimitDown, fallback: config.speedLimitDown) },
+                            set: { editModel.setValue(\.speedLimitDown, $0, original: config.speedLimitDown) }
                         ), format: .number)
                         Text("KB/s")
                             .foregroundColor(.secondary)
@@ -35,17 +35,17 @@ struct SpeedLimitsContent: View {
                 }
 
                 Toggle("Upload limit", isOn: Binding(
-                    get: { editModel.getValue("speedLimitUpEnabled", fallback: config.speedLimitUpEnabled) },
-                    set: { editModel.setValue("speedLimitUpEnabled", $0, original: config.speedLimitUpEnabled) }
+                    get: { editModel.value(for: \.speedLimitUpEnabled, fallback: config.speedLimitUpEnabled) },
+                    set: { editModel.setValue(\.speedLimitUpEnabled, $0, original: config.speedLimitUpEnabled) }
                 ))
 
-                if editModel.getValue("speedLimitUpEnabled", fallback: config.speedLimitUpEnabled) {
+                if editModel.value(for: \.speedLimitUpEnabled, fallback: config.speedLimitUpEnabled) {
                     HStack {
                         Text("Upload speed")
                         Spacer()
                         TextField("KB/s", value: Binding(
-                            get: { editModel.getValue("speedLimitUp", fallback: config.speedLimitUp) },
-                            set: { editModel.setValue("speedLimitUp", $0, original: config.speedLimitUp) }
+                            get: { editModel.value(for: \.speedLimitUp, fallback: config.speedLimitUp) },
+                            set: { editModel.setValue(\.speedLimitUp, $0, original: config.speedLimitUp) }
                         ), format: .number)
                         Text("KB/s")
                             .foregroundColor(.secondary)
@@ -67,17 +67,17 @@ struct SpeedLimitsContent: View {
                 }
 
                 Toggle("Enable alternate speeds", isOn: Binding(
-                    get: { editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled) },
-                    set: { editModel.setValue("altSpeedEnabled", $0, original: config.altSpeedEnabled) }
+                    get: { editModel.value(for: \.altSpeedEnabled, fallback: config.altSpeedEnabled) },
+                    set: { editModel.setValue(\.altSpeedEnabled, $0, original: config.altSpeedEnabled) }
                 ))
 
-                if editModel.getValue("altSpeedEnabled", fallback: config.altSpeedEnabled) {
+                if editModel.value(for: \.altSpeedEnabled, fallback: config.altSpeedEnabled) {
                     HStack {
                         Text("Download limit")
                         Spacer()
                         TextField("KB/s", value: Binding(
-                            get: { editModel.getValue("altSpeedDown", fallback: config.altSpeedDown) },
-                            set: { editModel.setValue("altSpeedDown", $0, original: config.altSpeedDown) }
+                            get: { editModel.value(for: \.altSpeedDown, fallback: config.altSpeedDown) },
+                            set: { editModel.setValue(\.altSpeedDown, $0, original: config.altSpeedDown) }
                         ), format: .number)
                         Text("KB/s")
                             .foregroundColor(.secondary)
@@ -87,8 +87,8 @@ struct SpeedLimitsContent: View {
                         Text("Upload limit")
                         Spacer()
                         TextField("KB/s", value: Binding(
-                            get: { editModel.getValue("altSpeedUp", fallback: config.altSpeedUp) },
-                            set: { editModel.setValue("altSpeedUp", $0, original: config.altSpeedUp) }
+                            get: { editModel.value(for: \.altSpeedUp, fallback: config.altSpeedUp) },
+                            set: { editModel.setValue(\.altSpeedUp, $0, original: config.altSpeedUp) }
                         ), format: .number)
                         Text("KB/s")
                             .foregroundColor(.secondary)
@@ -96,16 +96,16 @@ struct SpeedLimitsContent: View {
                 }
 
                 Toggle("Schedule alternate speeds", isOn: Binding(
-                    get: { editModel.getValue("altSpeedTimeEnabled", fallback: config.altSpeedTimeEnabled) },
-                    set: { editModel.setValue("altSpeedTimeEnabled", $0, original: config.altSpeedTimeEnabled) }
+                    get: { editModel.value(for: \.altSpeedTimeEnabled, fallback: config.altSpeedTimeEnabled) },
+                    set: { editModel.setValue(\.altSpeedTimeEnabled, $0, original: config.altSpeedTimeEnabled) }
                 ))
                 .padding(.top, 8)
 
-                if editModel.getValue("altSpeedTimeEnabled", fallback: config.altSpeedTimeEnabled) {
+                if editModel.value(for: \.altSpeedTimeEnabled, fallback: config.altSpeedTimeEnabled) {
                     HStack(spacing: 12) {
                         Picker("", selection: Binding(
-                            get: { editModel.getValue("altSpeedTimeDay", fallback: config.altSpeedTimeDay) },
-                            set: { editModel.setValue("altSpeedTimeDay", $0, original: config.altSpeedTimeDay) }
+                            get: { editModel.value(for: \.altSpeedTimeDay, fallback: config.altSpeedTimeDay) },
+                            set: { editModel.setValue(\.altSpeedTimeDay, $0, original: config.altSpeedTimeDay) }
                         )) {
                             Text("Every Day").tag(127)
                             Text("Weekdays").tag(62)
@@ -126,7 +126,7 @@ struct SpeedLimitsContent: View {
 
                         DatePicker("", selection: Binding(
                             get: {
-                                let minutes = editModel.getValue("altSpeedTimeBegin", fallback: config.altSpeedTimeBegin)
+                                let minutes = editModel.value(for: \.altSpeedTimeBegin, fallback: config.altSpeedTimeBegin)
                                 let calendar = Calendar.current
                                 return calendar.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: Date()) ?? Date()
                             },
@@ -134,7 +134,7 @@ struct SpeedLimitsContent: View {
                                 let calendar = Calendar.current
                                 let components = calendar.dateComponents([.hour, .minute], from: date)
                                 let minutes = (components.hour ?? 0) * 60 + (components.minute ?? 0)
-                                editModel.setValue("altSpeedTimeBegin", minutes, original: config.altSpeedTimeBegin)
+                                editModel.setValue(\.altSpeedTimeBegin, minutes, original: config.altSpeedTimeBegin)
                             }
                         ), displayedComponents: .hourAndMinute)
                         .datePickerStyle(.compact)
@@ -145,7 +145,7 @@ struct SpeedLimitsContent: View {
 
                         DatePicker("", selection: Binding(
                             get: {
-                                let minutes = editModel.getValue("altSpeedTimeEnd", fallback: config.altSpeedTimeEnd)
+                                let minutes = editModel.value(for: \.altSpeedTimeEnd, fallback: config.altSpeedTimeEnd)
                                 let calendar = Calendar.current
                                 return calendar.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: Date()) ?? Date()
                             },
@@ -153,7 +153,7 @@ struct SpeedLimitsContent: View {
                                 let calendar = Calendar.current
                                 let components = calendar.dateComponents([.hour, .minute], from: date)
                                 let minutes = (components.hour ?? 0) * 60 + (components.minute ?? 0)
-                                editModel.setValue("altSpeedTimeEnd", minutes, original: config.altSpeedTimeEnd)
+                                editModel.setValue(\.altSpeedTimeEnd, minutes, original: config.altSpeedTimeEnd)
                             }
                         ), displayedComponents: .hourAndMinute)
                         .datePickerStyle(.compact)

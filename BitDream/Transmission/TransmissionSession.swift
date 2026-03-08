@@ -71,4 +71,35 @@ internal extension TransmissionConnection {
             responseType: TransmissionSessionResponseArguments.self
         )
     }
+
+    func setSession(_ args: TransmissionSessionSetRequestArgs) async throws {
+        try await sendStatusRequest(
+            method: "session-set",
+            arguments: args
+        )
+    }
+
+    func checkFreeSpace(path: String) async throws -> FreeSpaceResponse {
+        try await sendRequiredArguments(
+            method: "free-space",
+            arguments: ["path": path] as [String: String],
+            responseType: FreeSpaceResponse.self
+        )
+    }
+
+    func testPort(ipProtocol: String? = nil) async throws -> PortTestResponse {
+        try await sendRequiredArguments(
+            method: "port-test",
+            arguments: PortTestRequestArgs(ipProtocol: ipProtocol),
+            responseType: PortTestResponse.self
+        )
+    }
+
+    func updateBlocklist() async throws -> BlocklistUpdateResponse {
+        try await sendRequiredArguments(
+            method: "blocklist-update",
+            arguments: EmptyArguments(),
+            responseType: BlocklistUpdateResponse.self
+        )
+    }
 }
