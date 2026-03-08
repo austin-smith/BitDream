@@ -183,6 +183,27 @@ final class TransmissionStoreRefreshLifecycleTests: XCTestCase {
         let updatedRefresh = await waitUntil { store.defaultDownloadDir == "/downloads/updated" }
         XCTAssertTrue(updatedRefresh)
     }
+
+    func testInitialActivationFailuresPreserveBackoffAcrossAutomaticRetries() async {
+        let sender = MethodQueueSender(stepsByMethod: [:])
+        let sleepController = ScriptedSleep(steps: [.immediate, .immediate, .suspend])
+        let store = makeStore(sender: sender, sleepController: sleepController)
+
+        store.setHost(host: makeHost(serverID: "server-1", server: ""))
+
+        let didScheduleThreeRetries = await waitUntil {
+            await sleepController.callCount() == 3
+        }
+        XCTAssertTrue(didScheduleThreeRetries)
+
+        let recordedSleeps = await sleepController.recordedSleeps()
+        XCTAssertEqual(recordedSleeps.count, 3)
+        XCTAssertLessThan(recordedSleeps[0], recordedSleeps[1])
+        XCTAssertLessThan(recordedSleeps[1], recordedSleeps[2])
+        XCTAssertEqual(store.connectionStatus, .reconnecting)
+        XCTAssertNil(store.sessionStats)
+        XCTAssertNil(store.sessionConfiguration)
+    }
 }
 
 private extension TransmissionStoreRefreshLifecycleTests {
@@ -336,6 +357,10 @@ private actor ScriptedSleep {
 
     func callCount() -> Int {
         calls.count
+    }
+
+    func recordedSleeps() -> [TimeInterval] {
+        calls
     }
 }
 

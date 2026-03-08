@@ -19,6 +19,21 @@ final class TransmissionStore: NSObject, ObservableObject {
         let generation: UUID
     }
 
+    private enum ConnectionAttemptReason {
+        case hostSelection
+        case manualReconnect
+        case automaticRetry
+
+        var resetsReconnectBackoff: Bool {
+            switch self {
+            case .automaticRetry:
+                return false
+            case .hostSelection, .manualReconnect:
+                return true
+            }
+        }
+    }
+
     private struct ExponentialBackoff {
         private(set) var attempt: Int = 0
         let base: TimeInterval
@@ -198,7 +213,7 @@ extension TransmissionStore {
             return
         }
 
-        replaceConnection(for: host, forceReconnect: false)
+        replaceConnection(for: host, trigger: .hostSelection)
     }
 
     func readPassword(for host: Host) -> String {
@@ -212,9 +227,7 @@ extension TransmissionStore {
     func reconnect() {
         guard let host = self.host else { return }
 
-        showConnectionErrorAlert = false
-        resetReconnectState()
-        replaceConnection(for: host, forceReconnect: true)
+        replaceConnection(for: host, trigger: .manualReconnect)
     }
 
     // Computed property to provide current server info for session-set calls
@@ -238,11 +251,19 @@ extension TransmissionStore {
         }
     }
 
-    func resetReconnectState() {
+    func clearReconnectPresentationState() {
         nextRetryAt = nil
-        reconnectBackoff.reset()
         cancelRetryTask()
         showConnectionErrorAlert = false
+    }
+
+    func resetReconnectBackoff() {
+        reconnectBackoff.reset()
+    }
+
+    func resetReconnectState() {
+        clearReconnectPresentationState()
+        resetReconnectBackoff()
     }
 
     func markConnecting() {
@@ -257,10 +278,7 @@ extension TransmissionStore {
     }
 
     func retryNow() {
-        reconnectBackoff.reset()
-        nextRetryAt = nil
-        cancelRetryTask()
-        showConnectionErrorAlert = false
+        resetReconnectState()
 
         if activeConnection != nil {
             requestRefresh()
@@ -268,7 +286,7 @@ extension TransmissionStore {
         }
 
         if let host {
-            replaceConnection(for: host, forceReconnect: true)
+            replaceConnection(for: host, trigger: .manualReconnect)
         }
     }
 
@@ -383,8 +401,10 @@ extension TransmissionStore {
         await task.value
     }
 
-    private func replaceConnection(for host: Host, forceReconnect: Bool) {
-        if !forceReconnect, let current = self.host, current.serverID == host.serverID {
+    private func replaceConnection(for host: Host, trigger: ConnectionAttemptReason) {
+        if case .hostSelection = trigger,
+           let current = self.host,
+           current.serverID == host.serverID {
             return
         }
 
@@ -397,7 +417,10 @@ extension TransmissionStore {
         self.host = host
         activeConnection = nil
         UserDefaults.standard.set(host.serverID, forKey: UserDefaultsKeys.selectedHost)
-        resetReconnectState()
+        clearReconnectPresentationState()
+        if trigger.resetsReconnectBackoff {
+            resetReconnectBackoff()
+        }
 
         torrents = []
         sessionStats = nil
@@ -560,7 +583,7 @@ extension TransmissionStore {
             if self.activeConnection != nil {
                 await self.refreshNow()
             } else if let host = self.host {
-                self.replaceConnection(for: host, forceReconnect: true)
+                self.replaceConnection(for: host, trigger: .automaticRetry)
             }
         }
     }
