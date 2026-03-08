@@ -128,6 +128,28 @@ final class TransmissionConnectionSnapshotTests: XCTestCase {
         )
     }
 
+    func testFetchWidgetRefreshSnapshotPreservesStatsWhenTorrentSummaryFails() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [
+            "session-stats": [
+                .http(statusCode: 200, body: successStatsBody)
+            ],
+            "torrent-get": [
+                .error(TestError.offline)
+            ]
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        let snapshot = try await connection.fetchWidgetRefreshSnapshot()
+
+        XCTAssertEqual(snapshot.sessionStats.torrentCount, 4)
+        XCTAssertTrue(snapshot.torrents.isEmpty)
+        XCTAssertNotNil(snapshot.torrentSummaryError)
+    }
+
     func testSnapshotMethodsPropagateTransmissionErrors() async throws {
         let sender = MethodQueueSender(stepsByMethod: [
             "session-stats": [

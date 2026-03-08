@@ -113,6 +113,13 @@ enum WidgetRefreshRunner {
                 snapshot.torrents,
                 false
             )
+
+            if let error = snapshot.torrentSummaryError {
+                let presentation = TransmissionErrorPresenter.presentation(for: error)
+                logger.notice(
+                    "Background refresh could not refresh torrent list for host \(hostIdentifier, privacy: .public): \(presentation.message, privacy: .public)"
+                )
+            }
         } catch {
             guard !isCancelled() else { return }
 

@@ -120,6 +120,41 @@ final class WidgetRefreshOperationTests: XCTestCase {
         XCTAssertEqual(recorder.reloadCount, 1)
     }
 
+    func testWidgetRefreshWritesStatsWithEmptyTorrentListWhenSummaryFails() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [
+            "session-stats": [
+                .http(statusCode: 200, body: successStatsBody)
+            ],
+            "torrent-get": [
+                .error(TestError.offline)
+            ]
+        ])
+        let recorder = WidgetRefreshRecorder()
+        let dependencies = makeDependencies(
+            sender: sender,
+            recorder: recorder,
+            records: [
+                makeHostRefreshRecord(
+                    serverID: "server-1",
+                    name: "Server",
+                    server: "example.com",
+                    isSSL: false
+                )
+            ],
+            resolvePassword: { _ in "" },
+            sleep: sleepUntilCancelled
+        )
+
+        let success = await WidgetRefreshRunner.run(dependencies: dependencies)
+
+        XCTAssertTrue(success)
+        XCTAssertEqual(recorder.sessionSnapshotCount, 1)
+        let snapshot = try XCTUnwrap(recorder.sessionSnapshots.first)
+        XCTAssertEqual(snapshot.stats.torrentCount, 4)
+        XCTAssertTrue(snapshot.torrents.isEmpty)
+        XCTAssertEqual(recorder.reloadCount, 1)
+    }
+
     func testEnqueuedWidgetRefreshesSerializeNetworkWork() async throws {
         let scenario = try makeSerializedRefreshScenario()
         let completionRecorder = WidgetRefreshCompletionRecorder()

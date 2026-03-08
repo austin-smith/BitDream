@@ -10,6 +10,12 @@ internal struct TransmissionAppRefreshSnapshot: Sendable {
     let sessionSettingsResult: Result<TransmissionSessionResponseArguments, TransmissionError>
 }
 
+internal struct TransmissionWidgetRefreshSnapshot: Sendable {
+    let sessionStats: SessionStats
+    let torrents: [Torrent]
+    let torrentSummaryError: TransmissionError?
+}
+
 internal extension TransmissionConnection {
     func fetchPollingSnapshot() async throws -> TransmissionPollingSnapshot {
         async let sessionStats = fetchSessionStats()
@@ -31,14 +37,17 @@ internal extension TransmissionConnection {
         )
     }
 
-    func fetchWidgetRefreshSnapshot() async throws -> TransmissionPollingSnapshot {
+    func fetchWidgetRefreshSnapshot() async throws -> TransmissionWidgetRefreshSnapshot {
         async let sessionStats = fetchSessionStats()
-        async let torrents = fetchWidgetSummary()
+        async let torrentSummaryResult = fetchWidgetSummaryResult()
+
+        let resolvedTorrentSummary = await torrentSummaryResult
 
         return try await TransmissionPollingSnapshot(
             sessionStats: sessionStats,
-            torrents: torrents
+            torrents: resolvedTorrentSummary.torrents
         )
+        .widgetSnapshot(torrentSummaryError: resolvedTorrentSummary.error)
     }
 
     private func fetchSessionSettingsResult() async -> Result<TransmissionSessionResponseArguments, TransmissionError> {
@@ -47,5 +56,23 @@ internal extension TransmissionConnection {
         } catch {
             return .failure(TransmissionErrorResolver.transmissionError(from: error))
         }
+    }
+
+    private func fetchWidgetSummaryResult() async -> (torrents: [Torrent], error: TransmissionError?) {
+        do {
+            return (try await fetchWidgetSummary(), nil)
+        } catch {
+            return ([], TransmissionErrorResolver.transmissionError(from: error))
+        }
+    }
+}
+
+private extension TransmissionPollingSnapshot {
+    func widgetSnapshot(torrentSummaryError: TransmissionError?) -> TransmissionWidgetRefreshSnapshot {
+        TransmissionWidgetRefreshSnapshot(
+            sessionStats: sessionStats,
+            torrents: torrents,
+            torrentSummaryError: torrentSummaryError
+        )
     }
 }
