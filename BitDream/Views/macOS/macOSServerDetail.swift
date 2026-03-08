@@ -217,7 +217,8 @@ struct macOSServerDetail: View {
                                 )
                                 updateExistingServer(
                                     host: host,
-                                    draft: draft
+                                    draft: draft,
+                                    store: store
                                 ) {
                                     dismiss()
                                 } onError: { message in

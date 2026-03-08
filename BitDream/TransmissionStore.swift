@@ -21,6 +21,7 @@ final class TransmissionStore: NSObject, ObservableObject {
 
     private enum ConnectionAttemptReason {
         case hostSelection
+        case hostConfigurationChange
         case manualReconnect
         case automaticRetry
 
@@ -28,7 +29,7 @@ final class TransmissionStore: NSObject, ObservableObject {
             switch self {
             case .automaticRetry:
                 return false
-            case .hostSelection, .manualReconnect:
+            case .hostSelection, .hostConfigurationChange, .manualReconnect:
                 return true
             }
         }
@@ -214,6 +215,14 @@ extension TransmissionStore {
         }
 
         replaceConnection(for: host, trigger: .hostSelection)
+    }
+
+    func applyPersistedHostUpdate(_ host: Host) {
+        guard self.host?.serverID == host.serverID else {
+            return
+        }
+
+        replaceConnection(for: host, trigger: .hostConfigurationChange)
     }
 
     func readPassword(for host: Host) -> String {

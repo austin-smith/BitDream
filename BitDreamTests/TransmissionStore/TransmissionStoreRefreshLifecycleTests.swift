@@ -204,9 +204,193 @@ final class TransmissionStoreRefreshLifecycleTests: XCTestCase {
         XCTAssertNil(store.sessionStats)
         XCTAssertNil(store.sessionConfiguration)
     }
+
+}
+
+@MainActor
+final class TransmissionStoreSelectedHostUpdateTests: XCTestCase {
+    func testSelectedHostUpdateWithSameServerIDReplacesConnection() async throws {
+        let sender = HostMethodScriptedSender(stepsByHostAndMethod: [
+            "old.example.com": [
+                "session-stats": [
+                    .http(statusCode: 200, body: successStatsBody)
+                ],
+                "torrent-get": [
+                    .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))
+                ],
+                "session-get": [
+                    .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/old", version: "4.0.0"))
+                ]
+            ],
+            "new.example.com": [
+                "session-stats": [
+                    .http(statusCode: 200, body: successStatsBody)
+                ],
+                "torrent-get": [
+                    .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))
+                ],
+                "session-get": [
+                    .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/new", version: "4.0.1"))
+                ]
+            ]
+        ])
+        let sleepController = ScriptedSleep(steps: [.suspend, .suspend])
+        let store = makeStore(sender: sender, sleepController: sleepController)
+
+        store.setHost(host: makeHost(serverID: "server-1", server: "old.example.com"))
+        let initialConnect = await waitUntil { store.defaultDownloadDir == "/downloads/old" }
+        XCTAssertTrue(initialConnect)
+
+        store.applyPersistedHostUpdate(makeHost(serverID: "server-1", server: "new.example.com"))
+
+        let didReconnectWithUpdatedHost = await waitUntil {
+            store.defaultDownloadDir == "/downloads/new" && store.connectionStatus == .connected
+        }
+        XCTAssertTrue(didReconnectWithUpdatedHost)
+        XCTAssertEqual(store.host?.server, "new.example.com")
+
+        let capturedRequests = await sender.capturedRequests()
+        XCTAssertEqual(capturedRequests.count, 6)
+        XCTAssertEqual(capturedRequests.prefix(3).compactMap(\.url?.host), ["old.example.com", "old.example.com", "old.example.com"])
+        XCTAssertEqual(capturedRequests.suffix(3).compactMap(\.url?.host), ["new.example.com", "new.example.com", "new.example.com"])
+    }
+
+    func testSelectedHostUpdateClearsReconnectState() async throws {
+        let sender = HostMethodScriptedSender(stepsByHostAndMethod: [
+            "old.example.com": [
+                "session-stats": [
+                    .http(statusCode: 200, body: successStatsBody),
+                    .error(TestError.offline)
+                ],
+                "torrent-get": [
+                    .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json")),
+                    .error(TestError.offline)
+                ],
+                "session-get": [
+                    .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/old", version: "4.0.0"))
+                ]
+            ],
+            "new.example.com": [
+                "session-stats": [
+                    .http(statusCode: 200, body: successStatsBody)
+                ],
+                "torrent-get": [
+                    .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))
+                ],
+                "session-get": [
+                    .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/new", version: "4.0.2"))
+                ]
+            ]
+        ])
+        let sleepController = ScriptedSleep(steps: [.immediate, .suspend, .suspend])
+        let store = makeStore(sender: sender, sleepController: sleepController)
+
+        store.setHost(host: makeHost(serverID: "server-1", server: "old.example.com"))
+        let enteredReconnectState = await waitUntil {
+            store.connectionStatus == .reconnecting && store.nextRetryAt != nil
+        }
+        XCTAssertTrue(enteredReconnectState)
+
+        store.applyPersistedHostUpdate(makeHost(serverID: "server-1", server: "new.example.com"))
+
+        let didReconnectWithCleanState = await waitUntil {
+            store.connectionStatus == .connected &&
+                store.defaultDownloadDir == "/downloads/new" &&
+                store.nextRetryAt == nil &&
+                store.lastErrorMessage.isEmpty
+        }
+        XCTAssertTrue(didReconnectWithCleanState)
+    }
+
+    func testNonSelectedHostUpdateDoesNotDisturbCurrentConnection() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [
+            "session-stats": [
+                .http(statusCode: 200, body: successStatsBody)
+            ],
+            "torrent-get": [
+                .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))
+            ],
+            "session-get": [
+                .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/current", version: "4.0.0"))
+            ]
+        ])
+        let sleepController = ScriptedSleep(steps: [.suspend])
+        let store = makeStore(sender: sender, sleepController: sleepController)
+
+        store.setHost(host: makeHost(serverID: "selected-server", server: "example.com"))
+        let initialConnect = await waitUntil { store.defaultDownloadDir == "/downloads/current" }
+        XCTAssertTrue(initialConnect)
+        let initialRequestCount = (await sender.capturedRequests()).count
+
+        store.applyPersistedHostUpdate(makeHost(serverID: "other-server", server: "other.example.com"))
+        await Task.yield()
+        await Task.yield()
+
+        let finalRequestCount = (await sender.capturedRequests()).count
+        XCTAssertEqual(store.host?.serverID, "selected-server")
+        XCTAssertEqual(store.defaultDownloadDir, "/downloads/current")
+        XCTAssertEqual(finalRequestCount, initialRequestCount)
+    }
 }
 
 private extension TransmissionStoreRefreshLifecycleTests {
+    func makeStore(
+        sender: some TransmissionRPCRequestSending,
+        sleepController: ScriptedSleep,
+        recorder: TestWidgetSnapshotRecorder = TestWidgetSnapshotRecorder()
+    ) -> TransmissionStore {
+        let factory = TransmissionConnectionFactory(
+            transport: TransmissionTransport(sender: sender),
+            credentialResolver: TransmissionCredentialResolver(resolvePassword: { source in
+                switch source {
+                case .resolvedPassword(let password):
+                    return password
+                case .keychainCredential(let key):
+                    return key == "test-key" ? "secret" : ""
+                }
+            })
+        )
+
+        return TransmissionStore(
+            connectionFactory: factory,
+            snapshotWriter: recorder.writer,
+            sleep: { seconds in
+                try await sleepController.sleep(seconds: seconds)
+            },
+            persistVersion: { _, _ in }
+        )
+    }
+
+    func makeHost(serverID: String, server: String) -> BitDream.Host {
+        BitDream.Host(
+            serverID: serverID,
+            isDefault: false,
+            isSSL: false,
+            credentialKey: "test-key",
+            name: serverID,
+            port: 9091,
+            server: server,
+            username: "demo",
+            version: nil
+        )
+    }
+
+    func waitUntil(
+        timeout: TimeInterval = 1,
+        _ predicate: @escaping @MainActor () async -> Bool
+    ) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if await predicate() {
+                return true
+            }
+            await Task.yield()
+        }
+        return false
+    }
+}
+
+private extension TransmissionStoreSelectedHostUpdateTests {
     func makeStore(
         sender: some TransmissionRPCRequestSending,
         sleepController: ScriptedSleep,

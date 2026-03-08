@@ -86,16 +86,20 @@ func saveNewServer(
 func updateExistingServer(
     host: Host,
     draft: HostDraft,
+    store: TransmissionStore,
+    hostRepository: any HostPersisting = HostRepository.shared,
     completion: @MainActor @escaping () -> Void,
     onError: @MainActor @escaping (String) -> Void = { _ in }
 ) {
     Task { @MainActor in
         do {
-            _ = try await HostRepository.shared.update(serverID: host.serverID, draft: draft)
+            let updatedHost = try await hostRepository.update(serverID: host.serverID, draft: draft)
+            store.applyPersistedHostUpdate(updatedHost)
             completion()
         } catch {
             if let persistenceError = error as? HostPersistenceError,
                case .catalogSyncFailure = persistenceError {
+                store.applyPersistedHostUpdate(host)
                 completion()
                 return
             }
