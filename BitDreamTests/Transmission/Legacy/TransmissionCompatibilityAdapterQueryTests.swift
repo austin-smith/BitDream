@@ -93,21 +93,6 @@ final class TransmissionAdapterQueryTests: XCTestCase {
             XCTFail("Expected success, got \(error)")
         }
     }
-
-    func testFetchSessionSettingsReturnsSettings() async throws {
-        let adapter = makeLegacyAdapter(steps: [
-            .http(statusCode: 200, body: try loadTransmissionFixture(named: "session-get.response.json"))
-        ])
-
-        let result = await adapter.fetchSessionSettings(config: makeConfig(), auth: makeAuth())
-
-        switch result {
-        case .success(let settings):
-            XCTAssertFalse(settings.downloadDir.isEmpty)
-        case .failure(let error):
-            XCTFail("Expected success, got \(error)")
-        }
-    }
 }
 
 private func makeCompatibilityTorrentPeersSuccessBody() -> String {

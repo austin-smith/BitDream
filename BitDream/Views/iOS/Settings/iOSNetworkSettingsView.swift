@@ -3,7 +3,7 @@ import SwiftUI
 
 struct iOSNetworkSettingsView: View {
     @ObservedObject var store: TransmissionStore
-    @StateObject private var editModel = SessionSettingsEditModel()
+    @StateObject private var editModel = SettingsViewModel()
 
     var body: some View {
         Group {
@@ -14,42 +14,59 @@ struct iOSNetworkSettingsView: View {
                             Text("Peer listening port")
                             Spacer()
                             TextField("", value: Binding(
-                                get: { editModel.getValue("peerPort", fallback: config.peerPort) },
-                                set: { editModel.setValue("peerPort", $0, original: config.peerPort) }
+                                get: { editModel.value(for: \.peerPort, fallback: config.peerPort) },
+                                set: { editModel.setValue(\.peerPort, $0, original: config.peerPort) }
                             ), format: .number.grouping(.never))
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
                         }
 
                         Button("Check Port") {
-                            checkPort(editModel: editModel, ipProtocol: nil)
+                            Task {
+                                await editModel.testPort(ipProtocol: nil)
+                            }
                         }
-                        .disabled(editModel.isTestingPort)
+                        .disabled({
+                            if case .testing = editModel.portTestState {
+                                return true
+                            }
+                            return false
+                        }())
 
-                        if editModel.isTestingPort {
+                        switch editModel.portTestState {
+                        case .testing:
                             HStack {
                                 Text("Testing port...")
                                 Spacer()
                                 ProgressView()
                                     .scaleEffect(0.8)
                             }
-                        } else if let portTestResult = editModel.portTestResult {
+                        case .result(let outcome):
                             HStack {
                                 Text("Port Status")
                                 Spacer()
-                                Text(portTestResult)
-                                    .foregroundColor(portTestResult.contains("open") ? .green : .orange)
+                                Text(outcome.message)
+                                    .foregroundColor(outcome.color)
                             }
+                        case .failed(let presentation):
+                            HStack {
+                                Text("Port Status")
+                                Spacer()
+                                Text(presentation.message)
+                                    .foregroundColor(.orange)
+                            }
+                        case .idle:
+                            EmptyView()
                         }
 
                         Toggle("Randomize port on launch", isOn: Binding(
-                            get: { editModel.getValue("peerPortRandomOnStart", fallback: config.peerPortRandomOnStart) },
-                            set: { editModel.setValue("peerPortRandomOnStart", $0, original: config.peerPortRandomOnStart) }
+                            get: { editModel.value(for: \.peerPortRandomOnStart, fallback: config.peerPortRandomOnStart) },
+                            set: { editModel.setValue(\.peerPortRandomOnStart, $0, original: config.peerPortRandomOnStart) }
                         ))
 
                         Picker("Encryption", selection: Binding(
-                            get: { editModel.getValue("encryption", fallback: config.encryption) },
-                            set: { editModel.setValue("encryption", $0, original: config.encryption) }
+                            get: { editModel.value(for: \.encryption, fallback: config.encryption) },
+                            set: { editModel.setValue(\.encryption, $0, original: config.encryption) }
                         )) {
                             Text("Required").tag("required")
                             Text("Preferred").tag("preferred")
@@ -59,28 +76,28 @@ struct iOSNetworkSettingsView: View {
 
                     Section(header: Text("Peer Exchange")) {
                         Toggle("Enable port forwarding", isOn: Binding(
-                            get: { editModel.getValue("portForwardingEnabled", fallback: config.portForwardingEnabled) },
-                            set: { editModel.setValue("portForwardingEnabled", $0, original: config.portForwardingEnabled) }
+                            get: { editModel.value(for: \.portForwardingEnabled, fallback: config.portForwardingEnabled) },
+                            set: { editModel.setValue(\.portForwardingEnabled, $0, original: config.portForwardingEnabled) }
                         ))
 
                         Toggle("Enable DHT", isOn: Binding(
-                            get: { editModel.getValue("dhtEnabled", fallback: config.dhtEnabled) },
-                            set: { editModel.setValue("dhtEnabled", $0, original: config.dhtEnabled) }
+                            get: { editModel.value(for: \.dhtEnabled, fallback: config.dhtEnabled) },
+                            set: { editModel.setValue(\.dhtEnabled, $0, original: config.dhtEnabled) }
                         ))
 
                         Toggle("Enable PEX", isOn: Binding(
-                            get: { editModel.getValue("pexEnabled", fallback: config.pexEnabled) },
-                            set: { editModel.setValue("pexEnabled", $0, original: config.pexEnabled) }
+                            get: { editModel.value(for: \.pexEnabled, fallback: config.pexEnabled) },
+                            set: { editModel.setValue(\.pexEnabled, $0, original: config.pexEnabled) }
                         ))
 
                         Toggle("Enable LPD", isOn: Binding(
-                            get: { editModel.getValue("lpdEnabled", fallback: config.lpdEnabled) },
-                            set: { editModel.setValue("lpdEnabled", $0, original: config.lpdEnabled) }
+                            get: { editModel.value(for: \.lpdEnabled, fallback: config.lpdEnabled) },
+                            set: { editModel.setValue(\.lpdEnabled, $0, original: config.lpdEnabled) }
                         ))
 
                         Toggle("Enable µTP", isOn: Binding(
-                            get: { editModel.getValue("utpEnabled", fallback: config.utpEnabled) },
-                            set: { editModel.setValue("utpEnabled", $0, original: config.utpEnabled) }
+                            get: { editModel.value(for: \.utpEnabled, fallback: config.utpEnabled) },
+                            set: { editModel.setValue(\.utpEnabled, $0, original: config.utpEnabled) }
                         ))
                     }
 
@@ -89,8 +106,8 @@ struct iOSNetworkSettingsView: View {
                             Text("Maximum global peers")
                             Spacer()
                             TextField("", value: Binding(
-                                get: { editModel.getValue("peerLimitGlobal", fallback: config.peerLimitGlobal) },
-                                set: { editModel.setValue("peerLimitGlobal", $0, original: config.peerLimitGlobal) }
+                                get: { editModel.value(for: \.peerLimitGlobal, fallback: config.peerLimitGlobal) },
+                                set: { editModel.setValue(\.peerLimitGlobal, $0, original: config.peerLimitGlobal) }
                             ), format: .number.grouping(.never))
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
@@ -100,8 +117,8 @@ struct iOSNetworkSettingsView: View {
                             Text("Maximum per torrent peers")
                             Spacer()
                             TextField("", value: Binding(
-                                get: { editModel.getValue("peerLimitPerTorrent", fallback: config.peerLimitPerTorrent) },
-                                set: { editModel.setValue("peerLimitPerTorrent", $0, original: config.peerLimitPerTorrent) }
+                                get: { editModel.value(for: \.peerLimitPerTorrent, fallback: config.peerLimitPerTorrent) },
+                                set: { editModel.setValue(\.peerLimitPerTorrent, $0, original: config.peerLimitPerTorrent) }
                             ), format: .number.grouping(.never))
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
@@ -110,26 +127,26 @@ struct iOSNetworkSettingsView: View {
 
                     Section(header: Text("Blocklist")) {
                         Toggle("Enable blocklist", isOn: Binding(
-                            get: { editModel.getValue("blocklistEnabled", fallback: config.blocklistEnabled) },
-                            set: { editModel.setValue("blocklistEnabled", $0, original: config.blocklistEnabled) }
+                            get: { editModel.value(for: \.blocklistEnabled, fallback: config.blocklistEnabled) },
+                            set: { editModel.setValue(\.blocklistEnabled, $0, original: config.blocklistEnabled) }
                         ))
 
                         HStack {
                             Text("Blocklist URL")
                             Spacer()
                             TextField("URL", text: Binding(
-                                get: { editModel.getValue("blocklistUrl", fallback: config.blocklistUrl) },
-                                set: { editModel.setValue("blocklistUrl", $0, original: config.blocklistUrl) }
+                                get: { editModel.value(for: \.blocklistUrl, fallback: config.blocklistUrl) },
+                                set: { editModel.setValue(\.blocklistUrl, $0, original: config.blocklistUrl) }
                             ))
                             .multilineTextAlignment(.trailing)
-                            .disabled(!editModel.getValue("blocklistEnabled", fallback: config.blocklistEnabled))
-                            .foregroundColor(editModel.getValue("blocklistEnabled", fallback: config.blocklistEnabled) ? .primary : .secondary)
+                            .disabled(!editModel.value(for: \.blocklistEnabled, fallback: config.blocklistEnabled))
+                            .foregroundColor(editModel.value(for: \.blocklistEnabled, fallback: config.blocklistEnabled) ? .primary : .secondary)
                         }
 
                         HStack {
                             Text("Rules active")
                             Spacer()
-                            if editModel.isUpdatingBlocklist {
+                            if case .updating = editModel.blocklistUpdateState {
                                 ProgressView()
                                     .scaleEffect(0.8)
                             } else {
@@ -139,21 +156,37 @@ struct iOSNetworkSettingsView: View {
                         }
 
                         Button("Update Blocklist") {
-                            updateBlocklist(editModel: editModel)
+                            Task {
+                                await editModel.updateBlocklist()
+                            }
                         }
-                        .disabled(editModel.isUpdatingBlocklist || !editModel.getValue("blocklistEnabled", fallback: config.blocklistEnabled))
+                        .disabled({
+                            if case .updating = editModel.blocklistUpdateState {
+                                return true
+                            }
+                            return !editModel.value(for: \.blocklistEnabled, fallback: config.blocklistEnabled)
+                        }())
 
-                        if let blocklistUpdateResult = editModel.blocklistUpdateResult {
-                            Text(blocklistUpdateResult)
+                        if let blocklistUpdateMessage = editModel.blocklistUpdateState.message {
+                            Text(blocklistUpdateMessage)
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor({
+                                    if case .failed = editModel.blocklistUpdateState {
+                                        return .orange
+                                    }
+                                    return .secondary
+                                }())
+                        }
+                    }
+
+                    if editModel.saveState != .idle {
+                        Section {
+                            SettingsSaveStateView(state: editModel.saveState)
                         }
                     }
                 }
                 .navigationTitle("Network")
-                .onAppear {
-                    editModel.setup(store: store)
-                }
+                .bindSettingsViewModel(editModel, to: store)
             } else {
                 ContentUnavailableView(
                     "No Server Connected",

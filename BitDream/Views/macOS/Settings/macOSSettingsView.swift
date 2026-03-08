@@ -6,7 +6,7 @@ typealias PlatformSettingsView = macOSSettingsView
 
 struct macOSSettingsView: View {
     @ObservedObject var store: TransmissionStore
-    @StateObject private var editModel = SessionSettingsEditModel()
+    @StateObject private var editModel = SettingsViewModel()
 
     @ObservedObject private var themeManager = ThemeManager.shared
 
@@ -63,18 +63,16 @@ struct macOSSettingsView: View {
 private struct SettingsServerTab<Content: View>: View {
     let config: TransmissionSessionResponseArguments?
     let store: TransmissionStore
-    let editModel: SessionSettingsEditModel
+    let editModel: SettingsViewModel
     let unavailableSystemImage: String
     let unavailableDescription: String
-    let content: (TransmissionSessionResponseArguments, SessionSettingsEditModel) -> Content
+    let content: (TransmissionSessionResponseArguments, SettingsViewModel) -> Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             if let config {
                 content(config, editModel)
-                    .onAppear {
-                        editModel.setup(store: store)
-                    }
+                SettingsSaveStateView(state: editModel.saveState)
                 Spacer()
             } else {
                 ContentUnavailableView(
@@ -87,6 +85,7 @@ private struct SettingsServerTab<Content: View>: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .bindSettingsViewModel(editModel, to: store)
     }
 }
 

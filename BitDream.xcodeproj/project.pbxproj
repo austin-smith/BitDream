@@ -95,6 +95,7 @@
 		4E2000014000000000C1D2E3 /* SpeedLimitsSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E2000044000000000C1D2E3 /* SpeedLimitsSettings.swift */; };
 		4E2000024000000000C1D2E3 /* NetworkSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E2000054000000000C1D2E3 /* NetworkSettings.swift */; };
 		4E2000034000000000C1D2E3 /* TorrentSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E2000064000000000C1D2E3 /* TorrentSettings.swift */; };
+		4E2000084000000000C1D2E3 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E2000094000000000C1D2E3 /* SettingsViewModel.swift */; };
 		4F7000024000000000A1B2C3 /* iOSTorrentFileRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7000014000000000A1B2C3 /* iOSTorrentFileRow.swift */; };
 		4F8000044000000000A1B2C3 /* macOSContentSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8000014000000000A1B2C3 /* macOSContentSidebar.swift */; };
 		4F8000054000000000A1B2C3 /* macOSContentDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8000024000000000A1B2C3 /* macOSContentDetail.swift */; };
@@ -233,6 +234,7 @@
 		4E2000044000000000C1D2E3 /* SpeedLimitsSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedLimitsSettings.swift; sourceTree = "<group>"; };
 		4E2000054000000000C1D2E3 /* NetworkSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkSettings.swift; sourceTree = "<group>"; };
 		4E2000064000000000C1D2E3 /* TorrentSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentSettings.swift; sourceTree = "<group>"; };
+		4E2000094000000000C1D2E3 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		4F7000014000000000A1B2C3 /* iOSTorrentFileRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSTorrentFileRow.swift; sourceTree = "<group>"; };
 		4F8000014000000000A1B2C3 /* macOSContentSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentSidebar.swift; sourceTree = "<group>"; };
 		4F8000024000000000A1B2C3 /* macOSContentDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macOSContentDetail.swift; sourceTree = "<group>"; };
@@ -583,6 +585,7 @@
 			isa = PBXGroup;
 			children = (
 				4B6F1EA52D82BD4A003D8F6E /* SettingsView.swift */,
+				4E2000094000000000C1D2E3 /* SettingsViewModel.swift */,
 				4E2000054000000000C1D2E3 /* NetworkSettings.swift */,
 				4E2000044000000000C1D2E3 /* SpeedLimitsSettings.swift */,
 				4E2000064000000000C1D2E3 /* TorrentSettings.swift */,
@@ -768,6 +771,7 @@
 				4B1DAE0E295E6FFB0037E9FB /* ErrorDialog.swift in Sources */,
 				4B1DAE0A295E6FE10037E9FB /* ServerDetail.swift in Sources */,
 				4B6F1EA62D82BD4A003D8F6E /* SettingsView.swift in Sources */,
+				4E2000084000000000C1D2E3 /* SettingsViewModel.swift in Sources */,
 				4B1DAE0C295E6FEF0037E9FB /* ServerList.swift in Sources */,
 				4E2000024000000000C1D2E3 /* NetworkSettings.swift in Sources */,
 				4E2000014000000000C1D2E3 /* SpeedLimitsSettings.swift in Sources */,

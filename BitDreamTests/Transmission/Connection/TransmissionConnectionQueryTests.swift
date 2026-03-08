@@ -156,6 +156,91 @@ final class TransmissionConnectionQueryTests: XCTestCase {
         XCTAssertEqual(try capturedRequestFields(requests[0]), TransmissionSessionQuerySpec.sessionSettings.fields)
     }
 
+    func testSetSessionUsesSessionSetMethodAndPayload() async throws {
+        let sender = QueueSender(steps: [
+            .http(statusCode: 200, body: successEmptyBody)
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+        var args = TransmissionSessionSetRequestArgs()
+        args.downloadDir = "/downloads/updated"
+        args.speedLimitDownEnabled = true
+
+        try await connection.setSession(args)
+
+        let requests = await sender.capturedRequests()
+        XCTAssertEqual(try requestMethod(from: requests[0].asURLRequest()), "session-set")
+        let arguments = try requestArguments(from: requests[0])
+        XCTAssertEqual(arguments["download-dir"] as? String, "/downloads/updated")
+        XCTAssertEqual(arguments["speed-limit-down-enabled"] as? Bool, true)
+    }
+
+    func testCheckFreeSpaceDecodesResponse() async throws {
+        let sender = QueueSender(steps: [
+            .http(
+                statusCode: 200,
+                body: #"{"result":"success","arguments":{"path":"/downloads","size-bytes":1024,"total_size":2048}}"#
+            )
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        let response = try await connection.checkFreeSpace(path: "/downloads")
+
+        XCTAssertEqual(response.path, "/downloads")
+        XCTAssertEqual(response.sizeBytes, 1024)
+        XCTAssertEqual(response.totalSize, 2048)
+        let requests = await sender.capturedRequests()
+        XCTAssertEqual(try requestMethod(from: requests[0].asURLRequest()), "free-space")
+    }
+
+    func testTestPortDecodesResponse() async throws {
+        let sender = QueueSender(steps: [
+            .http(
+                statusCode: 200,
+                body: #"{"result":"success","arguments":{"port-is-open":true,"ip_protocol":"ipv6"}}"#
+            )
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        let response = try await connection.testPort(ipProtocol: "ipv6")
+
+        XCTAssertEqual(response.portIsOpen, true)
+        XCTAssertEqual(response.ipProtocol, "ipv6")
+        let requests = await sender.capturedRequests()
+        XCTAssertEqual(try requestMethod(from: requests[0].asURLRequest()), "port-test")
+    }
+
+    func testUpdateBlocklistDecodesResponse() async throws {
+        let sender = QueueSender(steps: [
+            .http(
+                statusCode: 200,
+                body: #"{"result":"success","arguments":{"blocklist-size":42}}"#
+            )
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        let response = try await connection.updateBlocklist()
+
+        XCTAssertEqual(response.blocklistSize, 42)
+        let requests = await sender.capturedRequests()
+        XCTAssertEqual(try requestMethod(from: requests[0].asURLRequest()), "blocklist-update")
+    }
+
     func testQueryMethodsPropagateTransmissionErrors() async throws {
         let sender = QueueSender(steps: [
             .http(statusCode: 200, body: #"{"result":"server busy","arguments":{}}"#)
@@ -168,6 +253,21 @@ final class TransmissionConnectionQueryTests: XCTestCase {
 
         await assertThrowsTransmissionError(.rpcFailure(expectedResult: "server busy")) {
             _ = try await connection.fetchTorrentSummary()
+        }
+    }
+
+    func testSessionOperationsPropagateTransmissionErrors() async throws {
+        let sender = QueueSender(steps: [
+            .http(statusCode: 401, body: "")
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        await assertThrowsTransmissionError(.unauthorized) {
+            _ = try await connection.testPort()
         }
     }
 }
@@ -213,4 +313,19 @@ private func makeTorrentPeersSuccessBody() -> String {
       "result": "success"
     }
     """
+}
+
+private extension CapturedRequest {
+    func asURLRequest() -> URLRequest {
+        var request = URLRequest(url: url ?? URL(string: "https://example.com")!)
+        request.httpMethod = httpMethod
+        request.httpBody = body
+        return request
+    }
+}
+
+private func requestArguments(from request: CapturedRequest) throws -> [String: Any] {
+    let body = try XCTUnwrap(request.body)
+    let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+    return try XCTUnwrap(object["arguments"] as? [String: Any])
 }
