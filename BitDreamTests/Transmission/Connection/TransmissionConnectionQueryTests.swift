@@ -417,18 +417,3 @@ private func makeTorrentDetailSuccessBody() -> String {
     }
     """
 }
-
-private extension CapturedRequest {
-    func asURLRequest() -> URLRequest {
-        var request = URLRequest(url: url ?? URL(string: "https://example.com")!)
-        request.httpMethod = httpMethod
-        request.httpBody = body
-        return request
-    }
-}
-
-private func requestArguments(from request: CapturedRequest) throws -> [String: Any] {
-    let body = try XCTUnwrap(request.body)
-    let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
-    return try XCTUnwrap(object["arguments"] as? [String: Any])
-}

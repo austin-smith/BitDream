@@ -112,6 +112,18 @@ struct macOSTorrentDetail: View {
         }
     }
 
+    @MainActor
+    private func applyCommittedFileStatsMutation(
+        fileIndices: [Int],
+        mutation: TorrentDetailFileStatsMutation
+    ) {
+        supplementalStore.applyCommittedFileStatsMutation(
+            mutation,
+            for: torrent.id,
+            fileIndices: fileIndices
+        )
+    }
+
     private func performDelete(deleteLocalData: Bool) {
         performTransmissionAction(
             operation: {
@@ -137,7 +149,13 @@ struct macOSTorrentDetail: View {
                 files: supplementalPayload.files,
                 fileStats: supplementalPayload.fileStats,
                 torrentId: torrent.id,
-                store: store
+                store: store,
+                onCommittedFileStatsMutation: { fileIndices, mutation in
+                    applyCommittedFileStatsMutation(
+                        fileIndices: fileIndices,
+                        mutation: mutation
+                    )
+                }
             )
         } else {
             switch supplementalStore.status {

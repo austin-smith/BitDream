@@ -23,6 +23,11 @@ internal enum TorrentDetailSupplementalLoadStatus: Sendable, Equatable {
     case failed
 }
 
+internal enum TorrentDetailFileStatsMutation: Sendable, Equatable {
+    case wanted(Bool)
+    case priority(FilePriority)
+}
+
 internal struct TorrentDetailSupplementalPayload: Sendable, Equatable {
     let files: [TorrentFile]
     let fileStats: [TorrentFileStats]
@@ -79,6 +84,19 @@ internal struct TorrentDetailSupplementalPayload: Sendable, Equatable {
             pieceSize: snapshot.pieceSize,
             piecesBitfieldBase64: snapshot.piecesBitfieldBase64,
             piecesHaveCount: haveSet.reduce(0) { $0 + ($1 ? 1 : 0) }
+        )
+    }
+
+    func updating(fileStats: [TorrentFileStats]) -> Self {
+        Self(
+            files: files,
+            fileStats: fileStats,
+            peers: peers,
+            peersFrom: peersFrom,
+            pieceCount: pieceCount,
+            pieceSize: pieceSize,
+            piecesBitfieldBase64: piecesBitfieldBase64,
+            piecesHaveCount: piecesHaveCount
         )
     }
 }
@@ -150,11 +168,41 @@ internal struct TorrentDetailSupplementalState: Sendable {
         status = hasLoadedPayload ? .loaded : .idle
         return true
     }
+
+    @discardableResult
+    mutating func applyCommittedFileStatsMutation(
+        _ mutation: TorrentDetailFileStatsMutation,
+        for torrentID: Int,
+        fileIndices: [Int]
+    ) -> Bool {
+        guard activeTorrentID == torrentID, hasLoadedPayload else {
+            return false
+        }
+
+        var updatedFileStats = payload.fileStats
+        var didApply = false
+
+        for fileIndex in fileIndices where updatedFileStats.indices.contains(fileIndex) {
+            updatedFileStats[fileIndex] = updatedFileStats[fileIndex].applying(mutation)
+            didApply = true
+        }
+
+        guard didApply else {
+            return false
+        }
+
+        payload = payload.updating(fileStats: updatedFileStats)
+        return true
+    }
 }
 
 @MainActor
 internal final class TorrentDetailSupplementalStore: ObservableObject {
     @Published private(set) var state = TorrentDetailSupplementalState()
+
+    init(state: TorrentDetailSupplementalState = TorrentDetailSupplementalState()) {
+        self.state = state
+    }
 
     var payload: TorrentDetailSupplementalPayload {
         state.payload
@@ -170,6 +218,15 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
 
     func shouldDisplayPayload(for torrentID: Int) -> Bool {
         state.shouldDisplayPayload(for: torrentID)
+    }
+
+    @discardableResult
+    func applyCommittedFileStatsMutation(
+        _ mutation: TorrentDetailFileStatsMutation,
+        for torrentID: Int,
+        fileIndices: [Int]
+    ) -> Bool {
+        mutateState { $0.applyCommittedFileStatsMutation(mutation, for: torrentID, fileIndices: fileIndices) }
     }
 
     func load(
@@ -222,21 +279,12 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
 
     @discardableResult
     private func markFailure(for torrentID: Int, generation: Int) -> Bool {
-        var nextState = state
-        let didMarkFailure = nextState.markFailed(for: torrentID, generation: generation)
-        state = nextState
-        return didMarkFailure
+        mutateState { $0.markFailed(for: torrentID, generation: generation) }
     }
 
     @discardableResult
     private func markCancellation(for torrentID: Int, generation: Int) -> Bool {
-        var nextState = state
-        let didMarkCancellation = nextState.markCancelled(
-            for: torrentID,
-            generation: generation
-        )
-        state = nextState
-        return didMarkCancellation
+        mutateState { $0.markCancelled(for: torrentID, generation: generation) }
     }
 
     @discardableResult
@@ -247,6 +295,25 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
         let result = mutate(&nextState)
         state = nextState
         return result
+    }
+}
+
+private extension TorrentFileStats {
+    func applying(_ mutation: TorrentDetailFileStatsMutation) -> Self {
+        switch mutation {
+        case .wanted(let wanted):
+            TorrentFileStats(
+                bytesCompleted: bytesCompleted,
+                wanted: wanted,
+                priority: priority
+            )
+        case .priority(let priority):
+            TorrentFileStats(
+                bytesCompleted: bytesCompleted,
+                wanted: wanted,
+                priority: priority.rawValue
+            )
+        }
     }
 }
 

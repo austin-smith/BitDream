@@ -294,38 +294,15 @@ struct TorrentActionsToolbarMenu: View {
             Label("Actions", systemImage: "ellipsis.circle")
         }
         .sheet(isPresented: $labelDialog) {
-            let torrents = selectedTorrents
-            let titleSuffix = torrents.count > 1 ? " (\(torrents.count) torrents)" : ""
-            VStack(spacing: 16) {
-                Text("Edit Labels\(titleSuffix)")
-                    .font(.headline)
-
-                LabelEditView(
-                    labelInput: $labelInput,
-                    existingLabels: torrents.count == 1 ? Array(torrents.first!.labels) : [],
-                    store: store,
-                    selectedTorrents: torrents,
-                    shouldSave: $shouldSave,
-                    onError: { message in
-                        errorMessage = message
-                        showingError = true
-                    }
-                )
-
-                HStack {
-                    Button("Cancel") {
-                        labelDialog = false
-                    }
-                    .keyboardShortcut(.escape)
-
-                    Button("Save") {
-                        shouldSave = true
-                    }
-                    .keyboardShortcut(.return, modifiers: .command)
-                    .buttonStyle(.borderedProminent)
-                }
-            }
-            .padding()
+            LabelEditSheetContent(
+                store: store,
+                selectedTorrents: selectedTorrents,
+                labelInput: $labelInput,
+                shouldSave: $shouldSave,
+                isPresented: $labelDialog,
+                showingError: $showingError,
+                errorMessage: $errorMessage
+            )
             .frame(width: 400)
         }
         .alert(
@@ -358,42 +335,17 @@ struct TorrentActionsToolbarMenu: View {
             }
         .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
         .sheet(isPresented: $renameDialog) {
-            // Resolve target torrent using captured id or current selection
-            let targetTorrent: Torrent? = {
-                if let id = renameTargetId {
-                    return store.torrents.first { $0.id == id }
-                }
-                return selectedTorrents.first
-            }()
-            if let targetTorrent {
-                RenameSheetView(
-                    title: "Rename Torrent",
-                    name: $renameInput,
-                    currentName: targetTorrent.name,
-                    onCancel: {
-                        renameDialog = false
-                    },
-                    onSave: { newName in
-                        if let validation = validateNewName(newName, current: targetTorrent.name) {
-                            errorMessage = validation
-                            showingError = true
-                            return
-                        }
-                        performTransmissionAction(
-                            operation: { try await store.renameTorrentRoot(targetTorrent, to: newName) },
-                            onSuccess: { (_: TorrentRenameResponseArgs) in
-                                renameDialog = false
-                            },
-                            onError: { message in
-                                errorMessage = message
-                                showingError = true
-                            }
-                        )
-                    }
-                )
-                .frame(width: 420)
-                .padding()
-            }
+            RenameSheetContent(
+                store: store,
+                selectedTorrents: selectedTorrents,
+                renameInput: $renameInput,
+                renameTargetId: $renameTargetId,
+                isPresented: $renameDialog,
+                showingError: $showingError,
+                errorMessage: $errorMessage
+            )
+            .frame(width: 420)
+            .padding()
         }
         .sheet(isPresented: $moveDialog) {
             MoveSheetContent(
@@ -429,7 +381,9 @@ struct LabelEditSheetContent: View {
 
             LabelEditView(
                 labelInput: $labelInput,
-                existingLabels: selectedTorrents.count == 1 ? Array(selectedTorrents.first!.labels) : [],
+                existingLabels: selectedTorrents.count == 1
+                    ? Array(selectedTorrents.first!.labels)
+                    : sharedLabels(for: selectedTorrents),
                 store: store,
                 selectedTorrents: selectedTorrents,
                 shouldSave: $shouldSave,

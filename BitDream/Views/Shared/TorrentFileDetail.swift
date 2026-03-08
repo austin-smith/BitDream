@@ -132,12 +132,39 @@ struct TorrentFileDetail: View {
     let fileStats: [TorrentFileStats]
     let torrentId: Int
     let store: TransmissionStore
+    let onCommittedFileStatsMutation: @MainActor @Sendable ([Int], TorrentDetailFileStatsMutation) -> Void
+
+    init(
+        files: [TorrentFile],
+        fileStats: [TorrentFileStats],
+        torrentId: Int,
+        store: TransmissionStore,
+        onCommittedFileStatsMutation: @escaping @MainActor @Sendable ([Int], TorrentDetailFileStatsMutation) -> Void = { _, _ in }
+    ) {
+        self.files = files
+        self.fileStats = fileStats
+        self.torrentId = torrentId
+        self.store = store
+        self.onCommittedFileStatsMutation = onCommittedFileStatsMutation
+    }
 
     var body: some View {
         #if os(iOS)
-        iOSTorrentFileDetail(files: files, fileStats: fileStats, torrentId: torrentId, store: store)
+        iOSTorrentFileDetail(
+            files: files,
+            fileStats: fileStats,
+            torrentId: torrentId,
+            store: store,
+            onCommittedFileStatsMutation: onCommittedFileStatsMutation
+        )
         #elseif os(macOS)
-        macOSTorrentFileDetail(files: files, fileStats: fileStats, torrentId: torrentId, store: store)
+        macOSTorrentFileDetail(
+            files: files,
+            fileStats: fileStats,
+            torrentId: torrentId,
+            store: store,
+            onCommittedFileStatsMutation: onCommittedFileStatsMutation
+        )
         #endif
     }
 }

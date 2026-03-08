@@ -88,6 +88,18 @@ struct iOSTorrentDetail: View {
         }
     }
 
+    @MainActor
+    private func applyCommittedFileStatsMutation(
+        fileIndices: [Int],
+        mutation: TorrentDetailFileStatsMutation
+    ) {
+        supplementalStore.applyCommittedFileStatsMutation(
+            mutation,
+            for: torrent.id,
+            fileIndices: fileIndices
+        )
+    }
+
     @ViewBuilder
     private var filesDestination: some View {
         if shouldDisplaySupplementalPayload {
@@ -95,7 +107,13 @@ struct iOSTorrentDetail: View {
                 files: supplementalPayload.files,
                 fileStats: supplementalPayload.fileStats,
                 torrentId: torrent.id,
-                store: store
+                store: store,
+                onCommittedFileStatsMutation: { fileIndices, mutation in
+                    applyCommittedFileStatsMutation(
+                        fileIndices: fileIndices,
+                        mutation: mutation
+                    )
+                }
             )
             .navigationBarTitleDisplayMode(.inline)
         } else {

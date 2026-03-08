@@ -108,11 +108,15 @@ struct LabelEditView: View {
                 onError: onError
             )
         } else {
-            let updates = selectedTorrents.map { torrent in
-                TransmissionTorrentLabelsUpdate(
-                    ids: [torrent.id],
-                    labels: Array(Set(torrent.labels).union(workingLabels)).sorted()
-                )
+            let updates = bulkLabelUpdates(
+                for: selectedTorrents,
+                existingLabels: existingLabels,
+                workingLabels: workingLabels
+            )
+
+            guard !updates.isEmpty else {
+                dismiss()
+                return
             }
 
             performTransmissionAction(
@@ -249,6 +253,48 @@ struct MoveSheetContent: View {
             }
         }
         .padding(.vertical)
+    }
+}
+
+internal func sharedLabels(for torrents: Set<Torrent>) -> [String] {
+    guard var shared = torrents.first.map({ Set($0.labels) }) else {
+        return []
+    }
+
+    for torrent in torrents.dropFirst() {
+        shared.formIntersection(torrent.labels)
+    }
+
+    return shared.sorted()
+}
+
+internal func bulkLabelUpdates(
+    for torrents: Set<Torrent>,
+    existingLabels: [String],
+    workingLabels: Set<String>
+) -> [TransmissionTorrentLabelsUpdate] {
+    let existingLabelSet = Set(existingLabels)
+    let removedSharedLabels = existingLabelSet.subtracting(workingLabels)
+    let addedLabels = workingLabels.subtracting(existingLabelSet)
+
+    guard !removedSharedLabels.isEmpty || !addedLabels.isEmpty else {
+        return []
+    }
+
+    return torrents.compactMap { torrent in
+        var labels = Set(torrent.labels)
+        labels.subtract(removedSharedLabels)
+        labels.formUnion(addedLabels)
+
+        let sortedLabels = labels.sorted()
+        guard sortedLabels != torrent.labels.sorted() else {
+            return nil
+        }
+
+        return TransmissionTorrentLabelsUpdate(ids: [torrent.id], labels: sortedLabels)
+    }
+    .sorted { lhs, rhs in
+        (lhs.ids.first ?? 0) < (rhs.ids.first ?? 0)
     }
 }
 

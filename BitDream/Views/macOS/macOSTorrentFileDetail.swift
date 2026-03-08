@@ -35,6 +35,21 @@ struct macOSTorrentFileDetail: View {
     let fileStats: [TorrentFileStats]
     let torrentId: Int
     let store: TransmissionStore
+    let onCommittedFileStatsMutation: @MainActor @Sendable ([Int], TorrentDetailFileStatsMutation) -> Void
+
+    init(
+        files: [TorrentFile],
+        fileStats: [TorrentFileStats],
+        torrentId: Int,
+        store: TransmissionStore,
+        onCommittedFileStatsMutation: @escaping @MainActor @Sendable ([Int], TorrentDetailFileStatsMutation) -> Void = { _, _ in }
+    ) {
+        self.files = files
+        self.fileStats = fileStats
+        self.torrentId = torrentId
+        self.store = store
+        self.onCommittedFileStatsMutation = onCommittedFileStatsMutation
+    }
 
     @StateObject private var viewModel = FileTableViewModel()
     @State private var columnVisibility = Set<String>(["name", "size", "progress", "downloaded", "priority", "status"])
@@ -248,6 +263,9 @@ private extension macOSTorrentFileDetail {
                     wanted: wanted
                 )
             },
+            onSuccess: {
+                onCommittedFileStatsMutation(fileIndices, .wanted(wanted))
+            },
             onError: { message in
                 revertStats(previousStats)
                 errorMessage = message
@@ -269,6 +287,9 @@ private extension macOSTorrentFileDetail {
                     fileIndices: fileIndices,
                     priority: priority
                 )
+            },
+            onSuccess: {
+                onCommittedFileStatsMutation(fileIndices, .priority(priority))
             },
             onError: { message in
                 revertStats(previousStats)

@@ -69,7 +69,9 @@ final class TransmissionStore: NSObject, ObservableObject {
         }
     }
 
-    @Published var torrents: [Torrent] = []
+    @Published var torrents: [Torrent] = [] {
+        didSet { recomputeLabelCounts() }
+    }
     @Published var sessionStats: SessionStats?
     @Published var setup: Bool = false
     @Published var host: Host?
@@ -130,6 +132,10 @@ final class TransmissionStore: NSObject, ObservableObject {
 
     // Confirmation dialog state for menu remove command
     @Published var showingMenuRemoveConfirmation = false
+
+    // MARK: - Label Management (cached)
+    private(set) var availableLabels: [String] = []
+    private var labelCounts: [String: Int] = [:]
 
     private let resolveConnection: @Sendable (TransmissionConnectionDescriptor) async throws -> TransmissionConnection
     private let snapshotWriter: WidgetSnapshotWriter
@@ -609,19 +615,29 @@ extension TransmissionStore {
 
     // MARK: - Label Management
 
-    /// Get all unique labels from current torrents, sorted alphabetically
-    var availableLabels: [String] {
-        let allLabels = torrents.flatMap { $0.labels }
-        return Array(Set(allLabels)).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
-    }
-
     /// Get count of torrents that have the specified label
     func torrentCount(for label: String) -> Int {
-        return torrents.filter { torrent in
-            torrent.labels.contains { torrentLabel in
-                torrentLabel.lowercased() == label.lowercased()
+        labelCounts[label.lowercased(), default: 0]
+    }
+
+    private func recomputeLabelCounts() {
+        var counts: [String: Int] = [:]
+        var normalizedToDisplay: [String: String] = [:]
+
+        for torrent in torrents {
+            for label in torrent.labels {
+                let key = label.lowercased()
+                counts[key, default: 0] += 1
+                if normalizedToDisplay[key] == nil {
+                    normalizedToDisplay[key] = label
+                }
             }
-        }.count
+        }
+
+        labelCounts = counts
+        availableLabels = normalizedToDisplay.values.sorted {
+            $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+        }
     }
 
     func requestRefresh() {

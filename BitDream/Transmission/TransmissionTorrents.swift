@@ -25,7 +25,7 @@ internal struct TransmissionTorrentDetailQuerySpec: Sendable {
 }
 
 internal enum TransmissionTorrentQuerySpec {
-    static let torrentSummary = TransmissionTorrentListQuerySpec(fields: [
+    private static let summaryFields: [String] = [
         "activityDate", "addedDate", "desiredAvailable", "error", "errorString",
         "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled",
         "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete",
@@ -33,17 +33,10 @@ internal enum TransmissionTorrentQuerySpec {
         "percentDone", "primary-mime-type", "downloadDir", "queuePosition",
         "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status",
         "uploadRatio", "uploadedEver", "downloadedEver"
-    ])
+    ]
 
-    static let widgetSummary = TransmissionTorrentListQuerySpec(fields: [
-        "activityDate", "addedDate", "desiredAvailable", "error", "errorString",
-        "eta", "haveUnchecked", "haveValid", "id", "isFinished", "isStalled",
-        "labels", "leftUntilDone", "magnetLink", "metadataPercentComplete",
-        "name", "peersConnected", "peersGettingFromUs", "peersSendingToUs",
-        "percentDone", "primary-mime-type", "downloadDir", "queuePosition",
-        "rateDownload", "rateUpload", "sizeWhenDone", "totalSize", "status",
-        "uploadRatio", "uploadedEver", "downloadedEver"
-    ])
+    static let torrentSummary = TransmissionTorrentListQuerySpec(fields: summaryFields)
+    static let widgetSummary = TransmissionTorrentListQuerySpec(fields: summaryFields)
 
     static func torrentFiles(id: Int) -> TransmissionTorrentDetailQuerySpec {
         TransmissionTorrentDetailQuerySpec(fields: ["files", "fileStats"], id: id)
