@@ -266,6 +266,11 @@ extension TransmissionStore {
         showConnectionErrorAlert = false
     }
 
+    func clearPendingRetrySchedule() {
+        nextRetryAt = nil
+        retryTask = nil
+    }
+
     func resetReconnectBackoff() {
         reconnectBackoff.reset()
     }
@@ -313,6 +318,10 @@ extension TransmissionStore {
         }
 
         if let nextRetryAt, nextRetryAt > now {
+            if retryTask == nil {
+                let remainingDelay = nextRetryAt.timeIntervalSince(now)
+                scheduleRetryTask(after: remainingDelay, generation: currentConnectionGeneration)
+            }
             #if os(iOS)
             showConnectionErrorAlert = true
             #else
@@ -322,7 +331,6 @@ extension TransmissionStore {
         }
 
         let scheduledDelay = reconnectBackoff.nextDelay()
-        nextRetryAt = now.addingTimeInterval(scheduledDelay)
         scheduleRetryTask(after: scheduledDelay, generation: currentConnectionGeneration)
 
         #if os(iOS)
@@ -399,7 +407,6 @@ extension TransmissionStore {
         }
 
         cancelPollTask()
-        cancelRetryTask()
 
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
@@ -575,6 +582,7 @@ extension TransmissionStore {
 
     private func scheduleRetryTask(after delay: TimeInterval, generation: UUID) {
         cancelRetryTask()
+        nextRetryAt = Date().addingTimeInterval(delay)
 
         retryTask = Task { @MainActor [weak self] in
             guard let self else { return }
@@ -588,6 +596,8 @@ extension TransmissionStore {
             guard self.currentConnectionGeneration == generation else {
                 return
             }
+
+            self.clearPendingRetrySchedule()
 
             if self.activeConnection != nil {
                 await self.refreshNow()

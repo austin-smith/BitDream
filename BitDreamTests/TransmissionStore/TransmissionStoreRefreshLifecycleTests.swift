@@ -518,10 +518,12 @@ private actor ScriptedSleep {
     enum Step {
         case immediate
         case suspend
+        case blocked(id: String)
     }
 
     private var steps: [Step]
     private var calls: [TimeInterval] = []
+    private var continuations: [String: CheckedContinuation<Void, Never>] = [:]
 
     init(steps: [Step]) {
         self.steps = steps
@@ -536,6 +538,14 @@ private actor ScriptedSleep {
             return
         case .suspend:
             try await Task.sleep(nanoseconds: .max)
+        case .blocked(let id):
+            await withTaskCancellationHandler {
+                await waitForResume(id: id)
+            } onCancel: {
+                Task {
+                    await self.resume(id: id)
+                }
+            }
         }
     }
 
@@ -545,6 +555,16 @@ private actor ScriptedSleep {
 
     func recordedSleeps() -> [TimeInterval] {
         calls
+    }
+
+    func resume(id: String) {
+        continuations.removeValue(forKey: id)?.resume()
+    }
+
+    private func waitForResume(id: String) async {
+        await withCheckedContinuation { continuation in
+            continuations[id] = continuation
+        }
     }
 }
 
