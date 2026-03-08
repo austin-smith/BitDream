@@ -8,167 +8,34 @@ struct macOSTorrentDetail: View {
     @ObservedObject var store: TransmissionStore
     var torrent: Torrent
 
-    @State public var files: [TorrentFile] = []
-    @State private var fileStats: [TorrentFileStats] = []
+    @StateObject private var supplementalStore = TorrentDetailSupplementalStore()
     @State private var isShowingFilesSheet = false
-    @State private var peers: [Peer] = []
-    @State private var peersFrom: PeersFrom?
     @State private var isShowingPeersSheet = false
     @State private var showingDeleteConfirmation = false
-    @State private var showingDeleteError = false
-    @State private var deleteErrorMessage = ""
-    @State private var pieceCount: Int = 0
-    @State private var pieceSize: Int64 = 0
-    @State private var piecesBitfield: String = ""
-    @State private var piecesHaveCount: Int = 0
+    @State private var showingError = false
+    @State private var errorMessage = ""
+
+    private var supplementalPayload: TorrentDetailSupplementalPayload {
+        supplementalStore.payload
+    }
+
+    private var shouldDisplaySupplementalPayload: Bool {
+        supplementalStore.shouldDisplayPayload
+    }
 
     var body: some View {
-        // Use shared formatting function
         let details = formatTorrentDetails(torrent: torrent)
 
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                TorrentDetailHeaderView(torrent: torrent)
-                    .padding(.bottom, 4)
-
-                // General section
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 12) {
-                        // Native macOS section header
-                        macOSSectionHeader("General", icon: "info.circle")
-
-                        DetailRow(label: "Name", value: torrent.name)
-
-                        DetailRow(label: "Status") {
-                            TorrentStatusBadge(torrent: torrent)
-                        }
-
-                        DetailRow(label: "Date Added", value: details.addedDate)
-
-                        DetailRow(label: "Files") {
-                            Button {
-                                isShowingFilesSheet = true
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "document")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.accentColor)
-                                    Text("\(files.count)")
-                                        .foregroundColor(.accentColor)
-                                }
-                            }
-                            .buttonStyle(.bordered)
-                            .help("View files in this torrent")
-                        }
-
-                        DetailRow(label: "Peers") {
-                            Button {
-                                isShowingPeersSheet = true
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "person.2")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.accentColor)
-                                    Text("\(peers.count)")
-                                        .foregroundColor(.accentColor)
-                                }
-                            }
-                            .buttonStyle(.bordered)
-                            .help("View peers for this torrent")
-                        }
-                    }
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 20)
-                }
-                .padding(.bottom, 8)
-
-                // Stats section
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 10) {
-                        // Native macOS section header
-                        macOSSectionHeader("Stats", icon: "chart.bar")
-
-                        DetailRow(label: "Size When Done", value: details.sizeWhenDoneFormatted)
-                        DetailRow(label: "Progress", value: details.percentComplete)
-                        DetailRow(label: "Downloaded", value: details.downloadedFormatted)
-                        DetailRow(label: "Uploaded", value: details.uploadedFormatted)
-                        DetailRow(label: "Upload Ratio", value: details.uploadRatio)
-                    }
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 20)
-                }
-                .padding(.bottom, 8)
-
-                // Pieces section
-                if pieceCount > 0 && !piecesBitfield.isEmpty {
-                    GroupBox {
-                        VStack(alignment: .leading, spacing: 10) {
-                            macOSSectionHeader("Pieces", icon: "square.grid.2x2")
-
-                            VStack(alignment: .leading, spacing: 8) {
-                                PiecesGridView(pieceCount: pieceCount, piecesBitfieldBase64: piecesBitfield)
-                                    .frame(maxWidth: .infinity)
-                                Text("\(piecesHaveCount) of \(pieceCount) pieces • \(formatByteCount(pieceSize)) each")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .padding(.vertical, 16)
-                        .padding(.horizontal, 20)
-                    }
-                    .padding(.bottom, 8)
-                }
-
-                // Additional Info section
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 10) {
-                        // Native macOS section header
-                        macOSSectionHeader("Additional Info", icon: "doc.text")
-
-                        DetailRow(label: "Availability", value: details.percentAvailable)
-                        DetailRow(label: "Last Activity", value: details.activityDate)
-                    }
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 20)
-                }
-                .padding(.bottom, 8)
-
-                // Beautiful Dedicated Labels Section (Display Only)
-                if !torrent.labels.isEmpty {
-                    GroupBox {
-                        VStack(alignment: .leading, spacing: 16) {
-                            // Native macOS section header
-                            macOSSectionHeader("Labels", icon: "tag")
-
-                            // Labels display
-                            FlowLayout(spacing: 6) {
-                                ForEach(torrent.labels.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }, id: \.self) { label in
-                                    DetailViewLabelTag(label: label, isLarge: false)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .padding(.vertical, 16)
-                        .padding(.horizontal, 20)
-                    }
-                    .padding(.bottom, 8)
-                }
-
-                // Actions
-                HStack {
-                    Spacer()
-                    Button(role: .destructive, action: {
-                        showingDeleteConfirmation = true
-                    }, label: {
-                        Label("Delete…", systemImage: "trash")
-                    })
-                }
-                .padding(.top, 8)
-            }
-            .padding(20)
-        }
+        MacOSTorrentDetailContent(
+            torrent: torrent,
+            details: details,
+            supplementalPayload: supplementalPayload,
+            onShowFiles: { isShowingFilesSheet = true },
+            onShowPeers: { isShowingPeersSheet = true },
+            onDelete: { showingDeleteConfirmation = true }
+        )
         .sheet(isPresented: $isShowingFilesSheet) {
-            let totalSizeFormatted = formatByteCount(files.reduce(0) { $0 + $1.length })
+            let totalSizeFormatted = formatByteCount(supplementalPayload.files.reduce(0) { $0 + $1.length })
 
             VStack(spacing: 0) {
                 // Header with proper hierarchy
@@ -179,7 +46,7 @@ struct macOSTorrentDetail: View {
                                 .font(.title2)
                                 .fontWeight(.semibold)
 
-                            Text("\(torrent.name) • \(files.count) files • \(totalSizeFormatted)")
+                            Text("\(torrent.name) • \(supplementalPayload.files.count) files • \(totalSizeFormatted)")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                                 .lineLimit(1)
@@ -198,21 +65,13 @@ struct macOSTorrentDetail: View {
 
                 Divider()
 
-                macOSTorrentFileDetail(files: files, fileStats: fileStats, torrentId: torrent.id, store: store)
+                filesSheetContent
             }
             .frame(minWidth: 1000, minHeight: 800)
         }
         .sheet(isPresented: $isShowingPeersSheet) {
-            macOSTorrentPeerDetail(
-                torrentName: torrent.name,
-                torrentId: torrent.id,
-                store: store,
-                peers: peers,
-                peersFrom: peersFrom,
-                onRefresh: { await loadSupplementalData(for: torrent.id) },
-                onDone: { isShowingPeersSheet = false }
-            )
-            .frame(minWidth: 1000, minHeight: 700)
+            peersSheetContent
+                .frame(minWidth: 1000, minHeight: 700)
         }
         .task(id: torrent.id) {
             await loadSupplementalData(for: torrent.id)
@@ -234,22 +93,23 @@ struct macOSTorrentDetail: View {
         } message: {
             Text("Do you want to delete the file(s) from the disk?")
         }
-        .transmissionErrorAlert(isPresented: $showingDeleteError, message: deleteErrorMessage)
+        .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
     }
 
     @MainActor
     private func loadSupplementalData(for torrentID: Int) async {
-        guard let snapshot = await performStructuredTransmissionOperation(
-            operation: { try await store.loadTorrentDetail(id: torrentID) },
-            onError: { message in
-                deleteErrorMessage = message
-                showingDeleteError = true
-            }
-        ) else {
-            return
+        await supplementalStore.load(for: torrentID, using: store) { message in
+            errorMessage = message
+            showingError = true
         }
+    }
 
-        apply(snapshot: snapshot)
+    @MainActor
+    private func loadSupplementalDataIfNeeded(for torrentID: Int) async {
+        await supplementalStore.loadIfNeeded(for: torrentID, using: store) { message in
+            errorMessage = message
+            showingError = true
+        }
     }
 
     private func performDelete(deleteLocalData: Bool) {
@@ -264,26 +124,230 @@ struct macOSTorrentDetail: View {
                 dismiss()
             },
             onError: makeTransmissionBindingErrorHandler(
-                isPresented: $showingDeleteError,
-                message: $deleteErrorMessage
+                isPresented: $showingError,
+                message: $errorMessage
             )
         )
     }
 
-    private func apply(snapshot: TransmissionTorrentDetailSnapshot) {
-        files = snapshot.files
-        fileStats = snapshot.fileStats
-        peers = snapshot.peers
-        peersFrom = snapshot.peersFrom
-        pieceCount = snapshot.pieceCount
-        pieceSize = snapshot.pieceSize
-        piecesBitfield = snapshot.piecesBitfieldBase64
+    @ViewBuilder
+    private var filesSheetContent: some View {
+        if shouldDisplaySupplementalPayload {
+            macOSTorrentFileDetail(
+                files: supplementalPayload.files,
+                fileStats: supplementalPayload.fileStats,
+                torrentId: torrent.id,
+                store: store
+            )
+        } else {
+            switch supplementalStore.status {
+            case .idle:
+                TorrentDetailLoadingPlaceholderView(
+                    title: "Loading Files",
+                    message: "Fetching the latest files for this torrent."
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .task {
+                    await loadSupplementalDataIfNeeded(for: torrent.id)
+                }
+            case .loading:
+                TorrentDetailLoadingPlaceholderView(
+                    title: "Loading Files",
+                    message: "Fetching the latest files for this torrent."
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .failed:
+                TorrentDetailUnavailablePlaceholderView(
+                    title: "Files Unavailable",
+                    message: "The latest file details could not be loaded."
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .task {
+                    await loadSupplementalDataIfNeeded(for: torrent.id)
+                }
+            case .loaded:
+                EmptyView()
+            }
+        }
+    }
 
-        let haveSet = decodePiecesBitfield(
-            base64String: snapshot.piecesBitfieldBase64,
-            pieceCount: snapshot.pieceCount
-        )
-        piecesHaveCount = haveSet.reduce(0) { $0 + ($1 ? 1 : 0) }
+    @ViewBuilder
+    private var peersSheetContent: some View {
+        if shouldDisplaySupplementalPayload {
+            macOSTorrentPeerDetail(
+                torrentName: torrent.name,
+                torrentId: torrent.id,
+                store: store,
+                peers: supplementalPayload.peers,
+                peersFrom: supplementalPayload.peersFrom,
+                onRefresh: { await loadSupplementalData(for: torrent.id) },
+                onDone: { isShowingPeersSheet = false }
+            )
+        } else {
+            switch supplementalStore.status {
+            case .idle:
+                TorrentDetailLoadingPlaceholderView(
+                    title: "Loading Peers",
+                    message: "Fetching the latest peers for this torrent."
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .task {
+                    await loadSupplementalDataIfNeeded(for: torrent.id)
+                }
+            case .loading:
+                TorrentDetailLoadingPlaceholderView(
+                    title: "Loading Peers",
+                    message: "Fetching the latest peers for this torrent."
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .failed:
+                TorrentDetailUnavailablePlaceholderView(
+                    title: "Peers Unavailable",
+                    message: "The latest peer details could not be loaded."
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .task {
+                    await loadSupplementalDataIfNeeded(for: torrent.id)
+                }
+            case .loaded:
+                EmptyView()
+            }
+        }
+    }
+}
+
+private struct MacOSTorrentDetailContent: View {
+    let torrent: Torrent
+    let details: TorrentDetailsDisplay
+    let supplementalPayload: TorrentDetailSupplementalPayload
+    let onShowFiles: () -> Void
+    let onShowPeers: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                TorrentDetailHeaderView(torrent: torrent)
+                    .padding(.bottom, 4)
+
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 12) {
+                        macOSSectionHeader("General", icon: "info.circle")
+                        DetailRow(label: "Name", value: torrent.name)
+                        DetailRow(label: "Status") {
+                            TorrentStatusBadge(torrent: torrent)
+                        }
+                        DetailRow(label: "Date Added", value: details.addedDate)
+                        DetailRow(label: "Files") {
+                            Button(action: onShowFiles) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "document")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.accentColor)
+                                    Text("\(supplementalPayload.files.count)")
+                                        .foregroundColor(.accentColor)
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .help("View files in this torrent")
+                        }
+                        DetailRow(label: "Peers") {
+                            Button(action: onShowPeers) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "person.2")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.accentColor)
+                                    Text("\(supplementalPayload.peers.count)")
+                                        .foregroundColor(.accentColor)
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .help("View peers for this torrent")
+                        }
+                    }
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 20)
+                }
+                .padding(.bottom, 8)
+
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 10) {
+                        macOSSectionHeader("Stats", icon: "chart.bar")
+                        DetailRow(label: "Size When Done", value: details.sizeWhenDoneFormatted)
+                        DetailRow(label: "Progress", value: details.percentComplete)
+                        DetailRow(label: "Downloaded", value: details.downloadedFormatted)
+                        DetailRow(label: "Uploaded", value: details.uploadedFormatted)
+                        DetailRow(label: "Upload Ratio", value: details.uploadRatio)
+                    }
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 20)
+                }
+                .padding(.bottom, 8)
+
+                if supplementalPayload.pieceCount > 0 && !supplementalPayload.piecesBitfieldBase64.isEmpty {
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 10) {
+                            macOSSectionHeader("Pieces", icon: "square.grid.2x2")
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                PiecesGridView(
+                                    pieceCount: supplementalPayload.pieceCount,
+                                    piecesBitfieldBase64: supplementalPayload.piecesBitfieldBase64
+                                )
+                                .frame(maxWidth: .infinity)
+
+                                Text(
+                                    "\(supplementalPayload.piecesHaveCount) of \(supplementalPayload.pieceCount) pieces • \(formatByteCount(supplementalPayload.pieceSize)) each"
+                                )
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 16)
+                        .padding(.horizontal, 20)
+                    }
+                    .padding(.bottom, 8)
+                }
+
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 10) {
+                        macOSSectionHeader("Additional Info", icon: "doc.text")
+                        DetailRow(label: "Availability", value: details.percentAvailable)
+                        DetailRow(label: "Last Activity", value: details.activityDate)
+                    }
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 20)
+                }
+                .padding(.bottom, 8)
+
+                if !torrent.labels.isEmpty {
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 16) {
+                            macOSSectionHeader("Labels", icon: "tag")
+
+                            FlowLayout(spacing: 6) {
+                                ForEach(torrent.labels.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }, id: \.self) { label in
+                                    DetailViewLabelTag(label: label, isLarge: false)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.vertical, 16)
+                        .padding(.horizontal, 20)
+                    }
+                    .padding(.bottom, 8)
+                }
+
+                HStack {
+                    Spacer()
+                    Button(role: .destructive, action: onDelete) {
+                        Label("Delete…", systemImage: "trash")
+                    }
+                }
+                .padding(.top, 8)
+            }
+            .padding(20)
+        }
     }
 }
 

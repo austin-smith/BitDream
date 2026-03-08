@@ -4,6 +4,51 @@ import XCTest
 
 @MainActor
 final class TransmissionStoreTorrentOperationTests: XCTestCase {
+    func testAddTorrentWaitsForActivationInFlight() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [
+            "session-stats": [
+                .http(statusCode: 200, body: successStatsBody),
+                .http(statusCode: 200, body: successStatsBody)
+            ],
+            "torrent-get": [
+                .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json")),
+                .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))
+            ],
+            "session-get": [
+                .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/initial", version: "4.0.0")),
+                .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/initial", version: "4.0.0"))
+            ],
+            "torrent-add": [
+                .http(statusCode: 200, body: makeTorrentAddSuccessBody())
+            ]
+        ])
+        let store = makeStore(sender: sender)
+
+        store.setHost(host: makeHost(serverID: "server-1", server: "example.com"))
+        let outcome = try await store.addTorrent(
+            magnetLink: "magnet:?xt=urn:btih:1234567890abcdef",
+            saveLocation: "/downloads/initial"
+        )
+
+        guard case .added(let torrent) = outcome else {
+            return XCTFail("Expected added torrent outcome")
+        }
+
+        XCTAssertEqual(torrent.name, "Ubuntu.iso")
+
+        let didRefresh = await waitUntil {
+            let requests = await sender.capturedRequests()
+            return requests.count == 7 && store.connectionStatus == .connected
+        }
+        XCTAssertTrue(didRefresh)
+
+        let methods = try await sender.capturedRequests().map { try requestMethod(from: $0.asURLRequest()) }
+        XCTAssertEqual(methods.filter { $0 == "torrent-add" }.count, 1)
+        XCTAssertEqual(methods.filter { $0 == "session-stats" }.count, 2)
+        XCTAssertEqual(methods.filter { $0 == "torrent-get" }.count, 2)
+        XCTAssertEqual(methods.filter { $0 == "session-get" }.count, 2)
+    }
+
     func testRemoveTorrentsSchedulesRefreshAfterSuccess() async throws {
         let sender = MethodQueueSender(stepsByMethod: [
             "session-stats": [
@@ -430,6 +475,21 @@ private func makeTorrentDetailSuccessBody() -> String {
             "pieces": "Zm9v"
           }
         ]
+      },
+      "result": "success"
+    }
+    """
+}
+
+private func makeTorrentAddSuccessBody() -> String {
+    """
+    {
+      "arguments": {
+        "torrent-added": {
+          "hashString": "abcdef1234567890",
+          "id": 99,
+          "name": "Ubuntu.iso"
+        }
       },
       "result": "success"
     }

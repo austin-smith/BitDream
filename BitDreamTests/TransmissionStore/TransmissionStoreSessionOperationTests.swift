@@ -10,6 +10,35 @@ final class TransmissionStoreSessionOperationTests: XCTestCase {
         let args: TransmissionSessionSetRequestArgs
     }
 
+    func testApplySessionSettingsWaitsForActivationInFlight() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [
+            "session-stats": [
+                .http(statusCode: 200, body: successStatsBody)
+            ],
+            "torrent-get": [
+                .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))
+            ],
+            "session-get": [
+                .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/initial", version: "4.0.0")),
+                .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/updated", version: "4.0.1"))
+            ],
+            "session-set": [
+                .http(statusCode: 200, body: successEmptyBody)
+            ]
+        ])
+        let sleepController = ScriptedSleep(steps: [.suspend])
+        let store = makeStore(sender: sender, sleepController: sleepController)
+        var args = TransmissionSessionSetRequestArgs()
+        args.downloadDir = "/downloads/updated"
+
+        store.setHost(host: makeHost(serverID: "server-1", server: "example.com"))
+        let refreshed = try await store.applySessionSettings(args)
+
+        XCTAssertEqual(refreshed.downloadDir, "/downloads/updated")
+        XCTAssertEqual(store.sessionConfiguration?.downloadDir, "/downloads/updated")
+        XCTAssertEqual(store.defaultDownloadDir, "/downloads/updated")
+    }
+
     func testApplySessionSettingsRefreshesSessionConfiguration() async throws {
         let sender = MethodQueueSender(stepsByMethod: [
             "session-stats": [
@@ -102,6 +131,56 @@ final class TransmissionStoreSessionOperationTests: XCTestCase {
         XCTAssertEqual(response.blocklistSize, 42)
         XCTAssertEqual(store.sessionConfiguration?.blocklistSize, 42)
     }
+
+    func testWaitingOperationCancelsWhenActivationIsSupersededByHostSwitch() async throws {
+        let sender = HostMethodScriptedSender(stepsByHostAndMethod: [
+            "new.example.com": [
+                "session-stats": [
+                    .http(statusCode: 200, body: successStatsBody)
+                ],
+                "torrent-get": [
+                    .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))
+                ],
+                "session-get": [
+                    .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/new", version: "5.0.0")),
+                    .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/newer", version: "5.0.1"))
+                ],
+                "session-set": [
+                    .http(statusCode: 200, body: successEmptyBody)
+                ]
+            ]
+        ])
+        let sleepController = ScriptedSleep(steps: [.suspend])
+        let resolver = BlockingConnectionResolver(blockedHost: "old.example.com")
+        let store = makeStore(
+            sender: sender,
+            sleepController: sleepController,
+            resolveConnection: { descriptor, factory in
+                try await resolver.resolve(descriptor, using: factory)
+            }
+        )
+        var args = TransmissionSessionSetRequestArgs()
+        args.downloadDir = "/downloads/newer"
+
+        store.setHost(host: makeHost(serverID: "server-1", server: "old.example.com"))
+
+        let task = Task { @MainActor in
+            try await store.applySessionSettings(args)
+        }
+
+        await Task.yield()
+        store.setHost(host: makeHost(serverID: "server-2", server: "new.example.com"))
+
+        let switchedHosts = await didSwitchHosts(store)
+        XCTAssertTrue(switchedHosts)
+
+        do {
+            _ = try await task.value
+            XCTFail("Expected waiting operation to be cancelled")
+        } catch {
+            XCTAssertNil(TransmissionUserFacingError.presentation(for: error))
+        }
+    }
 }
 
 private extension TransmissionStoreSessionOperationTests {
@@ -156,7 +235,8 @@ private extension TransmissionStoreSessionOperationTests {
 
     func makeStore(
         sender: some TransmissionRPCRequestSending,
-        sleepController: ScriptedSleep
+        sleepController: ScriptedSleep,
+        resolveConnection: (@Sendable (TransmissionConnectionDescriptor, TransmissionConnectionFactory) async throws -> TransmissionConnection)? = nil
     ) -> TransmissionStore {
         let factory = TransmissionConnectionFactory(
             transport: TransmissionTransport(sender: sender),
@@ -169,9 +249,18 @@ private extension TransmissionStoreSessionOperationTests {
                 }
             })
         )
+        let resolvedConnection: (@Sendable (TransmissionConnectionDescriptor) async throws -> TransmissionConnection)?
+        if let resolveConnection {
+            resolvedConnection = { descriptor in
+                try await resolveConnection(descriptor, factory)
+            }
+        } else {
+            resolvedConnection = nil
+        }
 
         return TransmissionStore(
             connectionFactory: factory,
+            resolveConnection: resolvedConnection,
             snapshotWriter: WidgetSnapshotWriter(
                 writeServerIndex: { _ in },
                 writeSessionSnapshot: { _, _, _, _, _ in },
@@ -210,6 +299,25 @@ private extension TransmissionStoreSessionOperationTests {
             await Task.yield()
         }
         return false
+    }
+}
+
+private actor BlockingConnectionResolver {
+    let blockedHost: String
+
+    init(blockedHost: String) {
+        self.blockedHost = blockedHost
+    }
+
+    func resolve(
+        _ descriptor: TransmissionConnectionDescriptor,
+        using factory: TransmissionConnectionFactory
+    ) async throws -> TransmissionConnection {
+        if descriptor.host == blockedHost {
+            try await Task.sleep(nanoseconds: .max)
+        }
+
+        return try await factory.connection(for: descriptor)
     }
 }
 

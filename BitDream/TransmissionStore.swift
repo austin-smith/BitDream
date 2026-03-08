@@ -126,7 +126,7 @@ final class TransmissionStore: NSObject, ObservableObject {
     // Confirmation dialog state for menu remove command
     @Published var showingMenuRemoveConfirmation = false
 
-    private let connectionFactory: TransmissionConnectionFactory
+    private let resolveConnection: @Sendable (TransmissionConnectionDescriptor) async throws -> TransmissionConnection
     private let snapshotWriter: WidgetSnapshotWriter
     private let sleep: @Sendable (TimeInterval) async throws -> Void
     private let persistVersion: @MainActor @Sendable (String, String) async -> Void
@@ -150,13 +150,16 @@ final class TransmissionStore: NSObject, ObservableObject {
 
     init(
         connectionFactory: TransmissionConnectionFactory = TransmissionConnectionFactory(),
+        resolveConnection: (@Sendable (TransmissionConnectionDescriptor) async throws -> TransmissionConnection)? = nil,
         snapshotWriter: WidgetSnapshotWriter = .live,
         sleep: @escaping @Sendable (TimeInterval) async throws -> Void = TransmissionStore.liveSleep,
         persistVersion: @escaping @MainActor @Sendable (String, String) async -> Void = { serverID, version in
             await HostRepository.shared.persistVersionIfNeeded(serverID: serverID, version: version)
         }
     ) {
-        self.connectionFactory = connectionFactory
+        self.resolveConnection = resolveConnection ?? { descriptor in
+            try await connectionFactory.connection(for: descriptor)
+        }
         self.snapshotWriter = snapshotWriter
         self.sleep = sleep
         self.persistVersion = persistVersion
@@ -260,28 +263,28 @@ extension TransmissionStore {
     }
 
     func applySessionSettings(_ args: TransmissionSessionSetRequestArgs) async throws -> TransmissionSessionResponseArguments {
-        let connectionState = try requireActiveConnection()
+        let connectionState = try await awaitActiveConnection()
         try await connectionState.connection.setSession(args)
         try ensureCurrent(connectionState)
         return try await refreshSessionConfiguration(for: connectionState)
     }
 
     func checkFreeSpace(path: String) async throws -> FreeSpaceResponse {
-        let connectionState = try requireActiveConnection()
+        let connectionState = try await awaitActiveConnection()
         let response = try await connectionState.connection.checkFreeSpace(path: path)
         try ensureCurrent(connectionState)
         return response
     }
 
     func testPort(ipProtocol: String? = nil) async throws -> PortTestResponse {
-        let connectionState = try requireActiveConnection()
+        let connectionState = try await awaitActiveConnection()
         let response = try await connectionState.connection.testPort(ipProtocol: ipProtocol)
         try ensureCurrent(connectionState)
         return response
     }
 
     func updateBlocklist() async throws -> BlocklistUpdateResponse {
-        let connectionState = try requireActiveConnection()
+        let connectionState = try await awaitActiveConnection()
         let response = try await connectionState.connection.updateBlocklist()
         try ensureCurrent(connectionState)
         _ = try await refreshSessionConfiguration(for: connectionState)
@@ -407,7 +410,7 @@ extension TransmissionStore {
         let nonEmptyUpdates = updates.filter { !$0.ids.isEmpty }
         guard !nonEmptyUpdates.isEmpty else { return }
 
-        let connectionState = try requireActiveConnection()
+        let connectionState = try await awaitActiveConnection()
         var appliedAnyUpdate = false
 
         do {
@@ -676,7 +679,7 @@ extension TransmissionStore {
 
     private func activateConnection(for host: Host, generation: UUID) async {
         do {
-            let connection = try await connectionFactory.connection(for: TransmissionConnectionDescriptor(host: host))
+            let connection = try await resolveConnection(TransmissionConnectionDescriptor(host: host))
             guard isCurrentGeneration(generation, hostID: host.serverID) else {
                 return
             }
@@ -851,19 +854,42 @@ extension TransmissionStore {
         currentConnectionGeneration == generation && host?.serverID == hostID
     }
 
-    private func requireActiveConnection() throws -> ActiveConnection {
-        guard let activeConnection else {
+    private func awaitActiveConnection() async throws -> ActiveConnection {
+        if let activeConnection {
+            try ensureCurrent(activeConnection)
+            return activeConnection
+        }
+
+        guard let host else {
             throw TransmissionError.invalidEndpointConfiguration
         }
 
-        return activeConnection
+        let waitingGeneration = currentConnectionGeneration
+        let waitingHostID = host.serverID
+
+        if let activationTask {
+            await activationTask.value
+
+            guard isCurrentGeneration(waitingGeneration, hostID: waitingHostID) else {
+                throw CancellationError()
+            }
+
+            guard let activeConnection else {
+                throw CancellationError()
+            }
+
+            try ensureCurrent(activeConnection)
+            return activeConnection
+        }
+
+        throw CancellationError()
     }
 
     private func performConnectionOperation<Result: Sendable>(
         refreshOnSuccess: Bool = false,
         operation: (ActiveConnection) async throws -> Result
     ) async throws -> Result {
-        let connectionState = try requireActiveConnection()
+        let connectionState = try await awaitActiveConnection()
         let result = try await operation(connectionState)
         try ensureCurrent(connectionState)
         if refreshOnSuccess {
