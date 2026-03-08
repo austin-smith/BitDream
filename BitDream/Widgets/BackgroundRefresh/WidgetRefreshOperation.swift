@@ -151,18 +151,48 @@ enum WidgetRefreshRunner {
 }
 
 private enum WidgetRefreshScheduler {
+    private static let state = SchedulerState()
+
     @discardableResult
     static func enqueue(
         dependencies: WidgetRefreshDependencies = .live,
         completion: (@Sendable (Bool) -> Void)? = nil
     ) -> WidgetRefreshHandle {
-        let task = Task.detached(priority: .utility) { () -> Bool in
-            let success = await WidgetRefreshRunner.run(dependencies: dependencies)
-            completion?(success)
-            return success
-        }
+        state.enqueue(dependencies: dependencies, completion: completion)
+    }
 
-        return WidgetRefreshHandle(task: task)
+    private final class SchedulerState: @unchecked Sendable {
+        private let lock = NSLock()
+        private var tailTask: Task<Bool, Never>?
+
+        func enqueue(
+            dependencies: WidgetRefreshDependencies,
+            completion: (@Sendable (Bool) -> Void)?
+        ) -> WidgetRefreshHandle {
+            lock.lock()
+            let predecessor = tailTask
+            let task = Task.detached(priority: .utility) { () -> Bool in
+                if let predecessor {
+                    _ = await predecessor.value
+                }
+
+                guard !Task.isCancelled else {
+                    return false
+                }
+
+                let success = await WidgetRefreshRunner.run(dependencies: dependencies)
+                guard !Task.isCancelled else {
+                    return false
+                }
+
+                completion?(success)
+                return success
+            }
+            tailTask = task
+            lock.unlock()
+
+            return WidgetRefreshHandle(task: task)
+        }
     }
 }
 
@@ -176,6 +206,9 @@ func performWidgetRefresh(completion: (@Sendable () -> Void)? = nil) -> WidgetRe
 }
 
 @discardableResult
-func enqueueWidgetRefresh(completion: (@Sendable (Bool) -> Void)? = nil) -> WidgetRefreshHandle {
-    WidgetRefreshScheduler.enqueue(completion: completion)
+func enqueueWidgetRefresh(
+    dependencies: WidgetRefreshDependencies = .live,
+    completion: (@Sendable (Bool) -> Void)? = nil
+) -> WidgetRefreshHandle {
+    WidgetRefreshScheduler.enqueue(dependencies: dependencies, completion: completion)
 }

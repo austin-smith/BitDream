@@ -53,7 +53,12 @@ final class TransmissionConnectionSnapshotTests: XCTestCase {
 
         XCTAssertEqual(snapshot.polling.sessionStats.torrentCount, 4)
         XCTAssertFalse(snapshot.polling.torrents.isEmpty)
-        XCTAssertFalse(snapshot.sessionSettings.downloadDir.isEmpty)
+        switch snapshot.sessionSettingsResult {
+        case .success(let sessionSettings):
+            XCTAssertFalse(sessionSettings.downloadDir.isEmpty)
+        case .failure(let error):
+            XCTFail("Expected session settings success, got \(error)")
+        }
 
         let requests = await sender.capturedRequests()
         XCTAssertEqual(requests.count, 3)
@@ -62,6 +67,40 @@ final class TransmissionConnectionSnapshotTests: XCTestCase {
             try capturedRequestFields(sessionRequest),
             TransmissionSessionQuerySpec.sessionSettings.fields
         )
+    }
+
+    func testFetchAppRefreshSnapshotPreservesPollingWhenSessionSettingsFail() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [
+            "session-stats": [
+                .http(statusCode: 200, body: successStatsBody)
+            ],
+            "torrent-get": [
+                .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))
+            ],
+            "session-get": [
+                .error(TestError.offline)
+            ]
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        let snapshot = try await connection.fetchAppRefreshSnapshot()
+
+        XCTAssertEqual(snapshot.polling.sessionStats.torrentCount, 4)
+        XCTAssertFalse(snapshot.polling.torrents.isEmpty)
+
+        switch snapshot.sessionSettingsResult {
+        case .success:
+            XCTFail("Expected session settings failure to be preserved in the snapshot")
+        case .failure(let error):
+            if case .transport = error {
+                break
+            }
+            XCTFail("Unexpected session settings error: \(error)")
+        }
     }
 
     func testFetchWidgetRefreshSnapshotUsesNamedWidgetFields() async throws {
@@ -103,6 +142,26 @@ final class TransmissionConnectionSnapshotTests: XCTestCase {
 
         await assertThrowsTransmissionError(.rpcFailure(expectedResult: "server busy")) {
             _ = try await connection.fetchPollingSnapshot()
+        }
+    }
+
+    func testFetchAppRefreshSnapshotStillThrowsWhenPollingFails() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [
+            "session-stats": [
+                .http(statusCode: 200, body: #"{"result":"server busy","arguments":{}}"#)
+            ],
+            "session-get": [
+                .http(statusCode: 200, body: try loadTransmissionFixture(named: "session-get.response.json"))
+            ]
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        await assertThrowsTransmissionError(.rpcFailure(expectedResult: "server busy")) {
+            _ = try await connection.fetchAppRefreshSnapshot()
         }
     }
 }

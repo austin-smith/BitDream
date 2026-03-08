@@ -119,6 +119,40 @@ final class WidgetRefreshOperationTests: XCTestCase {
         XCTAssertEqual(recorder.sessionSnapshotCount, 2)
         XCTAssertEqual(recorder.reloadCount, 1)
     }
+
+    func testEnqueuedWidgetRefreshesSerializeNetworkWork() async throws {
+        let scenario = try makeSerializedRefreshScenario()
+        let completionRecorder = WidgetRefreshCompletionRecorder()
+
+        enqueueWidgetRefresh(dependencies: scenario.dependencies, completion: completionHandler(for: completionRecorder))
+
+        let didStartFirstRun = await waitUntil {
+            let requests = await scenario.sender.capturedRequests()
+            return requests.count == 2
+        }
+        XCTAssertTrue(didStartFirstRun)
+
+        enqueueWidgetRefresh(dependencies: scenario.dependencies, completion: completionHandler(for: completionRecorder))
+
+        await Task.yield()
+        await Task.yield()
+
+        let requestsWhileFirstBlocked = await scenario.sender.capturedRequests()
+        XCTAssertEqual(requestsWhileFirstBlocked.count, 2)
+
+        await scenario.sender.resume(id: "first-run-stats")
+
+        let didCompleteBothRuns = await waitUntil {
+            await completionRecorder.count() == 2
+        }
+        XCTAssertTrue(didCompleteBothRuns)
+
+        let requests = await scenario.sender.capturedRequests()
+        XCTAssertEqual(requests.count, 4)
+        XCTAssertEqual(scenario.recorder.serverIndexCount, 2)
+        XCTAssertEqual(scenario.recorder.sessionSnapshotCount, 2)
+        XCTAssertEqual(scenario.recorder.reloadCount, 2)
+    }
 }
 
 private final class WidgetRefreshRecorder: @unchecked Sendable {
@@ -191,6 +225,65 @@ private final class WidgetRefreshRecorder: @unchecked Sendable {
     }
 }
 
+private actor WidgetRefreshCompletionRecorder {
+    private var results: [Bool] = []
+
+    func record(_ success: Bool) {
+        results.append(success)
+    }
+
+    func count() -> Int {
+        results.count
+    }
+}
+
+private struct SerializedRefreshScenario {
+    let sender: HostMethodScriptedSender
+    let recorder: WidgetRefreshRecorder
+    let dependencies: WidgetRefreshDependencies
+}
+
+private func makeSerializedRefreshScenario() throws -> SerializedRefreshScenario {
+    let sender = HostMethodScriptedSender(stepsByHostAndMethod: [
+        "example.com": [
+            "session-stats": [
+                .blocked(id: "first-run-stats", statusCode: 200, body: successStatsBody),
+                .http(statusCode: 200, body: successStatsBody)
+            ],
+            "torrent-get": [
+                .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json")),
+                .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))
+            ]
+        ]
+    ])
+    let recorder = WidgetRefreshRecorder()
+    let dependencies = makeDependencies(
+        sender: sender,
+        recorder: recorder,
+        records: [
+            makeHostRefreshRecord(
+                serverID: "server-1",
+                name: "Server",
+                server: "example.com",
+                isSSL: false
+            )
+        ],
+        resolvePassword: { _ in "" },
+        sleep: sleepUntilCancelled
+    )
+    return SerializedRefreshScenario(sender: sender, recorder: recorder, dependencies: dependencies)
+}
+
+private func completionHandler(
+    for recorder: WidgetRefreshCompletionRecorder
+) -> @Sendable (Bool) -> Void {
+    { success in
+        Task {
+            await recorder.record(success)
+        }
+    }
+}
+
 private actor HangingSender: TransmissionRPCRequestSending {
     func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         try await Task.sleep(nanoseconds: .max)
@@ -237,6 +330,20 @@ private func makeHostRefreshRecord(
 
 private func sleepUntilCancelled(_: TimeInterval) async throws {
     try await Task.sleep(nanoseconds: .max)
+}
+
+private func waitUntil(
+    timeout: TimeInterval = 1,
+    _ predicate: @escaping () async -> Bool
+) async -> Bool {
+    let deadline = Date().addingTimeInterval(timeout)
+    while Date() < deadline {
+        if await predicate() {
+            return true
+        }
+        await Task.yield()
+    }
+    return false
 }
 
 private func request(named expectedMethod: String, in requests: [CapturedRequest]) throws -> CapturedRequest {

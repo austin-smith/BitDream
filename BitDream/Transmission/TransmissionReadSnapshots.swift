@@ -5,9 +5,9 @@ internal struct TransmissionPollingSnapshot: Sendable, Equatable {
     let torrents: [Torrent]
 }
 
-internal struct TransmissionAppRefreshSnapshot: Sendable, Equatable {
+internal struct TransmissionAppRefreshSnapshot: Sendable {
     let polling: TransmissionPollingSnapshot
-    let sessionSettings: TransmissionSessionResponseArguments
+    let sessionSettingsResult: Result<TransmissionSessionResponseArguments, TransmissionError>
 }
 
 internal extension TransmissionConnection {
@@ -23,11 +23,11 @@ internal extension TransmissionConnection {
 
     func fetchAppRefreshSnapshot() async throws -> TransmissionAppRefreshSnapshot {
         async let polling = fetchPollingSnapshot()
-        async let sessionSettings = fetchSessionSettings()
+        async let sessionSettingsResult = fetchSessionSettingsResult()
 
         return try await TransmissionAppRefreshSnapshot(
             polling: polling,
-            sessionSettings: sessionSettings
+            sessionSettingsResult: sessionSettingsResult
         )
     }
 
@@ -39,5 +39,13 @@ internal extension TransmissionConnection {
             sessionStats: sessionStats,
             torrents: torrents
         )
+    }
+
+    private func fetchSessionSettingsResult() async -> Result<TransmissionSessionResponseArguments, TransmissionError> {
+        do {
+            return .success(try await fetchSessionSettings())
+        } catch {
+            return .failure(TransmissionErrorResolver.transmissionError(from: error))
+        }
     }
 }

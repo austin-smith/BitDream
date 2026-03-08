@@ -520,11 +520,17 @@ extension TransmissionStore {
 
     private func apply(snapshot: TransmissionAppRefreshSnapshot, for connectionState: ActiveConnection) {
         apply(snapshot: snapshot.polling, for: connectionState)
-        sessionConfiguration = snapshot.sessionSettings
-        defaultDownloadDir = snapshot.sessionSettings.downloadDir
+        switch snapshot.sessionSettingsResult {
+        case .success(let sessionSettings):
+            sessionConfiguration = sessionSettings
+            defaultDownloadDir = sessionSettings.downloadDir
 
-        Task {
-            await persistVersion(connectionState.hostID, snapshot.sessionSettings.version)
+            Task {
+                await persistVersion(connectionState.hostID, sessionSettings.version)
+            }
+        case .failure(let error):
+            let presentation = TransmissionErrorPresenter.presentation(for: error)
+            logger.error("Failed to refresh session configuration during full refresh: \(presentation.message, privacy: .public)")
         }
     }
 
