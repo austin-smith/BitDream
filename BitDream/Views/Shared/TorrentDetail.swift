@@ -90,8 +90,12 @@ internal struct TorrentDetailSupplementalState: Sendable {
     private(set) var payload: TorrentDetailSupplementalPayload = .empty
     private(set) var hasLoadedPayload = false
 
-    var shouldDisplayPayload: Bool {
-        hasLoadedPayload
+    func shouldDisplayPayload(for torrentID: Int) -> Bool {
+        activeTorrentID == torrentID && hasLoadedPayload
+    }
+
+    func visiblePayload(for torrentID: Int) -> TorrentDetailSupplementalPayload {
+        shouldDisplayPayload(for: torrentID) ? payload : .empty
     }
 
     @discardableResult
@@ -132,6 +136,20 @@ internal struct TorrentDetailSupplementalState: Sendable {
         status = .failed
         return true
     }
+
+    @discardableResult
+    mutating func markCancelled(for torrentID: Int, generation: Int) -> Bool {
+        guard activeTorrentID == torrentID, activeRequestGeneration == generation else {
+            return false
+        }
+
+        guard status == .loading else {
+            return false
+        }
+
+        status = hasLoadedPayload ? .loaded : .idle
+        return true
+    }
 }
 
 @MainActor
@@ -146,8 +164,12 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
         state.status
     }
 
-    var shouldDisplayPayload: Bool {
-        state.shouldDisplayPayload
+    func payload(for torrentID: Int) -> TorrentDetailSupplementalPayload {
+        state.visiblePayload(for: torrentID)
+    }
+
+    func shouldDisplayPayload(for torrentID: Int) -> Bool {
+        state.shouldDisplayPayload(for: torrentID)
     }
 
     func load(
@@ -169,6 +191,7 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
                 onError(message)
             }
         ) else {
+            _ = markCancellation(for: torrentID, generation: requestGeneration)
             return
         }
 
@@ -186,7 +209,7 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
         using store: TransmissionStore,
         onError: @escaping @MainActor @Sendable (String) -> Void
     ) async {
-        guard !state.shouldDisplayPayload else {
+        guard !state.shouldDisplayPayload(for: torrentID) else {
             return
         }
 
@@ -203,6 +226,17 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
         let didMarkFailure = nextState.markFailed(for: torrentID, generation: generation)
         state = nextState
         return didMarkFailure
+    }
+
+    @discardableResult
+    private func markCancellation(for torrentID: Int, generation: Int) -> Bool {
+        var nextState = state
+        let didMarkCancellation = nextState.markCancelled(
+            for: torrentID,
+            generation: generation
+        )
+        state = nextState
+        return didMarkCancellation
     }
 
     @discardableResult

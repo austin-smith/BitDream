@@ -180,6 +180,22 @@ final class TransmissionStoreTorrentOperationTests: XCTestCase {
         }
     }
 
+    func testTorrentOperationSurfacesStoredActivationFailureAfterActivationCompletes() async throws {
+        let store = makeUnauthorizedActivationStore()
+        store.setHost(host: makeHost(serverID: "server-1", server: "example.com"))
+
+        let didEnterReconnectState = await waitUntil {
+            store.connectionStatus == .reconnecting
+                && store.lastErrorMessage == "Authentication failed. Please check your server credentials."
+        }
+        XCTAssertTrue(didEnterReconnectState)
+
+        try await assertUnauthorizedStoredActivationFailure(store)
+    }
+}
+
+@MainActor
+extension TransmissionStoreTorrentOperationTests {
     func testUpdateTorrentLabelsSchedulesRefreshAfterPartialFailure() async throws {
         let sender = MethodQueueSender(stepsByMethod: [
             "session-stats": [
@@ -291,6 +307,59 @@ final class TransmissionStoreTorrentOperationTests: XCTestCase {
 }
 
 private extension TransmissionStoreTorrentOperationTests {
+    func makeUnauthorizedActivationStore() -> TransmissionStore {
+        let sender = MethodQueueSender(stepsByMethod: [:])
+        let factory = TransmissionConnectionFactory(
+            transport: TransmissionTransport(sender: sender),
+            credentialResolver: TransmissionCredentialResolver(resolvePassword: { source in
+                switch source {
+                case .resolvedPassword(let password):
+                    return password
+                case .keychainCredential(let key):
+                    return key == "test-key" ? "secret" : ""
+                }
+            })
+        )
+
+        return TransmissionStore(
+            connectionFactory: factory,
+            resolveConnection: { descriptor in
+                guard descriptor.host == "example.com" else {
+                    throw TransmissionError.invalidEndpointConfiguration
+                }
+                throw TransmissionError.unauthorized
+            },
+            snapshotWriter: WidgetSnapshotWriter(
+                writeServerIndex: { _ in },
+                writeSessionSnapshot: { _, _, _, _, _ in },
+                reloadTimelines: { }
+            ),
+            sleep: { _ in
+                try await Task.sleep(nanoseconds: .max)
+            },
+            persistVersion: { _, _ in }
+        )
+    }
+
+    func assertUnauthorizedStoredActivationFailure(_ store: TransmissionStore) async throws {
+        do {
+            try await store.removeTorrents(ids: [1], deleteLocalData: false)
+            XCTFail("Expected removeTorrents to surface stored activation failure")
+        } catch let error as TransmissionError {
+            guard case .unauthorized = error else {
+                return XCTFail("Expected unauthorized error, got \(error)")
+            }
+            let presentation = try XCTUnwrap(TransmissionUserFacingError.presentation(for: error))
+            XCTAssertEqual(presentation.title, "Authentication Failed")
+            XCTAssertEqual(
+                presentation.message,
+                "Authentication failed. Please check your server credentials."
+            )
+        } catch {
+            XCTFail("Expected TransmissionError.unauthorized, got \(error)")
+        }
+    }
+
     func makeStore(sender: some TransmissionRPCRequestSending) -> TransmissionStore {
         let factory = TransmissionConnectionFactory(
             transport: TransmissionTransport(sender: sender),

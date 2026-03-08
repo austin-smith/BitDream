@@ -907,6 +907,12 @@ extension TransmissionStore {
             return activeConnection
         }
 
+        if let activationFailure,
+           activationFailure.generation == waitingGeneration,
+           isCurrentGeneration(waitingGeneration, hostID: waitingHostID) {
+            throw activationFailure.error
+        }
+
         throw CancellationError()
     }
 

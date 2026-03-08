@@ -50,7 +50,6 @@ struct iOSTorrentFileDetail: View {
     @State private var sortProperty: FileSortProperty = .name
     @State private var sortOrder: SortOrder = .ascending
 
-    // Filter toggles - same as macOS
     @State private var showWantedFiles = true
     @State private var showSkippedFiles = true
     @State private var showCompleteFiles = true
@@ -63,7 +62,6 @@ struct iOSTorrentFileDetail: View {
     @State private var showOther = true
     @State private var showFilterSheet = false
 
-    // Multi-select state
     @State private var isEditing = false
     @State private var selectedFileIds: Set<String> = []
     @State private var showingError = false
@@ -93,7 +91,6 @@ struct iOSTorrentFileDetail: View {
 
     private var filteredAndSortedFileRows: [TorrentFileRow] {
         let filtered = fileRows.filter { row in
-            // Search filter
             if !searchText.isEmpty {
                 let searchLower = searchText.lowercased()
                 if !row.name.lowercased().contains(searchLower) {
@@ -101,16 +98,13 @@ struct iOSTorrentFileDetail: View {
                 }
             }
 
-            // Wanted/Skip filter - same logic as macOS
             if row.wanted && !showWantedFiles { return false }
             if !row.wanted && !showSkippedFiles { return false }
 
-            // Completion filter - same logic as macOS
             let isComplete = row.percentDone >= 1.0
             if isComplete && !showCompleteFiles { return false }
             if !isComplete && !showIncompleteFiles { return false }
 
-            // File type filter - same logic as macOS
             let fileType = fileTypeCategory(row.name)
             switch fileType {
             case .video: if !showVideos { return false }
@@ -137,7 +131,6 @@ struct iOSTorrentFileDetail: View {
                 )
             }
 
-            // File count footer as a List section
             Section {
                 EmptyView()
             } footer: {
@@ -162,15 +155,8 @@ struct iOSTorrentFileDetail: View {
                     selectedCount: selectedFileIds.count,
                     selectedFileIds: $selectedFileIds,
                     allFileRows: filteredAndSortedFileRows,
-                    torrentId: torrentId,
-                    store: store,
-                    updateFileStatus: updateLocalFileStatus,
-                    updateFilePriority: updateLocalFilePriority,
-                    revertData: revertToOriginalData,
-                    onError: makeTransmissionBindingErrorHandler(
-                        isPresented: $showingError,
-                        message: $errorMessage
-                    )
+                    setBulkWanted: setBulkWanted,
+                    setBulkPriority: setBulkPriority
                 )
             }
         }
@@ -207,11 +193,12 @@ struct iOSTorrentFileDetail: View {
         }
         .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
     }
+}
 
-    // MARK: - File Operations
-
-    private func setFileWanted(_ row: TorrentFileRow, wanted: Bool) {
-        updateLocalFileStatus(fileIndex: row.fileIndex, wanted: wanted)
+private extension iOSTorrentFileDetail {
+    func setFileWanted(_ row: TorrentFileRow, wanted: Bool) {
+        let previousStats = snapshotStats(for: [row.fileIndex])
+        updateLocalFileStatus(fileIndices: [row.fileIndex], wanted: wanted)
 
         performTransmissionAction(
             operation: {
@@ -222,15 +209,16 @@ struct iOSTorrentFileDetail: View {
                 )
             },
             onError: { message in
-                revertToOriginalData()
+                revertStats(previousStats)
                 errorMessage = message
                 showingError = true
             }
         )
     }
 
-    private func setFilePriority(_ row: TorrentFileRow, priority: FilePriority) {
-        updateLocalFilePriority(fileIndex: row.fileIndex, priority: priority)
+    func setFilePriority(_ row: TorrentFileRow, priority: FilePriority) {
+        let previousStats = snapshotStats(for: [row.fileIndex])
+        updateLocalFilePriority(fileIndices: [row.fileIndex], priority: priority)
 
         performTransmissionAction(
             operation: {
@@ -241,64 +229,121 @@ struct iOSTorrentFileDetail: View {
                 )
             },
             onError: { message in
-                revertToOriginalData()
+                revertStats(previousStats)
                 errorMessage = message
                 showingError = true
             }
         )
     }
 
-    // MARK: - Optimistic Updates
+    func setBulkWanted(fileIndices: [Int], wanted: Bool) {
+        let previousStats = snapshotStats(for: fileIndices)
+        updateLocalFileStatus(fileIndices: fileIndices, wanted: wanted)
 
-    private func updateLocalFileStatus(fileIndex: Int, wanted: Bool) {
-        guard fileIndex < mutableFileStats.count else { return }
-        mutableFileStats[fileIndex] = TorrentFileStats(
-            bytesCompleted: mutableFileStats[fileIndex].bytesCompleted,
-            wanted: wanted,
-            priority: mutableFileStats[fileIndex].priority
+        performTransmissionAction(
+            operation: {
+                try await store.setFileWantedStatus(
+                    torrentId: torrentId,
+                    fileIndices: fileIndices,
+                    wanted: wanted
+                )
+            },
+            onError: { message in
+                revertStats(previousStats)
+                errorMessage = message
+                showingError = true
+            }
         )
     }
 
-    private func updateLocalFilePriority(fileIndex: Int, priority: FilePriority) {
-        guard fileIndex < mutableFileStats.count else { return }
-        mutableFileStats[fileIndex] = TorrentFileStats(
-            bytesCompleted: mutableFileStats[fileIndex].bytesCompleted,
-            wanted: mutableFileStats[fileIndex].wanted,
-            priority: priority.rawValue
+    func setBulkPriority(fileIndices: [Int], priority: FilePriority) {
+        let previousStats = snapshotStats(for: fileIndices)
+        updateLocalFilePriority(fileIndices: fileIndices, priority: priority)
+
+        performTransmissionAction(
+            operation: {
+                try await store.setFilePriority(
+                    torrentId: torrentId,
+                    fileIndices: fileIndices,
+                    priority: priority
+                )
+            },
+            onError: { message in
+                revertStats(previousStats)
+                errorMessage = message
+                showingError = true
+            }
         )
     }
 
-    private func revertToOriginalData() {
-        mutableFileStats = fileStats
+    func snapshotStats(for fileIndices: [Int]) -> [(index: Int, stats: TorrentFileStats)] {
+        fileIndices.compactMap { fileIndex in
+            guard fileIndex < (mutableFileStats.isEmpty ? fileStats.count : mutableFileStats.count) else {
+                return nil
+            }
+
+            let currentStats = mutableFileStats.isEmpty ? fileStats[fileIndex] : mutableFileStats[fileIndex]
+            return (fileIndex, currentStats)
+        }
+    }
+
+    func revertStats(_ previousStats: [(index: Int, stats: TorrentFileStats)]) {
+        if mutableFileStats.isEmpty {
+            mutableFileStats = fileStats
+        }
+
+        for (fileIndex, previousStats) in previousStats where fileIndex < mutableFileStats.count {
+            mutableFileStats[fileIndex] = previousStats
+        }
+    }
+
+    func updateLocalFileStatus(fileIndices: [Int], wanted: Bool) {
+        if mutableFileStats.isEmpty {
+            mutableFileStats = fileStats
+        }
+
+        for fileIndex in fileIndices where fileIndex < mutableFileStats.count {
+            mutableFileStats[fileIndex] = TorrentFileStats(
+                bytesCompleted: mutableFileStats[fileIndex].bytesCompleted,
+                wanted: wanted,
+                priority: mutableFileStats[fileIndex].priority
+            )
+        }
+    }
+
+    func updateLocalFilePriority(fileIndices: [Int], priority: FilePriority) {
+        if mutableFileStats.isEmpty {
+            mutableFileStats = fileStats
+        }
+
+        for fileIndex in fileIndices where fileIndex < mutableFileStats.count {
+            mutableFileStats[fileIndex] = TorrentFileStats(
+                bytesCompleted: mutableFileStats[fileIndex].bytesCompleted,
+                wanted: mutableFileStats[fileIndex].wanted,
+                priority: priority.rawValue
+            )
+        }
     }
 }
-
-// MARK: - Bulk Action Toolbar
 
 struct BulkActionToolbar: View {
     let selectedCount: Int
     @Binding var selectedFileIds: Set<String>
     let allFileRows: [TorrentFileRow]
-    let torrentId: Int
-    let store: TransmissionStore
-    let updateFileStatus: (Int, Bool) -> Void
-    let updateFilePriority: (Int, FilePriority) -> Void
-    let revertData: () -> Void
-    let onError: @MainActor @Sendable (String) -> Void
+    let setBulkWanted: ([Int], Bool) -> Void
+    let setBulkPriority: ([Int], FilePriority) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
             Divider()
 
             HStack(spacing: 16) {
-                // Selection count
                 Text("\(selectedCount) selected")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 
                 Spacer()
 
-                // Select All/Deselect All - selection controls, not actions
                 Button(selectedCount == allFileRows.count ? "Deselect All" : "Select All") {
                     if selectedCount == allFileRows.count {
                         selectedFileIds.removeAll()
@@ -308,7 +353,6 @@ struct BulkActionToolbar: View {
                 }
                 .font(.subheadline)
 
-                // Actions menu - EXACTLY same as context menu
                 Menu {
                     Section("Status") {
                         Button("Download") {
@@ -346,51 +390,17 @@ struct BulkActionToolbar: View {
     }
 
     private func setBulkPriority(_ priority: FilePriority) {
-        let selectedRows = allFileRows.filter { selectedFileIds.contains($0.id) }
-        let fileIndices = selectedRows.map { $0.fileIndex }
-
-        // Optimistic updates for all selected files
-        for fileIndex in fileIndices {
-            updateFilePriority(fileIndex, priority)
-        }
-
-        performTransmissionAction(
-            operation: {
-                try await store.setFilePriority(
-                    torrentId: torrentId,
-                    fileIndices: fileIndices,
-                    priority: priority
-                )
-            },
-            onError: { message in
-                revertData()
-                onError(message)
-            }
-        )
+        let fileIndices = allFileRows
+            .filter { selectedFileIds.contains($0.id) }
+            .map(\.fileIndex)
+        setBulkPriority(fileIndices, priority)
     }
 
     private func setBulkWanted(_ wanted: Bool) {
-        let selectedRows = allFileRows.filter { selectedFileIds.contains($0.id) }
-        let fileIndices = selectedRows.map { $0.fileIndex }
-
-        // Optimistic updates for all selected files
-        for fileIndex in fileIndices {
-            updateFileStatus(fileIndex, wanted)
-        }
-
-        performTransmissionAction(
-            operation: {
-                try await store.setFileWantedStatus(
-                    torrentId: torrentId,
-                    fileIndices: fileIndices,
-                    wanted: wanted
-                )
-            },
-            onError: { message in
-                revertData()
-                onError(message)
-            }
-        )
+        let fileIndices = allFileRows
+            .filter { selectedFileIds.contains($0.id) }
+            .map(\.fileIndex)
+        setBulkWanted(fileIndices, wanted)
     }
 }
 
@@ -406,7 +416,6 @@ struct FileActionButtonsView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Filter button
             Button {
                 showFilterSheet = true
             } label: {
@@ -422,9 +431,7 @@ struct FileActionButtonsView: View {
                 .cornerRadius(16)
             }
 
-            // Sort menu
             Menu {
-                // Sort properties
                 ForEach(FileSortProperty.allCases, id: \.self) { property in
                     Button {
                         sortProperty = property
@@ -441,7 +448,6 @@ struct FileActionButtonsView: View {
 
                 Divider()
 
-                // Sort order
                 Button {
                     sortOrder = .ascending
                 } label: {
@@ -480,7 +486,6 @@ struct FileActionButtonsView: View {
 
             Spacer()
 
-            // Edit button - separated on the right
             Button {
                 withAnimation {
                     isEditing.toggle()

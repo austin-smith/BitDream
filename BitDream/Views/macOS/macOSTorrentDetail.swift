@@ -16,11 +16,11 @@ struct macOSTorrentDetail: View {
     @State private var errorMessage = ""
 
     private var supplementalPayload: TorrentDetailSupplementalPayload {
-        supplementalStore.payload
+        supplementalStore.payload(for: torrent.id)
     }
 
     private var shouldDisplaySupplementalPayload: Bool {
-        supplementalStore.shouldDisplayPayload
+        supplementalStore.shouldDisplayPayload(for: torrent.id)
     }
 
     var body: some View {

@@ -10,7 +10,7 @@ final class TorrentDetailSupplementalStateTests: XCTestCase {
         XCTAssertEqual(state.activeRequestGeneration, generation)
         XCTAssertEqual(state.status, .loading)
         XCTAssertEqual(state.payload, .empty)
-        XCTAssertFalse(state.shouldDisplayPayload)
+        XCTAssertFalse(state.shouldDisplayPayload(for: 42))
     }
 
     func testApplySnapshotPopulatesPayloadAndPieceCount() {
@@ -31,7 +31,7 @@ final class TorrentDetailSupplementalStateTests: XCTestCase {
         XCTAssertEqual(state.payload.peersFrom, snapshot.peersFrom)
         XCTAssertEqual(state.payload.pieceCount, 3)
         XCTAssertEqual(state.payload.piecesHaveCount, 2)
-        XCTAssertTrue(state.shouldDisplayPayload)
+        XCTAssertTrue(state.shouldDisplayPayload(for: 7))
     }
 
     func testApplySnapshotIgnoresStaleRequest() {
@@ -60,7 +60,7 @@ final class TorrentDetailSupplementalStateTests: XCTestCase {
         XCTAssertEqual(state.activeRequestGeneration, newGeneration)
         XCTAssertEqual(state.status, .loaded)
         XCTAssertEqual(state.payload.files.map(\.name), ["new-file"])
-        XCTAssertTrue(state.shouldDisplayPayload)
+        XCTAssertTrue(state.shouldDisplayPayload(for: 2))
     }
 
     func testBeginLoadingForSameTorrentPreservesLoadedPayload() {
@@ -77,7 +77,7 @@ final class TorrentDetailSupplementalStateTests: XCTestCase {
         XCTAssertNotEqual(firstGeneration, secondGeneration)
         XCTAssertEqual(state.status, .loading)
         XCTAssertEqual(state.payload.files, snapshot.files)
-        XCTAssertTrue(state.shouldDisplayPayload)
+        XCTAssertTrue(state.shouldDisplayPayload(for: 11))
     }
 
     func testBeginLoadingForDifferentTorrentClearsLoadedPayload() {
@@ -93,7 +93,7 @@ final class TorrentDetailSupplementalStateTests: XCTestCase {
         XCTAssertEqual(state.activeRequestGeneration, secondGeneration)
         XCTAssertEqual(state.status, .loading)
         XCTAssertEqual(state.payload, .empty)
-        XCTAssertFalse(state.shouldDisplayPayload)
+        XCTAssertFalse(state.shouldDisplayPayload(for: 12))
     }
 
     func testMarkFailedPreservesPayloadForActiveRequest() {
@@ -108,7 +108,7 @@ final class TorrentDetailSupplementalStateTests: XCTestCase {
         XCTAssertTrue(didMarkFailure)
         XCTAssertEqual(state.status, .failed)
         XCTAssertEqual(state.payload.files, snapshot.files)
-        XCTAssertTrue(state.shouldDisplayPayload)
+        XCTAssertTrue(state.shouldDisplayPayload(for: 11))
     }
 
     func testMarkFailedIgnoresStaleRequest() {
@@ -124,7 +124,7 @@ final class TorrentDetailSupplementalStateTests: XCTestCase {
         XCTAssertEqual(state.activeRequestGeneration, currentGeneration)
         XCTAssertEqual(state.status, .loading)
         XCTAssertEqual(state.payload, .empty)
-        XCTAssertFalse(state.shouldDisplayPayload)
+        XCTAssertFalse(state.shouldDisplayPayload(for: 4))
     }
 
     func testApplySnapshotRecoversAfterFailureWhileRetainingPayload() {
@@ -142,7 +142,7 @@ final class TorrentDetailSupplementalStateTests: XCTestCase {
         XCTAssertTrue(didApply)
         XCTAssertEqual(state.status, .loaded)
         XCTAssertEqual(state.payload.files.map(\.name), ["new-file"])
-        XCTAssertTrue(state.shouldDisplayPayload)
+        XCTAssertTrue(state.shouldDisplayPayload(for: 7))
     }
 
     func testApplySnapshotIgnoresOlderGenerationForSameTorrent() {
@@ -170,7 +170,7 @@ final class TorrentDetailSupplementalStateTests: XCTestCase {
         XCTAssertEqual(state.activeRequestGeneration, newerGeneration)
         XCTAssertEqual(state.status, .loaded)
         XCTAssertEqual(state.payload.files.map(\.name), ["newer-file"])
-        XCTAssertTrue(state.shouldDisplayPayload)
+        XCTAssertTrue(state.shouldDisplayPayload(for: 9))
     }
 
     func testMarkFailedIgnoresOlderGenerationForSameTorrent() {
@@ -190,7 +190,71 @@ final class TorrentDetailSupplementalStateTests: XCTestCase {
         XCTAssertEqual(state.activeRequestGeneration, currentGeneration)
         XCTAssertEqual(state.status, .loading)
         XCTAssertEqual(state.payload.files.map(\.name), ["retained-file"])
-        XCTAssertTrue(state.shouldDisplayPayload)
+        XCTAssertTrue(state.shouldDisplayPayload(for: 13))
+    }
+
+    func testMarkCancelledRestoresIdleStateWhenNoPayloadExists() {
+        var state = TorrentDetailSupplementalState()
+
+        let generation = state.beginLoading(for: 21)
+        let didMarkCancellation = state.markCancelled(for: 21, generation: generation)
+
+        XCTAssertTrue(didMarkCancellation)
+        XCTAssertEqual(state.activeTorrentID, 21)
+        XCTAssertEqual(state.activeRequestGeneration, generation)
+        XCTAssertEqual(state.status, .idle)
+        XCTAssertEqual(state.payload, .empty)
+        XCTAssertFalse(state.shouldDisplayPayload(for: 21))
+    }
+
+    func testMarkCancelledRestoresLoadedStateWhenPayloadExists() {
+        var state = TorrentDetailSupplementalState()
+        let snapshot = makeSnapshot(fileName: "retained-file")
+
+        let firstGeneration = state.beginLoading(for: 22)
+        XCTAssertTrue(state.apply(snapshot: snapshot, for: 22, generation: firstGeneration))
+        let secondGeneration = state.beginLoading(for: 22)
+
+        let didMarkCancellation = state.markCancelled(for: 22, generation: secondGeneration)
+
+        XCTAssertTrue(didMarkCancellation)
+        XCTAssertEqual(state.activeTorrentID, 22)
+        XCTAssertEqual(state.activeRequestGeneration, secondGeneration)
+        XCTAssertEqual(state.status, .loaded)
+        XCTAssertEqual(state.payload.files.map(\.name), ["retained-file"])
+        XCTAssertTrue(state.shouldDisplayPayload(for: 22))
+    }
+
+    func testMarkCancelledIgnoresOlderGenerationForSameTorrent() {
+        var state = TorrentDetailSupplementalState()
+        let snapshot = makeSnapshot(fileName: "retained-file")
+
+        let firstGeneration = state.beginLoading(for: 23)
+        XCTAssertTrue(state.apply(snapshot: snapshot, for: 23, generation: firstGeneration))
+        let staleGeneration = state.beginLoading(for: 23)
+        let currentGeneration = state.beginLoading(for: 23)
+
+        let didMarkCancellation = state.markCancelled(for: 23, generation: staleGeneration)
+
+        XCTAssertFalse(didMarkCancellation)
+        XCTAssertEqual(state.activeTorrentID, 23)
+        XCTAssertEqual(state.activeRequestGeneration, currentGeneration)
+        XCTAssertEqual(state.status, .loading)
+        XCTAssertEqual(state.payload.files.map(\.name), ["retained-file"])
+        XCTAssertTrue(state.shouldDisplayPayload(for: 23))
+    }
+
+    func testShouldDisplayPayloadRequiresMatchingActiveTorrentID() {
+        var state = TorrentDetailSupplementalState()
+        let snapshot = makeSnapshot(fileName: "retained-file")
+
+        let generation = state.beginLoading(for: 24)
+        XCTAssertTrue(state.apply(snapshot: snapshot, for: 24, generation: generation))
+
+        XCTAssertTrue(state.shouldDisplayPayload(for: 24))
+        XCTAssertFalse(state.shouldDisplayPayload(for: 25))
+        XCTAssertEqual(state.visiblePayload(for: 24).files.map(\.name), ["retained-file"])
+        XCTAssertEqual(state.visiblePayload(for: 25), .empty)
     }
 }
 
