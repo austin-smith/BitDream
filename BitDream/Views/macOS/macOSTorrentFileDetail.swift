@@ -34,7 +34,7 @@ struct macOSTorrentFileDetail: View {
     let files: [TorrentFile]
     let fileStats: [TorrentFileStats]
     let torrentId: Int
-    let store: AppStore
+    let store: TransmissionStore
 
     @StateObject private var viewModel = FileTableViewModel()
     @State private var columnVisibility = Set<String>(["name", "size", "progress", "downloaded", "priority", "status"])
@@ -449,7 +449,7 @@ struct FooterView: View {
         files: TorrentFilePreviewData.sampleFiles,
         fileStats: TorrentFilePreviewData.sampleFileStats,
         torrentId: 1,
-        store: AppStore()
+        store: TransmissionStore()
     )
     .frame(width: 1000, height: 700)
 }

@@ -8,7 +8,7 @@ typealias PlatformSettingsView = iOSSettingsView
 struct iOSSettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
 
     @ObservedObject private var themeManager = ThemeManager.shared
     @StateObject private var appIconManager = AppIconManager.shared
@@ -246,6 +246,6 @@ private struct CurrentAppIconPreview: View {
 }
 
 #Preview {
-    iOSSettingsView(store: AppStore())
+    iOSSettingsView(store: TransmissionStore())
 }
 #endif

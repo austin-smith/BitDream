@@ -127,6 +127,111 @@ actor QueueSender: TransmissionRPCRequestSending {
     }
 }
 
+actor MethodQueueSender: TransmissionRPCRequestSending {
+    enum Step {
+        case http(statusCode: Int, body: String, headers: [String: String] = [:])
+        case error(any Error)
+    }
+
+    private var stepsByMethod: [String: [Step]]
+    private var requests: [CapturedRequest] = []
+
+    init(stepsByMethod: [String: [Step]]) {
+        self.stepsByMethod = stepsByMethod
+    }
+
+    func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        requests.append(CapturedRequest(request))
+
+        guard
+            let url = request.url,
+            let method = try? requestMethod(from: request),
+            var methodSteps = stepsByMethod[method],
+            !methodSteps.isEmpty
+        else {
+            throw TestError.unexpectedRequest
+        }
+
+        let step = methodSteps.removeFirst()
+        stepsByMethod[method] = methodSteps
+
+        switch step {
+        case let .http(statusCode, body, headers):
+            return (
+                Data(body.utf8),
+                makeHTTPResponse(for: url, statusCode: statusCode, headers: headers)
+            )
+        case let .error(error):
+            throw error
+        }
+    }
+
+    func capturedRequests() -> [CapturedRequest] {
+        requests
+    }
+}
+
+actor HostMethodScriptedSender: TransmissionRPCRequestSending {
+    enum Step {
+        case http(statusCode: Int, body: String, headers: [String: String] = [:])
+        case blocked(id: String, statusCode: Int, body: String, headers: [String: String] = [:])
+        case error(any Error)
+    }
+
+    private var stepsByHostAndMethod: [String: [String: [Step]]]
+    private var continuations: [String: CheckedContinuation<Void, Never>] = [:]
+    private var requests: [CapturedRequest] = []
+
+    init(stepsByHostAndMethod: [String: [String: [Step]]]) {
+        self.stepsByHostAndMethod = stepsByHostAndMethod
+    }
+
+    func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        requests.append(CapturedRequest(request))
+
+        guard
+            let url = request.url,
+            let host = url.host,
+            let method = try? requestMethod(from: request),
+            var hostSteps = stepsByHostAndMethod[host],
+            var methodSteps = hostSteps[method],
+            !methodSteps.isEmpty
+        else {
+            throw TestError.unexpectedRequest
+        }
+
+        let step = methodSteps.removeFirst()
+        hostSteps[method] = methodSteps
+        stepsByHostAndMethod[host] = hostSteps
+
+        switch step {
+        case let .http(statusCode, body, headers):
+            return (
+                Data(body.utf8),
+                makeHTTPResponse(for: url, statusCode: statusCode, headers: headers)
+            )
+        case let .blocked(id, statusCode, body, headers):
+            await withCheckedContinuation { continuation in
+                continuations[id] = continuation
+            }
+            return (
+                Data(body.utf8),
+                makeHTTPResponse(for: url, statusCode: statusCode, headers: headers)
+            )
+        case let .error(error):
+            throw error
+        }
+    }
+
+    func resume(id: String) {
+        continuations.removeValue(forKey: id)?.resume()
+    }
+
+    func capturedRequests() -> [CapturedRequest] {
+        requests
+    }
+}
+
 actor ConcurrentRefreshSender: TransmissionRPCRequestSending {
     private var requests: [CapturedRequest] = []
 
@@ -209,6 +314,12 @@ func capturedRequestFields(_ request: CapturedRequest) throws -> [String] {
     let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
     let arguments = try XCTUnwrap(object["arguments"] as? [String: Any])
     return try XCTUnwrap(arguments["fields"] as? [String])
+}
+
+func requestMethod(from request: URLRequest) throws -> String {
+    let body = try XCTUnwrap(request.httpBody)
+    let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+    return try XCTUnwrap(object["method"] as? String)
 }
 
 func loadTransmissionFixture(named fileName: String) throws -> String {

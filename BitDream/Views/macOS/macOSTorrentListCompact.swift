@@ -60,7 +60,7 @@ struct macOSTorrentListCompact: View {
     @Binding var sortProperty: SortProperty
     @Binding var sortOrder: SortOrder
     @State private var tableSortOrder = [KeyPathComparator(\TorrentTableRow.name)]
-    let store: AppStore
+    let store: TransmissionStore
     let showContentTypeIcons: Bool
 
     @State private var deleteDialog: Bool = false

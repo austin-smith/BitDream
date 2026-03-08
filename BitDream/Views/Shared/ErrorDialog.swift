@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 struct ErrorDialog: View {
-    var store: AppStore
+    var store: TransmissionStore
 
     var body: some View {
         VStack {

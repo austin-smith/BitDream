@@ -25,7 +25,7 @@ struct TorrentActionDialogState {
 @MainActor
 struct TorrentContextMenu: View {
     let torrents: Set<Torrent>
-    let store: AppStore
+    let store: TransmissionStore
     let dialogState: TorrentActionDialogState
 
     private var firstTorrent: Torrent? {
@@ -237,7 +237,7 @@ struct TorrentContextMenu: View {
 }
 
 struct TorrentActionsToolbarMenu: View {
-    let store: AppStore
+    let store: TransmissionStore
     let selectedTorrents: Set<Torrent>
 
     // Shared state used by the context menu builder
@@ -415,7 +415,7 @@ struct TorrentActionsToolbarMenu: View {
 // MARK: - Shared Presenters for Sheets/Alerts
 
 struct LabelEditSheetContent: View {
-    let store: AppStore
+    let store: TransmissionStore
     let selectedTorrents: Set<Torrent>
     @Binding var labelInput: String
     @Binding var shouldSave: Bool
@@ -452,7 +452,7 @@ struct LabelEditSheetContent: View {
 }
 
 struct RenameSheetContent: View {
-    let store: AppStore
+    let store: TransmissionStore
     let selectedTorrents: Set<Torrent>
     @Binding var renameInput: String
     @Binding var renameTargetId: Int?
@@ -501,7 +501,7 @@ extension View {
     func torrentDeleteAlert(
         isPresented: Binding<Bool>,
         selectedTorrents: @escaping () -> Set<Torrent>,
-        store: AppStore,
+        store: TransmissionStore,
         showingError: Binding<Bool>,
         errorMessage: Binding<String>
     ) -> some View {

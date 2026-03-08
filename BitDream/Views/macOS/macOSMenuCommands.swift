@@ -23,7 +23,7 @@ extension FocusedValues {
 // MARK: - Search Commands
 
 struct SearchCommands: Commands {
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
 
     var body: some Commands {
         CommandGroup(after: .textEditing) {
@@ -41,7 +41,7 @@ struct SearchCommands: Commands {
 // MARK: - File Commands
 
 struct FileCommands: Commands {
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
     @FocusedBinding(\.selectedTorrentIds) private var selectedTorrentIds: Set<Int>?
 
     private var selectedTorrents: Set<Torrent> {
@@ -87,7 +87,7 @@ struct FileCommands: Commands {
 // MARK: - Torrent Commands
 
 struct TorrentCommands: Commands {
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
     @FocusedBinding(\.selectedTorrentIds) private var selectedTorrentIds: Set<Int>?
 
     private var selectedTorrentIDs: [Int] {
@@ -285,7 +285,7 @@ private extension TorrentCommands {
 // MARK: - View Commands
 
 struct ViewCommands: Commands {
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
     @Environment(\.openWindow) private var openWindow
     @AppStorage(UserDefaultsKeys.torrentListCompactMode) private var isCompactMode: Bool = false
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = true
@@ -321,7 +321,7 @@ struct ViewCommands: Commands {
 // MARK: - Inspector Commands
 
 struct InspectorCommands: Commands {
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
 
     var body: some Commands {
         CommandGroup(after: .toolbar) {

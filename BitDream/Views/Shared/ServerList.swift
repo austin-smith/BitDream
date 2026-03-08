@@ -4,7 +4,7 @@ import SwiftData
 /// Platform-agnostic wrapper for ServerList view
 /// This view simply delegates to the appropriate platform-specific implementation
 struct ServerList: View {
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
     let modelContext: ModelContext
     let hosts: [Host]
 
@@ -44,7 +44,7 @@ private func userFacingServerListPersistenceMessage(_ error: Error) -> String {
 @MainActor
 func deleteServer(
     host: Host,
-    store: AppStore,
+    store: TransmissionStore,
     hosts: [Host],
     modelContext _: ModelContext,
     completion: @MainActor @escaping () -> Void,
@@ -58,11 +58,8 @@ func deleteServer(
                 currentStore.setHost(host: newServer)
                 UserDefaults.standard.set(newServer.serverID, forKey: UserDefaultsKeys.selectedHost)
             } else {
-                currentStore.host = nil
                 UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedHost)
-                currentStore.torrents = []
-                currentStore.sessionStats = nil
-                currentStore.timer.invalidate()
+                currentStore.clearSelectedHost()
             }
         }
 
@@ -87,7 +84,7 @@ func deleteServer(
 /// Creates a confirmation message for server deletion
 @MainActor
 @ViewBuilder
-func deleteConfirmationMessage(for host: Host, store: AppStore) -> some View {
+func deleteConfirmationMessage(for host: Host, store: TransmissionStore) -> some View {
     let currentStore = store // Create a local reference to avoid wrapper issues
     VStack(alignment: .leading, spacing: 8) {
         Text("Are you sure you want to delete \(host.name ?? "Unnamed Server")?")

@@ -11,13 +11,13 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
     private var statusMenu: NSMenu?
     private var contentMenuItem: NSMenuItem?
     private var contentHostingView: NSHostingView<AnyView>?
-    private weak var store: AppStore?
+    private weak var store: TransmissionStore?
     private var storeChangeCancellable: AnyCancellable?
     private var pendingRelayoutTask: Task<Void, Never>?
     private var isMenuOpen = false
     private let panelWidth: CGFloat = 380
 
-    func configure(isEnabled: Bool, store: AppStore) {
+    func configure(isEnabled: Bool, store: TransmissionStore) {
         if self.store !== store {
             self.store = store
             observeStoreChanges(store)
@@ -121,7 +121,7 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
         statusMenu?.cancelTracking()
     }
 
-    private func observeStoreChanges(_ store: AppStore) {
+    private func observeStoreChanges(_ store: TransmissionStore) {
         storeChangeCancellable = store.objectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in

@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 struct macOSAddTorrent: View {
     // MARK: - Properties
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
 
     @State private var inputMethod: TorrentInputMethod = .magnetLink
     @State private var alertInput = ""
@@ -428,6 +428,6 @@ private struct TorrentSourceCard: View {
 
 // MARK: - Preview
 #Preview("Add Torrent") {
-    macOSAddTorrent(store: AppStore())
+    macOSAddTorrent(store: TransmissionStore())
 }
 #endif

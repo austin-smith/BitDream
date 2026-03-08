@@ -2,7 +2,7 @@ import SwiftUI
 
 #if os(macOS)
 struct macOSConnectionInfoView: View {
-    @EnvironmentObject var store: AppStore
+    @EnvironmentObject var store: TransmissionStore
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -27,7 +27,7 @@ struct macOSConnectionInfoView: View {
         HStack(spacing: 12) {
             Text("Connection")
             Spacer(minLength: 16)
-            if store.connectionStatus == AppStore.ConnectionStatus.reconnecting {
+            if store.connectionStatus == TransmissionStore.ConnectionStatus.reconnecting {
                 Button(
                     action: {
                         store.retryNow()

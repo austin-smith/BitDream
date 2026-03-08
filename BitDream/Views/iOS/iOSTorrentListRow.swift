@@ -4,7 +4,7 @@ import SwiftUI
 #if os(iOS)
 struct iOSTorrentListRow: View {
     var torrent: Torrent
-    var store: AppStore
+    var store: TransmissionStore
     var showContentTypeIcons: Bool
 
     @State private var deleteDialog: Bool = false
@@ -179,7 +179,7 @@ struct iOSTorrentListRow: View {
 @MainActor
 private struct IOSTorrentActionsMenu: View {
     let torrent: Torrent
-    let store: AppStore
+    let store: TransmissionStore
     let onShowMove: () -> Void
     let onShowRename: () -> Void
     let onShowLabels: () -> Void
@@ -317,7 +317,7 @@ private struct IOSTorrentActionsMenu: View {
 @MainActor
 private struct IOSTorrentRenameSheet: View {
     let torrent: Torrent
-    let store: AppStore
+    let store: TransmissionStore
     @Binding var renameInput: String
     @Binding var isPresented: Bool
     let onError: (String) -> Void
@@ -374,7 +374,7 @@ private struct IOSTorrentRenameSheet: View {
 @MainActor
 private struct IOSTorrentMoveSheet: View {
     let torrent: Torrent
-    let store: AppStore
+    let store: TransmissionStore
     @Binding var movePath: String
     @Binding var moveShouldMove: Bool
     @Binding var isPresented: Bool
@@ -433,7 +433,7 @@ private struct IOSTorrentMoveSheet: View {
         )
         setTorrentLocation(args: args, info: info) { response in
             handleTransmissionResponse(response, onSuccess: {
-                refreshTransmissionData(store: store)
+                store.requestRefresh()
                 isPresented = false
             }, onError: onError)
         }
@@ -447,10 +447,10 @@ struct iOSLabelEditView: View {
     @State private var newTagInput: String = ""
     @FocusState private var isInputFocused: Bool
     @Environment(\.dismiss) private var dismiss
-    var store: AppStore
+    var store: TransmissionStore
     var torrentId: Int
 
-    init(labelInput: Binding<String>, existingLabels: [String], store: AppStore, torrentId: Int) {
+    init(labelInput: Binding<String>, existingLabels: [String], store: TransmissionStore, torrentId: Int) {
         self._labelInput = labelInput
         self.existingLabels = existingLabels
         self._workingLabels = State(initialValue: Set(existingLabels))
@@ -555,7 +555,7 @@ struct iOSLabelEditView: View {
 #else
 struct iOSTorrentListRow: View {
     var torrent: Torrent
-    var store: AppStore
+    var store: TransmissionStore
     var showContentTypeIcons: Bool
 
     var body: some View {

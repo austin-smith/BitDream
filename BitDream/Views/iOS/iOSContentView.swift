@@ -6,16 +6,16 @@ import SwiftData
 struct iOSContentView: View {
     let modelContext: ModelContext
     let hosts: [Host]
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
 
     // Add explicit initializer with internal access level
-    init(modelContext: ModelContext, hosts: [Host], store: AppStore) {
+    init(modelContext: ModelContext, hosts: [Host], store: TransmissionStore) {
         self.modelContext = modelContext
         self.hosts = hosts
         self.store = store
     }
 
-    // AppStore the selected torrent IDs
+    // Store the selected torrent IDs
     @State private var selectedTorrentIds: Set<Int> = []
 
     // Computed property to get the selected torrents from the IDs
@@ -45,7 +45,7 @@ struct iOSContentView: View {
             .navigationTitle("Dreams")
             .navigationBarTitleDisplayMode(.inline)
             .refreshable {
-                refreshTransmissionData(store: store)
+                await store.refreshNow()
             }
             .searchable(text: $searchText, prompt: "Search torrents")
             .toolbar {
@@ -239,7 +239,7 @@ struct iOSContentView: View {
 
                 Button(action: {
                     playPauseAllTorrents(start: false, info: makeConfig(store: store), onResponse: { _ in
-                        refreshTransmissionData(store: store)
+                        store.requestRefresh()
                     })
                 }, label: {
                     Label("Pause All", systemImage: "pause")
@@ -247,7 +247,7 @@ struct iOSContentView: View {
 
                 Button(action: {
                     playPauseAllTorrents(start: true, info: makeConfig(store: store), onResponse: { _ in
-                        refreshTransmissionData(store: store)
+                        store.requestRefresh()
                     })
                 }, label: {
                     Label("Resume All", systemImage: "play")

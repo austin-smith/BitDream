@@ -4,7 +4,7 @@ import Foundation
 #if os(macOS)
 struct macOSGeneralSettingsTab: View {
     @EnvironmentObject private var appUpdater: AppUpdater
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
 
     @ObservedObject private var themeManager = ThemeManager.shared
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = AppDefaults.showContentTypeIcons

@@ -10,7 +10,7 @@ struct macOSContentView: View {
     @Environment(\.openSettings) private var openSettings
     let modelContext: ModelContext
     let hosts: [Host]
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
 
     @ObservedObject private var themeManager = ThemeManager.shared
 
@@ -191,7 +191,6 @@ struct macOSContentView: View {
             onSelectHost: { host in
                 store.setHost(host: host)
                 selectedTorrentIds.removeAll()
-                refreshTransmissionData(store: store)
             },
             onAddServer: {
                 store.setup.toggle()
@@ -223,7 +222,7 @@ struct macOSContentView: View {
         .navigationTitle(sidebarSelection.rawValue)
         .navigationSubtitle(navigationSubtitle)
         .refreshable {
-            refreshTransmissionData(store: store)
+            await store.refreshNow()
         }
         .alert(
             "Remove \(selectedTorrents.count > 1 ? "\(selectedTorrents.count) Torrents" : "Torrent")",

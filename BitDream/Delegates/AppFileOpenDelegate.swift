@@ -6,7 +6,7 @@ import Combine
 @MainActor
 final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     @Published var pendingOpenFiles: [URL] = []
-    var storeProvider: (() -> AppStore?)?
+    var storeProvider: (() -> TransmissionStore?)?
     private var hostCancellable: AnyCancellable?
     private var isProcessingOpenFiles = false
 
@@ -98,7 +98,7 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
     }
 
     @MainActor
-    private func apply(_ result: OpenBatchResult, to store: AppStore) {
+    private func apply(_ result: OpenBatchResult, to store: TransmissionStore) {
         for action in result.actions {
             switch action {
             case .magnet(let magnetString):
@@ -167,7 +167,7 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
         return magnet.isEmpty ? "magnet link" : magnet
     }
 
-    func configure(with store: AppStore) {
+    func configure(with store: TransmissionStore) {
         self.storeProvider = { store }
         hostCancellable = store.$host.sink { [weak self] _ in
             self?.flushIfPossible()
