@@ -2,21 +2,14 @@ import Foundation
 
 // MARK: - Enums
 
-public enum TransmissionResponse: Sendable, Equatable {
-    case success
-    case unauthorized
-    case configError
-    case failed
-}
-
-public enum TorrentPriority: String {
-    case high = "priority-high"
-    case normal = "priority-normal"
-    case low = "priority-low"
+public enum TorrentPriority: Int, Sendable {
+    case high = 1
+    case normal = 0
+    case low = -1
 }
 
 // Priority enum for torrent files
-public enum FilePriority: Int {
+public enum FilePriority: Int, Sendable {
     case low = -1
     case normal = 0
     case high = 1
@@ -172,7 +165,7 @@ public struct Torrent: Codable, Hashable, Identifiable, Sendable {
     }
 }
 
-public struct TorrentFile: Codable, Identifiable, Sendable {
+public struct TorrentFile: Codable, Equatable, Identifiable, Sendable {
     public var id: String { name }
     var bytesCompleted: Int64
     var length: Int64
@@ -180,7 +173,7 @@ public struct TorrentFile: Codable, Identifiable, Sendable {
     var percentDone: Double { Double(bytesCompleted) / Double(length) }
 }
 
-public struct TorrentFileStats: Codable, Sendable {
+public struct TorrentFileStats: Codable, Equatable, Sendable {
     var bytesCompleted: Int64
     var wanted: Bool
     var priority: Int
@@ -323,11 +316,7 @@ public struct TorrentSetRequestArgs: Codable, Sendable {
 
     public init(ids: [Int], priority: TorrentPriority) {
         self.ids = ids
-        switch priority {
-        case .high: priorityHigh = []
-        case .normal: priorityNormal = []
-        case .low: priorityLow = []
-        }
+        bandwidthPriority = priority.rawValue
     }
 
     enum CodingKeys: String, CodingKey {

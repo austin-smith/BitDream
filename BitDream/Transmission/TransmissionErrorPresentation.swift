@@ -80,57 +80,17 @@ enum TransmissionErrorPresenter {
     }
 }
 
-struct TransmissionLegacyCompatibilityError: LocalizedError, Sendable {
-    let transmissionError: TransmissionError
-
-    var errorDescription: String? {
-        TransmissionErrorPresenter.presentation(for: transmissionError).message
-    }
-}
-
-enum TransmissionLegacyCompatibility {
-    static func response(from error: Error) -> TransmissionResponse {
-        response(from: TransmissionErrorResolver.transmissionError(from: error))
-    }
-
-    static func response(from error: TransmissionError) -> TransmissionResponse {
-        switch error {
-        case .unauthorized:
-            return .unauthorized
-        case .invalidEndpointConfiguration, .transport, .timeout:
-            return .configError
-        case .rpcFailure, .httpStatus, .invalidResponse, .decoding, .cancelled:
-            return .failed
-        }
-    }
-
-    static func localizedError(from error: Error) -> Error {
-        TransmissionLegacyCompatibilityError(
-            transmissionError: TransmissionErrorResolver.transmissionError(from: error)
-        )
-    }
-
-    static func presentation(for response: TransmissionResponse) -> TransmissionErrorPresentation? {
-        switch response {
-        case .success:
+enum TransmissionUserFacingError {
+    static func presentation(for error: Error) -> TransmissionErrorPresentation? {
+        let transmissionError = TransmissionErrorResolver.transmissionError(from: error)
+        if case .cancelled = transmissionError {
             return nil
-        case .unauthorized:
-            return TransmissionErrorPresenter.presentation(for: .unauthorized)
-        case .configError:
-            return TransmissionErrorPresenter.presentation(for: .invalidEndpointConfiguration)
-        case .failed:
-            return TransmissionErrorPresentation(
-                title: "Operation Failed",
-                message: "Operation failed. Please try again."
-            )
         }
+
+        return TransmissionErrorPresenter.presentation(for: transmissionError)
     }
 
-    static func transmissionError(from error: Error) -> TransmissionError {
-        if let compatibilityError = error as? TransmissionLegacyCompatibilityError {
-            return compatibilityError.transmissionError
-        }
-
-        return TransmissionErrorResolver.transmissionError(from: error)
+    static func message(for error: Error) -> String? {
+        presentation(for: error)?.message
     }
 }

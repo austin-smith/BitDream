@@ -103,7 +103,9 @@ struct TorrentRowModifier: ViewModifier {
             selectedTorrents: affectedTorrents,
             labelInput: $labelInput,
             shouldSave: $shouldSave,
-            isPresented: $labelDialog
+            isPresented: $labelDialog,
+            showingError: $showingError,
+            errorMessage: $errorMessage
         )
         .frame(width: 400)
     }

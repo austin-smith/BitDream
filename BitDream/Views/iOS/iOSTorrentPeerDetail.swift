@@ -8,7 +8,7 @@ struct iOSTorrentPeerDetail: View {
     let store: TransmissionStore
     let peers: [Peer]
     let peersFrom: PeersFrom?
-    let onRefresh: () -> Void
+    let onRefresh: @MainActor () async -> Void
     let onDone: () -> Void
 
     @State private var searchText: String = ""
@@ -29,7 +29,11 @@ struct iOSTorrentPeerDetail: View {
                 VStack(spacing: 12) {
                     Text(peers.isEmpty ? "No peers yet" : "No results")
                         .foregroundColor(.secondary)
-                    Button(action: onRefresh) { Label("Refresh", systemImage: "arrow.clockwise") }
+                    Button {
+                        Task { await onRefresh() }
+                    } label: {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .navigationTitle("Peers")
@@ -37,7 +41,9 @@ struct iOSTorrentPeerDetail: View {
                 .searchable(text: $searchText, prompt: "Search peers")
                 .toolbar {
                     ToolbarItemGroup(placement: .navigationBarTrailing) {
-                        Button(action: onRefresh) {
+                        Button {
+                            Task { await onRefresh() }
+                        } label: {
                             Image(systemName: "arrow.clockwise")
                         }
                         Button("Done", action: onDone)
@@ -66,13 +72,15 @@ struct iOSTorrentPeerDetail: View {
                         }
                     }
                 }
-                .refreshable { onRefresh() }
+                .refreshable { await onRefresh() }
                 .navigationTitle("Peers")
                 .navigationBarTitleDisplayMode(.inline)
                 .searchable(text: $searchText, prompt: "Search peers")
                 .toolbar {
                     ToolbarItemGroup(placement: .navigationBarTrailing) {
-                        Button(action: onRefresh) {
+                        Button {
+                            Task { await onRefresh() }
+                        } label: {
                             Image(systemName: "arrow.clockwise")
                         }
                         Button("Done", action: onDone)
@@ -155,7 +163,7 @@ struct iOSTorrentPeerDetail: View {
     let store: TransmissionStore
     let peers: [Peer]
     let peersFrom: PeersFrom?
-    let onRefresh: () -> Void
+    let onRefresh: @MainActor () async -> Void
     let onDone: () -> Void
     var body: some View { EmptyView() }
 }

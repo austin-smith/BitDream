@@ -131,4 +131,114 @@ final class TransmissionConnectionTests: XCTestCase {
         XCTAssertEqual(torrent.id, 14)
         XCTAssertEqual(torrent.name, "Ubuntu.iso")
     }
+
+    func testRemoveTorrentsUsesSingleBatchPayload() async throws {
+        let sender = QueueSender(steps: [
+            .http(statusCode: 200, body: successEmptyBody)
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        try await connection.removeTorrents(ids: [11, 12], deleteLocalData: true)
+
+        let requests = await sender.capturedRequests()
+        XCTAssertEqual(try requestMethod(from: requests[0].asURLRequest()), "torrent-remove")
+        let arguments = try requestArguments(from: requests[0])
+        XCTAssertEqual(arguments["ids"] as? [Int], [11, 12])
+        XCTAssertEqual(arguments["delete-local-data"] as? Bool, true)
+    }
+
+    func testSetTorrentPriorityUsesBandwidthPriority() async throws {
+        let sender = QueueSender(steps: [
+            .http(statusCode: 200, body: successEmptyBody)
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        try await connection.setTorrentPriority(ids: [42], priority: .high)
+
+        let requests = await sender.capturedRequests()
+        XCTAssertEqual(try requestMethod(from: requests[0].asURLRequest()), "torrent-set")
+        let arguments = try requestArguments(from: requests[0])
+        XCTAssertEqual(arguments["ids"] as? [Int], [42])
+        XCTAssertEqual(arguments["bandwidthPriority"] as? Int, TorrentPriority.high.rawValue)
+    }
+
+    func testQueueMoveUsesSingleBatchRequest() async throws {
+        let sender = QueueSender(steps: [
+            .http(statusCode: 200, body: successEmptyBody)
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        try await connection.queueMove(.bottom, ids: [3, 4, 5])
+
+        let requests = await sender.capturedRequests()
+        XCTAssertEqual(try requestMethod(from: requests[0].asURLRequest()), "queue-move-bottom")
+        let arguments = try requestArguments(from: requests[0])
+        XCTAssertEqual(arguments["ids"] as? [Int], [3, 4, 5])
+    }
+
+    func testRenameTorrentPathDecodesArguments() async throws {
+        let sender = QueueSender(steps: [
+            .http(
+                statusCode: 200,
+                body: #"{"result":"success","arguments":{"path":"Old Name","name":"New Name","id":42}}"#
+            )
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        let response = try await connection.renameTorrentPath(
+            torrentID: 42,
+            path: "Old Name",
+            newName: "New Name"
+        )
+
+        XCTAssertEqual(response.id, 42)
+        XCTAssertEqual(response.path, "Old Name")
+        XCTAssertEqual(response.name, "New Name")
+    }
+
+    func testMutationMethodsPropagateTransmissionErrors() async throws {
+        let sender = QueueSender(steps: [
+            .http(statusCode: 200, body: #"{"result":"queue move failed","arguments":{}}"#)
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        await assertThrowsTransmissionError(.rpcFailure(expectedResult: "queue move failed")) {
+            try await connection.queueMove(.top, ids: [1, 2])
+        }
+    }
+}
+
+private extension CapturedRequest {
+    func asURLRequest() -> URLRequest {
+        var request = URLRequest(url: url ?? URL(string: "https://example.com")!)
+        request.httpMethod = httpMethod
+        request.httpBody = body
+        return request
+    }
+}
+
+private func requestArguments(from request: CapturedRequest) throws -> [String: Any] {
+    let body = try XCTUnwrap(request.body)
+    let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+    return try XCTUnwrap(object["arguments"] as? [String: Any])
 }

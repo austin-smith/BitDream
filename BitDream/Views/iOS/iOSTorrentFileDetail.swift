@@ -66,6 +66,8 @@ struct iOSTorrentFileDetail: View {
     // Multi-select state
     @State private var isEditing = false
     @State private var selectedFileIds: Set<String> = []
+    @State private var showingError = false
+    @State private var errorMessage = ""
 
     private var fileRows: [TorrentFileRow] {
         let processedFiles = processFilesForDisplay(files, stats: mutableFileStats.isEmpty ? fileStats : mutableFileStats)
@@ -164,7 +166,11 @@ struct iOSTorrentFileDetail: View {
                     store: store,
                     updateFileStatus: updateLocalFileStatus,
                     updateFilePriority: updateLocalFilePriority,
-                    revertData: revertToOriginalData
+                    revertData: revertToOriginalData,
+                    onError: makeTransmissionBindingErrorHandler(
+                        isPresented: $showingError,
+                        message: $errorMessage
+                    )
                 )
             }
         }
@@ -196,6 +202,10 @@ struct iOSTorrentFileDetail: View {
         .onAppear {
             mutableFileStats = fileStats
         }
+        .onChange(of: fileStats) { _, newValue in
+            mutableFileStats = newValue
+        }
+        .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
     }
 
     // MARK: - File Operations
@@ -203,33 +213,39 @@ struct iOSTorrentFileDetail: View {
     private func setFileWanted(_ row: TorrentFileRow, wanted: Bool) {
         updateLocalFileStatus(fileIndex: row.fileIndex, wanted: wanted)
 
-        Task { @MainActor in
-            let response = await FileActionExecutor.setWanted(
-                torrentId: torrentId,
-                fileIndices: [row.fileIndex],
-                store: store,
-                wanted: wanted
-            )
-            if response != .success {
+        performTransmissionAction(
+            operation: {
+                try await store.setFileWantedStatus(
+                    torrentId: torrentId,
+                    fileIndices: [row.fileIndex],
+                    wanted: wanted
+                )
+            },
+            onError: { message in
                 revertToOriginalData()
+                errorMessage = message
+                showingError = true
             }
-        }
+        )
     }
 
     private func setFilePriority(_ row: TorrentFileRow, priority: FilePriority) {
         updateLocalFilePriority(fileIndex: row.fileIndex, priority: priority)
 
-        Task { @MainActor in
-            let response = await FileActionExecutor.setPriority(
-                torrentId: torrentId,
-                fileIndices: [row.fileIndex],
-                store: store,
-                priority: priority
-            )
-            if response != .success {
+        performTransmissionAction(
+            operation: {
+                try await store.setFilePriority(
+                    torrentId: torrentId,
+                    fileIndices: [row.fileIndex],
+                    priority: priority
+                )
+            },
+            onError: { message in
                 revertToOriginalData()
+                errorMessage = message
+                showingError = true
             }
-        }
+        )
     }
 
     // MARK: - Optimistic Updates
@@ -268,6 +284,7 @@ struct BulkActionToolbar: View {
     let updateFileStatus: (Int, Bool) -> Void
     let updateFilePriority: (Int, FilePriority) -> Void
     let revertData: () -> Void
+    let onError: @MainActor @Sendable (String) -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -337,18 +354,19 @@ struct BulkActionToolbar: View {
             updateFilePriority(fileIndex, priority)
         }
 
-        let info = makeConfig(store: store)
-        setFilePriority(
-            torrentId: torrentId,
-            fileIndices: fileIndices,
-            priority: priority,
-            info: info
-        ) { response in
-            if response != .success {
-                // Revert on failure
+        performTransmissionAction(
+            operation: {
+                try await store.setFilePriority(
+                    torrentId: torrentId,
+                    fileIndices: fileIndices,
+                    priority: priority
+                )
+            },
+            onError: { message in
                 revertData()
+                onError(message)
             }
-        }
+        )
     }
 
     private func setBulkWanted(_ wanted: Bool) {
@@ -360,18 +378,19 @@ struct BulkActionToolbar: View {
             updateFileStatus(fileIndex, wanted)
         }
 
-        let info = makeConfig(store: store)
-        setFileWantedStatus(
-            torrentId: torrentId,
-            fileIndices: fileIndices,
-            wanted: wanted,
-            info: info
-        ) { response in
-            if response != .success {
-                // Revert on failure
+        performTransmissionAction(
+            operation: {
+                try await store.setFileWantedStatus(
+                    torrentId: torrentId,
+                    fileIndices: fileIndices,
+                    wanted: wanted
+                )
+            },
+            onError: { message in
                 revertData()
+                onError(message)
             }
-        }
+        )
     }
 }
 

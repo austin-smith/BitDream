@@ -31,44 +31,6 @@ func statusColor(for torrent: Torrent) -> Color {
     }
 }
 
-// Shared function to fetch torrent files
-@MainActor
-func fetchTorrentFiles(transferId: Int, store: TransmissionStore, completion: @escaping ([TorrentFile], [TorrentFileStats]) -> Void) {
-    let info = makeConfig(store: store)
-
-    getTorrentFiles(transferId: transferId, info: info, onReceived: { files, fileStats in
-        completion(files, fileStats)
-    })
-}
-
-// Shared function to fetch torrent peers
-@MainActor
-func fetchTorrentPeers(transferId: Int, store: TransmissionStore, completion: @escaping ([Peer], PeersFrom?) -> Void) {
-    let info = makeConfig(store: store)
-
-    getTorrentPeers(transferId: transferId, info: info, onReceived: { peers, peersFrom in
-        completion(peers, peersFrom)
-    })
-}
-
-// Shared function to play/pause a torrent
-@MainActor
-func toggleTorrentPlayPause(torrent: Torrent, store: TransmissionStore, completion: @escaping () -> Void = {}) {
-    let info = makeConfig(store: store)
-    playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
-        handleTransmissionResponse(response,
-            onSuccess: {
-                completion()
-            },
-            onError: { _ in
-                // For play/pause operations, we'll silently fail and still call completion
-                // since the UI should update regardless to reflect current state
-                completion()
-            }
-        )
-    })
-}
-
 struct TorrentDetailsDisplay {
     let percentComplete: String
     let percentAvailable: String
@@ -157,7 +119,15 @@ struct TorrentDetailToolbar: ToolbarContent {
         ToolbarItem {
             Menu {
                 Button(action: {
-                    toggleTorrentPlayPause(torrent: torrent, store: store)
+                    performTransmissionAction(
+                        operation: { try await store.toggleTorrentPlayback(torrent) },
+                        onError: makeTransmissionDebugErrorHandler(
+                            store: store,
+                            context: torrent.status == TorrentStatus.stopped.rawValue
+                                ? .resumeTorrents
+                                : .pauseTorrents
+                        )
+                    )
                 }, label: {
                     HStack {
                         Text(torrent.status == TorrentStatus.stopped.rawValue ? "Resume Dream" : "Pause Dream")

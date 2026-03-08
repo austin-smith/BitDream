@@ -10,6 +10,11 @@ enum AddTorrentInitialMode {
 }
 #endif
 
+internal struct TransmissionTorrentLabelsUpdate: Sendable {
+    let ids: [Int]
+    let labels: [String]
+}
+
 @MainActor
 final class TransmissionStore: NSObject, ObservableObject {
     private struct ActiveConnection: Sendable {
@@ -281,6 +286,202 @@ extension TransmissionStore {
         try ensureCurrent(connectionState)
         _ = try await refreshSessionConfiguration(for: connectionState)
         return response
+    }
+
+    func addTorrent(magnetLink: String, saveLocation: String) async throws -> TransmissionTorrentAddOutcome {
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.addTorrent(
+                fileURL: magnetLink,
+                saveLocation: saveLocation,
+                isTorrentFile: false
+            )
+        }
+    }
+
+    func addTorrent(fileData: Data, saveLocation: String) async throws -> TransmissionTorrentAddOutcome {
+        let fileStream = fileData.base64EncodedString(options: [])
+
+        return try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.addTorrent(
+                fileURL: fileStream,
+                saveLocation: saveLocation,
+                isTorrentFile: true
+            )
+        }
+    }
+
+    func loadTorrentDetail(id: Int) async throws -> TransmissionTorrentDetailSnapshot {
+        try await performConnectionOperation { connectionState in
+            try await connectionState.connection.fetchTorrentDetailSnapshot(id: id)
+        }
+    }
+
+    func removeTorrents(ids: [Int], deleteLocalData: Bool) async throws {
+        guard !ids.isEmpty else { return }
+
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.removeTorrents(
+                ids: ids,
+                deleteLocalData: deleteLocalData
+            )
+        }
+    }
+
+    func toggleTorrentPlayback(_ torrent: Torrent) async throws {
+        if torrent.status == TorrentStatus.stopped.rawValue {
+            try await resumeTorrents(ids: [torrent.id])
+        } else {
+            try await pauseTorrents(ids: [torrent.id])
+        }
+    }
+
+    func pauseTorrents(ids: [Int]) async throws {
+        guard !ids.isEmpty else { return }
+
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.pauseTorrents(ids: ids)
+        }
+    }
+
+    func resumeTorrents(ids: [Int]) async throws {
+        guard !ids.isEmpty else { return }
+
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.resumeTorrents(ids: ids)
+        }
+    }
+
+    func pauseAllTorrents() async throws {
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.pauseAllTorrents()
+        }
+    }
+
+    func resumeAllTorrents() async throws {
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.resumeAllTorrents()
+        }
+    }
+
+    func startTorrentsNow(ids: [Int]) async throws {
+        guard !ids.isEmpty else { return }
+
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.startTorrentsNow(ids: ids)
+        }
+    }
+
+    func reannounceTorrents(ids: [Int]) async throws {
+        guard !ids.isEmpty else { return }
+
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.reannounceTorrents(ids: ids)
+        }
+    }
+
+    func verifyTorrents(ids: [Int]) async throws {
+        guard !ids.isEmpty else { return }
+
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.verifyTorrents(ids: ids)
+        }
+    }
+
+    func moveTorrentsInQueue(_ direction: TransmissionTorrentQueueMoveDirection, ids: [Int]) async throws {
+        guard !ids.isEmpty else { return }
+
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.queueMove(direction, ids: ids)
+        }
+    }
+
+    func updateTorrentPriority(ids: [Int], priority: TorrentPriority) async throws {
+        guard !ids.isEmpty else { return }
+
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.setTorrentPriority(ids: ids, priority: priority)
+        }
+    }
+
+    func updateTorrentLabels(_ updates: [TransmissionTorrentLabelsUpdate]) async throws {
+        let nonEmptyUpdates = updates.filter { !$0.ids.isEmpty }
+        guard !nonEmptyUpdates.isEmpty else { return }
+
+        let connectionState = try requireActiveConnection()
+        var appliedAnyUpdate = false
+
+        do {
+            for update in nonEmptyUpdates {
+                try await connectionState.connection.setTorrentLabels(
+                    ids: update.ids,
+                    labels: update.labels
+                )
+                appliedAnyUpdate = true
+            }
+
+            try ensureCurrent(connectionState)
+            requestRefresh()
+        } catch {
+            if appliedAnyUpdate, (try? ensureCurrent(connectionState)) != nil {
+                requestRefresh()
+            }
+
+            throw error
+        }
+    }
+
+    func setTorrentLocation(ids: [Int], location: String, move: Bool) async throws {
+        guard !ids.isEmpty else { return }
+
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.setTorrentLocation(
+                ids: ids,
+                location: location,
+                move: move
+            )
+        }
+    }
+
+    func renameTorrentRoot(_ torrent: Torrent, to newName: String) async throws -> TorrentRenameResponseArgs {
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.renameTorrentPath(
+                torrentID: torrent.id,
+                path: torrent.name,
+                newName: newName
+            )
+        }
+    }
+
+    func setFileWantedStatus(
+        torrentId: Int,
+        fileIndices: [Int],
+        wanted: Bool
+    ) async throws {
+        guard !fileIndices.isEmpty else { return }
+
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.setFileWantedStatus(
+                torrentID: torrentId,
+                fileIndices: fileIndices,
+                wanted: wanted
+            )
+        }
+    }
+
+    func setFilePriority(
+        torrentId: Int,
+        fileIndices: [Int],
+        priority: FilePriority
+    ) async throws {
+        guard !fileIndices.isEmpty else { return }
+
+        try await performConnectionOperation(refreshOnSuccess: true) { connectionState in
+            try await connectionState.connection.setFilePriority(
+                torrentID: torrentId,
+                fileIndices: fileIndices,
+                priority: priority
+            )
+        }
     }
 
     func clearReconnectPresentationState() {
@@ -652,10 +853,23 @@ extension TransmissionStore {
 
     private func requireActiveConnection() throws -> ActiveConnection {
         guard let activeConnection else {
-            throw CancellationError()
+            throw TransmissionError.invalidEndpointConfiguration
         }
 
         return activeConnection
+    }
+
+    private func performConnectionOperation<Result: Sendable>(
+        refreshOnSuccess: Bool = false,
+        operation: (ActiveConnection) async throws -> Result
+    ) async throws -> Result {
+        let connectionState = try requireActiveConnection()
+        let result = try await operation(connectionState)
+        try ensureCurrent(connectionState)
+        if refreshOnSuccess {
+            requestRefresh()
+        }
+        return result
     }
 
     private func ensureCurrent(_ connectionState: ActiveConnection) throws {

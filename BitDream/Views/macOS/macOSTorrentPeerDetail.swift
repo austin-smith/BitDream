@@ -8,7 +8,7 @@ struct macOSTorrentPeerDetail: View {
     let store: TransmissionStore
     let peers: [Peer]
     let peersFrom: PeersFrom?
-    let onRefresh: () -> Void
+    let onRefresh: @MainActor () async -> Void
     let onDone: () -> Void
 
     var body: some View {
@@ -28,7 +28,9 @@ struct macOSTorrentPeerDetail: View {
                     }
                     Spacer()
                     HStack(spacing: 8) {
-                        Button(action: onRefresh) {
+                        Button {
+                            Task { await onRefresh() }
+                        } label: {
                             Label("Refresh", systemImage: "arrow.clockwise")
                         }
                         Button("Done", action: onDone)
@@ -50,7 +52,11 @@ struct macOSTorrentPeerDetail: View {
                 VStack(spacing: 12) {
                     Text("No peers yet")
                         .foregroundColor(.secondary)
-                    Button(action: onRefresh) { Label("Refresh", systemImage: "arrow.clockwise") }
+                    Button {
+                        Task { await onRefresh() }
+                    } label: {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -100,7 +106,7 @@ struct macOSTorrentPeerDetail: View {
     let store: TransmissionStore
     let peers: [Peer]
     let peersFrom: PeersFrom?
-    let onRefresh: () -> Void
+    let onRefresh: @MainActor () async -> Void
     let onDone: () -> Void
     var body: some View { EmptyView() }
 }

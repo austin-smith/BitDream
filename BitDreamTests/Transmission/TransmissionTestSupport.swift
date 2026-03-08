@@ -15,6 +15,13 @@ let successStatsBody = """
 }
 """
 
+let successEmptyBody = """
+{
+  "arguments": {},
+  "result": "success"
+}
+"""
+
 func makeConfig() -> TransmissionConfig {
     var config = TransmissionConfig()
     config.scheme = "http"

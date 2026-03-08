@@ -67,13 +67,15 @@ struct LabelEditView: View {
     var store: TransmissionStore
     let selectedTorrents: Set<Torrent>
     @Binding var shouldSave: Bool
+    let onError: @MainActor @Sendable (String) -> Void
 
     init(
         labelInput: Binding<String>,
         existingLabels: [String],
         store: TransmissionStore,
         selectedTorrents: Set<Torrent>,
-        shouldSave: Binding<Bool>
+        shouldSave: Binding<Bool>,
+        onError: @escaping @MainActor @Sendable (String) -> Void
     ) {
         self._labelInput = labelInput
         self.existingLabels = existingLabels
@@ -81,6 +83,7 @@ struct LabelEditView: View {
         self.store = store
         self.selectedTorrents = selectedTorrents
         self._shouldSave = shouldSave
+        self.onError = onError
     }
 
     private func saveAndDismiss() {
@@ -92,22 +95,33 @@ struct LabelEditView: View {
 
         if selectedTorrents.count == 1 {
             let torrent = selectedTorrents.first!
-            saveTorrentLabels(torrentId: torrent.id, labels: workingLabels, store: store) {
-                dismiss()
-            }
+            let sortedLabels = Array(workingLabels).sorted()
+            performTransmissionAction(
+                operation: {
+                    try await store.updateTorrentLabels([
+                        TransmissionTorrentLabelsUpdate(ids: [torrent.id], labels: sortedLabels)
+                    ])
+                },
+                onSuccess: {
+                    dismiss()
+                },
+                onError: onError
+            )
         } else {
-            let info = makeConfig(store: store)
-            for torrent in selectedTorrents {
-                let mergedLabels = Set(torrent.labels).union(workingLabels)
-                let sortedLabels = Array(mergedLabels).sorted()
-                updateTorrent(
-                    args: TorrentSetRequestArgs(ids: [torrent.id], labels: sortedLabels),
-                    info: info,
-                    onComplete: { _ in }
+            let updates = selectedTorrents.map { torrent in
+                TransmissionTorrentLabelsUpdate(
+                    ids: [torrent.id],
+                    labels: Array(Set(torrent.labels).union(workingLabels)).sorted()
                 )
             }
-            store.requestRefresh()
-            dismiss()
+
+            performTransmissionAction(
+                operation: { try await store.updateTorrentLabels(updates) },
+                onSuccess: {
+                    dismiss()
+                },
+                onError: onError
+            )
         }
     }
 
@@ -209,22 +223,25 @@ struct MoveSheetContent: View {
                 Button("Cancel") { isPresented = false }
                     .keyboardShortcut(.cancelAction)
                 Button("Set Location") {
-                    let info = makeConfig(store: store)
                     let ids = Array(selectedTorrents.map(\.id))
-                    let args = TorrentSetLocationRequestArgs(
-                        ids: ids,
-                        location: movePath.trimmingCharacters(in: .whitespacesAndNewlines),
-                        move: moveShouldMove
-                    )
-                    setTorrentLocation(args: args, info: info) { response in
-                        handleTransmissionResponse(response, onSuccess: {
-                            store.requestRefresh()
+                    let location = movePath.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                    performTransmissionAction(
+                        operation: {
+                            try await store.setTorrentLocation(
+                                ids: ids,
+                                location: location,
+                                move: moveShouldMove
+                            )
+                        },
+                        onSuccess: {
                             isPresented = false
-                        }, onError: { error in
-                            errorMessage = error
-                            showingError = true
-                        })
-                    }
+                        },
+                        onError: makeTransmissionBindingErrorHandler(
+                            isPresented: $showingError,
+                            message: $errorMessage
+                        )
+                    )
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)

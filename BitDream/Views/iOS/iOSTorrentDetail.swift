@@ -67,12 +67,7 @@ struct iOSTorrentDetail: View {
                                 store: store,
                                 peers: peers,
                                 peersFrom: peersFrom,
-                                onRefresh: {
-                                    fetchTorrentPeers(transferId: torrent.id, store: store) { fetchedPeers, fetchedFrom in
-                                        peers = fetchedPeers
-                                        peersFrom = fetchedFrom
-                                    }
-                                },
+                                onRefresh: { await loadSupplementalData(for: torrent.id) },
                                 onDone: { /* no-op in push */ }
                             )
                             .navigationBarTitleDisplayMode(.inline)
@@ -169,26 +164,8 @@ struct iOSTorrentDetail: View {
                     })
                 }
             }
-            .onAppear {
-                // Use shared function to fetch files
-                fetchTorrentFiles(transferId: torrent.id, store: store) { fetchedFiles, fetchedStats in
-                    files = fetchedFiles
-                    fileStats = fetchedStats
-                }
-                // Fetch peers initially
-                fetchTorrentPeers(transferId: torrent.id, store: store) { fetchedPeers, fetchedFrom in
-                    peers = fetchedPeers
-                    peersFrom = fetchedFrom
-                }
-                // Fetch pieces
-                let info = makeConfig(store: store)
-                getTorrentPieces(transferId: torrent.id, info: info) { count, size, bitfield in
-                    pieceCount = count
-                    pieceSize = size
-                    piecesBitfield = bitfield
-                    let haveSet = decodePiecesBitfield(base64String: bitfield, pieceCount: count)
-                    piecesHaveCount = haveSet.reduce(0) { $0 + ($1 ? 1 : 0) }
-                }
+            .task(id: torrent.id) {
+                await loadSupplementalData(for: torrent.id)
             }
             .toolbar {
                 // Use shared toolbar
@@ -196,34 +173,12 @@ struct iOSTorrentDetail: View {
             }
             .alert("Delete Torrent", isPresented: $showingDeleteConfirmation) {
                 Button(role: .destructive) {
-                    let info = makeConfig(store: store)
-                    deleteTorrent(torrent: torrent, erase: true, config: info.config, auth: info.auth, onDel: { response in
-                        handleTransmissionResponse(response,
-                            onSuccess: {
-                                dismiss()
-                            },
-                            onError: { errorMessage in
-                                deleteErrorMessage = errorMessage
-                                showingDeleteError = true
-                            }
-                        )
-                    })
+                    performDelete(deleteLocalData: true)
                 } label: {
                     Text("Delete file(s)")
                 }
                 Button("Remove from list only") {
-                    let info = makeConfig(store: store)
-                    deleteTorrent(torrent: torrent, erase: false, config: info.config, auth: info.auth, onDel: { response in
-                        handleTransmissionResponse(response,
-                            onSuccess: {
-                                dismiss()
-                            },
-                            onError: { errorMessage in
-                                deleteErrorMessage = errorMessage
-                                showingDeleteError = true
-                            }
-                        )
-                    })
+                    performDelete(deleteLocalData: false)
                 }
                 Button("Cancel", role: .cancel) { }
             } message: {
@@ -232,6 +187,55 @@ struct iOSTorrentDetail: View {
             .transmissionErrorAlert(isPresented: $showingDeleteError, message: deleteErrorMessage)
         }
 
+    }
+
+    private func performDelete(deleteLocalData: Bool) {
+        performTransmissionAction(
+            operation: {
+                try await store.removeTorrents(
+                    ids: [torrent.id],
+                    deleteLocalData: deleteLocalData
+                )
+            },
+            onSuccess: {
+                dismiss()
+            },
+            onError: makeTransmissionBindingErrorHandler(
+                isPresented: $showingDeleteError,
+                message: $deleteErrorMessage
+            )
+        )
+    }
+
+    @MainActor
+    private func loadSupplementalData(for torrentID: Int) async {
+        guard let snapshot = await performStructuredTransmissionOperation(
+            operation: { try await store.loadTorrentDetail(id: torrentID) },
+            onError: { message in
+                deleteErrorMessage = message
+                showingDeleteError = true
+            }
+        ) else {
+            return
+        }
+
+        apply(snapshot: snapshot)
+    }
+
+    private func apply(snapshot: TransmissionTorrentDetailSnapshot) {
+        files = snapshot.files
+        fileStats = snapshot.fileStats
+        peers = snapshot.peers
+        peersFrom = snapshot.peersFrom
+        pieceCount = snapshot.pieceCount
+        pieceSize = snapshot.pieceSize
+        piecesBitfield = snapshot.piecesBitfieldBase64
+
+        let haveSet = decodePiecesBitfield(
+            base64String: snapshot.piecesBitfieldBase64,
+            pieceCount: snapshot.pieceCount
+        )
+        piecesHaveCount = haveSet.reduce(0) { $0 + ($1 ? 1 : 0) }
     }
 }
 

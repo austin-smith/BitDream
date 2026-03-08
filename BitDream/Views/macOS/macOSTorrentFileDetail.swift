@@ -40,8 +40,44 @@ struct macOSTorrentFileDetail: View {
     @State private var columnVisibility = Set<String>(["name", "size", "progress", "downloaded", "priority", "status"])
     @State private var mutableFileStats: [TorrentFileStats] = []
     @State private var cachedRows: [TorrentFileRow] = []
+    @State private var showingError = false
+    @State private var errorMessage = ""
 
-    private func recomputeRows() {
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header with search and filters
+            HeaderView(viewModel: viewModel)
+                .padding(.horizontal)
+                .padding(.vertical, 12)
+
+            Divider()
+
+            // Table
+            filesTable
+
+            // Footer with file count
+            FooterView(totalCount: cachedRows.count, filteredCount: filteredRows.count)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+        }
+        .frame(minHeight: 300)
+        .onAppear {
+            mutableFileStats = fileStats
+            recomputeRows()
+        }
+        .onChange(of: fileStats) { _, newValue in
+            mutableFileStats = newValue
+            recomputeRows()
+        }
+        .onChange(of: files) { _, _ in
+            recomputeRows()
+        }
+        .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
+    }
+}
+
+private extension macOSTorrentFileDetail {
+    func recomputeRows() {
         let statsToUse = mutableFileStats.isEmpty ? fileStats : mutableFileStats
         let processed = processFilesForDisplay(files, stats: statsToUse)
         cachedRows = processed.map { processed in
@@ -57,15 +93,13 @@ struct macOSTorrentFileDetail: View {
         }
     }
 
-    private var filteredRows: [TorrentFileRow] {
+    var filteredRows: [TorrentFileRow] {
         cachedRows.filter { row in
-            // Search filter
             if !viewModel.searchText.isEmpty {
                 let searchLower = viewModel.searchText.lowercased()
                 if !row.name.lowercased().contains(searchLower) { return false }
             }
 
-            // Priority filters
             let priority = FilePriority(rawValue: row.priority) ?? .normal
             switch priority {
             case .low:
@@ -76,16 +110,13 @@ struct macOSTorrentFileDetail: View {
                 if !viewModel.showHighPriority { return false }
             }
 
-            // Wanted/Skip filter
             if row.wanted && !viewModel.showWantedFiles { return false }
             if !row.wanted && !viewModel.showSkippedFiles { return false }
 
-            // Completion filter
             let isComplete = row.percentDone >= 1.0
             if isComplete && !viewModel.showCompleteFiles { return false }
             if !isComplete && !viewModel.showIncompleteFiles { return false }
 
-            // File type filter
             let fileType = fileTypeCategory(row.name)
             switch fileType {
             case .video: if !viewModel.showVideos { return false }
@@ -102,7 +133,7 @@ struct macOSTorrentFileDetail: View {
         .sorted(using: viewModel.sortOrder)
     }
 
-    private var filesTable: some View {
+    var filesTable: some View {
         Table(filteredRows, selection: $viewModel.selection, sortOrder: $viewModel.sortOrder) {
             TableColumn("") { row in
                 Toggle("", isOn: Binding(
@@ -166,36 +197,36 @@ struct macOSTorrentFileDetail: View {
         .contextMenu(forSelectionType: TorrentFileRow.ID.self) { selection in
             if selection.isEmpty {
                 Button("Select All") {
-                    viewModel.selection = Set(filteredRows.map { $0.id })
+                    viewModel.selection = Set(filteredRows.map(\.id))
                 }
             } else {
                 let selectedRows = filteredRows.filter { selection.contains($0.id) }
 
                 Section("Status") {
                     Toggle("Download", isOn: Binding(
-                        get: { selectedRows.allSatisfy({ $0.wanted }) },
+                        get: { selectedRows.allSatisfy(\.wanted) },
                         set: { _ in setFilesWanted(selectedRows, wanted: true) }
                     ))
 
                     Toggle("Don't Download", isOn: Binding(
-                        get: { selectedRows.allSatisfy({ !$0.wanted }) },
+                        get: { selectedRows.allSatisfy { !$0.wanted } },
                         set: { _ in setFilesWanted(selectedRows, wanted: false) }
                     ))
                 }
 
                 Section("Priority") {
                     Toggle("High", isOn: Binding(
-                        get: { selectedRows.allSatisfy({ $0.priority == FilePriority.high.rawValue }) },
+                        get: { selectedRows.allSatisfy { $0.priority == FilePriority.high.rawValue } },
                         set: { _ in setFilesPriority(selectedRows, priority: .high) }
                     ))
 
                     Toggle("Normal", isOn: Binding(
-                        get: { selectedRows.allSatisfy({ $0.priority == FilePriority.normal.rawValue }) },
+                        get: { selectedRows.allSatisfy { $0.priority == FilePriority.normal.rawValue } },
                         set: { _ in setFilesPriority(selectedRows, priority: .normal) }
                     ))
 
                     Toggle("Low", isOn: Binding(
-                        get: { selectedRows.allSatisfy({ $0.priority == FilePriority.low.rawValue }) },
+                        get: { selectedRows.allSatisfy { $0.priority == FilePriority.low.rawValue } },
                         set: { _ in setFilesPriority(selectedRows, priority: .low) }
                     ))
                 }
@@ -203,95 +234,77 @@ struct macOSTorrentFileDetail: View {
         }
     }
 
-    var body: some View {
-        VStack(spacing: 0) {
-            // Header with search and filters
-            HeaderView(viewModel: viewModel)
-                .padding(.horizontal)
-                .padding(.vertical, 12)
-
-            Divider()
-
-            // Table
-            filesTable
-
-            // Footer with file count
-            FooterView(totalCount: cachedRows.count, filteredCount: filteredRows.count)
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-        }
-        .frame(minHeight: 300)
-        .onAppear {
-            mutableFileStats = fileStats
-            recomputeRows()
-        }
-    }
-
-    // MARK: - File Operations
-
-    private func setFilesWanted(_ selectedRows: [TorrentFileRow], wanted: Bool) {
-        let fileIndices = selectedRows.map { $0.fileIndex }
-
-        // Snapshot previous stats for revert-on-failure
-        let previousStats: [(index: Int, stats: TorrentFileStats)] = fileIndices.compactMap { idx in
-            guard idx < (mutableFileStats.isEmpty ? fileStats.count : mutableFileStats.count) else { return nil }
-            let current = (mutableFileStats.isEmpty ? fileStats[idx] : mutableFileStats[idx])
-            return (idx, current)
-        }
+    func setFilesWanted(_ selectedRows: [TorrentFileRow], wanted: Bool) {
+        let fileIndices = selectedRows.map(\.fileIndex)
+        let previousStats = snapshotStats(for: fileIndices)
 
         updateLocalFileStatus(selectedRows, wanted: wanted)
 
-        Task { @MainActor in
-            let response = await FileActionExecutor.setWanted(
-                torrentId: torrentId,
-                fileIndices: fileIndices,
-                store: store,
-                wanted: wanted
-            )
-            if response != .success {
-                for (idx, old) in previousStats where idx < mutableFileStats.count {
-                    mutableFileStats[idx] = old
-                }
-                recomputeRows()
+        performTransmissionAction(
+            operation: {
+                try await store.setFileWantedStatus(
+                    torrentId: torrentId,
+                    fileIndices: fileIndices,
+                    wanted: wanted
+                )
+            },
+            onError: { message in
+                revertStats(previousStats)
+                errorMessage = message
+                showingError = true
             }
-        }
+        )
     }
 
-    private func setFilesPriority(_ selectedRows: [TorrentFileRow], priority: FilePriority) {
-        let fileIndices = selectedRows.map { $0.fileIndex }
-
-        // Snapshot previous stats for revert-on-failure
-        let previousStats: [(index: Int, stats: TorrentFileStats)] = fileIndices.compactMap { idx in
-            guard idx < (mutableFileStats.isEmpty ? fileStats.count : mutableFileStats.count) else { return nil }
-            let current = (mutableFileStats.isEmpty ? fileStats[idx] : mutableFileStats[idx])
-            return (idx, current)
-        }
+    func setFilesPriority(_ selectedRows: [TorrentFileRow], priority: FilePriority) {
+        let fileIndices = selectedRows.map(\.fileIndex)
+        let previousStats = snapshotStats(for: fileIndices)
 
         updateLocalFilePriority(selectedRows, priority: priority)
 
-        Task { @MainActor in
-            let response = await FileActionExecutor.setPriority(
-                torrentId: torrentId,
-                fileIndices: fileIndices,
-                store: store,
-                priority: priority
-            )
-            if response != .success {
-                for (idx, old) in previousStats where idx < mutableFileStats.count {
-                    mutableFileStats[idx] = old
-                }
-                recomputeRows()
+        performTransmissionAction(
+            operation: {
+                try await store.setFilePriority(
+                    torrentId: torrentId,
+                    fileIndices: fileIndices,
+                    priority: priority
+                )
+            },
+            onError: { message in
+                revertStats(previousStats)
+                errorMessage = message
+                showingError = true
             }
+        )
+    }
+
+    func snapshotStats(for fileIndices: [Int]) -> [(index: Int, stats: TorrentFileStats)] {
+        fileIndices.compactMap { idx in
+            guard idx < (mutableFileStats.isEmpty ? fileStats.count : mutableFileStats.count) else {
+                return nil
+            }
+            let current = mutableFileStats.isEmpty ? fileStats[idx] : mutableFileStats[idx]
+            return (idx, current)
         }
     }
 
-    private func updateLocalFileStatus(_ selectedRows: [TorrentFileRow], wanted: Bool) {
-        // Update local data optimistically by mutating stats
+    func revertStats(_ previousStats: [(index: Int, stats: TorrentFileStats)]) {
+        for (idx, old) in previousStats where idx < mutableFileStats.count {
+            mutableFileStats[idx] = old
+        }
+        recomputeRows()
+    }
+
+    func updateLocalFileStatus(_ selectedRows: [TorrentFileRow], wanted: Bool) {
         for row in selectedRows {
             let idx = row.fileIndex
             guard idx < (mutableFileStats.isEmpty ? fileStats.count : mutableFileStats.count) else { continue }
             let current = mutableFileStats.isEmpty ? fileStats[idx] : mutableFileStats[idx]
-            let updated = TorrentFileStats(bytesCompleted: current.bytesCompleted, wanted: wanted, priority: current.priority)
+            let updated = TorrentFileStats(
+                bytesCompleted: current.bytesCompleted,
+                wanted: wanted,
+                priority: current.priority
+            )
             if mutableFileStats.isEmpty {
                 mutableFileStats = fileStats
             }
@@ -300,13 +313,16 @@ struct macOSTorrentFileDetail: View {
         recomputeRows()
     }
 
-    private func updateLocalFilePriority(_ selectedRows: [TorrentFileRow], priority: FilePriority) {
-        // Update local data optimistically by mutating stats
+    func updateLocalFilePriority(_ selectedRows: [TorrentFileRow], priority: FilePriority) {
         for row in selectedRows {
             let idx = row.fileIndex
             guard idx < (mutableFileStats.isEmpty ? fileStats.count : mutableFileStats.count) else { continue }
             let current = mutableFileStats.isEmpty ? fileStats[idx] : mutableFileStats[idx]
-            let updated = TorrentFileStats(bytesCompleted: current.bytesCompleted, wanted: current.wanted, priority: priority.rawValue)
+            let updated = TorrentFileStats(
+                bytesCompleted: current.bytesCompleted,
+                wanted: current.wanted,
+                priority: priority.rawValue
+            )
             if mutableFileStats.isEmpty {
                 mutableFileStats = fileStats
             }

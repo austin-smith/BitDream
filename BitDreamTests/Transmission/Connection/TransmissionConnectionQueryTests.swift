@@ -124,6 +124,57 @@ final class TransmissionConnectionQueryTests: XCTestCase {
         XCTAssertEqual(try capturedRequestFields(requests[0]), TransmissionTorrentQuerySpec.torrentPieces(id: 42).fields)
     }
 
+    func testFetchTorrentDetailSnapshotUsesNamedQueriesAndDecodesResponse() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [
+            "torrent-get": [
+                .http(statusCode: 200, body: makeTorrentDetailSuccessBody()),
+                .http(statusCode: 200, body: makeTorrentDetailSuccessBody()),
+                .http(statusCode: 200, body: makeTorrentDetailSuccessBody())
+            ]
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        let snapshot = try await connection.fetchTorrentDetailSnapshot(id: 42)
+
+        XCTAssertEqual(snapshot.files.first?.name, "Ubuntu.iso")
+        XCTAssertEqual(snapshot.fileStats.first?.wanted, true)
+        XCTAssertEqual(snapshot.peers.first?.clientName, "Transmission")
+        XCTAssertEqual(snapshot.pieceCount, 2)
+        XCTAssertEqual(snapshot.piecesBitfieldBase64, "Zm9v")
+
+        let requests = await sender.capturedRequests()
+        XCTAssertEqual(requests.count, 3)
+        let fields = try requests.map(capturedRequestFields)
+        XCTAssertTrue(fields.contains(TransmissionTorrentQuerySpec.torrentFiles(id: 42).fields))
+        XCTAssertTrue(fields.contains(TransmissionTorrentQuerySpec.torrentPeers(id: 42).fields))
+        XCTAssertTrue(fields.contains(TransmissionTorrentQuerySpec.torrentPieces(id: 42).fields))
+    }
+
+    func testFetchTorrentDetailSnapshotPropagatesErrors() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [
+            "torrent-get": [
+                .http(statusCode: 200, body: #"{"result":"server busy","arguments":{}}"#),
+                .http(statusCode: 200, body: #"{"result":"server busy","arguments":{}}"#),
+                .http(statusCode: 200, body: #"{"result":"server busy","arguments":{}}"#)
+            ]
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        await assertThrowsTransmissionError(.rpcFailure(expectedResult: "server busy")) {
+            _ = try await connection.fetchTorrentDetailSnapshot(id: 42)
+        }
+    }
+}
+
+final class TransmissionConnectionSessionQueryTests: XCTestCase {
     func testFetchSessionStatsDecodesResponse() async throws {
         let sender = QueueSender(steps: [
             .http(statusCode: 200, body: successStatsBody)
@@ -307,6 +358,58 @@ private func makeTorrentPeersSuccessBody() -> String {
               "fromPex": 0,
               "fromTracker": 1
             }
+          }
+        ]
+      },
+      "result": "success"
+    }
+    """
+}
+
+private func makeTorrentDetailSuccessBody() -> String {
+    """
+    {
+      "arguments": {
+        "torrents": [
+          {
+            "files": [
+              { "bytesCompleted": 1, "length": 2, "name": "Ubuntu.iso" }
+            ],
+            "fileStats": [
+              { "bytesCompleted": 1, "wanted": true, "priority": 0 }
+            ],
+            "peers": [
+              {
+                "address": "127.0.0.1",
+                "clientName": "Transmission",
+                "clientIsChoked": false,
+                "clientIsInterested": true,
+                "flagStr": "D",
+                "isDownloadingFrom": true,
+                "isEncrypted": false,
+                "isIncoming": false,
+                "isUploadingTo": false,
+                "isUTP": false,
+                "peerIsChoked": false,
+                "peerIsInterested": true,
+                "port": 51413,
+                "progress": 0.5,
+                "rateToClient": 100,
+                "rateToPeer": 200
+              }
+            ],
+            "peersFrom": {
+              "fromCache": 0,
+              "fromDht": 1,
+              "fromIncoming": 0,
+              "fromLpd": 0,
+              "fromLtep": 0,
+              "fromPex": 0,
+              "fromTracker": 1
+            },
+            "pieceCount": 2,
+            "pieceSize": 16384,
+            "pieces": "Zm9v"
           }
         ]
       },

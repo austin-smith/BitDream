@@ -299,7 +299,9 @@ private extension macOSTorrentListCompact {
             selectedTorrents: selectedTorrentsSet,
             labelInput: $labelInput,
             shouldSave: $shouldSave,
-            isPresented: $labelDialog
+            isPresented: $labelDialog,
+            showingError: $showingError,
+            errorMessage: $errorMessage
         )
         .frame(width: 400)
     }

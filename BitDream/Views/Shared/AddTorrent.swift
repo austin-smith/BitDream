@@ -25,39 +25,36 @@ func handleAddTorrentError(_ message: String, errorMessage: Binding<String?>, sh
     showingError.wrappedValue = true
 }
 
-/// Function to add a torrent to the server
-@MainActor
-func addTorrentAction(
-    alertInput: String,
-    downloadDir: String,
-    store: TransmissionStore,
-    errorMessage: Binding<String?>,
-    showingError: Binding<Bool>,
-    onSuccess: (@MainActor () -> Void)? = nil
-) {
-    // Only proceed if we have a magnet link
-    guard !alertInput.isEmpty else { return }
+let addTorrentNoServerConfiguredMessage =
+    "No server configured. Please add or select a server in Settings."
 
-    // Send the magnet link to the server
-    let info = makeConfig(store: store)
-    addTorrent(
-        fileUrl: alertInput,
-        saveLocation: downloadDir,
-        auth: info.auth,
-        file: false,
-        config: info.config,
-        onAdd: { response in
-            if let presentation = TransmissionLegacyCompatibility.presentation(for: response.response) {
-                handleAddTorrentError(
-                    "Failed to add torrent: \(presentation.message)",
-                    errorMessage: errorMessage,
-                    showingError: showingError
-                )
-            } else {
-                onSuccess?()
-            }
-        }
+@MainActor
+func presentAddTorrentSheetError(
+    detail: String,
+    errorMessage: Binding<String?>,
+    showingError: Binding<Bool>
+) {
+    handleAddTorrentError(
+        TransmissionActionFailureContext.addTorrent.inlineMessage(detail: detail),
+        errorMessage: errorMessage,
+        showingError: showingError
     )
+}
+
+@MainActor
+func presentAddTorrentStoreError(
+    detail: String,
+    store: TransmissionStore
+) {
+    #if os(macOS)
+    store.globalAlertTitle = TransmissionActionFailureContext.addTorrent.globalAlertTitle
+    store.globalAlertMessage = TransmissionActionFailureContext.addTorrent.globalAlertMessage(detail: detail)
+    store.showGlobalAlert = true
+    #else
+    store.debugBrief = TransmissionActionFailureContext.addTorrent.debugBrief
+    store.debugMessage = detail
+    store.isError = true
+    #endif
 }
 
 // MARK: - Extensions
@@ -68,52 +65,4 @@ extension UTType {
         ?? UTType(mimeType: "application/x-bittorrent")
         ?? .data
     }
-}
-
-// MARK: - Programmatic Add from .torrent data
-
-/// Adds a torrent by sending a base64-encoded .torrent file to Transmission without presenting UI
-@MainActor
-func addTorrentFromFileData(_ fileData: Data, store: TransmissionStore) {
-    // Ensure server is configured; surface an error instead of silently returning
-    guard store.host != nil else {
-        #if os(macOS)
-        store.globalAlertTitle = "Error"
-        store.globalAlertMessage = "Failed to add torrent\n\nNo server configured. Please add or select a server in Settings."
-        store.showGlobalAlert = true
-        #else
-        store.debugBrief = "Failed to add torrent"
-        store.debugMessage = "No server configured. Please add or select a server in Settings."
-        store.isError = true
-        #endif
-        return
-    }
-
-    let fileStream = fileData.base64EncodedString(options: [])
-    let info = makeConfig(store: store)
-
-    addTorrent(
-        fileUrl: fileStream,
-        saveLocation: store.defaultDownloadDir,
-        auth: info.auth,
-        file: true,
-        config: info.config,
-        onAdd: { response in
-            handleTransmissionResponse(
-                response.response,
-                onSuccess: {},
-                onError: { message in
-                    #if os(macOS)
-                    store.globalAlertTitle = "Error"
-                    store.globalAlertMessage = "Failed to add torrent\n\n\(message)"
-                    store.showGlobalAlert = true
-                    #else
-                    store.debugBrief = "Failed to add torrent"
-                    store.debugMessage = message
-                    store.isError = true
-                    #endif
-                }
-            )
-        }
-    )
 }

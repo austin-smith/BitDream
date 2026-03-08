@@ -336,25 +336,17 @@ private extension macOSContentView {
     }
 
     func removeSelectedTorrentsFromMenu(deleteData: Bool) {
-        let selected = Array(selectedTorrents)
-        guard !selected.isEmpty else { return }
+        let ids = Array(selectedTorrents.map(\.id))
+        guard !ids.isEmpty else { return }
 
-        let info = makeConfig(store: store)
-
-        for torrent in selected {
-            deleteTorrent(torrent: torrent, erase: deleteData, config: info.config, auth: info.auth) { response in
-                handleTransmissionResponse(response,
-                    onSuccess: {},
-                    onError: { error in
-                        store.debugBrief = "Failed to remove torrent"
-                        store.debugMessage = error
-                        store.isError = true
-                    }
-                )
+        performTransmissionDebugAction(
+            .removeTorrents,
+            store: store,
+            operation: { try await store.removeTorrents(ids: ids, deleteLocalData: deleteData) },
+            onSuccess: {
+                selectedTorrentIds.removeAll()
             }
-        }
-
-        selectedTorrentIds.removeAll()
+        )
     }
 
     func handleSearchTextChange(oldValue: String, newValue: String) {

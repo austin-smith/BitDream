@@ -28,14 +28,7 @@ struct iOSAddTorrent: View {
                     }
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button("Add") {
-                            addTorrentAction(
-                                alertInput: alertInput,
-                                downloadDir: downloadDir,
-                                store: store,
-                                errorMessage: $errorMessage,
-                                showingError: $showingError,
-                                onSuccess: { dismiss() }
-                            )
+                            submitMagnetTorrent()
                         }
                         .keyboardShortcut(.defaultAction)
                         .disabled(alertInput.isEmpty)
@@ -60,14 +53,7 @@ struct iOSAddTorrent: View {
                     .disableAutocorrection(true)
                     .submitLabel(.done)
                     .onSubmit {
-                        addTorrentAction(
-                            alertInput: alertInput,
-                            downloadDir: downloadDir,
-                            store: store,
-                            errorMessage: $errorMessage,
-                            showingError: $showingError,
-                            onSuccess: { dismiss() }
-                        )
+                        submitMagnetTorrent()
                     }
             }
 
@@ -85,6 +71,28 @@ struct iOSAddTorrent: View {
     }
 
     // MARK: - Actions
-    // Using shared implementations from AddTorrent.swift
+
+    private func submitMagnetTorrent() {
+        guard !alertInput.isEmpty else { return }
+
+        performTransmissionAction(
+            operation: {
+                try await store.addTorrent(
+                    magnetLink: alertInput,
+                    saveLocation: downloadDir
+                )
+            },
+            onSuccess: { (_: TransmissionTorrentAddOutcome) in
+                dismiss()
+            },
+            onError: { message in
+                presentAddTorrentSheetError(
+                    detail: message,
+                    errorMessage: $errorMessage,
+                    showingError: $showingError
+                )
+            }
+        )
+    }
 }
 #endif

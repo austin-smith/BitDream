@@ -147,17 +147,17 @@ struct iOSTorrentListRow: View {
     }
 
     private func togglePlayback() {
-        let info = makeConfig(store: store)
-        playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth) { response in
-            handleTransmissionResponse(response, onSuccess: {}, onError: presentError)
-        }
+        performTransmissionAction(
+            operation: { try await store.toggleTorrentPlayback(torrent) },
+            onError: presentError
+        )
     }
 
     private func performDelete(erase: Bool) {
-        let info = makeConfig(store: store)
-        deleteTorrent(torrent: torrent, erase: erase, config: info.config, auth: info.auth) { response in
-            handleTransmissionResponse(response, onSuccess: {}, onError: presentError)
-        }
+        performTransmissionAction(
+            operation: { try await store.removeTorrents(ids: [torrent.id], deleteLocalData: erase) },
+            onError: presentError
+        )
     }
 
     private func showRenameDialog() {
@@ -184,7 +184,7 @@ private struct IOSTorrentActionsMenu: View {
     let onShowRename: () -> Void
     let onShowLabels: () -> Void
     let onShowDelete: () -> Void
-    let onError: (String) -> Void
+    let onError: @MainActor @Sendable (String) -> Void
 
     var body: some View {
         playbackSection
@@ -201,7 +201,7 @@ private struct IOSTorrentActionsMenu: View {
         }
         Divider()
         Button("Ask For More Peers", systemImage: "arrow.left.arrow.right") {
-            reAnnounceToTrackers(torrent: torrent, store: store)
+            reannounce()
         }
         Button("Verify Local Data", systemImage: "checkmark.arrow.trianglehead.counterclockwise") {
             verifyTorrentAction()
@@ -221,7 +221,7 @@ private struct IOSTorrentActionsMenu: View {
 
             if torrent.status == TorrentStatus.stopped.rawValue {
                 Button("Resume Now", systemImage: "play.fill") {
-                    resumeTorrentNow(torrent: torrent, store: store)
+                    resumeNow()
                 }
             }
         }
@@ -259,58 +259,61 @@ private struct IOSTorrentActionsMenu: View {
     }
 
     private func togglePlayback() {
-        let info = makeConfig(store: store)
-        playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth) { response in
-            handleResponse(response)
+        runAction {
+            try await store.toggleTorrentPlayback(torrent)
         }
     }
 
     private func updatePriority(_ priority: TorrentPriority) {
-        let info = makeConfig(store: store)
-        updateTorrent(
-            args: TorrentSetRequestArgs(ids: [torrent.id], priority: priority),
-            info: info,
-            onComplete: { _ in }
-        )
+        runAction {
+            try await store.updateTorrentPriority(ids: [torrent.id], priority: priority)
+        }
     }
 
     private func queueMoveTopAction() {
-        let info = makeConfig(store: store)
-        queueMoveTop(ids: [torrent.id], info: info) { response in
-            handleResponse(response)
+        runAction {
+            try await store.moveTorrentsInQueue(.top, ids: [torrent.id])
         }
     }
 
     private func queueMoveUpAction() {
-        let info = makeConfig(store: store)
-        queueMoveUp(ids: [torrent.id], info: info) { response in
-            handleResponse(response)
+        runAction {
+            try await store.moveTorrentsInQueue(.upward, ids: [torrent.id])
         }
     }
 
     private func queueMoveDownAction() {
-        let info = makeConfig(store: store)
-        queueMoveDown(ids: [torrent.id], info: info) { response in
-            handleResponse(response)
+        runAction {
+            try await store.moveTorrentsInQueue(.downward, ids: [torrent.id])
         }
     }
 
     private func queueMoveBottomAction() {
-        let info = makeConfig(store: store)
-        queueMoveBottom(ids: [torrent.id], info: info) { response in
-            handleResponse(response)
+        runAction {
+            try await store.moveTorrentsInQueue(.bottom, ids: [torrent.id])
         }
     }
 
     private func verifyTorrentAction() {
-        let info = makeConfig(store: store)
-        verifyTorrent(torrent: torrent, config: info.config, auth: info.auth) { response in
-            handleResponse(response)
+        runAction {
+            try await store.verifyTorrents(ids: [torrent.id])
         }
     }
 
-    private func handleResponse(_ response: TransmissionResponse) {
-        handleTransmissionResponse(response, onSuccess: {}, onError: onError)
+    private func resumeNow() {
+        runAction {
+            try await store.startTorrentsNow(ids: [torrent.id])
+        }
+    }
+
+    private func reannounce() {
+        runAction {
+            try await store.reannounceTorrents(ids: [torrent.id])
+        }
+    }
+
+    private func runAction(_ operation: @escaping @MainActor () async throws -> Void) {
+        performTransmissionAction(operation: operation, onError: onError)
     }
 }
 
@@ -320,7 +323,7 @@ private struct IOSTorrentRenameSheet: View {
     let store: TransmissionStore
     @Binding var renameInput: String
     @Binding var isPresented: Bool
-    let onError: (String) -> Void
+    let onError: @MainActor @Sendable (String) -> Void
 
     private var trimmedRenameInput: String {
         renameInput.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -361,13 +364,13 @@ private struct IOSTorrentRenameSheet: View {
     private func saveRename() {
         guard isRenameValid else { return }
         let nameToSave = trimmedRenameInput
-        renameTorrentRoot(torrent: torrent, to: nameToSave, store: store) { error in
-            if let error {
-                onError(error)
-            } else {
+        performTransmissionAction(
+            operation: { try await store.renameTorrentRoot(torrent, to: nameToSave) },
+            onSuccess: { (_: TorrentRenameResponseArgs) in
                 isPresented = false
-            }
-        }
+            },
+            onError: onError
+        )
     }
 }
 
@@ -378,7 +381,7 @@ private struct IOSTorrentMoveSheet: View {
     @Binding var movePath: String
     @Binding var moveShouldMove: Bool
     @Binding var isPresented: Bool
-    let onError: (String) -> Void
+    let onError: @MainActor @Sendable (String) -> Void
 
     private var isMoveDisabled: Bool {
         movePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -425,18 +428,21 @@ private struct IOSTorrentMoveSheet: View {
     }
 
     private func setLocation() {
-        let info = makeConfig(store: store)
-        let args = TorrentSetLocationRequestArgs(
-            ids: [torrent.id],
-            location: movePath.trimmingCharacters(in: .whitespacesAndNewlines),
-            move: moveShouldMove
-        )
-        setTorrentLocation(args: args, info: info) { response in
-            handleTransmissionResponse(response, onSuccess: {
-                store.requestRefresh()
+        let location = movePath.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        performTransmissionAction(
+            operation: {
+                try await store.setTorrentLocation(
+                    ids: [torrent.id],
+                    location: location,
+                    move: moveShouldMove
+                )
+            },
+            onSuccess: {
                 isPresented = false
-            }, onError: onError)
-        }
+            },
+            onError: onError
+        )
     }
 }
 
@@ -447,6 +453,8 @@ struct iOSLabelEditView: View {
     @State private var newTagInput: String = ""
     @FocusState private var isInputFocused: Bool
     @Environment(\.dismiss) private var dismiss
+    @State private var showingError = false
+    @State private var errorMessage = ""
     var store: TransmissionStore
     var torrentId: Int
 
@@ -470,10 +478,22 @@ struct iOSLabelEditView: View {
         }
 
         labelInput = workingLabels.joined(separator: ", ")
+        let sortedLabels = Array(workingLabels).sorted()
 
-        saveTorrentLabels(torrentId: torrentId, labels: workingLabels, store: store) {
-            dismiss()
-        }
+        performTransmissionAction(
+            operation: {
+                try await store.updateTorrentLabels([
+                    TransmissionTorrentLabelsUpdate(ids: [torrentId], labels: sortedLabels)
+                ])
+            },
+            onSuccess: {
+                dismiss()
+            },
+            onError: { message in
+                errorMessage = message
+                showingError = true
+            }
+        )
     }
 
     var body: some View {
@@ -529,6 +549,7 @@ struct iOSLabelEditView: View {
         }
         .navigationTitle("Edit Labels")
         .navigationBarTitleDisplayMode(.inline)
+        .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
