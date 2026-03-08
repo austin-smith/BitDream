@@ -24,6 +24,11 @@ final class TransmissionStore: NSObject, ObservableObject {
         let generation: UUID
     }
 
+    private struct ActivationFailure: Sendable {
+        let generation: UUID
+        let error: TransmissionError
+    }
+
     private enum ConnectionAttemptReason {
         case hostSelection
         case hostConfigurationChange
@@ -132,6 +137,7 @@ final class TransmissionStore: NSObject, ObservableObject {
     private let persistVersion: @MainActor @Sendable (String, String) async -> Void
 
     private var activeConnection: ActiveConnection?
+    private var activationFailure: ActivationFailure?
     private var currentConnectionGeneration = UUID()
     private var activationTask: Task<Void, Never>?
     private var fullRefreshTask: Task<Void, Never>?
@@ -665,6 +671,7 @@ extension TransmissionStore {
             resetReconnectBackoff()
         }
 
+        activationFailure = nil
         torrents = []
         sessionStats = nil
         sessionConfiguration = nil
@@ -691,9 +698,22 @@ extension TransmissionStore {
                 connection: connection,
                 generation: generation
             )
+            activationFailure = nil
             activeConnection = connectionState
             await performFullRefresh(for: connectionState)
         } catch {
+            let transmissionError = TransmissionErrorResolver.transmissionError(from: error)
+            if case .cancelled = transmissionError {
+                return
+            }
+
+            if isCurrentGeneration(generation, hostID: host.serverID) {
+                activationFailure = ActivationFailure(
+                    generation: generation,
+                    error: transmissionError
+                )
+            }
+
             handleReadError(error, generation: generation)
         }
     }
@@ -872,6 +892,11 @@ extension TransmissionStore {
 
             guard isCurrentGeneration(waitingGeneration, hostID: waitingHostID) else {
                 throw CancellationError()
+            }
+
+            if let activationFailure,
+               activationFailure.generation == waitingGeneration {
+                throw activationFailure.error
             }
 
             guard let activeConnection else {

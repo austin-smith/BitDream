@@ -181,6 +181,44 @@ final class TransmissionStoreSessionOperationTests: XCTestCase {
             XCTAssertNil(TransmissionUserFacingError.presentation(for: error))
         }
     }
+
+    func testWaitingOperationSurfacesCurrentActivationFailure() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [:])
+        let sleepController = ScriptedSleep(steps: [.suspend])
+        let store = makeStore(
+            sender: sender,
+            sleepController: sleepController,
+            resolveConnection: { descriptor, _ in
+                guard descriptor.host == "example.com" else {
+                    throw TransmissionError.invalidEndpointConfiguration
+                }
+                throw TransmissionError.unauthorized
+            }
+        )
+        var args = TransmissionSessionSetRequestArgs()
+        args.downloadDir = "/downloads/updated"
+
+        store.setHost(host: makeHost(serverID: "server-1", server: "example.com"))
+
+        do {
+            _ = try await store.applySessionSettings(args)
+            XCTFail("Expected waiting operation to surface activation failure")
+        } catch let error as TransmissionError {
+            guard case .unauthorized = error else {
+                return XCTFail("Expected unauthorized error, got \(error)")
+            }
+            let presentation = try XCTUnwrap(TransmissionUserFacingError.presentation(for: error))
+            XCTAssertEqual(presentation.title, "Authentication Failed")
+        } catch {
+            XCTFail("Expected TransmissionError.unauthorized, got \(error)")
+        }
+
+        let didEnterReconnectState = await waitUntil {
+            store.connectionStatus == .reconnecting
+                && store.lastErrorMessage == "Authentication failed. Please check your server credentials."
+        }
+        XCTAssertTrue(didEnterReconnectState)
+    }
 }
 
 private extension TransmissionStoreSessionOperationTests {
