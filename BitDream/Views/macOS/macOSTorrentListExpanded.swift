@@ -4,7 +4,7 @@ import SwiftUI
 #if os(macOS)
 struct macOSTorrentListExpanded: View {
     var torrent: Torrent
-    var store: AppStore
+    var store: TransmissionStore
     var selectedTorrents: Set<Torrent>
     var showContentTypeIcons: Bool
 

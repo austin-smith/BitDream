@@ -2,36 +2,6 @@ import XCTest
 @testable import BitDream
 
 final class TransmissionAdapterQueryTests: XCTestCase {
-    func testFetchTorrentSummaryReturnsTorrents() async throws {
-        let adapter = makeLegacyAdapter(steps: [
-            .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))
-        ])
-
-        let result = await adapter.fetchTorrentSummary(config: makeConfig(), auth: makeAuth())
-
-        switch result {
-        case .success(let torrents):
-            XCTAssertFalse(torrents.isEmpty)
-        case .failure(let error):
-            XCTFail("Expected success, got \(error)")
-        }
-    }
-
-    func testFetchWidgetSummaryReturnsTorrents() async throws {
-        let adapter = makeLegacyAdapter(steps: [
-            .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))
-        ])
-
-        let result = await adapter.fetchWidgetSummary(config: makeConfig(), auth: makeAuth())
-
-        switch result {
-        case .success(let torrents):
-            XCTAssertFalse(torrents.isEmpty)
-        case .failure(let error):
-            XCTFail("Expected success, got \(error)")
-        }
-    }
-
     func testFetchTorrentFilesReturnsFirstTorrentPayload() async {
         let adapter = makeLegacyAdapter(steps: [
             .http(
@@ -119,21 +89,6 @@ final class TransmissionAdapterQueryTests: XCTestCase {
         switch result {
         case .success(let response):
             XCTAssertEqual(response.pieces, "Zm9v")
-        case .failure(let error):
-            XCTFail("Expected success, got \(error)")
-        }
-    }
-
-    func testFetchSessionStatsReturnsStats() async {
-        let adapter = makeLegacyAdapter(steps: [
-            .http(statusCode: 200, body: successStatsBody)
-        ])
-
-        let result = await adapter.fetchSessionStats(config: makeConfig(), auth: makeAuth())
-
-        switch result {
-        case .success(let stats):
-            XCTAssertEqual(stats.torrentCount, 4)
         case .failure(let error):
             XCTFail("Expected success, got \(error)")
         }

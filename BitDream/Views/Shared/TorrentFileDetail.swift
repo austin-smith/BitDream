@@ -131,7 +131,7 @@ struct TorrentFileDetail: View {
     let files: [TorrentFile]
     let fileStats: [TorrentFileStats]
     let torrentId: Int
-    let store: AppStore
+    let store: TransmissionStore
 
     var body: some View {
         #if os(iOS)
@@ -293,7 +293,7 @@ enum FileActionExecutor {
     static func setWanted(
         torrentId: Int,
         fileIndices: [Int],
-        store: AppStore,
+        store: TransmissionStore,
         wanted: Bool
     ) async -> TransmissionResponse {
         let info = makeConfig(store: store)
@@ -314,7 +314,7 @@ enum FileActionExecutor {
     static func setPriority(
         torrentId: Int,
         fileIndices: [Int],
-        store: AppStore,
+        store: TransmissionStore,
         priority: FilePriority
     ) async -> TransmissionResponse {
         let info = makeConfig(store: store)

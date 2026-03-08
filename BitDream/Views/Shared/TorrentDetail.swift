@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 struct TorrentDetail: View {
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
     var torrent: Torrent
 
     var body: some View {
@@ -33,7 +33,7 @@ func statusColor(for torrent: Torrent) -> Color {
 
 // Shared function to fetch torrent files
 @MainActor
-func fetchTorrentFiles(transferId: Int, store: AppStore, completion: @escaping ([TorrentFile], [TorrentFileStats]) -> Void) {
+func fetchTorrentFiles(transferId: Int, store: TransmissionStore, completion: @escaping ([TorrentFile], [TorrentFileStats]) -> Void) {
     let info = makeConfig(store: store)
 
     getTorrentFiles(transferId: transferId, info: info, onReceived: { files, fileStats in
@@ -43,7 +43,7 @@ func fetchTorrentFiles(transferId: Int, store: AppStore, completion: @escaping (
 
 // Shared function to fetch torrent peers
 @MainActor
-func fetchTorrentPeers(transferId: Int, store: AppStore, completion: @escaping ([Peer], PeersFrom?) -> Void) {
+func fetchTorrentPeers(transferId: Int, store: TransmissionStore, completion: @escaping ([Peer], PeersFrom?) -> Void) {
     let info = makeConfig(store: store)
 
     getTorrentPeers(transferId: transferId, info: info, onReceived: { peers, peersFrom in
@@ -53,7 +53,7 @@ func fetchTorrentPeers(transferId: Int, store: AppStore, completion: @escaping (
 
 // Shared function to play/pause a torrent
 @MainActor
-func toggleTorrentPlayPause(torrent: Torrent, store: AppStore, completion: @escaping () -> Void = {}) {
+func toggleTorrentPlayPause(torrent: Torrent, store: TransmissionStore, completion: @escaping () -> Void = {}) {
     let info = makeConfig(store: store)
     playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
         handleTransmissionResponse(response,
@@ -142,7 +142,7 @@ struct TorrentDetailHeaderView: View {
 // Shared toolbar menu for both platforms
 struct TorrentDetailToolbar: ToolbarContent {
     var torrent: Torrent
-    var store: AppStore
+    var store: TransmissionStore
 
     var body: some ToolbarContent {
         #if os(macOS)

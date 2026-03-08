@@ -1,191 +1,205 @@
 //  Shared refresh logic for both iOS and macOS widget background updates.
 
 import Foundation
-import Synchronization
 import WidgetKit
 import OSLog
 
-private let widgetRefreshQueue: DispatchQueue = {
-    DispatchQueue(label: RuntimeDomain.widgetRefreshQueue, qos: .utility)
-}()
-
-private final class WidgetRefreshCancellationToken: Sendable {
-    private let isCancelledState = Mutex(false)
-
-    func cancel() {
-        isCancelledState.withLock { $0 = true }
-    }
-
-    func isCancelled() -> Bool {
-        isCancelledState.withLock { $0 }
-    }
-}
-
 struct WidgetRefreshHandle: Sendable {
-    fileprivate let cancellationToken: WidgetRefreshCancellationToken
+    fileprivate let task: Task<Bool, Never>
 
     func cancel() {
-        cancellationToken.cancel()
+        task.cancel()
     }
 
     var isCancelled: Bool {
-        cancellationToken.isCancelled()
+        task.isCancelled
     }
 }
 
-private struct HostSnapshot: Sendable {
-    let serverID: String
-    let name: String
-    let server: String
-    let port: Int
-    let username: String
-    let isSSL: Bool
-    let credentialKey: String
+struct WidgetRefreshDependencies: Sendable {
+    let connectionFactory: TransmissionConnectionFactory
+    let snapshotWriter: WidgetSnapshotWriter
+    let loadHosts: @Sendable () -> [HostRefreshRecord]
+    let sleep: @Sendable (TimeInterval) async throws -> Void
+
+    static let live = Self(
+        connectionFactory: TransmissionConnectionFactory(),
+        snapshotWriter: .live,
+        loadHosts: { HostRefreshCatalogStore.loadRecordsSnapshot() },
+        sleep: { seconds in
+            let nanoseconds = UInt64(max(0, seconds) * 1_000_000_000)
+            try await Task.sleep(nanoseconds: nanoseconds)
+        }
+    )
 }
 
-private final class HostRefreshResultStore: Sendable {
-    private struct State: Sendable {
-        var stats: SessionStats?
-        var torrents: [Torrent] = []
-    }
-
-    private let state = Mutex(State())
-
-    func setStats(_ value: SessionStats?) {
-        state.withLock { $0.stats = value }
-    }
-
-    func setTorrents(_ value: [Torrent]) {
-        state.withLock { $0.torrents = value }
-    }
-
-    func snapshot() -> (stats: SessionStats?, torrents: [Torrent]) {
-        state.withLock { ($0.stats, $0.torrents) }
-    }
-}
-
-private enum WidgetRefreshRunner {
-    private static let backgroundWaitTimeout: DispatchTimeInterval = .seconds(15)
+enum WidgetRefreshRunner {
+    static let backgroundWaitTimeout: TimeInterval = 15
     private static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "backgroundRefresh")
 
-    static func run(isCancelled: @Sendable () -> Bool) -> Bool {
+    static func run(
+        dependencies: WidgetRefreshDependencies = .live,
+        isCancelled: @Sendable () -> Bool = { Task.isCancelled }
+    ) async -> Bool {
         if isCancelled() { return false }
 
-        let hosts: [HostSnapshot] = fetchHosts()
+        let hosts = fetchHosts(loadHosts: dependencies.loadHosts)
         guard !hosts.isEmpty else { return !isCancelled() }
 
         let summaries = hosts.map { ServerSummary(id: $0.serverID, name: $0.name) }
-        writeServersIndex(servers: summaries)
+        dependencies.snapshotWriter.writeServerIndex(summaries)
 
         for host in hosts {
             if isCancelled() { return false }
-            refreshHost(host: host, isCancelled: isCancelled)
+            await refreshHost(host: host, dependencies: dependencies, isCancelled: isCancelled)
         }
 
         if isCancelled() { return false }
 
-        // Reload widget timelines after all hosts are updated
-        WidgetCenter.shared.reloadTimelines(ofKind: WidgetKind.sessionOverview)
+        dependencies.snapshotWriter.reloadTimelines()
         return true
     }
 
-    private static func fetchHosts() -> [HostSnapshot] {
-        let hosts = HostRefreshCatalogStore.loadRecordsSnapshot()
-
-        return hosts.compactMap { host in
+    private static func fetchHosts(
+        loadHosts: @Sendable () -> [HostRefreshRecord]
+    ) -> [HostRefreshRecord] {
+        loadHosts().compactMap { host in
             let server = host.server.trimmingCharacters(in: .whitespacesAndNewlines)
             let credentialKey = host.credentialKey.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !server.isEmpty, !credentialKey.isEmpty else {
                 return nil
             }
 
-            return HostSnapshot(
+            return HostRefreshRecord(
                 serverID: host.serverID,
                 name: host.name,
                 server: server,
                 port: host.port,
                 username: host.username,
                 isSSL: host.isSSL,
-                credentialKey: credentialKey
+                credentialKey: credentialKey,
+                isDefault: host.isDefault,
+                version: host.version
             )
         }
     }
 
-    private static func refreshHost(host: HostSnapshot, isCancelled: @Sendable () -> Bool) {
-        if isCancelled() { return }
-        let hostIdentifier: String = host.name.isEmpty ? host.server : host.name
+    private static func refreshHost(
+        host: HostRefreshRecord,
+        dependencies: WidgetRefreshDependencies,
+        isCancelled: @Sendable () -> Bool
+    ) async {
+        guard !isCancelled() else { return }
 
-        // Build Transmission config/auth
-        var config = TransmissionConfig()
-        config.host = host.server
-        config.port = Int(host.port)
-        config.scheme = host.isSSL ? "https" : "http"
+        let hostIdentifier = host.name.isEmpty ? host.server : host.name
 
-        let username = host.username
-        let password = KeychainService.readPassword(credentialKey: host.credentialKey)
-        let auth = TransmissionAuth(username: username, password: password)
-
-        let group = DispatchGroup()
-        let results = HostRefreshResultStore()
-
-        // Fetch session stats
-        group.enter()
-        // Widget refresh intentionally uses a non-@MainActor path to avoid pumping through the main actor.
-        getSessionStatsForWidgetRefresh(config: config, auth: auth) { sessionStats, errorMessage in
-            if let errorMessage {
-                logger.error("Background refresh session stats request failed for host \(hostIdentifier): \(errorMessage)")
+        do {
+            let connection = try await dependencies.connectionFactory.connection(
+                for: TransmissionConnectionDescriptor(record: host)
+            )
+            let snapshot = try await withTimeout(
+                seconds: backgroundWaitTimeout,
+                sleep: dependencies.sleep
+            ) {
+                try await connection.fetchWidgetRefreshSnapshot()
             }
-            results.setStats(sessionStats)
-            group.leave()
-        }
 
-        // Fetch torrent list for status breakdown
-        group.enter()
-        getTorrentsForWidgetRefresh(config: config, auth: auth) { torrents, errorMessage in
-            if let errorMessage {
-                logger.notice("Background refresh torrent list request failed for host \(hostIdentifier): \(errorMessage)")
+            guard !isCancelled() else { return }
+
+            dependencies.snapshotWriter.writeSessionSnapshot(
+                host.serverID,
+                host.name,
+                snapshot.sessionStats,
+                snapshot.torrents,
+                false
+            )
+
+            if let error = snapshot.torrentSummaryError {
+                let presentation = TransmissionErrorPresenter.presentation(for: error)
+                logger.notice(
+                    "Background refresh could not refresh torrent list for host \(hostIdentifier, privacy: .public): \(presentation.message, privacy: .public)"
+                )
             }
-            results.setTorrents(torrents ?? [])
-            group.leave()
+        } catch {
+            guard !isCancelled() else { return }
+
+            let transmissionError = TransmissionErrorResolver.transmissionError(from: error)
+            let presentation = TransmissionErrorPresenter.presentation(for: transmissionError)
+            logger.notice(
+                "Background refresh failed for host \(hostIdentifier, privacy: .public): \(presentation.message, privacy: .public)"
+            )
         }
+    }
 
-        // Wait with timeout to respect background limits
-        let waitResult = group.wait(timeout: .now() + backgroundWaitTimeout)
-        if waitResult == .timedOut {
-            logger.error("Timed out waiting for background fetches for host \(hostIdentifier)")
-            return
+    private static func withTimeout<Success: Sendable>(
+        seconds: TimeInterval,
+        sleep: @escaping @Sendable (TimeInterval) async throws -> Void,
+        operation: @escaping @Sendable () async throws -> Success
+    ) async throws -> Success {
+        try await withThrowingTaskGroup(of: Success.self) { group in
+            group.addTask {
+                try await operation()
+            }
+            group.addTask {
+                try await sleep(seconds)
+                throw TransmissionError.timeout
+            }
+
+            defer {
+                group.cancelAll()
+            }
+
+            guard let result = try await group.next() else {
+                throw TransmissionError.invalidResponse
+            }
+            return result
         }
-
-        if isCancelled() { return }
-
-        let snapshot = results.snapshot()
-        guard let stats = snapshot.stats else {
-            logger.error("Background refresh missing session stats for host \(hostIdentifier); skipping snapshot write.")
-            return
-        }
-
-        let serverName = host.name
-        writeSessionSnapshot(
-            serverID: host.serverID,
-            serverName: serverName,
-            stats: stats,
-            torrents: snapshot.torrents
-        )
     }
 }
 
 private enum WidgetRefreshScheduler {
+    private static let state = SchedulerState()
+
     @discardableResult
-    static func enqueue(completion: (@Sendable (Bool) -> Void)? = nil) -> WidgetRefreshHandle {
-        let cancellationToken = WidgetRefreshCancellationToken()
-        let handle = WidgetRefreshHandle(cancellationToken: cancellationToken)
+    static func enqueue(
+        dependencies: WidgetRefreshDependencies = .live,
+        completion: (@Sendable (Bool) -> Void)? = nil
+    ) -> WidgetRefreshHandle {
+        state.enqueue(dependencies: dependencies, completion: completion)
+    }
 
-        widgetRefreshQueue.async {
-            let success = WidgetRefreshRunner.run(isCancelled: { cancellationToken.isCancelled() })
-            completion?(success)
+    private final class SchedulerState: @unchecked Sendable {
+        private let lock = NSLock()
+        private var tailTask: Task<Bool, Never>?
+
+        func enqueue(
+            dependencies: WidgetRefreshDependencies,
+            completion: (@Sendable (Bool) -> Void)?
+        ) -> WidgetRefreshHandle {
+            lock.lock()
+            let predecessor = tailTask
+            let task = Task.detached(priority: .utility) { () -> Bool in
+                if let predecessor {
+                    _ = await predecessor.value
+                }
+
+                guard !Task.isCancelled else {
+                    return false
+                }
+
+                let success = await WidgetRefreshRunner.run(dependencies: dependencies)
+                guard !Task.isCancelled else {
+                    return false
+                }
+
+                completion?(success)
+                return success
+            }
+            tailTask = task
+            lock.unlock()
+
+            return WidgetRefreshHandle(task: task)
         }
-
-        return handle
     }
 }
 
@@ -199,6 +213,9 @@ func performWidgetRefresh(completion: (@Sendable () -> Void)? = nil) -> WidgetRe
 }
 
 @discardableResult
-func enqueueWidgetRefresh(completion: (@Sendable (Bool) -> Void)? = nil) -> WidgetRefreshHandle {
-    WidgetRefreshScheduler.enqueue(completion: completion)
+func enqueueWidgetRefresh(
+    dependencies: WidgetRefreshDependencies = .live,
+    completion: (@Sendable (Bool) -> Void)? = nil
+) -> WidgetRefreshHandle {
+    WidgetRefreshScheduler.enqueue(dependencies: dependencies, completion: completion)
 }

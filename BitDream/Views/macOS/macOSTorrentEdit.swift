@@ -64,14 +64,14 @@ struct LabelEditView: View {
     @State private var newTagInput: String = ""
     @FocusState private var isInputFocused: Bool
     @Environment(\.dismiss) private var dismiss
-    var store: AppStore
+    var store: TransmissionStore
     let selectedTorrents: Set<Torrent>
     @Binding var shouldSave: Bool
 
     init(
         labelInput: Binding<String>,
         existingLabels: [String],
-        store: AppStore,
+        store: TransmissionStore,
         selectedTorrents: Set<Torrent>,
         shouldSave: Binding<Bool>
     ) {
@@ -106,7 +106,7 @@ struct LabelEditView: View {
                     onComplete: { _ in }
                 )
             }
-            refreshTransmissionData(store: store)
+            store.requestRefresh()
             dismiss()
         }
     }
@@ -170,7 +170,7 @@ struct LabelEditView: View {
 
 @MainActor
 struct MoveSheetContent: View {
-    let store: AppStore
+    let store: TransmissionStore
     let selectedTorrents: Set<Torrent>
     @Binding var movePath: String
     @Binding var moveShouldMove: Bool
@@ -218,7 +218,7 @@ struct MoveSheetContent: View {
                     )
                     setTorrentLocation(args: args, info: info) { response in
                         handleTransmissionResponse(response, onSuccess: {
-                            refreshTransmissionData(store: store)
+                            store.requestRefresh()
                             isPresented = false
                         }, onError: { error in
                             errorMessage = error

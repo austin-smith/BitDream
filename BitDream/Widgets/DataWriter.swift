@@ -3,6 +3,36 @@
 import Foundation
 import WidgetKit
 
+struct WidgetSnapshotWriter: Sendable {
+    let writeServerIndex: @Sendable ([ServerSummary]) -> Void
+    let writeSessionSnapshot: @Sendable (_ serverID: String, _ serverName: String, _ stats: SessionStats, _ torrents: [Torrent], _ reloadTimelines: Bool) -> Void
+    let reloadTimelines: @Sendable () -> Void
+
+    static let live = Self(
+        writeServerIndex: { writeServersIndex(servers: $0) },
+        writeSessionSnapshot: writeLiveSessionSnapshot,
+        reloadTimelines: {
+            WidgetCenter.shared.reloadTimelines(ofKind: WidgetKind.sessionOverview)
+        }
+    )
+}
+
+private func writeLiveSessionSnapshot(
+    serverID: String,
+    serverName: String,
+    stats: SessionStats,
+    torrents: [Torrent],
+    reloadTimelines: Bool
+) {
+    writeSessionSnapshot(
+        serverID: serverID,
+        serverName: serverName,
+        stats: stats,
+        torrents: torrents,
+        reloadTimelines: reloadTimelines
+    )
+}
+
 func writeServersIndex(servers: [ServerSummary]) {
     guard let url = AppGroup.Files.serversIndexURL() else { return }
 
@@ -18,7 +48,13 @@ func writeServersIndex(servers: [ServerSummary]) {
     _ = AppGroupJSON.write(updated, to: url)
 }
 
-func writeSessionSnapshot(serverID: String, serverName: String, stats: SessionStats, torrents: [Torrent]) {
+func writeSessionSnapshot(
+    serverID: String,
+    serverName: String,
+    stats: SessionStats,
+    torrents: [Torrent],
+    reloadTimelines: Bool = true
+) {
     let active = stats.activeTorrentCount
     let paused = stats.pausedTorrentCount
     let total = stats.torrentCount
@@ -48,7 +84,7 @@ func writeSessionSnapshot(serverID: String, serverName: String, stats: SessionSt
     )
 
     guard let url = AppGroup.Files.sessionURL(for: serverID) else { return }
-    if AppGroupJSON.write(snap, to: url) {
+    if AppGroupJSON.write(snap, to: url), reloadTimelines {
         WidgetCenter.shared.reloadTimelines(ofKind: WidgetKind.sessionOverview)
     }
 }

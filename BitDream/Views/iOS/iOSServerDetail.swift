@@ -5,7 +5,7 @@ import SwiftData
 #if os(iOS)
 struct iOSServerDetail: View {
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
     let modelContext: ModelContext
     let hosts: [Host]
     @State var host: Host?
@@ -190,7 +190,8 @@ struct iOSServerDetail: View {
                                     )
                                     updateExistingServer(
                                         host: host,
-                                        draft: draft
+                                        draft: draft,
+                                        store: store
                                     ) {
                                         dismiss()
                                     } onError: { message in

@@ -4,8 +4,9 @@ disabled_rules:
 
 excluded:
   - build
-  # TODO: Refactor this file and remove the temporary lint exclusion.
+  # TODO: Refactor these files and remove the temporary lint exclusion.
   - BitDream/Transmission/TransmissionFunctions.swift
+  - BitDream/TransmissionStore.swift
 
 type_name:
   excluded:

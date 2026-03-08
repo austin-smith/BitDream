@@ -19,7 +19,7 @@
     - `session_<hash>.json`: per-server snapshot consumed by the widget.
 
 ### Data Flow
-1) App (AppStore) refreshes Transmission state on a timer (macOS: always while app runs; iOS: when in foreground or BG task wakes).
+1) App (TransmissionStore) refreshes Transmission state on a timer (macOS: always while app runs; iOS: when in foreground or BG task wakes).
 2) After refresh, the app writes a JSON snapshot to the App Group.
 3) The widget provider reads the snapshot at render time and constructs the view.
 4) The app nudges WidgetKit via `WidgetCenter.reloadTimelines(ofKind:)` after writing.
@@ -86,7 +86,7 @@
 - Benefit: Each widget instance opens directly to its configured server.
 
 ### Source of Truth
-- The app (AppStore + BackgroundRefreshManager on iOS) is the sole producer of widget data.
+- The app (TransmissionStore + BackgroundRefreshManager on iOS) is the sole producer of widget data.
 - The widget is a pure consumer, with read-only access to the App Group files.
 - Provider networking: widget extension intentionally performs no network I/O (by design).
 

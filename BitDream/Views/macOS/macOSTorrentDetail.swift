@@ -5,7 +5,7 @@ import SwiftUI
 struct macOSTorrentDetail: View {
     @Environment(\.dismiss) private var dismiss
 
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
     var torrent: Torrent
 
     @State public var files: [TorrentFile] = []
@@ -219,27 +219,8 @@ struct macOSTorrentDetail: View {
             )
             .frame(minWidth: 1000, minHeight: 700)
         }
-        .onAppear {
-            // Use shared function to fetch files
-            fetchTorrentFiles(transferId: torrent.id, store: store) { fetchedFiles, fetchedStats in
-                files = fetchedFiles
-                fileStats = fetchedStats
-            }
-            // Fetch peers initially
-            fetchTorrentPeers(transferId: torrent.id, store: store) { fetchedPeers, fetchedFrom in
-                peers = fetchedPeers
-                peersFrom = fetchedFrom
-            }
-            // Fetch pieces
-            let info = makeConfig(store: store)
-            getTorrentPieces(transferId: torrent.id, info: info) { count, size, bitfield in
-                pieceCount = count
-                pieceSize = size
-                piecesBitfield = bitfield
-                // Compute how many pieces are present
-                let haveSet = decodePiecesBitfield(base64String: bitfield, pieceCount: count)
-                piecesHaveCount = haveSet.reduce(0) { $0 + ($1 ? 1 : 0) }
-            }
+        .task(id: torrent.id) {
+            loadSupplementalData()
         }
         .toolbar {
             // Use shared toolbar
@@ -281,6 +262,37 @@ struct macOSTorrentDetail: View {
             Text("Do you want to delete the file(s) from the disk?")
         }
         .transmissionErrorAlert(isPresented: $showingDeleteError, message: deleteErrorMessage)
+    }
+
+    private func loadSupplementalData() {
+        files = []
+        fileStats = []
+        peers = []
+        peersFrom = nil
+        pieceCount = 0
+        pieceSize = 0
+        piecesBitfield = ""
+        piecesHaveCount = 0
+
+        fetchTorrentFiles(transferId: torrent.id, store: store) { fetchedFiles, fetchedStats in
+            files = fetchedFiles
+            fileStats = fetchedStats
+        }
+
+        fetchTorrentPeers(transferId: torrent.id, store: store) { fetchedPeers, fetchedFrom in
+            peers = fetchedPeers
+            peersFrom = fetchedFrom
+        }
+
+        let info = makeConfig(store: store)
+        getTorrentPieces(transferId: torrent.id, info: info) { count, size, bitfield in
+            pieceCount = count
+            pieceSize = size
+            piecesBitfield = bitfield
+
+            let haveSet = decodePiecesBitfield(base64String: bitfield, pieceCount: count)
+            piecesHaveCount = haveSet.reduce(0) { $0 + ($1 ? 1 : 0) }
+        }
     }
 }
 

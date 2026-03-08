@@ -7,7 +7,7 @@ struct macOSServerList: View {
     @Environment(\.dismiss) private var dismiss
     let modelContext: ModelContext
     let hosts: [Host]
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
 
     @State var selected: Host?
     @State private var showingAddServer = false

@@ -35,7 +35,7 @@ struct LinearTorrentProgressStyle: ProgressViewStyle {
 struct TorrentRowModifier: ViewModifier {
     var torrent: Torrent
     var selectedTorrents: Set<Torrent>
-    let store: AppStore
+    let store: TransmissionStore
     @Binding var deleteDialog: Bool
     @Binding var labelDialog: Bool
     @Binding var labelInput: String
