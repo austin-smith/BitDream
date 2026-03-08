@@ -81,8 +81,8 @@ struct iOSTorrentDetail: View {
     }
 
     @MainActor
-    private func loadSupplementalDataIfNeeded(for torrentID: Int) async {
-        await supplementalStore.loadIfNeeded(for: torrentID, using: store) { message in
+    private func loadSupplementalDataIfIdle(for torrentID: Int) async {
+        await supplementalStore.loadIfIdle(for: torrentID, using: store) { message in
             errorMessage = message
             showingError = true
         }
@@ -126,7 +126,7 @@ struct iOSTorrentDetail: View {
                 .navigationTitle("Files")
                 .navigationBarTitleDisplayMode(.inline)
                 .task {
-                    await loadSupplementalDataIfNeeded(for: torrent.id)
+                    await loadSupplementalDataIfIdle(for: torrent.id)
                 }
             case .loading:
                 TorrentDetailLoadingPlaceholderView(
@@ -138,13 +138,16 @@ struct iOSTorrentDetail: View {
             case .failed:
                 TorrentDetailUnavailablePlaceholderView(
                     title: "Files Unavailable",
-                    message: "The latest file details could not be loaded."
+                    message: "The latest file details could not be loaded.",
+                    actionTitle: "Retry",
+                    action: {
+                        Task {
+                            await loadSupplementalData(for: torrent.id)
+                        }
+                    }
                 )
                 .navigationTitle("Files")
                 .navigationBarTitleDisplayMode(.inline)
-                .task {
-                    await loadSupplementalDataIfNeeded(for: torrent.id)
-                }
             case .loaded:
                 EmptyView()
             }
@@ -174,7 +177,7 @@ struct iOSTorrentDetail: View {
                 .navigationTitle("Peers")
                 .navigationBarTitleDisplayMode(.inline)
                 .task {
-                    await loadSupplementalDataIfNeeded(for: torrent.id)
+                    await loadSupplementalDataIfIdle(for: torrent.id)
                 }
             case .loading:
                 TorrentDetailLoadingPlaceholderView(
@@ -186,13 +189,16 @@ struct iOSTorrentDetail: View {
             case .failed:
                 TorrentDetailUnavailablePlaceholderView(
                     title: "Peers Unavailable",
-                    message: "The latest peer details could not be loaded."
+                    message: "The latest peer details could not be loaded.",
+                    actionTitle: "Retry",
+                    action: {
+                        Task {
+                            await loadSupplementalData(for: torrent.id)
+                        }
+                    }
                 )
                 .navigationTitle("Peers")
                 .navigationBarTitleDisplayMode(.inline)
-                .task {
-                    await loadSupplementalDataIfNeeded(for: torrent.id)
-                }
             case .loaded:
                 EmptyView()
             }

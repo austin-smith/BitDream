@@ -261,7 +261,7 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
         }
     }
 
-    func loadIfNeeded(
+    func loadIfIdle(
         for torrentID: Int,
         using store: TransmissionStore,
         onError: @escaping @MainActor @Sendable (String) -> Void
@@ -270,7 +270,7 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
             return
         }
 
-        guard state.status != .loading else {
+        guard state.status == .idle else {
             return
         }
 
@@ -335,12 +335,30 @@ internal struct TorrentDetailLoadingPlaceholderView: View {
 internal struct TorrentDetailUnavailablePlaceholderView: View {
     let title: String
     let message: String
+    let actionTitle: String?
+    let action: (() -> Void)?
+
+    init(
+        title: String,
+        message: String,
+        actionTitle: String? = nil,
+        action: (() -> Void)? = nil
+    ) {
+        self.title = title
+        self.message = message
+        self.actionTitle = actionTitle
+        self.action = action
+    }
 
     var body: some View {
         ContentUnavailableView {
             Label(title, systemImage: "exclamationmark.triangle")
         } description: {
             Text(message)
+        } actions: {
+            if let actionTitle, let action {
+                Button(actionTitle, action: action)
+            }
         }
     }
 }

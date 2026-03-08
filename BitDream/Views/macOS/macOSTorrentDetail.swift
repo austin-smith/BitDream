@@ -105,8 +105,8 @@ struct macOSTorrentDetail: View {
     }
 
     @MainActor
-    private func loadSupplementalDataIfNeeded(for torrentID: Int) async {
-        await supplementalStore.loadIfNeeded(for: torrentID, using: store) { message in
+    private func loadSupplementalDataIfIdle(for torrentID: Int) async {
+        await supplementalStore.loadIfIdle(for: torrentID, using: store) { message in
             errorMessage = message
             showingError = true
         }
@@ -166,7 +166,7 @@ struct macOSTorrentDetail: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .task {
-                    await loadSupplementalDataIfNeeded(for: torrent.id)
+                    await loadSupplementalDataIfIdle(for: torrent.id)
                 }
             case .loading:
                 TorrentDetailLoadingPlaceholderView(
@@ -177,12 +177,15 @@ struct macOSTorrentDetail: View {
             case .failed:
                 TorrentDetailUnavailablePlaceholderView(
                     title: "Files Unavailable",
-                    message: "The latest file details could not be loaded."
+                    message: "The latest file details could not be loaded.",
+                    actionTitle: "Retry",
+                    action: {
+                        Task {
+                            await loadSupplementalData(for: torrent.id)
+                        }
+                    }
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .task {
-                    await loadSupplementalDataIfNeeded(for: torrent.id)
-                }
             case .loaded:
                 EmptyView()
             }
@@ -210,7 +213,7 @@ struct macOSTorrentDetail: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .task {
-                    await loadSupplementalDataIfNeeded(for: torrent.id)
+                    await loadSupplementalDataIfIdle(for: torrent.id)
                 }
             case .loading:
                 TorrentDetailLoadingPlaceholderView(
@@ -221,12 +224,15 @@ struct macOSTorrentDetail: View {
             case .failed:
                 TorrentDetailUnavailablePlaceholderView(
                     title: "Peers Unavailable",
-                    message: "The latest peer details could not be loaded."
+                    message: "The latest peer details could not be loaded.",
+                    actionTitle: "Retry",
+                    action: {
+                        Task {
+                            await loadSupplementalData(for: torrent.id)
+                        }
+                    }
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .task {
-                    await loadSupplementalDataIfNeeded(for: torrent.id)
-                }
             case .loaded:
                 EmptyView()
             }
