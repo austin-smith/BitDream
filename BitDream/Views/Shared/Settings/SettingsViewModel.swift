@@ -178,7 +178,9 @@ final class SettingsViewModel: ObservableObject {
     deinit {
         debounceTask?.cancel()
     }
+}
 
+extension SettingsViewModel {
     func bind(to store: any SessionSettingsServing) {
         self.store = store
         synchronizeWithStore()
@@ -213,7 +215,9 @@ final class SettingsViewModel: ObservableObject {
 
         refreshSaveStateAfterSynchronization()
     }
+}
 
+extension SettingsViewModel {
     func value<Value: Equatable>(
         for keyPath: WritableKeyPath<TransmissionSessionSetRequestArgs, Value?>,
         fallback: Value
@@ -304,7 +308,9 @@ final class SettingsViewModel: ObservableObject {
         cancelDebounce()
         try await savePendingChangesIfNeeded()
     }
+}
 
+private extension SettingsViewModel {
     private func scheduleAutosave() {
         cancelDebounce()
         if inFlightSave == nil {
@@ -362,7 +368,9 @@ final class SettingsViewModel: ObservableObject {
             throw error
         }
     }
+}
 
+private extension SettingsViewModel {
     private func clearSavedFields(upTo revision: UInt64) {
         clearSavedField(\.speedLimitDown, upTo: revision)
         clearSavedField(\.speedLimitDownEnabled, upTo: revision)
@@ -424,7 +432,9 @@ final class SettingsViewModel: ObservableObject {
         dirtyFieldRevisions.removeValue(forKey: keyPath)
         draft[keyPath: keyPath] = nil
     }
+}
 
+private extension SettingsViewModel {
     private func rebaseDirtyFields(using baseline: TransmissionSessionResponseArguments) {
         rebaseField(\.speedLimitDown, against: baseline.speedLimitDown)
         rebaseField(\.speedLimitDownEnabled, against: baseline.speedLimitDownEnabled)
@@ -479,7 +489,9 @@ final class SettingsViewModel: ObservableObject {
         dirtyFieldRevisions.removeValue(forKey: keyPath)
         draft[keyPath: keyPath] = nil
     }
+}
 
+private extension SettingsViewModel {
     private func refreshSaveStateAfterSynchronization() {
         guard !dirtyFieldRevisions.isEmpty else {
             saveState = inFlightSave == nil ? .idle : .saving
@@ -499,7 +511,9 @@ final class SettingsViewModel: ObservableObject {
         debounceTask?.cancel()
         debounceTask = nil
     }
+}
 
+private extension SettingsViewModel {
     private static func presentation(for error: Error) -> TransmissionErrorPresentation {
         let transmissionError = TransmissionErrorResolver.transmissionError(from: error)
         return TransmissionErrorPresenter.presentation(for: transmissionError)
