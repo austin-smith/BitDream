@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct iOSTorrentsSettingsView: View {
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
     @StateObject private var editModel = SessionSettingsEditModel()
 
     var body: some View {

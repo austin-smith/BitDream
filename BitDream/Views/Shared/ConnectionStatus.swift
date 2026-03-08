@@ -6,7 +6,7 @@ enum ConnectionRetryTextStyle {
     case compact
 }
 
-func connectionStatusSymbol(for status: AppStore.ConnectionStatus) -> String {
+func connectionStatusSymbol(for status: TransmissionStore.ConnectionStatus) -> String {
     switch status {
     case .connecting:
         return "arrow.trianglehead.2.clockwise"
@@ -17,7 +17,7 @@ func connectionStatusSymbol(for status: AppStore.ConnectionStatus) -> String {
     }
 }
 
-func connectionStatusColor(for status: AppStore.ConnectionStatus) -> Color {
+func connectionStatusColor(for status: TransmissionStore.ConnectionStatus) -> Color {
     switch status {
     case .connecting:
         return .blue
@@ -28,7 +28,7 @@ func connectionStatusColor(for status: AppStore.ConnectionStatus) -> Color {
     }
 }
 
-func connectionStatusTitle(for status: AppStore.ConnectionStatus) -> String {
+func connectionStatusTitle(for status: TransmissionStore.ConnectionStatus) -> String {
     switch status {
     case .connecting:
         return "Connecting..."
@@ -40,7 +40,7 @@ func connectionStatusTitle(for status: AppStore.ConnectionStatus) -> String {
 }
 
 func connectionRetryText(
-    status: AppStore.ConnectionStatus,
+    status: TransmissionStore.ConnectionStatus,
     retryAt: Date?,
     at date: Date,
     style: ConnectionRetryTextStyle = .verbose

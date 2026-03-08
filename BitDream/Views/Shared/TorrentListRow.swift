@@ -3,7 +3,7 @@ import SwiftUI
 
 struct TorrentListRow: View {
     var torrent: Torrent
-    var store: AppStore
+    var store: TransmissionStore
     var selectedTorrents: Set<Torrent>
     var showContentTypeIcons: Bool
 
@@ -174,7 +174,7 @@ func copyMagnetLinkToClipboard(_ magnetLink: String) {
 
 // Shared function to save labels and refresh torrent data
 @MainActor
-func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: AppStore, onComplete: @escaping () -> Void = {}) {
+func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: TransmissionStore, onComplete: @escaping () -> Void = {}) {
     let info = makeConfig(store: store)
     let sortedLabels = Array(labels).sorted()
 
@@ -184,7 +184,7 @@ func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: AppStore, onC
         info: info,
         onComplete: { _ in
             // Trigger an immediate refresh
-            refreshTransmissionData(store: store)
+            store.requestRefresh()
             onComplete()
         }
     )
@@ -331,7 +331,7 @@ func validateNewName(_ name: String, current: String) -> String? {
 ///   - store: App store for config/auth and refresh
 ///   - onComplete: Called with nil on success, or an error message on failure
 @MainActor
-func renameTorrentRoot(torrent: Torrent, to newName: String, store: AppStore, onComplete: @escaping (String?) -> Void) {
+func renameTorrentRoot(torrent: Torrent, to newName: String, store: TransmissionStore, onComplete: @escaping (String?) -> Void) {
     let info = makeConfig(store: store)
     // For root rename, Transmission expects the current root path (the torrent's name)
     renameTorrentPath(
@@ -344,7 +344,7 @@ func renameTorrentRoot(torrent: Torrent, to newName: String, store: AppStore, on
         switch result {
         case .success:
             // Refresh to pick up updated name and files
-            refreshTransmissionData(store: store)
+            store.requestRefresh()
             onComplete(nil)
         case .failure(let error):
             onComplete(error.localizedDescription)

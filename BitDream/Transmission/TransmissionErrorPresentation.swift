@@ -5,6 +5,24 @@ struct TransmissionErrorPresentation: Equatable, Sendable {
     let message: String
 }
 
+enum TransmissionErrorResolver {
+    static func transmissionError(from error: Error) -> TransmissionError {
+        if let transmissionError = error as? TransmissionError {
+            return transmissionError
+        }
+
+        if let transportFailure = error as? TransmissionTransportFailure {
+            return transportFailure.transmissionError
+        }
+
+        if error is CancellationError {
+            return .cancelled
+        }
+
+        return .transport(underlyingDescription: error.localizedDescription)
+    }
+}
+
 enum TransmissionErrorPresenter {
     static func presentation(for error: TransmissionError) -> TransmissionErrorPresentation {
         switch error {
@@ -72,7 +90,7 @@ struct TransmissionLegacyCompatibilityError: LocalizedError, Sendable {
 
 enum TransmissionLegacyCompatibility {
     static func response(from error: Error) -> TransmissionResponse {
-        response(from: transmissionError(from: error))
+        response(from: TransmissionErrorResolver.transmissionError(from: error))
     }
 
     static func response(from error: TransmissionError) -> TransmissionResponse {
@@ -87,7 +105,9 @@ enum TransmissionLegacyCompatibility {
     }
 
     static func localizedError(from error: Error) -> Error {
-        TransmissionLegacyCompatibilityError(transmissionError: transmissionError(from: error))
+        TransmissionLegacyCompatibilityError(
+            transmissionError: TransmissionErrorResolver.transmissionError(from: error)
+        )
     }
 
     static func presentation(for response: TransmissionResponse) -> TransmissionErrorPresentation? {
@@ -111,14 +131,6 @@ enum TransmissionLegacyCompatibility {
             return compatibilityError.transmissionError
         }
 
-        if let transmissionError = error as? TransmissionError {
-            return transmissionError
-        }
-
-        if let transportFailure = error as? TransmissionTransportFailure {
-            return transportFailure.transmissionError
-        }
-
-        return .transport(underlyingDescription: error.localizedDescription)
+        return TransmissionErrorResolver.transmissionError(from: error)
     }
 }

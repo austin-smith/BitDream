@@ -5,7 +5,7 @@ import SwiftUI
 struct iOSTorrentDetail: View {
     @Environment(\.dismiss) private var dismiss
 
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
     var torrent: Torrent
 
     @State public var files: [TorrentFile] = []

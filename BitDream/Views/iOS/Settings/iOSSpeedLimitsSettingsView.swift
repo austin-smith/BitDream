@@ -3,7 +3,7 @@ import SwiftUI
 import Foundation
 
 struct iOSSpeedLimitsSettingsView: View {
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
     @StateObject private var editModel = SessionSettingsEditModel()
 
     var body: some View {

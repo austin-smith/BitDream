@@ -1,5 +1,8 @@
 import Foundation
 
+// TODO: Remove the remaining legacy adapter and callback wrapper surface in
+// phases 4/5 once write/detail callers have migrated to `TransmissionConnection`
+// and typed error presentation.
 internal struct TransmissionLegacyAdapter: Sendable {
     private let factory: TransmissionConnectionFactory
 
@@ -73,24 +76,6 @@ internal struct TransmissionLegacyAdapter: Sendable {
         }
     }
 
-    func fetchTorrentSummary(
-        config: TransmissionConfig,
-        auth: TransmissionAuth
-    ) async -> Result<[Torrent], Error> {
-        await performQuery(config: config, auth: auth) { connection in
-            try await connection.fetchTorrentSummary()
-        }
-    }
-
-    func fetchWidgetSummary(
-        config: TransmissionConfig,
-        auth: TransmissionAuth
-    ) async -> Result<[Torrent], Error> {
-        await performQuery(config: config, auth: auth) { connection in
-            try await connection.fetchWidgetSummary()
-        }
-    }
-
     func fetchTorrentFiles(
         transferID: Int,
         config: TransmissionConfig,
@@ -118,15 +103,6 @@ internal struct TransmissionLegacyAdapter: Sendable {
     ) async -> Result<TorrentPiecesResponseData, Error> {
         await performQuery(config: config, auth: auth) { connection in
             try await connection.fetchTorrentPieces(id: transferID)
-        }
-    }
-
-    func fetchSessionStats(
-        config: TransmissionConfig,
-        auth: TransmissionAuth
-    ) async -> Result<SessionStats, Error> {
-        await performQuery(config: config, auth: auth) { connection in
-            try await connection.fetchSessionStats()
         }
     }
 
@@ -223,59 +199,6 @@ private func executeTorrentAction(actionMethod: String, torrentId: Int, config: 
 }
 
 // MARK: - API Functions
-
-/// Makes a request to the server for a list of the currently running torrents
-public func getTorrents(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping ([Torrent]?, String?) -> Void) {
-    Task {
-        let result = await legacyTransmissionAdapter.fetchTorrentSummary(config: config, auth: auth)
-
-        switch result {
-        case .success(let torrents):
-            await onReceived(torrents, nil)
-        case .failure(let error):
-            await onReceived(nil, error.localizedDescription)
-        }
-    }
-}
-
-func getTorrentsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping ([Torrent]?, String?) -> Void) {
-    Task {
-        let result = await legacyTransmissionAdapter.fetchWidgetSummary(config: config, auth: auth)
-
-        switch result {
-        case .success(let torrents):
-            onReceived(torrents, nil)
-        case .failure(let error):
-            onReceived(nil, error.localizedDescription)
-        }
-    }
-}
-
-public func getSessionStats(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @MainActor @escaping (SessionStats?, String?) -> Void) {
-    Task {
-        let result = await legacyTransmissionAdapter.fetchSessionStats(config: config, auth: auth)
-
-        switch result {
-        case .success(let response):
-            await onReceived(response, nil)
-        case .failure(let error):
-            await onReceived(nil, error.localizedDescription)
-        }
-    }
-}
-
-func getSessionStatsForWidgetRefresh(config: TransmissionConfig, auth: TransmissionAuth, onReceived: @Sendable @escaping (SessionStats?, String?) -> Void) {
-    Task {
-        let result = await legacyTransmissionAdapter.fetchSessionStats(config: config, auth: auth)
-
-        switch result {
-        case .success(let response):
-            onReceived(response, nil)
-        case .failure(let error):
-            onReceived(nil, error.localizedDescription)
-        }
-    }
-}
 
 // TODO: Revisit this signature and reduce parameter count.
 // swiftlint:disable function_parameter_count

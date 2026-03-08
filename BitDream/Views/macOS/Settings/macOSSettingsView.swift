@@ -5,7 +5,7 @@ import Foundation
 typealias PlatformSettingsView = macOSSettingsView
 
 struct macOSSettingsView: View {
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
     @StateObject private var editModel = SessionSettingsEditModel()
 
     @ObservedObject private var themeManager = ThemeManager.shared
@@ -62,7 +62,7 @@ struct macOSSettingsView: View {
 
 private struct SettingsServerTab<Content: View>: View {
     let config: TransmissionSessionResponseArguments?
-    let store: AppStore
+    let store: TransmissionStore
     let editModel: SessionSettingsEditModel
     let unavailableSystemImage: String
     let unavailableDescription: String
@@ -91,7 +91,7 @@ private struct SettingsServerTab<Content: View>: View {
 }
 
 #Preview {
-    macOSSettingsView(store: AppStore())
+    macOSSettingsView(store: TransmissionStore())
         .environmentObject(AppUpdater())
 }
 #endif

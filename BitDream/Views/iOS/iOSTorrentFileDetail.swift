@@ -43,7 +43,7 @@ struct iOSTorrentFileDetail: View {
     let files: [TorrentFile]
     let fileStats: [TorrentFileStats]
     let torrentId: Int
-    let store: AppStore
+    let store: TransmissionStore
 
     @State private var mutableFileStats: [TorrentFileStats] = []
     @State private var searchText = ""
@@ -264,7 +264,7 @@ struct BulkActionToolbar: View {
     @Binding var selectedFileIds: Set<String>
     let allFileRows: [TorrentFileRow]
     let torrentId: Int
-    let store: AppStore
+    let store: TransmissionStore
     let updateFileStatus: (Int, Bool) -> Void
     let updateFilePriority: (Int, FilePriority) -> Void
     let revertData: () -> Void
@@ -563,7 +563,7 @@ struct FilterSheet: View {
             files: TorrentFilePreviewData.sampleFiles,
             fileStats: TorrentFilePreviewData.sampleFileStats,
             torrentId: 1,
-            store: AppStore()
+            store: TransmissionStore()
         )
     }
 }

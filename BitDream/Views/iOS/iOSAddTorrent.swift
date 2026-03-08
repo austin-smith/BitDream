@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 struct iOSAddTorrent: View {
     // MARK: - Properties
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
 
     @State private var alertInput: String = ""
     @State private var downloadDir: String = ""

@@ -7,7 +7,7 @@ import OSLog
 #if os(macOS)
 
 struct macOSContentDetail: View {
-    let store: AppStore
+    let store: TransmissionStore
     let torrents: [Torrent]
     let isCompactMode: Bool
     @Binding var selectedTorrentIds: Set<Int>
@@ -192,14 +192,13 @@ struct macOSContentDetail: View {
 }
 
 struct macOSContentInspector: View {
-    let store: AppStore
+    let store: TransmissionStore
     let selectedTorrent: Torrent?
 
     var body: some View {
         Group {
             if let selectedTorrent {
                 TorrentDetail(store: store, torrent: selectedTorrent)
-                    .id(selectedTorrent.id)
             } else {
                 VStack {
                     Spacer()
@@ -220,7 +219,7 @@ struct macOSContentInspector: View {
 private struct ConnectionBannerView: View {
     @Environment(\.openWindow) private var openWindow
 
-    let status: AppStore.ConnectionStatus
+    let status: TransmissionStore.ConnectionStatus
     let retryAt: Date?
 
     var body: some View {
@@ -269,7 +268,7 @@ private final class TorrentInfoAccumulator: Sendable {
 struct TorrentDropDelegate: DropDelegate {
     @Binding var isDropTargeted: Bool
     @Binding var draggedTorrentInfo: [TorrentInfo]
-    let store: AppStore
+    let store: TransmissionStore
     private nonisolated static let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "ui")
 
     private nonisolated static func readTorrentData(from url: URL) async throws -> Data {

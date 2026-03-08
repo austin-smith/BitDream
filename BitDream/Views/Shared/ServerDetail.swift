@@ -5,7 +5,7 @@ import SwiftData
 /// Platform-agnostic wrapper for ServerDetail view
 /// This view simply delegates to the appropriate platform-specific implementation
 struct ServerDetail: View {
-    @ObservedObject var store: AppStore
+    @ObservedObject var store: TransmissionStore
     let modelContext: ModelContext
     let hosts: [Host]
     @State var host: Host?
@@ -52,7 +52,7 @@ private func userFacingHostPersistenceMessage(_ error: Error) -> String {
 func saveNewServer(
     draft: HostDraft,
     modelContext: ModelContext,
-    store: AppStore,
+    store: TransmissionStore,
     completion: @MainActor @escaping () -> Void,
     onError: @MainActor @escaping (String) -> Void = { _ in }
 ) {
@@ -130,7 +130,7 @@ func loadServerData(
 @MainActor
 func deleteServerFromDetail(
     host: Host,
-    store: AppStore,
+    store: TransmissionStore,
     hosts: [Host],
     modelContext _: ModelContext,
     completion: @MainActor @escaping () -> Void,
@@ -142,11 +142,8 @@ func deleteServerFromDetail(
                 store.setHost(host: nextHost)
                 UserDefaults.standard.set(nextHost.serverID, forKey: UserDefaultsKeys.selectedHost)
             } else {
-                store.host = nil
                 UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedHost)
-                store.torrents = []
-                store.sessionStats = nil
-                store.timer.invalidate()
+                store.clearSelectedHost()
             }
         }
 
