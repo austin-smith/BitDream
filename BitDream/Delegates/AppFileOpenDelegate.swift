@@ -104,18 +104,7 @@ final class AppFileOpenDelegate: NSObject, NSApplicationDelegate, ObservableObje
             case .magnet(let magnetString):
                 store.enqueueMagnet(magnetString)
             case .torrentData(let data):
-                performTransmissionAction(
-                    operation: {
-                        try await store.addTorrent(
-                            fileData: data,
-                            saveLocation: store.defaultDownloadDir
-                        )
-                    },
-                    onSuccess: { (_: TransmissionTorrentAddOutcome) in },
-                    onError: { message in
-                        presentAddTorrentStoreError(detail: message, store: store)
-                    }
-                )
+                addTorrentFromFileData(data, store: store)
             }
         }
 

@@ -155,18 +155,7 @@ private extension BitDreamApp {
                         for url in urls {
                             do {
                                 let data = try Data(contentsOf: url)
-                                performTransmissionAction(
-                                    operation: {
-                                        try await store.addTorrent(
-                                            fileData: data,
-                                            saveLocation: store.defaultDownloadDir
-                                        )
-                                    },
-                                    onSuccess: { (_: TransmissionTorrentAddOutcome) in },
-                                    onError: { message in
-                                        presentAddTorrentStoreError(detail: message, store: store)
-                                    }
-                                )
+                                addTorrentFromFileData(data, store: store)
                             } catch {
                                 failures.append((url.lastPathComponent, error.localizedDescription))
                             }

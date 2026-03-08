@@ -634,10 +634,14 @@ extension TransmissionStore {
             }
         }
 
-        labelCounts = counts
-        availableLabels = normalizedToDisplay.values.sorted {
+        let nextAvailableLabels = normalizedToDisplay.values.sorted {
             $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
         }
+
+        guard counts != labelCounts || nextAvailableLabels != availableLabels else { return }
+
+        labelCounts = counts
+        availableLabels = nextAvailableLabels
     }
 
     func requestRefresh() {

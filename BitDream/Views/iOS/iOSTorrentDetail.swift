@@ -117,40 +117,17 @@ struct iOSTorrentDetail: View {
             )
             .navigationBarTitleDisplayMode(.inline)
         } else {
-            switch supplementalStore.status {
-            case .idle:
-                TorrentDetailLoadingPlaceholderView(
-                    title: "Loading Files",
-                    message: "Fetching the latest files for this torrent."
-                )
-                .navigationTitle("Files")
-                .navigationBarTitleDisplayMode(.inline)
-                .task {
-                    await loadSupplementalDataIfIdle(for: torrent.id)
-                }
-            case .loading:
-                TorrentDetailLoadingPlaceholderView(
-                    title: "Loading Files",
-                    message: "Fetching the latest files for this torrent."
-                )
-                .navigationTitle("Files")
-                .navigationBarTitleDisplayMode(.inline)
-            case .failed:
-                TorrentDetailUnavailablePlaceholderView(
-                    title: "Files Unavailable",
-                    message: "The latest file details could not be loaded.",
-                    actionTitle: "Retry",
-                    action: {
-                        Task {
-                            await loadSupplementalData(for: torrent.id)
-                        }
-                    }
-                )
-                .navigationTitle("Files")
-                .navigationBarTitleDisplayMode(.inline)
-            case .loaded:
-                EmptyView()
-            }
+            TorrentDetailSupplementalPlaceholder(
+                status: supplementalStore.status,
+                loadingTitle: "Loading Files",
+                loadingMessage: "Fetching the latest files for this torrent.",
+                unavailableTitle: "Files Unavailable",
+                unavailableMessage: "The latest file details could not be loaded.",
+                onLoadIfIdle: { await loadSupplementalDataIfIdle(for: torrent.id) },
+                onRetry: { Task { await loadSupplementalData(for: torrent.id) } }
+            )
+            .navigationTitle("Files")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
@@ -168,40 +145,17 @@ struct iOSTorrentDetail: View {
             )
             .navigationBarTitleDisplayMode(.inline)
         } else {
-            switch supplementalStore.status {
-            case .idle:
-                TorrentDetailLoadingPlaceholderView(
-                    title: "Loading Peers",
-                    message: "Fetching the latest peers for this torrent."
-                )
-                .navigationTitle("Peers")
-                .navigationBarTitleDisplayMode(.inline)
-                .task {
-                    await loadSupplementalDataIfIdle(for: torrent.id)
-                }
-            case .loading:
-                TorrentDetailLoadingPlaceholderView(
-                    title: "Loading Peers",
-                    message: "Fetching the latest peers for this torrent."
-                )
-                .navigationTitle("Peers")
-                .navigationBarTitleDisplayMode(.inline)
-            case .failed:
-                TorrentDetailUnavailablePlaceholderView(
-                    title: "Peers Unavailable",
-                    message: "The latest peer details could not be loaded.",
-                    actionTitle: "Retry",
-                    action: {
-                        Task {
-                            await loadSupplementalData(for: torrent.id)
-                        }
-                    }
-                )
-                .navigationTitle("Peers")
-                .navigationBarTitleDisplayMode(.inline)
-            case .loaded:
-                EmptyView()
-            }
+            TorrentDetailSupplementalPlaceholder(
+                status: supplementalStore.status,
+                loadingTitle: "Loading Peers",
+                loadingMessage: "Fetching the latest peers for this torrent.",
+                unavailableTitle: "Peers Unavailable",
+                unavailableMessage: "The latest peer details could not be loaded.",
+                onLoadIfIdle: { await loadSupplementalDataIfIdle(for: torrent.id) },
+                onRetry: { Task { await loadSupplementalData(for: torrent.id) } }
+            )
+            .navigationTitle("Peers")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
@@ -293,12 +247,11 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
                         }
                     }
 
-                    if supplementalPayload.pieceCount > 0 && !supplementalPayload.piecesBitfieldBase64.isEmpty {
+                    if supplementalPayload.pieceCount > 0 && !supplementalPayload.piecesHaveSet.isEmpty {
                         Section(header: Text("Pieces")) {
                             VStack(alignment: .leading, spacing: 6) {
                                 PiecesGridView(
-                                    pieceCount: supplementalPayload.pieceCount,
-                                    piecesBitfieldBase64: supplementalPayload.piecesBitfieldBase64
+                                    piecesHaveSet: supplementalPayload.piecesHaveSet
                                 )
                                 .frame(maxWidth: .infinity, alignment: .leading)
 

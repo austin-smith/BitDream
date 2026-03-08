@@ -158,37 +158,16 @@ struct macOSTorrentDetail: View {
                 }
             )
         } else {
-            switch supplementalStore.status {
-            case .idle:
-                TorrentDetailLoadingPlaceholderView(
-                    title: "Loading Files",
-                    message: "Fetching the latest files for this torrent."
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .task {
-                    await loadSupplementalDataIfIdle(for: torrent.id)
-                }
-            case .loading:
-                TorrentDetailLoadingPlaceholderView(
-                    title: "Loading Files",
-                    message: "Fetching the latest files for this torrent."
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .failed:
-                TorrentDetailUnavailablePlaceholderView(
-                    title: "Files Unavailable",
-                    message: "The latest file details could not be loaded.",
-                    actionTitle: "Retry",
-                    action: {
-                        Task {
-                            await loadSupplementalData(for: torrent.id)
-                        }
-                    }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .loaded:
-                EmptyView()
-            }
+            TorrentDetailSupplementalPlaceholder(
+                status: supplementalStore.status,
+                loadingTitle: "Loading Files",
+                loadingMessage: "Fetching the latest files for this torrent.",
+                unavailableTitle: "Files Unavailable",
+                unavailableMessage: "The latest file details could not be loaded.",
+                onLoadIfIdle: { await loadSupplementalDataIfIdle(for: torrent.id) },
+                onRetry: { Task { await loadSupplementalData(for: torrent.id) } }
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -205,37 +184,16 @@ struct macOSTorrentDetail: View {
                 onDone: { isShowingPeersSheet = false }
             )
         } else {
-            switch supplementalStore.status {
-            case .idle:
-                TorrentDetailLoadingPlaceholderView(
-                    title: "Loading Peers",
-                    message: "Fetching the latest peers for this torrent."
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .task {
-                    await loadSupplementalDataIfIdle(for: torrent.id)
-                }
-            case .loading:
-                TorrentDetailLoadingPlaceholderView(
-                    title: "Loading Peers",
-                    message: "Fetching the latest peers for this torrent."
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .failed:
-                TorrentDetailUnavailablePlaceholderView(
-                    title: "Peers Unavailable",
-                    message: "The latest peer details could not be loaded.",
-                    actionTitle: "Retry",
-                    action: {
-                        Task {
-                            await loadSupplementalData(for: torrent.id)
-                        }
-                    }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .loaded:
-                EmptyView()
-            }
+            TorrentDetailSupplementalPlaceholder(
+                status: supplementalStore.status,
+                loadingTitle: "Loading Peers",
+                loadingMessage: "Fetching the latest peers for this torrent.",
+                unavailableTitle: "Peers Unavailable",
+                unavailableMessage: "The latest peer details could not be loaded.",
+                onLoadIfIdle: { await loadSupplementalDataIfIdle(for: torrent.id) },
+                onRetry: { Task { await loadSupplementalData(for: torrent.id) } }
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }
@@ -308,15 +266,14 @@ private struct MacOSTorrentDetailContent: View {
                 }
                 .padding(.bottom, 8)
 
-                if supplementalPayload.pieceCount > 0 && !supplementalPayload.piecesBitfieldBase64.isEmpty {
+                if supplementalPayload.pieceCount > 0 && !supplementalPayload.piecesHaveSet.isEmpty {
                     GroupBox {
                         VStack(alignment: .leading, spacing: 10) {
                             macOSSectionHeader("Pieces", icon: "square.grid.2x2")
 
                             VStack(alignment: .leading, spacing: 8) {
                                 PiecesGridView(
-                                    pieceCount: supplementalPayload.pieceCount,
-                                    piecesBitfieldBase64: supplementalPayload.piecesBitfieldBase64
+                                    piecesHaveSet: supplementalPayload.piecesHaveSet
                                 )
                                 .frame(maxWidth: .infinity)
 

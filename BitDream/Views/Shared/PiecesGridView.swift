@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct PiecesGridView: View {
-    let pieceCount: Int
-    let piecesBitfieldBase64: String
+    let piecesHaveSet: [Bool]
     var rows: Int = 10
 
     // Visual tuning for macOS
@@ -10,7 +9,7 @@ struct PiecesGridView: View {
     private let cellSpacing: CGFloat = 2
 
     var body: some View {
-        let bitset = decodePiecesBitfield(base64String: piecesBitfieldBase64, pieceCount: pieceCount)
+        let bitset = piecesHaveSet
 
         GeometryReader { geometry in
             let columnsCount = computeColumns(availableWidth: geometry.size.width, cellSize: cellSize, cellSpacing: cellSpacing)

@@ -212,54 +212,16 @@ struct iOSTorrentFileDetail: View {
 
 private extension iOSTorrentFileDetail {
     func setFileWanted(_ row: TorrentFileRow, wanted: Bool) {
-        let previousStats = snapshotStats(for: [row.fileIndex])
-        updateLocalFileStatus(fileIndices: [row.fileIndex], wanted: wanted)
-
-        performTransmissionAction(
-            operation: {
-                try await store.setFileWantedStatus(
-                    torrentId: torrentId,
-                    fileIndices: [row.fileIndex],
-                    wanted: wanted
-                )
-            },
-            onSuccess: {
-                onCommittedFileStatsMutation([row.fileIndex], .wanted(wanted))
-            },
-            onError: { message in
-                revertStats(previousStats)
-                errorMessage = message
-                showingError = true
-            }
-        )
+        setBulkWanted(fileIndices: [row.fileIndex], wanted: wanted)
     }
 
     func setFilePriority(_ row: TorrentFileRow, priority: FilePriority) {
-        let previousStats = snapshotStats(for: [row.fileIndex])
-        updateLocalFilePriority(fileIndices: [row.fileIndex], priority: priority)
-
-        performTransmissionAction(
-            operation: {
-                try await store.setFilePriority(
-                    torrentId: torrentId,
-                    fileIndices: [row.fileIndex],
-                    priority: priority
-                )
-            },
-            onSuccess: {
-                onCommittedFileStatsMutation([row.fileIndex], .priority(priority))
-            },
-            onError: { message in
-                revertStats(previousStats)
-                errorMessage = message
-                showingError = true
-            }
-        )
+        setBulkPriority(fileIndices: [row.fileIndex], priority: priority)
     }
 
     func setBulkWanted(fileIndices: [Int], wanted: Bool) {
-        let previousStats = snapshotStats(for: fileIndices)
-        updateLocalFileStatus(fileIndices: fileIndices, wanted: wanted)
+        let previousStats = snapshotFileStats(for: fileIndices, mutableStats: mutableFileStats, fallbackStats: fileStats)
+        mutableFileStats = applyLocalFileWanted(fileIndices: fileIndices, wanted: wanted, mutableStats: mutableFileStats, fallbackStats: fileStats)
 
         performTransmissionAction(
             operation: {
@@ -273,7 +235,7 @@ private extension iOSTorrentFileDetail {
                 onCommittedFileStatsMutation(fileIndices, .wanted(wanted))
             },
             onError: { message in
-                revertStats(previousStats)
+                mutableFileStats = applyFileStatsRevert(previousStats, into: mutableFileStats, fallback: fileStats)
                 errorMessage = message
                 showingError = true
             }
@@ -281,8 +243,8 @@ private extension iOSTorrentFileDetail {
     }
 
     func setBulkPriority(fileIndices: [Int], priority: FilePriority) {
-        let previousStats = snapshotStats(for: fileIndices)
-        updateLocalFilePriority(fileIndices: fileIndices, priority: priority)
+        let previousStats = snapshotFileStats(for: fileIndices, mutableStats: mutableFileStats, fallbackStats: fileStats)
+        mutableFileStats = applyLocalFilePriority(fileIndices: fileIndices, priority: priority, mutableStats: mutableFileStats, fallbackStats: fileStats)
 
         performTransmissionAction(
             operation: {
@@ -296,60 +258,11 @@ private extension iOSTorrentFileDetail {
                 onCommittedFileStatsMutation(fileIndices, .priority(priority))
             },
             onError: { message in
-                revertStats(previousStats)
+                mutableFileStats = applyFileStatsRevert(previousStats, into: mutableFileStats, fallback: fileStats)
                 errorMessage = message
                 showingError = true
             }
         )
-    }
-
-    func snapshotStats(for fileIndices: [Int]) -> [(index: Int, stats: TorrentFileStats)] {
-        fileIndices.compactMap { fileIndex in
-            guard fileIndex < (mutableFileStats.isEmpty ? fileStats.count : mutableFileStats.count) else {
-                return nil
-            }
-
-            let currentStats = mutableFileStats.isEmpty ? fileStats[fileIndex] : mutableFileStats[fileIndex]
-            return (fileIndex, currentStats)
-        }
-    }
-
-    func revertStats(_ previousStats: [(index: Int, stats: TorrentFileStats)]) {
-        if mutableFileStats.isEmpty {
-            mutableFileStats = fileStats
-        }
-
-        for (fileIndex, previousStats) in previousStats where fileIndex < mutableFileStats.count {
-            mutableFileStats[fileIndex] = previousStats
-        }
-    }
-
-    func updateLocalFileStatus(fileIndices: [Int], wanted: Bool) {
-        if mutableFileStats.isEmpty {
-            mutableFileStats = fileStats
-        }
-
-        for fileIndex in fileIndices where fileIndex < mutableFileStats.count {
-            mutableFileStats[fileIndex] = TorrentFileStats(
-                bytesCompleted: mutableFileStats[fileIndex].bytesCompleted,
-                wanted: wanted,
-                priority: mutableFileStats[fileIndex].priority
-            )
-        }
-    }
-
-    func updateLocalFilePriority(fileIndices: [Int], priority: FilePriority) {
-        if mutableFileStats.isEmpty {
-            mutableFileStats = fileStats
-        }
-
-        for fileIndex in fileIndices where fileIndex < mutableFileStats.count {
-            mutableFileStats[fileIndex] = TorrentFileStats(
-                bytesCompleted: mutableFileStats[fileIndex].bytesCompleted,
-                wanted: mutableFileStats[fileIndex].wanted,
-                priority: priority.rawValue
-            )
-        }
     }
 }
 

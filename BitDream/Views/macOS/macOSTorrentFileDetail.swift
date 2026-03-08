@@ -251,9 +251,9 @@ private extension macOSTorrentFileDetail {
 
     func setFilesWanted(_ selectedRows: [TorrentFileRow], wanted: Bool) {
         let fileIndices = selectedRows.map(\.fileIndex)
-        let previousStats = snapshotStats(for: fileIndices)
-
-        updateLocalFileStatus(selectedRows, wanted: wanted)
+        let previousStats = snapshotFileStats(for: fileIndices, mutableStats: mutableFileStats, fallbackStats: fileStats)
+        mutableFileStats = applyLocalFileWanted(fileIndices: fileIndices, wanted: wanted, mutableStats: mutableFileStats, fallbackStats: fileStats)
+        recomputeRows()
 
         performTransmissionAction(
             operation: {
@@ -267,7 +267,8 @@ private extension macOSTorrentFileDetail {
                 onCommittedFileStatsMutation(fileIndices, .wanted(wanted))
             },
             onError: { message in
-                revertStats(previousStats)
+                mutableFileStats = applyFileStatsRevert(previousStats, into: mutableFileStats, fallback: fileStats)
+                recomputeRows()
                 errorMessage = message
                 showingError = true
             }
@@ -276,9 +277,9 @@ private extension macOSTorrentFileDetail {
 
     func setFilesPriority(_ selectedRows: [TorrentFileRow], priority: FilePriority) {
         let fileIndices = selectedRows.map(\.fileIndex)
-        let previousStats = snapshotStats(for: fileIndices)
-
-        updateLocalFilePriority(selectedRows, priority: priority)
+        let previousStats = snapshotFileStats(for: fileIndices, mutableStats: mutableFileStats, fallbackStats: fileStats)
+        mutableFileStats = applyLocalFilePriority(fileIndices: fileIndices, priority: priority, mutableStats: mutableFileStats, fallbackStats: fileStats)
+        recomputeRows()
 
         performTransmissionAction(
             operation: {
@@ -292,64 +293,12 @@ private extension macOSTorrentFileDetail {
                 onCommittedFileStatsMutation(fileIndices, .priority(priority))
             },
             onError: { message in
-                revertStats(previousStats)
+                mutableFileStats = applyFileStatsRevert(previousStats, into: mutableFileStats, fallback: fileStats)
+                recomputeRows()
                 errorMessage = message
                 showingError = true
             }
         )
-    }
-
-    func snapshotStats(for fileIndices: [Int]) -> [(index: Int, stats: TorrentFileStats)] {
-        fileIndices.compactMap { idx in
-            guard idx < (mutableFileStats.isEmpty ? fileStats.count : mutableFileStats.count) else {
-                return nil
-            }
-            let current = mutableFileStats.isEmpty ? fileStats[idx] : mutableFileStats[idx]
-            return (idx, current)
-        }
-    }
-
-    func revertStats(_ previousStats: [(index: Int, stats: TorrentFileStats)]) {
-        for (idx, old) in previousStats where idx < mutableFileStats.count {
-            mutableFileStats[idx] = old
-        }
-        recomputeRows()
-    }
-
-    func updateLocalFileStatus(_ selectedRows: [TorrentFileRow], wanted: Bool) {
-        for row in selectedRows {
-            let idx = row.fileIndex
-            guard idx < (mutableFileStats.isEmpty ? fileStats.count : mutableFileStats.count) else { continue }
-            let current = mutableFileStats.isEmpty ? fileStats[idx] : mutableFileStats[idx]
-            let updated = TorrentFileStats(
-                bytesCompleted: current.bytesCompleted,
-                wanted: wanted,
-                priority: current.priority
-            )
-            if mutableFileStats.isEmpty {
-                mutableFileStats = fileStats
-            }
-            mutableFileStats[idx] = updated
-        }
-        recomputeRows()
-    }
-
-    func updateLocalFilePriority(_ selectedRows: [TorrentFileRow], priority: FilePriority) {
-        for row in selectedRows {
-            let idx = row.fileIndex
-            guard idx < (mutableFileStats.isEmpty ? fileStats.count : mutableFileStats.count) else { continue }
-            let current = mutableFileStats.isEmpty ? fileStats[idx] : mutableFileStats[idx]
-            let updated = TorrentFileStats(
-                bytesCompleted: current.bytesCompleted,
-                wanted: current.wanted,
-                priority: priority.rawValue
-            )
-            if mutableFileStats.isEmpty {
-                mutableFileStats = fileStats
-            }
-            mutableFileStats[idx] = updated
-        }
-        recomputeRows()
     }
 }
 

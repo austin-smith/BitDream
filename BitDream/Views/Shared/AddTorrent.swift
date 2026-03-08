@@ -57,6 +57,22 @@ func presentAddTorrentStoreError(
     #endif
 }
 
+@MainActor
+func addTorrentFromFileData(_ data: Data, store: TransmissionStore) {
+    performTransmissionAction(
+        operation: {
+            try await store.addTorrent(
+                fileData: data,
+                saveLocation: store.defaultDownloadDir
+            )
+        },
+        onSuccess: { (_: TransmissionTorrentAddOutcome) in },
+        onError: { message in
+            presentAddTorrentStoreError(detail: message, store: store)
+        }
+    )
+}
+
 // MARK: - Extensions
 extension UTType {
     /// Convenience UTType for .torrent used by file importer; prefers extension, then MIME type, then .data

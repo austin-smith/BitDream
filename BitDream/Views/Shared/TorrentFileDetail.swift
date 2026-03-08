@@ -169,6 +169,66 @@ struct TorrentFileDetail: View {
     }
 }
 
+// MARK: - Shared File Stats Mutation Helpers
+
+func snapshotFileStats(
+    for fileIndices: [Int],
+    mutableStats: [TorrentFileStats],
+    fallbackStats: [TorrentFileStats]
+) -> [(index: Int, stats: TorrentFileStats)] {
+    let source = mutableStats.isEmpty ? fallbackStats : mutableStats
+    return fileIndices.compactMap { idx in
+        guard idx < source.count else { return nil }
+        return (idx, source[idx])
+    }
+}
+
+func applyFileStatsRevert(
+    _ previousStats: [(index: Int, stats: TorrentFileStats)],
+    into mutableStats: [TorrentFileStats],
+    fallback fallbackStats: [TorrentFileStats]
+) -> [TorrentFileStats] {
+    var result = mutableStats.isEmpty ? fallbackStats : mutableStats
+    for (idx, old) in previousStats where idx < result.count {
+        result[idx] = old
+    }
+    return result
+}
+
+func applyLocalFileWanted(
+    fileIndices: [Int],
+    wanted: Bool,
+    mutableStats: [TorrentFileStats],
+    fallbackStats: [TorrentFileStats]
+) -> [TorrentFileStats] {
+    var result = mutableStats.isEmpty ? fallbackStats : mutableStats
+    for idx in fileIndices where idx < result.count {
+        result[idx] = TorrentFileStats(
+            bytesCompleted: result[idx].bytesCompleted,
+            wanted: wanted,
+            priority: result[idx].priority
+        )
+    }
+    return result
+}
+
+func applyLocalFilePriority(
+    fileIndices: [Int],
+    priority: FilePriority,
+    mutableStats: [TorrentFileStats],
+    fallbackStats: [TorrentFileStats]
+) -> [TorrentFileStats] {
+    var result = mutableStats.isEmpty ? fallbackStats : mutableStats
+    for idx in fileIndices where idx < result.count {
+        result[idx] = TorrentFileStats(
+            bytesCompleted: result[idx].bytesCompleted,
+            wanted: result[idx].wanted,
+            priority: priority.rawValue
+        )
+    }
+    return result
+}
+
 // MARK: - Preview Data
 
 /// Shared test data for previews

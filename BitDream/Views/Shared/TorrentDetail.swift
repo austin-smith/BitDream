@@ -35,7 +35,7 @@ internal struct TorrentDetailSupplementalPayload: Sendable, Equatable {
     let peersFrom: PeersFrom?
     let pieceCount: Int
     let pieceSize: Int64
-    let piecesBitfieldBase64: String
+    let piecesHaveSet: [Bool]
     let piecesHaveCount: Int
 
     static let empty = TorrentDetailSupplementalPayload(
@@ -45,7 +45,7 @@ internal struct TorrentDetailSupplementalPayload: Sendable, Equatable {
         peersFrom: nil,
         pieceCount: 0,
         pieceSize: 0,
-        piecesBitfieldBase64: "",
+        piecesHaveSet: [],
         piecesHaveCount: 0
     )
 
@@ -56,7 +56,7 @@ internal struct TorrentDetailSupplementalPayload: Sendable, Equatable {
         peersFrom: PeersFrom?,
         pieceCount: Int,
         pieceSize: Int64,
-        piecesBitfieldBase64: String,
+        piecesHaveSet: [Bool],
         piecesHaveCount: Int
     ) {
         self.files = files
@@ -65,7 +65,7 @@ internal struct TorrentDetailSupplementalPayload: Sendable, Equatable {
         self.peersFrom = peersFrom
         self.pieceCount = pieceCount
         self.pieceSize = pieceSize
-        self.piecesBitfieldBase64 = piecesBitfieldBase64
+        self.piecesHaveSet = piecesHaveSet
         self.piecesHaveCount = piecesHaveCount
     }
 
@@ -82,7 +82,7 @@ internal struct TorrentDetailSupplementalPayload: Sendable, Equatable {
             peersFrom: snapshot.peersFrom,
             pieceCount: snapshot.pieceCount,
             pieceSize: snapshot.pieceSize,
-            piecesBitfieldBase64: snapshot.piecesBitfieldBase64,
+            piecesHaveSet: haveSet,
             piecesHaveCount: haveSet.reduce(0) { $0 + ($1 ? 1 : 0) }
         )
     }
@@ -95,7 +95,7 @@ internal struct TorrentDetailSupplementalPayload: Sendable, Equatable {
             peersFrom: peersFrom,
             pieceCount: pieceCount,
             pieceSize: pieceSize,
-            piecesBitfieldBase64: piecesBitfieldBase64,
+            piecesHaveSet: piecesHaveSet,
             piecesHaveCount: piecesHaveCount
         )
     }
@@ -313,6 +313,35 @@ private extension TorrentFileStats {
                 wanted: wanted,
                 priority: priority.rawValue
             )
+        }
+    }
+}
+
+internal struct TorrentDetailSupplementalPlaceholder: View {
+    let status: TorrentDetailSupplementalLoadStatus
+    let loadingTitle: String
+    let loadingMessage: String
+    let unavailableTitle: String
+    let unavailableMessage: String
+    let onLoadIfIdle: @Sendable () async -> Void
+    let onRetry: () -> Void
+
+    var body: some View {
+        switch status {
+        case .idle:
+            TorrentDetailLoadingPlaceholderView(title: loadingTitle, message: loadingMessage)
+                .task { await onLoadIfIdle() }
+        case .loading:
+            TorrentDetailLoadingPlaceholderView(title: loadingTitle, message: loadingMessage)
+        case .failed:
+            TorrentDetailUnavailablePlaceholderView(
+                title: unavailableTitle,
+                message: unavailableMessage,
+                actionTitle: "Retry",
+                action: onRetry
+            )
+        case .loaded:
+            EmptyView()
         }
     }
 }
