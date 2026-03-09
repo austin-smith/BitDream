@@ -28,6 +28,16 @@ struct iOSTorrentDetail: View {
         supplementalStore.shouldDisplayPayload(for: torrent.id)
     }
 
+    @MainActor
+    private func loadSupplementalDetails() async {
+        await supplementalStore.load(
+            for: torrent.id,
+            using: store,
+            showingError: $showingError,
+            errorMessage: $errorMessage
+        )
+    }
+
     var body: some View {
         let details = formatTorrentDetails(torrent: torrent)
         let piecesSectionState = TorrentPiecesSectionState.resolve(
@@ -46,17 +56,14 @@ struct iOSTorrentDetail: View {
             onDelete: { showingDeleteConfirmation = true },
             onRetryPiecesLoad: {
                 Task {
-                    await supplementalStore.load(
-                        for: torrent.id,
-                        using: store,
-                        showingError: $showingError,
-                        errorMessage: $errorMessage
-                    )
+                    await loadSupplementalDetails()
                 }
             }
         )
-        .task(id: torrent.id) {
-            await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage)
+        .onChange(of: torrent.id, initial: true) { _, _ in
+            Task {
+                await loadSupplementalDetails()
+            }
         }
         .toolbar {
             detailToolbar
@@ -335,6 +342,7 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
 
                     Section(header: Text("Pieces")) {
                         IOSTorrentPiecesSectionContent(
+                            torrentID: torrent.id,
                             state: piecesSectionState,
                             onRetry: onRetryPiecesLoad
                         )
@@ -384,6 +392,7 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
 }
 
 private struct IOSTorrentPiecesSectionContent: View {
+    let torrentID: Int
     let state: TorrentPiecesSectionState
     let onRetry: () -> Void
 
@@ -396,6 +405,11 @@ private struct IOSTorrentPiecesSectionContent: View {
                 PiecesGridView(
                     piecesHaveSet: payload.piecesHaveSet
                 )
+                .id(PiecesGridIdentity(
+                    torrentID: torrentID,
+                    pieceCount: payload.pieceCount,
+                    piecesHaveCount: payload.piecesHaveCount
+                ))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text(
@@ -418,6 +432,12 @@ private struct IOSTorrentPiecesSectionContent: View {
             )
         }
     }
+}
+
+private struct PiecesGridIdentity: Hashable {
+    let torrentID: Int
+    let pieceCount: Int
+    let piecesHaveCount: Int
 }
 
 private struct IOSTorrentPiecesLoadingView: View {
