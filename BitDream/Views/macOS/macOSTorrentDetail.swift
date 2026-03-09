@@ -205,7 +205,7 @@ internal enum MacOSTorrentPiecesSectionState: Equatable {
 
         switch status {
         case .failed:
-            return .failed
+            return payload.hasRenderablePieceData ? .content(payload) : .failed
         case .loaded:
             return payload.hasRenderablePieceData ? .content(payload) : .empty
         case .idle, .loading:
