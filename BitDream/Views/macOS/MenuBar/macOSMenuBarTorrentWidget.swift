@@ -5,6 +5,7 @@ struct macOSMenuBarTorrentWidget: View {
     @EnvironmentObject private var store: TransmissionStore
     @State private var torrentRowsHeight: CGFloat = 0
     @AppStorage(UserDefaultsKeys.menuBarSortMode) private var menuBarSortModeRaw: String = AppDefaults.menuBarSortMode.rawValue
+    @AppStorage(UserDefaultsKeys.ratioDisplayMode) private var ratioDisplayModeRaw: String = AppDefaults.ratioDisplayMode.rawValue
     let onOpenMainWindow: () -> Void
 
     private let panelWidth: CGFloat = 380
@@ -21,12 +22,16 @@ struct macOSMenuBarTorrentWidget: View {
         MenuBarSortMode(rawValue: menuBarSortModeRaw) ?? AppDefaults.menuBarSortMode
     }
 
+    private var ratioDisplayMode: RatioDisplayMode {
+        RatioDisplayMode(rawValue: ratioDisplayModeRaw) ?? AppDefaults.ratioDisplayMode
+    }
+
     private var activeTorrents: [Torrent] {
         menuBarActiveTorrents(from: store, sortMode: menuBarSortMode)
     }
 
     private var summary: MenuBarTorrentSummary {
-        menuBarSummary(from: store, activeTorrents: activeTorrents)
+        menuBarSummary(from: store, activeTorrents: activeTorrents, ratioDisplayMode: ratioDisplayMode)
     }
 
     private var isConnected: Bool {
@@ -96,10 +101,12 @@ struct macOSMenuBarTorrentWidget: View {
             }
 
             HStack(spacing: 8) {
-                SpeedChip(speed: summary.downloadSpeed, direction: .download, style: .chip, size: .compact)
-                SpeedChip(speed: summary.uploadSpeed, direction: .upload, style: .chip, size: .compact)
                 RatioChip(ratio: summary.ratio, size: .compact)
                 Spacer(minLength: 0)
+                HStack(spacing: 8) {
+                    SpeedChip(speed: summary.downloadSpeed, direction: .download, style: .chip, size: .compact)
+                    SpeedChip(speed: summary.uploadSpeed, direction: .upload, style: .chip, size: .compact)
+                }
             }
         }
     }

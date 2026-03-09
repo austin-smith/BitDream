@@ -26,23 +26,24 @@ func menuBarActiveTorrents(from store: TransmissionStore, sortMode: MenuBarSortM
 
 @MainActor
 func menuBarSummary(from store: TransmissionStore) -> MenuBarTorrentSummary {
-    menuBarSummary(from: store, activeTorrents: menuBarActiveTorrents(from: store, sortMode: .activity))
+    menuBarSummary(
+        from: store,
+        activeTorrents: menuBarActiveTorrents(from: store, sortMode: .activity),
+        ratioDisplayMode: AppDefaults.ratioDisplayMode
+    )
 }
 
 @MainActor
-func menuBarSummary(from store: TransmissionStore, activeTorrents: [Torrent]) -> MenuBarTorrentSummary {
+func menuBarSummary(from store: TransmissionStore, activeTorrents: [Torrent], ratioDisplayMode: RatioDisplayMode) -> MenuBarTorrentSummary {
     let stats = store.sessionStats
-
-    let uploaded = stats?.currentStats?.uploadedBytes ?? 0
-    let downloaded = stats?.currentStats?.downloadedBytes ?? 0
-    let ratio = downloaded > 0 ? Double(uploaded) / Double(downloaded) : 0
+    let ratioSummary = makeRatioSummarySnapshot(store: store, displayMode: ratioDisplayMode)
 
     return MenuBarTorrentSummary(
         serverName: store.host?.name ?? "No Server",
         activeCount: activeTorrents.count,
         downloadSpeed: stats?.downloadSpeed ?? 0,
         uploadSpeed: stats?.uploadSpeed ?? 0,
-        ratio: ratio
+        ratio: ratioSummary.ratio
     )
 }
 

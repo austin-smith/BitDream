@@ -82,6 +82,12 @@ From repo root (`/Users/austinsmith/Developer/Repos/BitDream`), run macOS tests 
   test
 ```
 
+Testing guidance:
+
+- Add tests when they protect meaningful user-visible behavior, cross-file integration, bug regressions, or non-trivial logic that is easy to break.
+- Do not add dedicated tests for every small helper extraction, straightforward computed property, or internal refactor unless the change introduces real behavioral risk.
+- Prefer a small number of high-signal tests over many narrow tests that only restate the implementation.
+
 ## Linting
 
 From repo root (`/Users/austinsmith/Developer/Repos/BitDream`), run:
