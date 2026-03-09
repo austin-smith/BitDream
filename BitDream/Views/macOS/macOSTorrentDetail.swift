@@ -25,11 +25,17 @@ struct macOSTorrentDetail: View {
 
     var body: some View {
         let details = formatTorrentDetails(torrent: torrent)
+        let piecesSectionState = MacOSTorrentPiecesSectionState.resolve(
+            status: supplementalStore.status,
+            payload: supplementalPayload,
+            shouldDisplayPayload: shouldDisplaySupplementalPayload
+        )
 
         MacOSTorrentDetailContent(
             torrent: torrent,
             details: details,
             supplementalPayload: supplementalPayload,
+            piecesSectionState: piecesSectionState,
             onShowFiles: { isShowingFilesSheet = true },
             onShowPeers: { isShowingPeersSheet = true },
             onDelete: { showingDeleteConfirmation = true }
@@ -182,10 +188,37 @@ struct macOSTorrentDetail: View {
     }
 }
 
+internal enum MacOSTorrentPiecesSectionState: Equatable {
+    case loading
+    case content(TorrentDetailSupplementalPayload)
+    case empty
+    case failed
+
+    static func resolve(
+        status: TorrentDetailSupplementalLoadStatus,
+        payload: TorrentDetailSupplementalPayload,
+        shouldDisplayPayload: Bool
+    ) -> Self {
+        guard shouldDisplayPayload else {
+            return status == .failed ? .failed : .loading
+        }
+
+        switch status {
+        case .failed:
+            return payload.hasRenderablePieceData ? .content(payload) : .failed
+        case .loaded:
+            return payload.hasRenderablePieceData ? .content(payload) : .empty
+        case .idle, .loading:
+            return payload.hasRenderablePieceData ? .content(payload) : .loading
+        }
+    }
+}
+
 private struct MacOSTorrentDetailContent: View {
     let torrent: Torrent
     let details: TorrentDetailsDisplay
     let supplementalPayload: TorrentDetailSupplementalPayload
+    let piecesSectionState: MacOSTorrentPiecesSectionState
     let onShowFiles: () -> Void
     let onShowPeers: () -> Void
     let onDelete: () -> Void
@@ -250,29 +283,8 @@ private struct MacOSTorrentDetailContent: View {
                 }
                 .padding(.bottom, 8)
 
-                if supplementalPayload.pieceCount > 0 && !supplementalPayload.piecesHaveSet.isEmpty {
-                    GroupBox {
-                        VStack(alignment: .leading, spacing: 10) {
-                            macOSSectionHeader("Pieces", icon: "square.grid.2x2")
-
-                            VStack(alignment: .leading, spacing: 8) {
-                                PiecesGridView(
-                                    piecesHaveSet: supplementalPayload.piecesHaveSet
-                                )
-                                .frame(maxWidth: .infinity)
-
-                                Text(
-                                    "\(supplementalPayload.piecesHaveCount) of \(supplementalPayload.pieceCount) pieces • \(formatByteCount(supplementalPayload.pieceSize)) each"
-                                )
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            }
-                        }
-                        .padding(.vertical, 16)
-                        .padding(.horizontal, 20)
-                    }
+                MacOSTorrentPiecesSection(state: piecesSectionState)
                     .padding(.bottom, 8)
-                }
 
                 GroupBox {
                     VStack(alignment: .leading, spacing: 10) {
@@ -316,6 +328,105 @@ private struct MacOSTorrentDetailContent: View {
     }
 }
 
+private struct MacOSTorrentPiecesSection: View {
+    private static let contentMinHeight: CGFloat = 96
+
+    let state: MacOSTorrentPiecesSectionState
+
+    var body: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 10) {
+                macOSSectionHeader("Pieces", icon: "square.grid.2x2")
+
+                sectionContent
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(minHeight: Self.contentMinHeight, alignment: .top)
+            }
+            .padding(.vertical, 16)
+            .padding(.horizontal, 20)
+        }
+    }
+
+    @ViewBuilder
+    private var sectionContent: some View {
+        switch state {
+        case .loading:
+            MacOSTorrentPiecesLoadingView()
+        case .content(let payload):
+            VStack(alignment: .leading, spacing: 8) {
+                PiecesGridView(
+                    piecesHaveSet: payload.piecesHaveSet
+                )
+                .frame(maxWidth: .infinity)
+
+                Text(
+                    "\(payload.piecesHaveCount) of \(payload.pieceCount) pieces • \(formatByteCount(payload.pieceSize)) each"
+                )
+                .font(.caption)
+                .foregroundColor(.secondary)
+            }
+        case .empty:
+            MacOSTorrentPiecesMessageView(
+                title: "No Piece Data",
+                message: "Piece availability is not available for this torrent."
+            )
+        case .failed:
+            MacOSTorrentPiecesMessageView(
+                title: "Pieces Unavailable",
+                message: "BitDream couldn't load piece availability for this torrent."
+            )
+        }
+    }
+}
+
+private struct MacOSTorrentPiecesLoadingView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.secondary.opacity(0.12))
+                .frame(maxWidth: .infinity)
+                .frame(height: 80)
+                .overlay(alignment: .topLeading) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .frame(width: 180, height: 8)
+                        RoundedRectangle(cornerRadius: 4)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 8)
+                        RoundedRectangle(cornerRadius: 4)
+                            .frame(width: 240, height: 8)
+                    }
+                    .padding(12)
+                    .foregroundStyle(.secondary.opacity(0.2))
+                }
+
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.secondary.opacity(0.12))
+                .frame(width: 220, height: 10)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Loading pieces")
+    }
+}
+
+private struct MacOSTorrentPiecesMessageView: View {
+    let title: String
+    let message: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+            Text(message)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 // Helper view for consistent detail rows
 struct DetailRow<Content: View>: View {
     var label: String
@@ -342,6 +453,12 @@ struct DetailRow<Content: View>: View {
             Spacer()
         }
         .padding(.vertical, 2)
+    }
+}
+
+private extension TorrentDetailSupplementalPayload {
+    var hasRenderablePieceData: Bool {
+        pieceCount > 0 && !piecesHaveSet.isEmpty
     }
 }
 
