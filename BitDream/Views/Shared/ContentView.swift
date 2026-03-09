@@ -143,6 +143,40 @@ func ensureStartupConnectionBehaviorApplied(store: TransmissionStore, modelConte
 
 // MARK: - Shared Views
 
+struct RatioSummarySnapshot: Equatable {
+    let uploaded: Int64
+    let downloaded: Int64
+
+    var ratio: Double {
+        downloaded > 0 ? Double(uploaded) / Double(downloaded) : 0
+    }
+}
+
+@MainActor
+func makeRatioSummarySnapshot(store: TransmissionStore, displayMode: RatioDisplayMode) -> RatioSummarySnapshot {
+    switch displayMode {
+    case .cumulative:
+        if let stats = store.sessionStats?.cumulativeStats {
+            return RatioSummarySnapshot(
+                uploaded: stats.uploadedBytes,
+                downloaded: stats.downloadedBytes
+            )
+        }
+    case .current:
+        if let stats = store.sessionStats?.currentStats {
+            return RatioSummarySnapshot(
+                uploaded: stats.uploadedBytes,
+                downloaded: stats.downloadedBytes
+            )
+        }
+    }
+
+    return RatioSummarySnapshot(
+        uploaded: store.torrents.reduce(0) { $0 + $1.uploadedEver },
+        downloaded: store.torrents.reduce(0) { $0 + $1.downloadedEver }
+    )
+}
+
 // Stats header view used on both platforms
 struct StatsHeaderView: View {
     @ObservedObject var store: TransmissionStore
@@ -154,32 +188,18 @@ struct StatsHeaderView: View {
         RatioDisplayMode(rawValue: ratioDisplayModeRaw) ?? AppDefaults.ratioDisplayMode
     }
 
-    private var overallTotals: (uploaded: Int64, downloaded: Int64) {
-        switch ratioDisplayMode {
-        case .cumulative:
-            if let stats = store.sessionStats?.cumulativeStats {
-                return (uploaded: stats.uploadedBytes, downloaded: stats.downloadedBytes)
-            }
-        case .current:
-            if let stats = store.sessionStats?.currentStats {
-                return (uploaded: stats.uploadedBytes, downloaded: stats.downloadedBytes)
-            }
-        }
-        let fallbackDownloaded = store.torrents.reduce(0) { $0 + $1.downloadedEver }
-        let fallbackUploaded = store.torrents.reduce(0) { $0 + $1.uploadedEver }
-        return (uploaded: fallbackUploaded, downloaded: fallbackDownloaded)
+    private var ratioSummary: RatioSummarySnapshot {
+        makeRatioSummarySnapshot(store: store, displayMode: ratioDisplayMode)
     }
 
     private var overallRatio: Double {
-        let totals = overallTotals
-        return totals.downloaded > 0 ? Double(totals.uploaded) / Double(totals.downloaded) : 0.0
+        ratioSummary.ratio
     }
 
     private var ratioTooltip: String {
-        let totals = overallTotals
         let mode = ratioDisplayMode == .cumulative ? "Total Ratio" : "Session Ratio"
-        let uploaded = formatByteCount(totals.uploaded)
-        let downloaded = formatByteCount(totals.downloaded)
+        let uploaded = formatByteCount(ratioSummary.uploaded)
+        let downloaded = formatByteCount(ratioSummary.downloaded)
         return "\(mode)\n----------\nUploaded: \(uploaded)\nDownloaded: \(downloaded)"
     }
 
