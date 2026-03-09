@@ -99,6 +99,36 @@ internal struct TorrentDetailSupplementalPayload: Sendable, Equatable {
             piecesHaveCount: piecesHaveCount
         )
     }
+
+    var hasRenderablePieceData: Bool {
+        pieceCount > 0 && !piecesHaveSet.isEmpty
+    }
+}
+
+internal enum TorrentPiecesSectionState: Equatable {
+    case loading
+    case content(TorrentDetailSupplementalPayload)
+    case empty
+    case failed
+
+    static func resolve(
+        status: TorrentDetailSupplementalLoadStatus,
+        payload: TorrentDetailSupplementalPayload,
+        shouldDisplayPayload: Bool
+    ) -> Self {
+        guard shouldDisplayPayload else {
+            return status == .failed ? .failed : .loading
+        }
+
+        switch status {
+        case .failed:
+            return payload.hasRenderablePieceData ? .content(payload) : .failed
+        case .loaded:
+            return payload.hasRenderablePieceData ? .content(payload) : .empty
+        case .idle, .loading:
+            return payload.hasRenderablePieceData ? .content(payload) : .loading
+        }
+    }
 }
 
 internal struct TorrentDetailSupplementalState: Sendable {

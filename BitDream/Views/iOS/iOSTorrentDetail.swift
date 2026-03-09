@@ -30,14 +30,30 @@ struct iOSTorrentDetail: View {
 
     var body: some View {
         let details = formatTorrentDetails(torrent: torrent)
+        let piecesSectionState = TorrentPiecesSectionState.resolve(
+            status: supplementalStore.status,
+            payload: supplementalPayload,
+            shouldDisplayPayload: shouldDisplaySupplementalPayload
+        )
 
         IOSTorrentDetailContent(
             torrent: torrent,
             details: details,
             supplementalPayload: supplementalPayload,
+            piecesSectionState: piecesSectionState,
             filesDestination: filesDestination,
             peersDestination: peersDestination,
-            onDelete: { showingDeleteConfirmation = true }
+            onDelete: { showingDeleteConfirmation = true },
+            onRetryPiecesLoad: {
+                Task {
+                    await supplementalStore.load(
+                        for: torrent.id,
+                        using: store,
+                        showingError: $showingError,
+                        errorMessage: $errorMessage
+                    )
+                }
+            }
         )
         .task(id: torrent.id) {
             await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage)
@@ -232,9 +248,11 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
     let torrent: Torrent
     let details: TorrentDetailsDisplay
     let supplementalPayload: TorrentDetailSupplementalPayload
+    let piecesSectionState: TorrentPiecesSectionState
     let filesDestination: FilesDestination
     let peersDestination: PeersDestination
     let onDelete: () -> Void
+    let onRetryPiecesLoad: () -> Void
 
     var body: some View {
         NavigationStack {
@@ -315,22 +333,12 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
                         }
                     }
 
-                    if supplementalPayload.pieceCount > 0 && !supplementalPayload.piecesHaveSet.isEmpty {
-                        Section(header: Text("Pieces")) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                PiecesGridView(
-                                    piecesHaveSet: supplementalPayload.piecesHaveSet
-                                )
-                                .frame(maxWidth: .infinity, alignment: .leading)
-
-                                Text(
-                                    "\(supplementalPayload.piecesHaveCount) of \(supplementalPayload.pieceCount) pieces • \(formatByteCount(supplementalPayload.pieceSize)) each"
-                                )
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            }
-                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                        }
+                    Section(header: Text("Pieces")) {
+                        IOSTorrentPiecesSectionContent(
+                            state: piecesSectionState,
+                            onRetry: onRetryPiecesLoad
+                        )
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     }
 
                     Section(header: Text("Additional Info")) {
@@ -372,6 +380,112 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
                 }
             }
         }
+    }
+}
+
+private struct IOSTorrentPiecesSectionContent: View {
+    let state: TorrentPiecesSectionState
+    let onRetry: () -> Void
+
+    var body: some View {
+        switch state {
+        case .loading:
+            IOSTorrentPiecesLoadingView()
+        case .content(let payload):
+            VStack(alignment: .leading, spacing: 6) {
+                PiecesGridView(
+                    piecesHaveSet: payload.piecesHaveSet
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text(
+                    "\(payload.piecesHaveCount) of \(payload.pieceCount) pieces • \(formatByteCount(payload.pieceSize)) each"
+                )
+                .font(.caption)
+                .foregroundColor(.secondary)
+            }
+        case .empty:
+            IOSTorrentPiecesMessageView(
+                title: "No Piece Data",
+                message: "Piece availability is not available for this torrent."
+            )
+        case .failed:
+            IOSTorrentPiecesMessageView(
+                title: "Pieces Unavailable",
+                message: "BitDream couldn't load piece availability for this torrent.",
+                actionTitle: "Retry",
+                action: onRetry
+            )
+        }
+    }
+}
+
+private struct IOSTorrentPiecesLoadingView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.secondary.opacity(0.12))
+                .frame(maxWidth: .infinity)
+                .frame(height: 80)
+                .overlay(alignment: .topLeading) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .frame(width: 140, height: 8)
+                        RoundedRectangle(cornerRadius: 4)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 8)
+                        RoundedRectangle(cornerRadius: 4)
+                            .frame(width: 200, height: 8)
+                    }
+                    .padding(12)
+                    .foregroundStyle(.secondary.opacity(0.2))
+                }
+
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.secondary.opacity(0.12))
+                .frame(width: 220, height: 10)
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Loading pieces")
+    }
+}
+
+private struct IOSTorrentPiecesMessageView: View {
+    let title: String
+    let message: String
+    let actionTitle: String?
+    let action: (() -> Void)?
+
+    init(
+        title: String,
+        message: String,
+        actionTitle: String? = nil,
+        action: (() -> Void)? = nil
+    ) {
+        self.title = title
+        self.message = message
+        self.actionTitle = actionTitle
+        self.action = action
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.medium)
+
+            Text(message)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let actionTitle, let action {
+                Button(actionTitle, action: action)
+                    .font(.caption.weight(.semibold))
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 

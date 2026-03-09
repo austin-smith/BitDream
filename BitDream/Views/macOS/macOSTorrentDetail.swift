@@ -25,7 +25,7 @@ struct macOSTorrentDetail: View {
 
     var body: some View {
         let details = formatTorrentDetails(torrent: torrent)
-        let piecesSectionState = MacOSTorrentPiecesSectionState.resolve(
+        let piecesSectionState = TorrentPiecesSectionState.resolve(
             status: supplementalStore.status,
             payload: supplementalPayload,
             shouldDisplayPayload: shouldDisplaySupplementalPayload
@@ -188,37 +188,11 @@ struct macOSTorrentDetail: View {
     }
 }
 
-internal enum MacOSTorrentPiecesSectionState: Equatable {
-    case loading
-    case content(TorrentDetailSupplementalPayload)
-    case empty
-    case failed
-
-    static func resolve(
-        status: TorrentDetailSupplementalLoadStatus,
-        payload: TorrentDetailSupplementalPayload,
-        shouldDisplayPayload: Bool
-    ) -> Self {
-        guard shouldDisplayPayload else {
-            return status == .failed ? .failed : .loading
-        }
-
-        switch status {
-        case .failed:
-            return payload.hasRenderablePieceData ? .content(payload) : .failed
-        case .loaded:
-            return payload.hasRenderablePieceData ? .content(payload) : .empty
-        case .idle, .loading:
-            return payload.hasRenderablePieceData ? .content(payload) : .loading
-        }
-    }
-}
-
 private struct MacOSTorrentDetailContent: View {
     let torrent: Torrent
     let details: TorrentDetailsDisplay
     let supplementalPayload: TorrentDetailSupplementalPayload
-    let piecesSectionState: MacOSTorrentPiecesSectionState
+    let piecesSectionState: TorrentPiecesSectionState
     let onShowFiles: () -> Void
     let onShowPeers: () -> Void
     let onDelete: () -> Void
@@ -331,7 +305,7 @@ private struct MacOSTorrentDetailContent: View {
 private struct MacOSTorrentPiecesSection: View {
     private static let contentMinHeight: CGFloat = 96
 
-    let state: MacOSTorrentPiecesSectionState
+    let state: TorrentPiecesSectionState
 
     var body: some View {
         GroupBox {
@@ -453,12 +427,6 @@ struct DetailRow<Content: View>: View {
             Spacer()
         }
         .padding(.vertical, 2)
-    }
-}
-
-private extension TorrentDetailSupplementalPayload {
-    var hasRenderablePieceData: Bool {
-        pieceCount > 0 && !piecesHaveSet.isEmpty
     }
 }
 
