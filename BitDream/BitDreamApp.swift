@@ -8,7 +8,6 @@ import SwiftData
 @main
 struct BitDreamApp: App {
     let persistenceController = PersistenceController.shared
-    private let swiftDataSchemaVersion = "swiftdata_v1"
 
     // Create a shared store instance that will be used by both the main app and settings
     @StateObject private var store = TransmissionStore()
@@ -30,8 +29,6 @@ struct BitDreamApp: App {
     #endif
 
     init() {
-        performPersistenceFreshStartCutoverIfNeeded(targetVersion: swiftDataSchemaVersion)
-
         // Register default values for view state
         UserDefaults.registerViewStateDefaults()
 
@@ -312,40 +309,6 @@ private extension BitDreamApp {
         .modelContainer(persistenceController.container)
     }
     #endif
-}
-
-// TODO(swiftdata-cutover): Remove this function entirely after the migration
-// window for pre-SwiftData installs has ended.
-private func performPersistenceFreshStartCutoverIfNeeded(targetVersion: String) {
-    let defaults = UserDefaults.standard
-    let currentVersion = defaults.string(forKey: UserDefaultsKeys.persistenceSchemaVersion)
-    guard currentVersion != targetVersion else { return }
-
-    defaults.removeObject(forKey: UserDefaultsKeys.selectedHost)
-    // TODO(swiftdata-cutover): Remove this one-time widget snapshot cleanup
-    // once legacy pre-SwiftData upgrade paths are no longer supported.
-    AppGroup.Files.removeWidgetSnapshotFiles()
-    removeLegacyCoreDataStoreFiles()
-    defaults.set(targetVersion, forKey: UserDefaultsKeys.persistenceSchemaVersion)
-}
-
-// TODO(swiftdata-cutover): Remove this helper when
-// `performPersistenceFreshStartCutoverIfNeeded` is deleted.
-private func removeLegacyCoreDataStoreFiles() {
-    guard let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-        return
-    }
-
-    let legacyFilenames = [
-        "BitDream.sqlite",
-        "BitDream.sqlite-shm",
-        "BitDream.sqlite-wal"
-    ]
-
-    legacyFilenames.forEach { filename in
-        let url = appSupportURL.appendingPathComponent(filename, isDirectory: false)
-        try? FileManager.default.removeItem(at: url)
-    }
 }
 
 #if os(macOS)
