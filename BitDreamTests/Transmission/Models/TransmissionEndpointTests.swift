@@ -6,7 +6,6 @@ final class TransmissionEndpointTests: XCTestCase {
         let endpoint = try TransmissionEndpoint(scheme: "http", host: "example.com", port: 9091)
 
         XCTAssertEqual(endpoint.rpcURL.absoluteString, "http://example.com:9091/transmission/rpc")
-        XCTAssertEqual(endpoint.endpointKey, "http://example.com:9091/transmission/rpc")
         XCTAssertEqual(endpoint.scheme, "http")
         XCTAssertEqual(endpoint.host, "example.com")
         XCTAssertEqual(endpoint.port, 9091)
@@ -30,21 +29,14 @@ final class TransmissionEndpointTests: XCTestCase {
         }
     }
 
-    func testEndpointRejectsMissingPortFromConfig() async {
-        var config = TransmissionConfig()
-        config.scheme = "http"
-        config.host = "example.com"
-
+    func testEndpointRejectsOutOfRangePort() async {
         await assertThrowsTransmissionError(.invalidEndpointConfiguration) {
-            _ = try TransmissionEndpoint(config: config)
+            _ = try TransmissionEndpoint(scheme: "http", host: "example.com", port: 65_536)
         }
     }
 
     func testEndpointAlwaysUsesDefaultRPCPath() throws {
-        var config = makeConfig()
-        config.path = "/custom/path"
-
-        let endpoint = try TransmissionEndpoint(config: config)
+        let endpoint = try TransmissionEndpoint(scheme: "http", host: "example.com", port: 9091)
 
         XCTAssertEqual(endpoint.rpcURL.path, "/transmission/rpc")
     }

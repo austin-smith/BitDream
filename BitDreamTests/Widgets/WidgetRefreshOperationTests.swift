@@ -159,7 +159,10 @@ final class WidgetRefreshOperationTests: XCTestCase {
         let scenario = try makeSerializedRefreshScenario()
         let completionRecorder = WidgetRefreshCompletionRecorder()
 
-        enqueueWidgetRefresh(dependencies: scenario.dependencies, completion: completionHandler(for: completionRecorder))
+        WidgetRefreshScheduler.enqueue(
+            dependencies: scenario.dependencies,
+            completion: completionHandler(for: completionRecorder)
+        )
 
         let didStartFirstRun = await waitUntil {
             let requests = await scenario.sender.capturedRequests()
@@ -167,7 +170,10 @@ final class WidgetRefreshOperationTests: XCTestCase {
         }
         XCTAssertTrue(didStartFirstRun)
 
-        enqueueWidgetRefresh(dependencies: scenario.dependencies, completion: completionHandler(for: completionRecorder))
+        WidgetRefreshScheduler.enqueue(
+            dependencies: scenario.dependencies,
+            completion: completionHandler(for: completionRecorder)
+        )
 
         await Task.yield()
         await Task.yield()

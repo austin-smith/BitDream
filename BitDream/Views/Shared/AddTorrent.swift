@@ -28,6 +28,36 @@ func handleAddTorrentError(_ message: String, errorMessage: Binding<String?>, sh
 let addTorrentNoServerConfiguredMessage =
     "No server configured. Please add or select a server in Settings."
 
+struct AddTorrentBatchFailure: Equatable {
+    let fileName: String
+    let message: String
+}
+
+func addTorrentBatchFailure(fileName: String, error: Error) -> AddTorrentBatchFailure? {
+    guard let message = TransmissionUserFacingError.message(for: error) else {
+        return nil
+    }
+
+    return AddTorrentBatchFailure(fileName: fileName, message: message)
+}
+
+func addTorrentBatchFailureSummary(_ failures: [AddTorrentBatchFailure]) -> String {
+    precondition(!failures.isEmpty, "Batch failure summary requires at least one failure.")
+
+    if failures.count == 1, let failure = failures.first {
+        return "Failed to add '\(failure.fileName)': \(failure.message)"
+    }
+
+    let summary = failures
+        .prefix(5)
+        .map { "\($0.fileName): \($0.message)" }
+        .joined(separator: "\n")
+    let remainingCount = failures.count - min(failures.count, 5)
+    let suffix = remainingCount > 0 ? "\n…and \(remainingCount) more" : ""
+
+    return "Failed to add \(failures.count) torrent files.\n\n\(summary)\(suffix)"
+}
+
 @MainActor
 func presentAddTorrentSheetError(
     detail: String,

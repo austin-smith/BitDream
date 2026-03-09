@@ -157,7 +157,7 @@ enum WidgetRefreshRunner {
     }
 }
 
-private enum WidgetRefreshScheduler {
+enum WidgetRefreshScheduler {
     private static let state = SchedulerState()
 
     @discardableResult
@@ -201,21 +201,4 @@ private enum WidgetRefreshScheduler {
             return WidgetRefreshHandle(task: task)
         }
     }
-}
-
-/// Convenience function to perform a widget refresh operation.
-/// Returns a handle that can be used to request cancellation.
-@discardableResult
-func performWidgetRefresh(completion: (@Sendable () -> Void)? = nil) -> WidgetRefreshHandle {
-    enqueueWidgetRefresh { _ in
-        completion?()
-    }
-}
-
-@discardableResult
-func enqueueWidgetRefresh(
-    dependencies: WidgetRefreshDependencies = .live,
-    completion: (@Sendable (Bool) -> Void)? = nil
-) -> WidgetRefreshHandle {
-    WidgetRefreshScheduler.enqueue(dependencies: dependencies, completion: completion)
 }

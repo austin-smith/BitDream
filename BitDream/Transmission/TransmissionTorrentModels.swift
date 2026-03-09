@@ -358,15 +358,6 @@ public struct TorrentAddResponseArgs: Codable, Sendable {
     public var name: String
 }
 
-/// Torrent add response wraps the added torrent info
-public struct TorrentAddResponseData: Codable, Sendable {
-    public var torrentAdded: TorrentAddResponseArgs
-
-    enum CodingKeys: String, CodingKey {
-        case torrentAdded = "torrent-added"
-    }
-}
-
 /// Response for torrent files
 public struct TorrentFilesResponseData: Codable, Sendable {
     public let files: [TorrentFile]
