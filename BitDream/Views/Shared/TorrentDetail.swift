@@ -16,6 +16,414 @@ struct TorrentDetail: View {
 
 // MARK: - Shared Helpers
 
+internal enum TorrentDetailSupplementalLoadStatus: Sendable, Equatable {
+    case idle
+    case loading
+    case loaded
+    case failed
+}
+
+internal enum TorrentDetailFileStatsMutation: Sendable, Equatable {
+    case wanted(Bool)
+    case priority(FilePriority)
+}
+
+internal struct TorrentDetailSupplementalPayload: Sendable, Equatable {
+    let files: [TorrentFile]
+    let fileStats: [TorrentFileStats]
+    let peers: [Peer]
+    let peersFrom: PeersFrom?
+    let pieceCount: Int
+    let pieceSize: Int64
+    let piecesHaveSet: [Bool]
+    let piecesHaveCount: Int
+
+    static let empty = TorrentDetailSupplementalPayload(
+        files: [],
+        fileStats: [],
+        peers: [],
+        peersFrom: nil,
+        pieceCount: 0,
+        pieceSize: 0,
+        piecesHaveSet: [],
+        piecesHaveCount: 0
+    )
+
+    init(
+        files: [TorrentFile],
+        fileStats: [TorrentFileStats],
+        peers: [Peer],
+        peersFrom: PeersFrom?,
+        pieceCount: Int,
+        pieceSize: Int64,
+        piecesHaveSet: [Bool],
+        piecesHaveCount: Int
+    ) {
+        self.files = files
+        self.fileStats = fileStats
+        self.peers = peers
+        self.peersFrom = peersFrom
+        self.pieceCount = pieceCount
+        self.pieceSize = pieceSize
+        self.piecesHaveSet = piecesHaveSet
+        self.piecesHaveCount = piecesHaveCount
+    }
+
+    init(snapshot: TransmissionTorrentDetailSnapshot) {
+        let haveSet = decodePiecesBitfield(
+            base64String: snapshot.piecesBitfieldBase64,
+            pieceCount: snapshot.pieceCount
+        )
+
+        self.init(
+            files: snapshot.files,
+            fileStats: snapshot.fileStats,
+            peers: snapshot.peers,
+            peersFrom: snapshot.peersFrom,
+            pieceCount: snapshot.pieceCount,
+            pieceSize: snapshot.pieceSize,
+            piecesHaveSet: haveSet,
+            piecesHaveCount: haveSet.reduce(0) { $0 + ($1 ? 1 : 0) }
+        )
+    }
+
+    func updating(fileStats: [TorrentFileStats]) -> Self {
+        Self(
+            files: files,
+            fileStats: fileStats,
+            peers: peers,
+            peersFrom: peersFrom,
+            pieceCount: pieceCount,
+            pieceSize: pieceSize,
+            piecesHaveSet: piecesHaveSet,
+            piecesHaveCount: piecesHaveCount
+        )
+    }
+}
+
+internal struct TorrentDetailSupplementalState: Sendable {
+    private(set) var activeTorrentID: Int?
+    private(set) var activeRequestGeneration: Int = 0
+    private(set) var status: TorrentDetailSupplementalLoadStatus = .idle
+    private(set) var payload: TorrentDetailSupplementalPayload = .empty
+    private(set) var hasLoadedPayload = false
+
+    func shouldDisplayPayload(for torrentID: Int) -> Bool {
+        activeTorrentID == torrentID && hasLoadedPayload
+    }
+
+    func visiblePayload(for torrentID: Int) -> TorrentDetailSupplementalPayload {
+        shouldDisplayPayload(for: torrentID) ? payload : .empty
+    }
+
+    @discardableResult
+    mutating func beginLoading(for torrentID: Int) -> Int {
+        if activeTorrentID != torrentID {
+            payload = .empty
+            hasLoadedPayload = false
+        }
+
+        activeTorrentID = torrentID
+        activeRequestGeneration += 1
+        status = .loading
+        return activeRequestGeneration
+    }
+
+    @discardableResult
+    mutating func apply(
+        snapshot: TransmissionTorrentDetailSnapshot,
+        for torrentID: Int,
+        generation: Int
+    ) -> Bool {
+        guard activeTorrentID == torrentID, activeRequestGeneration == generation else {
+            return false
+        }
+
+        status = .loaded
+        payload = TorrentDetailSupplementalPayload(snapshot: snapshot)
+        hasLoadedPayload = true
+        return true
+    }
+
+    @discardableResult
+    mutating func markFailed(for torrentID: Int, generation: Int) -> Bool {
+        guard activeTorrentID == torrentID, activeRequestGeneration == generation else {
+            return false
+        }
+
+        status = .failed
+        return true
+    }
+
+    @discardableResult
+    mutating func markCancelled(for torrentID: Int, generation: Int) -> Bool {
+        guard activeTorrentID == torrentID, activeRequestGeneration == generation else {
+            return false
+        }
+
+        guard status == .loading else {
+            return false
+        }
+
+        status = hasLoadedPayload ? .loaded : .idle
+        return true
+    }
+
+    @discardableResult
+    mutating func applyCommittedFileStatsMutation(
+        _ mutation: TorrentDetailFileStatsMutation,
+        for torrentID: Int,
+        fileIndices: [Int]
+    ) -> Bool {
+        guard activeTorrentID == torrentID, hasLoadedPayload else {
+            return false
+        }
+
+        var updatedFileStats = payload.fileStats
+        var didApply = false
+
+        for fileIndex in fileIndices where updatedFileStats.indices.contains(fileIndex) {
+            updatedFileStats[fileIndex] = updatedFileStats[fileIndex].applying(mutation)
+            didApply = true
+        }
+
+        guard didApply else {
+            return false
+        }
+
+        payload = payload.updating(fileStats: updatedFileStats)
+        return true
+    }
+}
+
+@MainActor
+internal final class TorrentDetailSupplementalStore: ObservableObject {
+    @Published private(set) var state = TorrentDetailSupplementalState()
+
+    init(state: TorrentDetailSupplementalState = TorrentDetailSupplementalState()) {
+        self.state = state
+    }
+
+    var payload: TorrentDetailSupplementalPayload {
+        state.payload
+    }
+
+    var status: TorrentDetailSupplementalLoadStatus {
+        state.status
+    }
+
+    func payload(for torrentID: Int) -> TorrentDetailSupplementalPayload {
+        state.visiblePayload(for: torrentID)
+    }
+
+    func shouldDisplayPayload(for torrentID: Int) -> Bool {
+        state.shouldDisplayPayload(for: torrentID)
+    }
+
+    @discardableResult
+    func applyCommittedFileStatsMutation(
+        _ mutation: TorrentDetailFileStatsMutation,
+        for torrentID: Int,
+        fileIndices: [Int]
+    ) -> Bool {
+        mutateState { $0.applyCommittedFileStatsMutation(mutation, for: torrentID, fileIndices: fileIndices) }
+    }
+
+    func load(
+        for torrentID: Int,
+        using store: TransmissionStore,
+        onError: @escaping @MainActor @Sendable (String) -> Void
+    ) async {
+        let requestGeneration = mutateState { state in
+            state.beginLoading(for: torrentID)
+        }
+
+        guard let snapshot = await performStructuredTransmissionOperation(
+            operation: { try await store.loadTorrentDetail(id: torrentID) },
+            onError: { [weak self] message in
+                guard let self else { return }
+                guard self.markFailure(for: torrentID, generation: requestGeneration) else {
+                    return
+                }
+                onError(message)
+            }
+        ) else {
+            _ = markCancellation(for: torrentID, generation: requestGeneration)
+            return
+        }
+
+        mutateState { state in
+            _ = state.apply(
+                snapshot: snapshot,
+                for: torrentID,
+                generation: requestGeneration
+            )
+        }
+    }
+
+    func loadIfIdle(
+        for torrentID: Int,
+        using store: TransmissionStore,
+        onError: @escaping @MainActor @Sendable (String) -> Void
+    ) async {
+        guard !state.shouldDisplayPayload(for: torrentID) else {
+            return
+        }
+
+        guard state.status == .idle else {
+            return
+        }
+
+        await load(for: torrentID, using: store, onError: onError)
+    }
+
+    func load(
+        for torrentID: Int,
+        using store: TransmissionStore,
+        showingError: Binding<Bool>,
+        errorMessage: Binding<String>
+    ) async {
+        await load(
+            for: torrentID,
+            using: store,
+            onError: makeTransmissionBindingErrorHandler(
+                isPresented: showingError,
+                message: errorMessage
+            )
+        )
+    }
+
+    func loadIfIdle(
+        for torrentID: Int,
+        using store: TransmissionStore,
+        showingError: Binding<Bool>,
+        errorMessage: Binding<String>
+    ) async {
+        await loadIfIdle(
+            for: torrentID,
+            using: store,
+            onError: makeTransmissionBindingErrorHandler(
+                isPresented: showingError,
+                message: errorMessage
+            )
+        )
+    }
+
+    @discardableResult
+    private func markFailure(for torrentID: Int, generation: Int) -> Bool {
+        mutateState { $0.markFailed(for: torrentID, generation: generation) }
+    }
+
+    @discardableResult
+    private func markCancellation(for torrentID: Int, generation: Int) -> Bool {
+        mutateState { $0.markCancelled(for: torrentID, generation: generation) }
+    }
+
+    @discardableResult
+    private func mutateState<Result>(
+        _ mutate: (inout TorrentDetailSupplementalState) -> Result
+    ) -> Result {
+        var nextState = state
+        let result = mutate(&nextState)
+        state = nextState
+        return result
+    }
+}
+
+private extension TorrentFileStats {
+    func applying(_ mutation: TorrentDetailFileStatsMutation) -> Self {
+        switch mutation {
+        case .wanted(let wanted):
+            TorrentFileStats(
+                bytesCompleted: bytesCompleted,
+                wanted: wanted,
+                priority: priority
+            )
+        case .priority(let priority):
+            TorrentFileStats(
+                bytesCompleted: bytesCompleted,
+                wanted: wanted,
+                priority: priority.rawValue
+            )
+        }
+    }
+}
+
+internal struct TorrentDetailSupplementalPlaceholder: View {
+    let status: TorrentDetailSupplementalLoadStatus
+    let loadingTitle: String
+    let loadingMessage: String
+    let unavailableTitle: String
+    let unavailableMessage: String
+    let onLoadIfIdle: @Sendable () async -> Void
+    let onRetry: () -> Void
+
+    var body: some View {
+        switch status {
+        case .idle:
+            TorrentDetailLoadingPlaceholderView(title: loadingTitle, message: loadingMessage)
+                .task { await onLoadIfIdle() }
+        case .loading:
+            TorrentDetailLoadingPlaceholderView(title: loadingTitle, message: loadingMessage)
+        case .failed:
+            TorrentDetailUnavailablePlaceholderView(
+                title: unavailableTitle,
+                message: unavailableMessage,
+                actionTitle: "Retry",
+                action: onRetry
+            )
+        case .loaded:
+            EmptyView()
+        }
+    }
+}
+
+internal struct TorrentDetailLoadingPlaceholderView: View {
+    let title: String
+    let message: String
+
+    var body: some View {
+        ContentUnavailableView {
+            Label(title, systemImage: "arrow.triangle.2.circlepath")
+        } description: {
+            Text(message)
+        } actions: {
+            ProgressView()
+        }
+    }
+}
+
+internal struct TorrentDetailUnavailablePlaceholderView: View {
+    let title: String
+    let message: String
+    let actionTitle: String?
+    let action: (() -> Void)?
+
+    init(
+        title: String,
+        message: String,
+        actionTitle: String? = nil,
+        action: (() -> Void)? = nil
+    ) {
+        self.title = title
+        self.message = message
+        self.actionTitle = actionTitle
+        self.action = action
+    }
+
+    var body: some View {
+        ContentUnavailableView {
+            Label(title, systemImage: "exclamationmark.triangle")
+        } description: {
+            Text(message)
+        } actions: {
+            if let actionTitle, let action {
+                Button(actionTitle, action: action)
+            }
+        }
+    }
+}
+
 // Shared function to determine torrent status color
 func statusColor(for torrent: Torrent) -> Color {
     if torrent.statusCalc == TorrentStatusCalc.complete || torrent.statusCalc == TorrentStatusCalc.seeding {
@@ -29,44 +437,6 @@ func statusColor(for torrent: Torrent) -> Color {
     } else {
         return .blue.opacity(0.9)
     }
-}
-
-// Shared function to fetch torrent files
-@MainActor
-func fetchTorrentFiles(transferId: Int, store: TransmissionStore, completion: @escaping ([TorrentFile], [TorrentFileStats]) -> Void) {
-    let info = makeConfig(store: store)
-
-    getTorrentFiles(transferId: transferId, info: info, onReceived: { files, fileStats in
-        completion(files, fileStats)
-    })
-}
-
-// Shared function to fetch torrent peers
-@MainActor
-func fetchTorrentPeers(transferId: Int, store: TransmissionStore, completion: @escaping ([Peer], PeersFrom?) -> Void) {
-    let info = makeConfig(store: store)
-
-    getTorrentPeers(transferId: transferId, info: info, onReceived: { peers, peersFrom in
-        completion(peers, peersFrom)
-    })
-}
-
-// Shared function to play/pause a torrent
-@MainActor
-func toggleTorrentPlayPause(torrent: Torrent, store: TransmissionStore, completion: @escaping () -> Void = {}) {
-    let info = makeConfig(store: store)
-    playPauseTorrent(torrent: torrent, config: info.config, auth: info.auth, onResponse: { response in
-        handleTransmissionResponse(response,
-            onSuccess: {
-                completion()
-            },
-            onError: { _ in
-                // For play/pause operations, we'll silently fail and still call completion
-                // since the UI should update regardless to reflect current state
-                completion()
-            }
-        )
-    })
 }
 
 struct TorrentDetailsDisplay {
@@ -157,7 +527,15 @@ struct TorrentDetailToolbar: ToolbarContent {
         ToolbarItem {
             Menu {
                 Button(action: {
-                    toggleTorrentPlayPause(torrent: torrent, store: store)
+                    performTransmissionAction(
+                        operation: { try await store.toggleTorrentPlayback(torrent) },
+                        onError: makeTransmissionDebugErrorHandler(
+                            store: store,
+                            context: torrent.status == TorrentStatus.stopped.rawValue
+                                ? .resumeTorrents
+                                : .pauseTorrents
+                        )
+                    )
                 }, label: {
                     HStack {
                         Text(torrent.status == TorrentStatus.stopped.rawValue ? "Resume Dream" : "Pause Dream")
@@ -188,6 +566,29 @@ struct TorrentStatusBadge: View {
                     .stroke(statusColor(for: torrent).opacity(0.3), lineWidth: 0.5)
             )
             .cornerRadius(6)
+    }
+}
+
+// Shared label tag component for detail views
+struct DetailViewLabelTag: View {
+    let label: String
+    var isLarge: Bool = false
+
+    var body: some View {
+        Text(label)
+            .font(isLarge ? .subheadline : .caption)
+            .fontWeight(.medium)
+            .padding(.horizontal, isLarge ? 8 : 6)
+            .padding(.vertical, isLarge ? 4 : 3)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.accentColor.opacity(0.12))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+            )
+            .foregroundColor(.primary)
     }
 }
 

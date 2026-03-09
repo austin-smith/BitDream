@@ -132,14 +132,101 @@ struct TorrentFileDetail: View {
     let fileStats: [TorrentFileStats]
     let torrentId: Int
     let store: TransmissionStore
+    let onCommittedFileStatsMutation: @MainActor @Sendable ([Int], TorrentDetailFileStatsMutation) -> Void
+
+    init(
+        files: [TorrentFile],
+        fileStats: [TorrentFileStats],
+        torrentId: Int,
+        store: TransmissionStore,
+        onCommittedFileStatsMutation: @escaping @MainActor @Sendable ([Int], TorrentDetailFileStatsMutation) -> Void = { _, _ in }
+    ) {
+        self.files = files
+        self.fileStats = fileStats
+        self.torrentId = torrentId
+        self.store = store
+        self.onCommittedFileStatsMutation = onCommittedFileStatsMutation
+    }
 
     var body: some View {
         #if os(iOS)
-        iOSTorrentFileDetail(files: files, fileStats: fileStats, torrentId: torrentId, store: store)
+        iOSTorrentFileDetail(
+            files: files,
+            fileStats: fileStats,
+            torrentId: torrentId,
+            store: store,
+            onCommittedFileStatsMutation: onCommittedFileStatsMutation
+        )
         #elseif os(macOS)
-        macOSTorrentFileDetail(files: files, fileStats: fileStats, torrentId: torrentId, store: store)
+        macOSTorrentFileDetail(
+            files: files,
+            fileStats: fileStats,
+            torrentId: torrentId,
+            store: store,
+            onCommittedFileStatsMutation: onCommittedFileStatsMutation
+        )
         #endif
     }
+}
+
+// MARK: - Shared File Stats Mutation Helpers
+
+func snapshotFileStats(
+    for fileIndices: [Int],
+    mutableStats: [TorrentFileStats],
+    fallbackStats: [TorrentFileStats]
+) -> [(index: Int, stats: TorrentFileStats)] {
+    let source = mutableStats.isEmpty ? fallbackStats : mutableStats
+    return fileIndices.compactMap { idx in
+        guard idx < source.count else { return nil }
+        return (idx, source[idx])
+    }
+}
+
+func applyFileStatsRevert(
+    _ previousStats: [(index: Int, stats: TorrentFileStats)],
+    into mutableStats: [TorrentFileStats],
+    fallback fallbackStats: [TorrentFileStats]
+) -> [TorrentFileStats] {
+    var result = mutableStats.isEmpty ? fallbackStats : mutableStats
+    for (idx, old) in previousStats where idx < result.count {
+        result[idx] = old
+    }
+    return result
+}
+
+func applyLocalFileWanted(
+    fileIndices: [Int],
+    wanted: Bool,
+    mutableStats: [TorrentFileStats],
+    fallbackStats: [TorrentFileStats]
+) -> [TorrentFileStats] {
+    var result = mutableStats.isEmpty ? fallbackStats : mutableStats
+    for idx in fileIndices where idx < result.count {
+        result[idx] = TorrentFileStats(
+            bytesCompleted: result[idx].bytesCompleted,
+            wanted: wanted,
+            priority: result[idx].priority
+        )
+    }
+    return result
+}
+
+func applyLocalFilePriority(
+    fileIndices: [Int],
+    priority: FilePriority,
+    mutableStats: [TorrentFileStats],
+    fallbackStats: [TorrentFileStats]
+) -> [TorrentFileStats] {
+    var result = mutableStats.isEmpty ? fallbackStats : mutableStats
+    for idx in fileIndices where idx < result.count {
+        result[idx] = TorrentFileStats(
+            bytesCompleted: result[idx].bytesCompleted,
+            wanted: result[idx].wanted,
+            priority: priority.rawValue
+        )
+    }
+    return result
 }
 
 // MARK: - Preview Data
@@ -280,53 +367,5 @@ struct TorrentFileRow: Identifiable {
         self.percentDone = percentDone
         self.priority = priority
         self.wanted = wanted
-    }
-}
-
-// MARK: - Shared File Action Executor
-
-/// Namespaced executor that standardizes optimistic apply + revert-on-failure
-/// across platforms while keeping all network calls in TransmissionFunctions.
-enum FileActionExecutor {
-    /// Set wanted status for specific file indices.
-    @MainActor
-    static func setWanted(
-        torrentId: Int,
-        fileIndices: [Int],
-        store: TransmissionStore,
-        wanted: Bool
-    ) async -> TransmissionResponse {
-        let info = makeConfig(store: store)
-        return await withCheckedContinuation { continuation in
-            setFileWantedStatus(
-                torrentId: torrentId,
-                fileIndices: fileIndices,
-                wanted: wanted,
-                info: info
-            ) { response in
-                continuation.resume(returning: response)
-            }
-        }
-    }
-
-    /// Set priority for specific file indices.
-    @MainActor
-    static func setPriority(
-        torrentId: Int,
-        fileIndices: [Int],
-        store: TransmissionStore,
-        priority: FilePriority
-    ) async -> TransmissionResponse {
-        let info = makeConfig(store: store)
-        return await withCheckedContinuation { continuation in
-            setFilePriority(
-                torrentId: torrentId,
-                fileIndices: fileIndices,
-                priority: priority,
-                info: info
-            ) { response in
-                continuation.resume(returning: response)
-            }
-        }
     }
 }

@@ -172,24 +172,6 @@ func copyMagnetLinkToClipboard(_ magnetLink: String) {
 
 // MARK: - Shared Label Components
 
-// Shared function to save labels and refresh torrent data
-@MainActor
-func saveTorrentLabels(torrentId: Int, labels: Set<String>, store: TransmissionStore, onComplete: @escaping () -> Void = {}) {
-    let info = makeConfig(store: store)
-    let sortedLabels = Array(labels).sorted()
-
-    // First update the labels
-    updateTorrent(
-        args: TorrentSetRequestArgs(ids: [torrentId], labels: sortedLabels),
-        info: info,
-        onComplete: { _ in
-            // Trigger an immediate refresh
-            store.requestRefresh()
-            onComplete()
-        }
-    )
-}
-
 // Shared function to handle adding new tags from input field
 @MainActor
 func addNewTag(from input: inout String, to workingLabels: inout Set<String>) -> Bool {
@@ -322,32 +304,4 @@ func validateNewName(_ name: String, current: String) -> String? {
         return "Name contains invalid characters."
     }
     return nil
-}
-
-/// Rename the torrent root folder/name using Transmission's torrent-rename-path
-/// - Parameters:
-///   - torrent: The torrent whose root should be renamed
-///   - newName: The new root name
-///   - store: App store for config/auth and refresh
-///   - onComplete: Called with nil on success, or an error message on failure
-@MainActor
-func renameTorrentRoot(torrent: Torrent, to newName: String, store: TransmissionStore, onComplete: @escaping (String?) -> Void) {
-    let info = makeConfig(store: store)
-    // For root rename, Transmission expects the current root path (the torrent's name)
-    renameTorrentPath(
-        torrentId: torrent.id,
-        path: torrent.name,
-        newName: newName,
-        config: info.config,
-        auth: info.auth
-    ) { result in
-        switch result {
-        case .success:
-            // Refresh to pick up updated name and files
-            store.requestRefresh()
-            onComplete(nil)
-        case .failure(let error):
-            onComplete(error.localizedDescription)
-        }
-    }
 }

@@ -204,81 +204,91 @@ struct TorrentCommands: Commands {
 
 private extension TorrentCommands {
     func pauseSelectedTorrents() {
-        TorrentActionExecutor.pause(ids: selectedTorrentIDs, store: store) { error in
-            presentDebugError("Failed to pause torrents", message: error)
-        }
+        performTransmissionDebugAction(
+            .pauseTorrents,
+            store: store,
+            operation: { try await store.pauseTorrents(ids: selectedTorrentIDs) }
+        )
     }
 
     func resumeSelectedTorrents() {
-        TorrentActionExecutor.resume(ids: selectedTorrentIDs, store: store) { error in
-            presentDebugError("Failed to resume torrents", message: error)
-        }
+        performTransmissionDebugAction(
+            .resumeTorrents,
+            store: store,
+            operation: { try await store.resumeTorrents(ids: selectedTorrentIDs) }
+        )
     }
 
     func resumeSelectedTorrentsNow() {
-        TorrentActionExecutor.resumeNow(torrents: Array(selectedTorrents), store: store) { error in
-            presentDebugError("Failed to resume torrents now", message: error)
-        }
+        performTransmissionDebugAction(
+            .resumeTorrentsNow,
+            store: store,
+            operation: { try await store.startTorrentsNow(ids: selectedTorrentIDs) }
+        )
     }
 
     func pauseAllTorrents() {
-        TorrentActionExecutor.setAllPlayback(start: false, store: store) { error in
-            presentDebugError("Failed to pause all torrents", message: error)
-        }
+        performTransmissionDebugAction(
+            .pauseAllTorrents,
+            store: store,
+            operation: { try await store.pauseAllTorrents() }
+        )
     }
 
     func resumeAllTorrents() {
-        TorrentActionExecutor.setAllPlayback(start: true, store: store) { error in
-            presentDebugError("Failed to resume all torrents", message: error)
-        }
+        performTransmissionDebugAction(
+            .resumeAllTorrents,
+            store: store,
+            operation: { try await store.resumeAllTorrents() }
+        )
     }
 
     func reannounceSelectedTorrents() {
-        TorrentActionExecutor.reannounce(torrents: Array(selectedTorrents), store: store) { error in
-            presentDebugError("Failed to ask for more peers", message: error)
-        }
+        performTransmissionDebugAction(
+            .askForMorePeers,
+            store: store,
+            operation: { try await store.reannounceTorrents(ids: selectedTorrentIDs) }
+        )
     }
 
     func verifySelectedTorrents() {
-        TorrentActionExecutor.verify(torrents: Array(selectedTorrents), store: store) { error in
-            presentDebugError("Failed to verify torrent", message: error)
-        }
+        performTransmissionDebugAction(
+            .verifyTorrents,
+            store: store,
+            operation: { try await store.verifyTorrents(ids: selectedTorrentIDs) }
+        )
     }
 
     func moveSelectedTorrentsToFront() {
-        TorrentActionExecutor.moveInQueue(.top, ids: selectedTorrentIDs, store: store) { error in
-            presentQueueError(error)
-        }
+        performTransmissionGlobalAlertAction(
+            .queueMove,
+            store: store,
+            operation: { try await store.moveTorrentsInQueue(.top, ids: selectedTorrentIDs) }
+        )
     }
 
     func moveSelectedTorrentsUp() {
-        TorrentActionExecutor.moveInQueue(.upward, ids: selectedTorrentIDs, store: store) { error in
-            presentQueueError(error)
-        }
+        performTransmissionGlobalAlertAction(
+            .queueMove,
+            store: store,
+            operation: { try await store.moveTorrentsInQueue(.upward, ids: selectedTorrentIDs) }
+        )
     }
 
     func moveSelectedTorrentsDown() {
-        TorrentActionExecutor.moveInQueue(.downward, ids: selectedTorrentIDs, store: store) { error in
-            presentQueueError(error)
-        }
+        performTransmissionGlobalAlertAction(
+            .queueMove,
+            store: store,
+            operation: { try await store.moveTorrentsInQueue(.downward, ids: selectedTorrentIDs) }
+        )
     }
 
     func moveSelectedTorrentsToBack() {
-        TorrentActionExecutor.moveInQueue(.bottom, ids: selectedTorrentIDs, store: store) { error in
-            presentQueueError(error)
-        }
-    }
-
-    func presentDebugError(_ brief: String, message: String) {
-        store.debugBrief = brief
-        store.debugMessage = message
-        store.isError = true
-    }
-
-    func presentQueueError(_ message: String) {
-        store.globalAlertTitle = "Queue Error"
-        store.globalAlertMessage = message
-        store.showGlobalAlert = true
+        performTransmissionGlobalAlertAction(
+            .queueMove,
+            store: store,
+            operation: { try await store.moveTorrentsInQueue(.bottom, ids: selectedTorrentIDs) }
+        )
     }
 }
 

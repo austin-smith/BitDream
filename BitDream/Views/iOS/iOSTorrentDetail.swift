@@ -8,27 +8,153 @@ struct iOSTorrentDetail: View {
     @ObservedObject var store: TransmissionStore
     var torrent: Torrent
 
-    @State public var files: [TorrentFile] = []
-    @State public var fileStats: [TorrentFileStats] = []
-    @State private var isShowingFilesSheet = false
-    @State private var peers: [Peer] = []
-    @State private var peersFrom: PeersFrom?
-    @State private var isShowingPeersSheet = false
-    @State private var pieceCount: Int = 0
-    @State private var pieceSize: Int64 = 0
-    @State private var piecesBitfield: String = ""
-    @State private var piecesHaveCount: Int = 0
+    @StateObject private var supplementalStore = TorrentDetailSupplementalStore()
     @State private var showingDeleteConfirmation = false
-    @State private var showingDeleteError = false
-    @State private var deleteErrorMessage = ""
+    @State private var showingError = false
+    @State private var errorMessage = ""
+
+    private var supplementalPayload: TorrentDetailSupplementalPayload {
+        supplementalStore.payload(for: torrent.id)
+    }
+
+    private var shouldDisplaySupplementalPayload: Bool {
+        supplementalStore.shouldDisplayPayload(for: torrent.id)
+    }
 
     var body: some View {
-        // Use shared formatting function
         let details = formatTorrentDetails(torrent: torrent)
 
+        IOSTorrentDetailContent(
+            torrent: torrent,
+            details: details,
+            supplementalPayload: supplementalPayload,
+            filesDestination: filesDestination,
+            peersDestination: peersDestination,
+            onDelete: { showingDeleteConfirmation = true }
+        )
+        .task(id: torrent.id) {
+            await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage)
+        }
+        .toolbar {
+            TorrentDetailToolbar(torrent: torrent, store: store)
+        }
+        .alert("Delete Torrent", isPresented: $showingDeleteConfirmation) {
+            Button(role: .destructive) {
+                performDelete(deleteLocalData: true)
+            } label: {
+                Text("Delete file(s)")
+            }
+            Button("Remove from list only") {
+                performDelete(deleteLocalData: false)
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Do you want to delete the file(s) from the disk?")
+        }
+        .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
+    }
+
+    private func performDelete(deleteLocalData: Bool) {
+        performTransmissionAction(
+            operation: {
+                try await store.removeTorrents(
+                    ids: [torrent.id],
+                    deleteLocalData: deleteLocalData
+                )
+            },
+            onSuccess: {
+                dismiss()
+            },
+            onError: makeTransmissionBindingErrorHandler(
+                isPresented: $showingError,
+                message: $errorMessage
+            )
+        )
+    }
+
+    @MainActor
+    private func applyCommittedFileStatsMutation(
+        fileIndices: [Int],
+        mutation: TorrentDetailFileStatsMutation
+    ) {
+        supplementalStore.applyCommittedFileStatsMutation(
+            mutation,
+            for: torrent.id,
+            fileIndices: fileIndices
+        )
+    }
+
+    @ViewBuilder
+    private var filesDestination: some View {
+        if shouldDisplaySupplementalPayload {
+            iOSTorrentFileDetail(
+                files: supplementalPayload.files,
+                fileStats: supplementalPayload.fileStats,
+                torrentId: torrent.id,
+                store: store,
+                onCommittedFileStatsMutation: { fileIndices, mutation in
+                    applyCommittedFileStatsMutation(
+                        fileIndices: fileIndices,
+                        mutation: mutation
+                    )
+                }
+            )
+            .navigationBarTitleDisplayMode(.inline)
+        } else {
+            TorrentDetailSupplementalPlaceholder(
+                status: supplementalStore.status,
+                loadingTitle: "Loading Files",
+                loadingMessage: "Fetching the latest files for this torrent.",
+                unavailableTitle: "Files Unavailable",
+                unavailableMessage: "The latest file details could not be loaded.",
+                onLoadIfIdle: { await supplementalStore.loadIfIdle(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) },
+                onRetry: { Task { await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) } }
+            )
+            .navigationTitle("Files")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    @ViewBuilder
+    private var peersDestination: some View {
+        if shouldDisplaySupplementalPayload {
+            iOSTorrentPeerDetail(
+                torrentName: torrent.name,
+                torrentId: torrent.id,
+                store: store,
+                peers: supplementalPayload.peers,
+                peersFrom: supplementalPayload.peersFrom,
+                onRefresh: { await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) },
+                onDone: { /* no-op in push */ }
+            )
+            .navigationBarTitleDisplayMode(.inline)
+        } else {
+            TorrentDetailSupplementalPlaceholder(
+                status: supplementalStore.status,
+                loadingTitle: "Loading Peers",
+                loadingMessage: "Fetching the latest peers for this torrent.",
+                unavailableTitle: "Peers Unavailable",
+                unavailableMessage: "The latest peer details could not be loaded.",
+                onLoadIfIdle: { await supplementalStore.loadIfIdle(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) },
+                onRetry: { Task { await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) } }
+            )
+            .navigationTitle("Peers")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination: View>: View {
+    let torrent: Torrent
+    let details: TorrentDetailsDisplay
+    let supplementalPayload: TorrentDetailSupplementalPayload
+    let filesDestination: FilesDestination
+    let peersDestination: PeersDestination
+    let onDelete: () -> Void
+
+    var body: some View {
         NavigationStack {
             VStack {
-                // Use shared header view
                 TorrentDetailHeaderView(torrent: torrent)
 
                 Form {
@@ -54,30 +180,21 @@ struct iOSTorrentDetail: View {
                         }
 
                         NavigationLink {
-                            iOSTorrentFileDetail(files: files, fileStats: fileStats, torrentId: torrent.id, store: store)
-                                .navigationBarTitleDisplayMode(.inline)
+                            filesDestination
                         } label: {
-                            LabeledContent("Files", value: NumberFormatter.localizedString(from: NSNumber(value: files.count), number: .decimal))
+                            LabeledContent(
+                                "Files",
+                                value: NumberFormatter.localizedString(
+                                    from: NSNumber(value: supplementalPayload.files.count),
+                                    number: .decimal
+                                )
+                            )
                         }
 
                         NavigationLink {
-                            iOSTorrentPeerDetail(
-                                torrentName: torrent.name,
-                                torrentId: torrent.id,
-                                store: store,
-                                peers: peers,
-                                peersFrom: peersFrom,
-                                onRefresh: {
-                                    fetchTorrentPeers(transferId: torrent.id, store: store) { fetchedPeers, fetchedFrom in
-                                        peers = fetchedPeers
-                                        peersFrom = fetchedFrom
-                                    }
-                                },
-                                onDone: { /* no-op in push */ }
-                            )
-                            .navigationBarTitleDisplayMode(.inline)
+                            peersDestination
                         } label: {
-                            LabeledContent("Peers", value: "\(peers.count)")
+                            LabeledContent("Peers", value: "\(supplementalPayload.peers.count)")
                         }
                     }
 
@@ -114,15 +231,19 @@ struct iOSTorrentDetail: View {
                         }
                     }
 
-                    // Pieces section
-                    if pieceCount > 0 && !piecesBitfield.isEmpty {
+                    if supplementalPayload.pieceCount > 0 && !supplementalPayload.piecesHaveSet.isEmpty {
                         Section(header: Text("Pieces")) {
                             VStack(alignment: .leading, spacing: 6) {
-                                PiecesGridView(pieceCount: pieceCount, piecesBitfieldBase64: piecesBitfield)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                Text("\(piecesHaveCount) of \(pieceCount) pieces • \(formatByteCount(pieceSize)) each")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
+                                PiecesGridView(
+                                    piecesHaveSet: supplementalPayload.piecesHaveSet
+                                )
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                                Text(
+                                    "\(supplementalPayload.piecesHaveCount) of \(supplementalPayload.pieceCount) pieces • \(formatByteCount(supplementalPayload.pieceSize)) each"
+                                )
+                                .font(.caption)
+                                .foregroundColor(.gray)
                             }
                             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                         }
@@ -143,7 +264,6 @@ struct iOSTorrentDetail: View {
                         }
                     }
 
-                    // Beautiful Dedicated Labels Section (Display Only)
                     if !torrent.labels.isEmpty {
                         Section(header: Text("Labels")) {
                             FlowLayout(spacing: 6) {
@@ -156,9 +276,7 @@ struct iOSTorrentDetail: View {
                         }
                     }
 
-                    Button(role: .destructive, action: {
-                        showingDeleteConfirmation = true
-                    }, label: {
+                    Button(role: .destructive, action: onDelete) {
                         HStack {
                             HStack {
                                 Image(systemName: "trash")
@@ -166,95 +284,11 @@ struct iOSTorrentDetail: View {
                                 Spacer()
                             }
                         }
-                    })
+                    }
                 }
             }
-            .onAppear {
-                // Use shared function to fetch files
-                fetchTorrentFiles(transferId: torrent.id, store: store) { fetchedFiles, fetchedStats in
-                    files = fetchedFiles
-                    fileStats = fetchedStats
-                }
-                // Fetch peers initially
-                fetchTorrentPeers(transferId: torrent.id, store: store) { fetchedPeers, fetchedFrom in
-                    peers = fetchedPeers
-                    peersFrom = fetchedFrom
-                }
-                // Fetch pieces
-                let info = makeConfig(store: store)
-                getTorrentPieces(transferId: torrent.id, info: info) { count, size, bitfield in
-                    pieceCount = count
-                    pieceSize = size
-                    piecesBitfield = bitfield
-                    let haveSet = decodePiecesBitfield(base64String: bitfield, pieceCount: count)
-                    piecesHaveCount = haveSet.reduce(0) { $0 + ($1 ? 1 : 0) }
-                }
-            }
-            .toolbar {
-                // Use shared toolbar
-                TorrentDetailToolbar(torrent: torrent, store: store)
-            }
-            .alert("Delete Torrent", isPresented: $showingDeleteConfirmation) {
-                Button(role: .destructive) {
-                    let info = makeConfig(store: store)
-                    deleteTorrent(torrent: torrent, erase: true, config: info.config, auth: info.auth, onDel: { response in
-                        handleTransmissionResponse(response,
-                            onSuccess: {
-                                dismiss()
-                            },
-                            onError: { errorMessage in
-                                deleteErrorMessage = errorMessage
-                                showingDeleteError = true
-                            }
-                        )
-                    })
-                } label: {
-                    Text("Delete file(s)")
-                }
-                Button("Remove from list only") {
-                    let info = makeConfig(store: store)
-                    deleteTorrent(torrent: torrent, erase: false, config: info.config, auth: info.auth, onDel: { response in
-                        handleTransmissionResponse(response,
-                            onSuccess: {
-                                dismiss()
-                            },
-                            onError: { errorMessage in
-                                deleteErrorMessage = errorMessage
-                                showingDeleteError = true
-                            }
-                        )
-                    })
-                }
-                Button("Cancel", role: .cancel) { }
-            } message: {
-                Text("Do you want to delete the file(s) from the disk?")
-            }
-            .transmissionErrorAlert(isPresented: $showingDeleteError, message: deleteErrorMessage)
         }
-
     }
 }
 
-// Enhanced LabelTag component for detail views
-struct DetailViewLabelTag: View {
-    let label: String
-    var isLarge: Bool = false
-
-    var body: some View {
-        Text(label)
-            .font(isLarge ? .subheadline : .caption)
-            .fontWeight(.medium)
-            .padding(.horizontal, isLarge ? 8 : 6)
-            .padding(.vertical, isLarge ? 4 : 3)
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.accentColor.opacity(0.12))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 4)
-                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
-            )
-            .foregroundColor(.primary)
-    }
-}
 #endif

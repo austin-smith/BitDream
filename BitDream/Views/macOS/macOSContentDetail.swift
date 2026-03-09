@@ -343,6 +343,13 @@ struct TorrentDropDelegate: DropDelegate {
                 Task { @MainActor in
                     do {
                         let data = try await Self.readTorrentData(from: url)
+                        guard store.host != nil else {
+                            presentAddTorrentStoreError(
+                                detail: addTorrentNoServerConfiguredMessage,
+                                store: store
+                            )
+                            return
+                        }
                         addTorrentFromFileData(data, store: store)
                     } catch {
                         Self.logger.error("Failed to read dropped torrent file \(url.lastPathComponent): \(error.localizedDescription)")

@@ -159,54 +159,59 @@ struct TorrentContextMenu: View {
     }
 
     private func pauseTorrentsAction() {
-        TorrentActionExecutor.pause(ids: torrentIDs, store: store) { error in
-            dialogState.presentError(error)
-        }
+        performTransmissionAction(
+            operation: { try await store.pauseTorrents(ids: torrentIDs) },
+            onError: dialogState.presentError
+        )
     }
 
     private func resumeTorrentsAction() {
-        TorrentActionExecutor.resume(ids: torrentIDs, store: store) { error in
-            dialogState.presentError(error)
-        }
+        performTransmissionAction(
+            operation: { try await store.resumeTorrents(ids: torrentIDs) },
+            onError: dialogState.presentError
+        )
     }
 
     private func resumeNowAction() {
-        TorrentActionExecutor.resumeNow(torrents: Array(torrents), store: store) { error in
-            dialogState.presentError(error)
-        }
+        performTransmissionAction(
+            operation: { try await store.startTorrentsNow(ids: torrentIDs) },
+            onError: dialogState.presentError
+        )
     }
 
     private func updatePriority(_ priority: TorrentPriority) {
-        let info = makeConfig(store: store)
-        updateTorrent(
-            args: TorrentSetRequestArgs(ids: torrentIDs, priority: priority),
-            info: info,
-            onComplete: { _ in }
+        performTransmissionAction(
+            operation: { try await store.updateTorrentPriority(ids: torrentIDs, priority: priority) },
+            onError: dialogState.presentError
         )
     }
 
     private func queueMoveTopAction() {
-        TorrentActionExecutor.moveInQueue(.top, ids: torrentIDs, store: store) { error in
-            dialogState.presentError(error)
-        }
+        performTransmissionAction(
+            operation: { try await store.moveTorrentsInQueue(.top, ids: torrentIDs) },
+            onError: dialogState.presentError
+        )
     }
 
     private func queueMoveUpAction() {
-        TorrentActionExecutor.moveInQueue(.upward, ids: torrentIDs, store: store) { error in
-            dialogState.presentError(error)
-        }
+        performTransmissionAction(
+            operation: { try await store.moveTorrentsInQueue(.upward, ids: torrentIDs) },
+            onError: dialogState.presentError
+        )
     }
 
     private func queueMoveDownAction() {
-        TorrentActionExecutor.moveInQueue(.downward, ids: torrentIDs, store: store) { error in
-            dialogState.presentError(error)
-        }
+        performTransmissionAction(
+            operation: { try await store.moveTorrentsInQueue(.downward, ids: torrentIDs) },
+            onError: dialogState.presentError
+        )
     }
 
     private func queueMoveBottomAction() {
-        TorrentActionExecutor.moveInQueue(.bottom, ids: torrentIDs, store: store) { error in
-            dialogState.presentError(error)
-        }
+        performTransmissionAction(
+            operation: { try await store.moveTorrentsInQueue(.bottom, ids: torrentIDs) },
+            onError: dialogState.presentError
+        )
     }
 
     private func showMoveDialog() {
@@ -224,15 +229,17 @@ struct TorrentContextMenu: View {
     }
 
     private func verifyTorrentsAction() {
-        TorrentActionExecutor.verify(torrents: Array(torrents), store: store) { error in
-            dialogState.presentError(error)
-        }
+        performTransmissionAction(
+            operation: { try await store.verifyTorrents(ids: torrentIDs) },
+            onError: dialogState.presentError
+        )
     }
 
     private func reannounceTorrentsAction() {
-        TorrentActionExecutor.reannounce(torrents: Array(torrents), store: store) { error in
-            dialogState.presentError(error)
-        }
+        performTransmissionAction(
+            operation: { try await store.reannounceTorrents(ids: torrentIDs) },
+            onError: dialogState.presentError
+        )
     }
 }
 
@@ -287,73 +294,40 @@ struct TorrentActionsToolbarMenu: View {
             Label("Actions", systemImage: "ellipsis.circle")
         }
         .sheet(isPresented: $labelDialog) {
-            let torrents = selectedTorrents
-            let titleSuffix = torrents.count > 1 ? " (\(torrents.count) torrents)" : ""
-            VStack(spacing: 16) {
-                Text("Edit Labels\(titleSuffix)")
-                    .font(.headline)
-
-                LabelEditView(
-                    labelInput: $labelInput,
-                    existingLabels: torrents.count == 1 ? Array(torrents.first!.labels) : [],
-                    store: store,
-                    selectedTorrents: torrents,
-                    shouldSave: $shouldSave
-                )
-
-                HStack {
-                    Button("Cancel") {
-                        labelDialog = false
-                    }
-                    .keyboardShortcut(.escape)
-
-                    Button("Save") {
-                        shouldSave = true
-                    }
-                    .keyboardShortcut(.return, modifiers: .command)
-                    .buttonStyle(.borderedProminent)
-                }
-            }
-            .padding()
+            LabelEditSheetContent(
+                store: store,
+                selectedTorrents: selectedTorrents,
+                labelInput: $labelInput,
+                shouldSave: $shouldSave,
+                isPresented: $labelDialog,
+                showingError: $showingError,
+                errorMessage: $errorMessage
+            )
             .frame(width: 400)
         }
         .alert(
             "Delete \(selectedTorrents.count > 1 ? "\(selectedTorrents.count) Torrents" : "Torrent")",
             isPresented: $deleteDialog) {
                 Button(role: .destructive) {
-                    let info = makeConfig(store: store)
-                    for torrent in selectedTorrents {
-                        deleteTorrent(torrent: torrent, erase: true, config: info.config, auth: info.auth, onDel: { response in
-                            handleTransmissionResponse(response,
-                                onSuccess: {
-                                    // Success - torrent deleted
-                                },
-                                onError: { error in
-                                    errorMessage = error
-                                    showingError = true
-                                }
-                            )
-                        })
-                    }
+                    deleteTorrents(
+                        ids: Array(selectedTorrents.map(\.id)),
+                        deleteLocalData: true,
+                        store: store,
+                        showingError: $showingError,
+                        errorMessage: $errorMessage
+                    )
                     deleteDialog.toggle()
                 } label: {
                     Text("Delete file(s)")
                 }
                 Button("Remove from list only") {
-                    let info = makeConfig(store: store)
-                    for torrent in selectedTorrents {
-                        deleteTorrent(torrent: torrent, erase: false, config: info.config, auth: info.auth, onDel: { response in
-                            handleTransmissionResponse(response,
-                                onSuccess: {
-                                    // Success - torrent removed from list
-                                },
-                                onError: { error in
-                                    errorMessage = error
-                                    showingError = true
-                                }
-                            )
-                        })
-                    }
+                    deleteTorrents(
+                        ids: Array(selectedTorrents.map(\.id)),
+                        deleteLocalData: false,
+                        store: store,
+                        showingError: $showingError,
+                        errorMessage: $errorMessage
+                    )
                     deleteDialog.toggle()
                 }
             } message: {
@@ -361,40 +335,17 @@ struct TorrentActionsToolbarMenu: View {
             }
         .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
         .sheet(isPresented: $renameDialog) {
-            // Resolve target torrent using captured id or current selection
-            let targetTorrent: Torrent? = {
-                if let id = renameTargetId {
-                    return store.torrents.first { $0.id == id }
-                }
-                return selectedTorrents.first
-            }()
-            if let targetTorrent {
-                RenameSheetView(
-                    title: "Rename Torrent",
-                    name: $renameInput,
-                    currentName: targetTorrent.name,
-                    onCancel: {
-                        renameDialog = false
-                    },
-                    onSave: { newName in
-                        if let validation = validateNewName(newName, current: targetTorrent.name) {
-                            errorMessage = validation
-                            showingError = true
-                            return
-                        }
-                        renameTorrentRoot(torrent: targetTorrent, to: newName, store: store) { err in
-                            if let err = err {
-                                errorMessage = err
-                                showingError = true
-                            } else {
-                                renameDialog = false
-                            }
-                        }
-                    }
-                )
-                .frame(width: 420)
-                .padding()
-            }
+            RenameSheetContent(
+                store: store,
+                selectedTorrents: selectedTorrents,
+                renameInput: $renameInput,
+                renameTargetId: $renameTargetId,
+                isPresented: $renameDialog,
+                showingError: $showingError,
+                errorMessage: $errorMessage
+            )
+            .frame(width: 420)
+            .padding()
         }
         .sheet(isPresented: $moveDialog) {
             MoveSheetContent(
@@ -420,6 +371,8 @@ struct LabelEditSheetContent: View {
     @Binding var labelInput: String
     @Binding var shouldSave: Bool
     @Binding var isPresented: Bool
+    @Binding var showingError: Bool
+    @Binding var errorMessage: String
 
     var body: some View {
         VStack(spacing: 16) {
@@ -428,10 +381,16 @@ struct LabelEditSheetContent: View {
 
             LabelEditView(
                 labelInput: $labelInput,
-                existingLabels: selectedTorrents.count == 1 ? Array(selectedTorrents.first!.labels) : [],
+                existingLabels: selectedTorrents.count == 1
+                    ? Array(selectedTorrents.first!.labels)
+                    : sharedLabels(for: selectedTorrents),
                 store: store,
                 selectedTorrents: selectedTorrents,
-                shouldSave: $shouldSave
+                shouldSave: $shouldSave,
+                onError: { message in
+                    errorMessage = message
+                    showingError = true
+                }
             )
 
             HStack {
@@ -482,14 +441,16 @@ struct RenameSheetContent: View {
                             showingError = true
                             return
                         }
-                        renameTorrentRoot(torrent: targetTorrent, to: newName, store: store) { err in
-                            if let err = err {
-                                errorMessage = err
-                                showingError = true
-                            } else {
+                        performTransmissionAction(
+                            operation: { try await store.renameTorrentRoot(targetTorrent, to: newName) },
+                            onSuccess: { (_: TorrentRenameResponseArgs) in
                                 isPresented = false
+                            },
+                            onError: { message in
+                                errorMessage = message
+                                showingError = true
                             }
-                        }
+                        )
                     }
                 )
             }
@@ -512,41 +473,48 @@ extension View {
             isPresented: isPresented
         ) {
             Button(role: .destructive) {
-                let info = makeConfig(store: store)
-                for torrent in set {
-                    deleteTorrent(torrent: torrent, erase: true, config: info.config, auth: info.auth, onDel: { response in
-                        handleTransmissionResponse(response,
-                            onSuccess: {},
-                            onError: { error in
-                                errorMessage.wrappedValue = error
-                                showingError.wrappedValue = true
-                            }
-                        )
-                    })
-                }
+                deleteTorrents(
+                    ids: Array(set.map(\.id)),
+                    deleteLocalData: true,
+                    store: store,
+                    showingError: showingError,
+                    errorMessage: errorMessage
+                )
                 isPresented.wrappedValue.toggle()
             } label: {
                 Text("Delete file(s)")
             }
             Button("Remove from list only") {
-                let info = makeConfig(store: store)
-                for torrent in set {
-                    deleteTorrent(torrent: torrent, erase: false, config: info.config, auth: info.auth, onDel: { response in
-                        handleTransmissionResponse(response,
-                            onSuccess: {},
-                            onError: { error in
-                                errorMessage.wrappedValue = error
-                                showingError.wrappedValue = true
-                            }
-                        )
-                    })
-                }
+                deleteTorrents(
+                    ids: Array(set.map(\.id)),
+                    deleteLocalData: false,
+                    store: store,
+                    showingError: showingError,
+                    errorMessage: errorMessage
+                )
                 isPresented.wrappedValue.toggle()
             }
         } message: {
             Text("Do you want to delete the file(s) from the disk?")
         }
     }
+}
+
+@MainActor
+private func deleteTorrents(
+    ids: [Int],
+    deleteLocalData: Bool,
+    store: TransmissionStore,
+    showingError: Binding<Bool>,
+    errorMessage: Binding<String>
+) {
+    performTransmissionAction(
+        operation: { try await store.removeTorrents(ids: ids, deleteLocalData: deleteLocalData) },
+        onError: makeTransmissionBindingErrorHandler(
+            isPresented: showingError,
+            message: errorMessage
+        )
+    )
 }
 
 #endif

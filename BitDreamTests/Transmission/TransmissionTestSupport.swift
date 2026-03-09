@@ -15,6 +15,13 @@ let successStatsBody = """
 }
 """
 
+let successEmptyBody = """
+{
+  "arguments": {},
+  "result": "success"
+}
+"""
+
 func makeConfig() -> TransmissionConfig {
     var config = TransmissionConfig()
     config.scheme = "http"
@@ -357,6 +364,89 @@ func makeHTTPResponse(
     }
 
     return response
+}
+
+extension CapturedRequest {
+    func asURLRequest() -> URLRequest {
+        var request = URLRequest(url: url ?? URL(string: "https://example.com")!)
+        request.httpMethod = httpMethod
+        request.httpBody = body
+        return request
+    }
+}
+
+func requestArguments(from request: CapturedRequest) throws -> [String: Any] {
+    let body = try XCTUnwrap(request.body)
+    let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+    return try XCTUnwrap(object["arguments"] as? [String: Any])
+}
+
+func sessionSettingsBody(downloadDir: String, version: String) throws -> String {
+    let data = Data(try loadTransmissionFixture(named: "session-get.response.json").utf8)
+    var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    var arguments = try XCTUnwrap(object["arguments"] as? [String: Any])
+    arguments["download-dir"] = downloadDir
+    arguments["version"] = version
+    arguments["blocklist-size"] = 0
+    object["arguments"] = arguments
+    let encoded = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+    return try XCTUnwrap(String(bytes: encoded, encoding: .utf8))
+}
+
+@MainActor
+func makeStore(sender: some TransmissionRPCRequestSending) -> TransmissionStore {
+    let factory = TransmissionConnectionFactory(
+        transport: TransmissionTransport(sender: sender),
+        credentialResolver: TransmissionCredentialResolver(resolvePassword: { source in
+            switch source {
+            case .resolvedPassword(let password):
+                return password
+            case .keychainCredential(let key):
+                return key == "test-key" ? "secret" : ""
+            }
+        })
+    )
+
+    return TransmissionStore(
+        connectionFactory: factory,
+        snapshotWriter: WidgetSnapshotWriter(
+            writeServerIndex: { _ in },
+            writeSessionSnapshot: { _, _, _, _, _ in },
+            reloadTimelines: { }
+        ),
+        sleep: { _ in
+            try await Task.sleep(nanoseconds: .max)
+        },
+        persistVersion: { _, _ in }
+    )
+}
+
+func makeHost(serverID: String, server: String) -> BitDream.Host {
+    BitDream.Host(
+        serverID: serverID,
+        isDefault: false,
+        isSSL: false,
+        credentialKey: "test-key",
+        name: serverID,
+        port: 9091,
+        server: server,
+        username: "demo",
+        version: nil
+    )
+}
+
+func waitUntil(
+    timeout: TimeInterval = 1,
+    _ predicate: @escaping @MainActor () async -> Bool
+) async -> Bool {
+    let deadline = Date().addingTimeInterval(timeout)
+    while Date() < deadline {
+        if await predicate() {
+            return true
+        }
+        await Task.yield()
+    }
+    return false
 }
 
 extension XCTestCase {

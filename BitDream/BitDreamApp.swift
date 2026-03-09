@@ -57,17 +57,34 @@ struct BitDreamApp: App {
         #endif
     }
 
+    var body: some Scene {
+        #if os(macOS)
+        macOSScenes
+        #else
+        iOSScene
+        #endif
+    }
+}
+
+private extension BitDreamApp {
     #if os(macOS)
-    private func syncMenuBarStatusItem(isEnabled: Bool? = nil) {
+    func syncMenuBarStatusItem(isEnabled: Bool? = nil) {
         menuBarStatusItemController.configure(
             isEnabled: isEnabled ?? menuBarTransferWidgetEnabled,
             store: store
         )
     }
-    #endif
 
-    var body: some Scene {
-        #if os(macOS)
+    @SceneBuilder
+    var macOSScenes: some Scene {
+        mainWindowScene
+        connectionInfoScene
+        statisticsScene
+        aboutScene
+        settingsScene
+    }
+
+    var mainWindowScene: some Scene {
         Window("BitDream", id: "main") {
             ContentView()
                 .environmentObject(store) // Pass the shared store to the ContentView
@@ -127,6 +144,13 @@ struct BitDreamApp: App {
                 ) { result in
                     switch result {
                     case .success(let urls):
+                        guard store.host != nil else {
+                            presentAddTorrentStoreError(
+                                detail: addTorrentNoServerConfiguredMessage,
+                                store: store
+                            )
+                            return
+                        }
                         var failures: [(String, String)] = []
                         for url in urls {
                             do {
@@ -155,7 +179,6 @@ struct BitDreamApp: App {
                         store.showGlobalAlert = true
                     }
                 }
-                #if os(macOS)
                 .sheet(isPresented: $store.showGlobalRenameDialog) {
                     // Resolve target torrent using the stored ID
                     if let targetId = store.globalRenameTargetId,
@@ -176,24 +199,25 @@ struct BitDreamApp: App {
                                     store.showGlobalAlert = true
                                     return
                                 }
-                                renameTorrentRoot(torrent: targetTorrent, to: newName, store: store) { error in
-                                    if let error = error {
-                                        store.globalAlertTitle = "Rename Error"
-                                        store.globalAlertMessage = error
-                                        store.showGlobalAlert = true
-                                    } else {
+                                performTransmissionAction(
+                                    operation: { try await store.renameTorrentRoot(targetTorrent, to: newName) },
+                                    onSuccess: { (_: TorrentRenameResponseArgs) in
                                         store.showGlobalRenameDialog = false
                                         store.globalRenameInput = ""
                                         store.globalRenameTargetId = nil
+                                    },
+                                    onError: { message in
+                                        store.globalAlertTitle = "Rename Error"
+                                        store.globalAlertMessage = message
+                                        store.showGlobalAlert = true
                                     }
-                                }
+                                )
                             }
                         )
                         .frame(width: 420)
                         .padding()
                     }
                 }
-                #endif
         }
         .windowResizability(.contentSize)
         .commands {
@@ -213,6 +237,9 @@ struct BitDreamApp: App {
             )
         }
         .modelContainer(persistenceController.container)
+    }
+
+    var connectionInfoScene: some Scene {
         WindowGroup("Connection Info", id: "connection-info") {
             macOSConnectionInfoView()
                 .environmentObject(store)
@@ -223,7 +250,9 @@ struct BitDreamApp: App {
         }
         .windowResizability(.contentSize)
         .modelContainer(persistenceController.container)
+    }
 
+    var statisticsScene: some Scene {
         WindowGroup("Statistics", id: "statistics") {
             macOSStatisticsView()
                 .environmentObject(store)
@@ -234,7 +263,9 @@ struct BitDreamApp: App {
         }
         .windowResizability(.contentSize)
         .modelContainer(persistenceController.container)
+    }
 
+    var aboutScene: some Scene {
         // About window - Using WindowGroup to prevent automatic Window menu entry
         // This follows Apple's recommended pattern for auxiliary windows that shouldn't
         // appear in the Window menu, as About windows are not user-managed utility windows
@@ -248,8 +279,19 @@ struct BitDreamApp: App {
         .windowResizability(.contentSize)
         .defaultPosition(.center)
         .modelContainer(persistenceController.container)
+    }
 
-        #else
+    var settingsScene: some Scene {
+        Settings {
+            SettingsView(store: store) // Use the same store instance
+                .frame(minWidth: 500, idealWidth: 550, maxWidth: 650)
+                .environmentObject(appUpdater)
+                .environmentObject(themeManager) // Pass the ThemeManager to the Settings view
+                .immediateTheme(manager: themeManager)
+        }
+    }
+    #else
+    var iOSScene: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(store) // Pass the shared store to the ContentView
@@ -268,18 +310,8 @@ struct BitDreamApp: App {
                 }
         }
         .modelContainer(persistenceController.container)
-        #endif
-
-        #if os(macOS)
-        Settings {
-            SettingsView(store: store) // Use the same store instance
-                .frame(minWidth: 500, idealWidth: 550, maxWidth: 650)
-                .environmentObject(appUpdater)
-                .environmentObject(themeManager) // Pass the ThemeManager to the Settings view
-                .immediateTheme(manager: themeManager)
-        }
-        #endif
     }
+    #endif
 }
 
 // TODO(swiftdata-cutover): Remove this function entirely after the migration

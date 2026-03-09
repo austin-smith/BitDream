@@ -16,6 +16,16 @@ internal struct TransmissionWidgetRefreshSnapshot: Sendable {
     let torrentSummaryError: TransmissionError?
 }
 
+internal struct TransmissionTorrentDetailSnapshot: Sendable {
+    let files: [TorrentFile]
+    let fileStats: [TorrentFileStats]
+    let peers: [Peer]
+    let peersFrom: PeersFrom?
+    let pieceCount: Int
+    let pieceSize: Int64
+    let piecesBitfieldBase64: String
+}
+
 internal extension TransmissionConnection {
     func fetchPollingSnapshot() async throws -> TransmissionPollingSnapshot {
         async let sessionStats = fetchSessionStats()
@@ -48,6 +58,26 @@ internal extension TransmissionConnection {
             torrents: resolvedTorrentSummary.torrents
         )
         .widgetSnapshot(torrentSummaryError: resolvedTorrentSummary.error)
+    }
+
+    func fetchTorrentDetailSnapshot(id: Int) async throws -> TransmissionTorrentDetailSnapshot {
+        async let filesResponse = fetchTorrentFiles(id: id)
+        async let peersResponse = fetchTorrentPeers(id: id)
+        async let piecesResponse = fetchTorrentPieces(id: id)
+
+        let files = try await filesResponse
+        let peers = try await peersResponse
+        let pieces = try await piecesResponse
+
+        return TransmissionTorrentDetailSnapshot(
+            files: files.files,
+            fileStats: files.fileStats,
+            peers: peers.peers,
+            peersFrom: peers.peersFrom,
+            pieceCount: pieces.pieceCount,
+            pieceSize: pieces.pieceSize,
+            piecesBitfieldBase64: pieces.pieces
+        )
     }
 
     private func fetchSessionSettingsResult() async -> Result<TransmissionSessionResponseArguments, TransmissionError> {

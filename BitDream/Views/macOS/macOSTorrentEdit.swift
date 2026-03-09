@@ -67,13 +67,15 @@ struct LabelEditView: View {
     var store: TransmissionStore
     let selectedTorrents: Set<Torrent>
     @Binding var shouldSave: Bool
+    let onError: @MainActor @Sendable (String) -> Void
 
     init(
         labelInput: Binding<String>,
         existingLabels: [String],
         store: TransmissionStore,
         selectedTorrents: Set<Torrent>,
-        shouldSave: Binding<Bool>
+        shouldSave: Binding<Bool>,
+        onError: @escaping @MainActor @Sendable (String) -> Void
     ) {
         self._labelInput = labelInput
         self.existingLabels = existingLabels
@@ -81,6 +83,7 @@ struct LabelEditView: View {
         self.store = store
         self.selectedTorrents = selectedTorrents
         self._shouldSave = shouldSave
+        self.onError = onError
     }
 
     private func saveAndDismiss() {
@@ -92,22 +95,37 @@ struct LabelEditView: View {
 
         if selectedTorrents.count == 1 {
             let torrent = selectedTorrents.first!
-            saveTorrentLabels(torrentId: torrent.id, labels: workingLabels, store: store) {
-                dismiss()
-            }
+            let sortedLabels = Array(workingLabels).sorted()
+            performTransmissionAction(
+                operation: {
+                    try await store.updateTorrentLabels([
+                        TransmissionTorrentLabelsUpdate(ids: [torrent.id], labels: sortedLabels)
+                    ])
+                },
+                onSuccess: {
+                    dismiss()
+                },
+                onError: onError
+            )
         } else {
-            let info = makeConfig(store: store)
-            for torrent in selectedTorrents {
-                let mergedLabels = Set(torrent.labels).union(workingLabels)
-                let sortedLabels = Array(mergedLabels).sorted()
-                updateTorrent(
-                    args: TorrentSetRequestArgs(ids: [torrent.id], labels: sortedLabels),
-                    info: info,
-                    onComplete: { _ in }
-                )
+            let updates = bulkLabelUpdates(
+                for: selectedTorrents,
+                existingLabels: existingLabels,
+                workingLabels: workingLabels
+            )
+
+            guard !updates.isEmpty else {
+                dismiss()
+                return
             }
-            store.requestRefresh()
-            dismiss()
+
+            performTransmissionAction(
+                operation: { try await store.updateTorrentLabels(updates) },
+                onSuccess: {
+                    dismiss()
+                },
+                onError: onError
+            )
         }
     }
 
@@ -209,22 +227,25 @@ struct MoveSheetContent: View {
                 Button("Cancel") { isPresented = false }
                     .keyboardShortcut(.cancelAction)
                 Button("Set Location") {
-                    let info = makeConfig(store: store)
                     let ids = Array(selectedTorrents.map(\.id))
-                    let args = TorrentSetLocationRequestArgs(
-                        ids: ids,
-                        location: movePath.trimmingCharacters(in: .whitespacesAndNewlines),
-                        move: moveShouldMove
-                    )
-                    setTorrentLocation(args: args, info: info) { response in
-                        handleTransmissionResponse(response, onSuccess: {
-                            store.requestRefresh()
+                    let location = movePath.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                    performTransmissionAction(
+                        operation: {
+                            try await store.setTorrentLocation(
+                                ids: ids,
+                                location: location,
+                                move: moveShouldMove
+                            )
+                        },
+                        onSuccess: {
                             isPresented = false
-                        }, onError: { error in
-                            errorMessage = error
-                            showingError = true
-                        })
-                    }
+                        },
+                        onError: makeTransmissionBindingErrorHandler(
+                            isPresented: $showingError,
+                            message: $errorMessage
+                        )
+                    )
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
@@ -232,6 +253,48 @@ struct MoveSheetContent: View {
             }
         }
         .padding(.vertical)
+    }
+}
+
+internal func sharedLabels(for torrents: Set<Torrent>) -> [String] {
+    guard var shared = torrents.first.map({ Set($0.labels) }) else {
+        return []
+    }
+
+    for torrent in torrents.dropFirst() {
+        shared.formIntersection(torrent.labels)
+    }
+
+    return shared.sorted()
+}
+
+internal func bulkLabelUpdates(
+    for torrents: Set<Torrent>,
+    existingLabels: [String],
+    workingLabels: Set<String>
+) -> [TransmissionTorrentLabelsUpdate] {
+    let existingLabelSet = Set(existingLabels)
+    let removedSharedLabels = existingLabelSet.subtracting(workingLabels)
+    let addedLabels = workingLabels.subtracting(existingLabelSet)
+
+    guard !removedSharedLabels.isEmpty || !addedLabels.isEmpty else {
+        return []
+    }
+
+    return torrents.compactMap { torrent in
+        var labels = Set(torrent.labels)
+        labels.subtract(removedSharedLabels)
+        labels.formUnion(addedLabels)
+
+        let sortedLabels = labels.sorted()
+        guard sortedLabels != torrent.labels.sorted() else {
+            return nil
+        }
+
+        return TransmissionTorrentLabelsUpdate(ids: [torrent.id], labels: sortedLabels)
+    }
+    .sorted { lhs, rhs in
+        (lhs.ids.first ?? 0) < (rhs.ids.first ?? 0)
     }
 }
 

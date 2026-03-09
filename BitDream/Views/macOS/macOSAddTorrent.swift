@@ -248,24 +248,73 @@ private extension macOSAddTorrent {
     }
 
     func addMagnetTorrent() {
-        addTorrentAction(
-            alertInput: alertInput,
-            downloadDir: downloadDir,
-            store: store,
-            errorMessage: $errorMessage,
-            showingError: $showingError,
-            onSuccess: { dismiss() }
+        guard !alertInput.isEmpty else { return }
+
+        performTransmissionAction(
+            operation: {
+                try await store.addTorrent(
+                    magnetLink: alertInput,
+                    saveLocation: downloadDir
+                )
+            },
+            onSuccess: { (_: TransmissionTorrentAddOutcome) in
+                dismiss()
+            },
+            onError: { message in
+                presentAddTorrentSheetError(
+                    detail: message,
+                    errorMessage: $errorMessage,
+                    showingError: $showingError
+                )
+            }
         )
     }
 
     func addSelectedTorrentFiles() {
         guard !selectedTorrentFiles.isEmpty else { return }
+        let torrentFiles = selectedTorrentFiles
+        let saveLocation = downloadDir
 
-        for torrentFile in selectedTorrentFiles {
-            addTorrentFile(fileData: torrentFile.data)
+        Task { @MainActor in
+            var failures: [(String, String)] = []
+
+            for torrentFile in torrentFiles {
+                do {
+                    _ = try await store.addTorrent(
+                        fileData: torrentFile.data,
+                        saveLocation: saveLocation
+                    )
+                } catch {
+                    let message = TransmissionUserFacingError.message(for: error) ?? error.localizedDescription
+                    failures.append((torrentFile.name, message))
+                }
+            }
+
+            guard failures.isEmpty else {
+                if failures.count == 1, let failure = failures.first {
+                    handleAddTorrentError(
+                        "Failed to add '\(failure.0)': \(failure.1)",
+                        errorMessage: $errorMessage,
+                        showingError: $showingError
+                    )
+                } else {
+                    let summary = failures
+                        .prefix(5)
+                        .map { "\($0.0): \($0.1)" }
+                        .joined(separator: "\n")
+                    let remainingCount = failures.count - min(failures.count, 5)
+                    let suffix = remainingCount > 0 ? "\n…and \(remainingCount) more" : ""
+                    handleAddTorrentError(
+                        "Failed to add \(failures.count) torrent files.\n\n\(summary)\(suffix)",
+                        errorMessage: $errorMessage,
+                        showingError: $showingError
+                    )
+                }
+                return
+            }
+
+            dismiss()
         }
-
-        dismiss()
     }
 
     func handleImporterResult(_ result: Result<[URL], Error>) {
@@ -352,28 +401,6 @@ private extension macOSAddTorrent {
             alertInput = prefill
             store.addTorrentPrefill = nil
         }
-    }
-
-    func addTorrentFile(fileData: Data) {
-        let fileStream = fileData.base64EncodedString(options: [])
-        let info = makeConfig(store: store)
-
-        addTorrent(
-            fileUrl: fileStream,
-            saveLocation: downloadDir,
-            auth: info.auth,
-            file: true,
-            config: info.config,
-            onAdd: { response in
-                if let presentation = TransmissionLegacyCompatibility.presentation(for: response.response) {
-                    handleAddTorrentError(
-                        "Failed to add torrent: \(presentation.message)",
-                        errorMessage: $errorMessage,
-                        showingError: $showingError
-                    )
-                }
-            }
-        )
     }
 }
 

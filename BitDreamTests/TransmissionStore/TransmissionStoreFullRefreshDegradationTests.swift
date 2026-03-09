@@ -169,14 +169,3 @@ private extension TransmissionStoreFullRefreshTests {
         return false
     }
 }
-
-private func sessionSettingsBody(downloadDir: String, version: String) throws -> String {
-    let data = Data(try loadTransmissionFixture(named: "session-get.response.json").utf8)
-    var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
-    var arguments = try XCTUnwrap(object["arguments"] as? [String: Any])
-    arguments["download-dir"] = downloadDir
-    arguments["version"] = version
-    object["arguments"] = arguments
-    let encoded = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
-    return try XCTUnwrap(String(bytes: encoded, encoding: .utf8))
-}

@@ -18,13 +18,6 @@ struct iOSContentView: View {
     // Store the selected torrent IDs
     @State private var selectedTorrentIds: Set<Int> = []
 
-    // Computed property to get the selected torrents from the IDs
-    private var selectedTorrentsSet: Set<Torrent> {
-        Set(selectedTorrentIds.compactMap { id in
-            store.torrents.first { $0.id == id }
-        })
-    }
-
     @State var sortProperty: SortProperty = UserDefaults.standard.sortProperty
     @State var sortOrder: SortOrder = UserDefaults.standard.sortOrder
     @State var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
@@ -95,10 +88,16 @@ struct iOSContentView: View {
             SettingsView(store: store)
         })
     }
+}
 
-    // MARK: - iOS Views
+private extension iOSContentView {
+    var selectedTorrentsSet: Set<Torrent> {
+        Set(selectedTorrentIds.compactMap { id in
+            store.torrents.first { $0.id == id }
+        })
+    }
 
-    private var torrentRows: some View {
+    var torrentRows: some View {
         Group {
             if store.torrents.isEmpty {
                 Text("No dreams available")
@@ -126,33 +125,15 @@ struct iOSContentView: View {
         }
     }
 
-    // MARK: - Toolbar Items
-
-    private var serverToolbarItem: some ToolbarContent {
+    var serverToolbarItem: some ToolbarContent {
         ToolbarItem(placement: .automatic) {
             Menu {
-                Menu {
-                    Picker("Server", selection: .init(
-                        get: { store.host },
-                        set: { host in
-                            if let host = host {
-                                store.setHost(host: host)
-                            }
-                        }
-                    )) {
-                        ForEach(hosts, id: \.serverID) { host in
-                            Text(host.name ?? "Unnamed Server")
-                                .tag(host as Host?)
-                        }
-                    }
-                } label: {
-                    Label("Server", systemImage: "arrow.triangle.2.circlepath")
-                }
+                serverSelectionMenu
                 Divider()
-                Button(action: {store.setup.toggle()}, label: {
+                Button(action: { store.setup.toggle() }, label: {
                     Label("Add", systemImage: "plus")
                 })
-                Button(action: {store.editServers.toggle()}, label: {
+                Button(action: { store.editServers.toggle() }, label: {
                     Label("Edit", systemImage: "square.and.pencil")
                 })
             } label: {
@@ -161,100 +142,19 @@ struct iOSContentView: View {
         }
     }
 
-    private var actionToolbarItems: some ToolbarContent {
+    var actionToolbarItems: some ToolbarContent {
         ToolbarItemGroup(placement: .automatic) {
             Menu {
-                Menu {
-                    Section(header: Text("Include")) {
-                        Button("All") {
-                            filterBySelection = TorrentStatusCalc.allCases
-                        }
-                        Button("Downloading") {
-                            filterBySelection = [.downloading]
-                        }
-                        Button("Complete") {
-                            filterBySelection = [.complete]
-                        }
-                        Button("Paused") {
-                            filterBySelection = [.paused]
-                        }
-                    }
-                    Section(header: Text("Exclude")) {
-                        Button("Complete") {
-                            filterBySelection = TorrentStatusCalc.allCases.filter {$0 != .complete}
-                        }
-                    }
-                } label: {
-                    Text("Filter By")
-                    Image(systemName: "slider.horizontal.3")
-                }.environment(\.menuOrder, .fixed)
-
-                Menu {
-                    // Sort properties
-                    ForEach(SortProperty.allCases, id: \.self) { property in
-                        Button {
-                            sortProperty = property
-                        } label: {
-                            HStack {
-                                Text(property.rawValue)
-                                Spacer()
-                                if sortProperty == property {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                        }
-                    }
-
-                    Divider()
-
-                    // Sort order
-                    Button {
-                        sortOrder = .ascending
-                    } label: {
-                        HStack {
-                            Text("Ascending")
-                            Spacer()
-                            if sortOrder == .ascending {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-
-                    Button {
-                        sortOrder = .descending
-                    } label: {
-                        HStack {
-                            Text("Descending")
-                            Spacer()
-                            if sortOrder == .descending {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                } label: {
-                    Label("Sort", systemImage: "arrow.up.arrow.down")
-                }.environment(\.menuOrder, .fixed)
-
+                filterMenu
+                sortMenu
                 Divider()
-
-                Button(action: {
-                    playPauseAllTorrents(start: false, info: makeConfig(store: store), onResponse: { _ in
-                        store.requestRefresh()
-                    })
-                }, label: {
+                Button(action: pauseAllTorrents, label: {
                     Label("Pause All", systemImage: "pause")
                 })
-
-                Button(action: {
-                    playPauseAllTorrents(start: true, info: makeConfig(store: store), onResponse: { _ in
-                        store.requestRefresh()
-                    })
-                }, label: {
+                Button(action: resumeAllTorrents, label: {
                     Label("Resume All", systemImage: "play")
                 })
-
                 Divider()
-
                 Button(action: {
                     store.showSettings.toggle()
                 }, label: {
@@ -266,9 +166,7 @@ struct iOSContentView: View {
         }
     }
 
-    // MARK: - Bottom Toolbar
-
-    private var bottomToolbarItems: some ToolbarContent {
+    var bottomToolbarItems: some ToolbarContent {
         Group {
             DefaultToolbarItem(kind: .search, placement: .bottomBar)
             ToolbarSpacer(.flexible, placement: .bottomBar)
@@ -282,6 +180,117 @@ struct iOSContentView: View {
                 .foregroundStyle(.tint)
             }
         }
+    }
+
+    var serverSelectionMenu: some View {
+        Menu {
+            Picker("Server", selection: .init(
+                get: { store.host },
+                set: { host in
+                    if let host {
+                        store.setHost(host: host)
+                    }
+                }
+            )) {
+                ForEach(hosts, id: \.serverID) { host in
+                    Text(host.name ?? "Unnamed Server")
+                        .tag(host as Host?)
+                }
+            }
+        } label: {
+            Label("Server", systemImage: "arrow.triangle.2.circlepath")
+        }
+    }
+
+    var filterMenu: some View {
+        Menu {
+            Section(header: Text("Include")) {
+                Button("All") {
+                    filterBySelection = TorrentStatusCalc.allCases
+                }
+                Button("Downloading") {
+                    filterBySelection = [.downloading]
+                }
+                Button("Complete") {
+                    filterBySelection = [.complete]
+                }
+                Button("Paused") {
+                    filterBySelection = [.paused]
+                }
+            }
+            Section(header: Text("Exclude")) {
+                Button("Complete") {
+                    filterBySelection = TorrentStatusCalc.allCases.filter { $0 != .complete }
+                }
+            }
+        } label: {
+            Text("Filter By")
+            Image(systemName: "slider.horizontal.3")
+        }
+        .environment(\.menuOrder, .fixed)
+    }
+
+    var sortMenu: some View {
+        Menu {
+            ForEach(SortProperty.allCases, id: \.self) { property in
+                Button {
+                    sortProperty = property
+                } label: {
+                    HStack {
+                        Text(property.rawValue)
+                        Spacer()
+                        if sortProperty == property {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+
+            Divider()
+
+            Button {
+                sortOrder = .ascending
+            } label: {
+                HStack {
+                    Text("Ascending")
+                    Spacer()
+                    if sortOrder == .ascending {
+                        Image(systemName: "checkmark")
+                    }
+                }
+            }
+
+            Button {
+                sortOrder = .descending
+            } label: {
+                HStack {
+                    Text("Descending")
+                    Spacer()
+                    if sortOrder == .descending {
+                        Image(systemName: "checkmark")
+                    }
+                }
+            }
+        } label: {
+            Label("Sort", systemImage: "arrow.up.arrow.down")
+        }
+        .environment(\.menuOrder, .fixed)
+    }
+
+    func pauseAllTorrents() {
+        performTransmissionDebugAction(
+            .pauseAllTorrents,
+            store: store,
+            operation: { try await store.pauseAllTorrents() }
+        )
+    }
+
+    func resumeAllTorrents() {
+        performTransmissionDebugAction(
+            .resumeAllTorrents,
+            store: store,
+            operation: { try await store.resumeAllTorrents() }
+        )
     }
 }
 #endif
