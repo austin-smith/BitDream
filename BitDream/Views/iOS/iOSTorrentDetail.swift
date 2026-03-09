@@ -342,7 +342,6 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
 
                     Section(header: Text("Pieces")) {
                         IOSTorrentPiecesSectionContent(
-                            torrentID: torrent.id,
                             state: piecesSectionState,
                             onRetry: onRetryPiecesLoad
                         )
@@ -392,7 +391,6 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
 }
 
 private struct IOSTorrentPiecesSectionContent: View {
-    let torrentID: Int
     let state: TorrentPiecesSectionState
     let onRetry: () -> Void
 
@@ -405,11 +403,6 @@ private struct IOSTorrentPiecesSectionContent: View {
                 PiecesGridView(
                     piecesHaveSet: payload.piecesHaveSet
                 )
-                .id(PiecesGridIdentity(
-                    torrentID: torrentID,
-                    pieceCount: payload.pieceCount,
-                    piecesHaveCount: payload.piecesHaveCount
-                ))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text(
@@ -432,12 +425,6 @@ private struct IOSTorrentPiecesSectionContent: View {
             )
         }
     }
-}
-
-private struct PiecesGridIdentity: Hashable {
-    let torrentID: Int
-    let pieceCount: Int
-    let piecesHaveCount: Int
 }
 
 private struct IOSTorrentPiecesLoadingView: View {

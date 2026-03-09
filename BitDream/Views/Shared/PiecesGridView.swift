@@ -11,25 +11,22 @@ struct PiecesGridView: View {
     var body: some View {
         let bitset = piecesHaveSet
 
-        GeometryReader { geometry in
-            let columnsCount = computeColumns(availableWidth: geometry.size.width, cellSize: cellSize, cellSpacing: cellSpacing)
+        Canvas { context, size in
+            let columnsCount = computeColumns(availableWidth: size.width, cellSize: cellSize, cellSpacing: cellSpacing)
             let totalCells = max(1, rows * columnsCount)
             let buckets = bucketize(bitset: bitset, totalBuckets: totalCells)
+            let unit = cellSize + cellSpacing
 
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.fixed(cellSize), spacing: cellSpacing, alignment: .leading), count: columnsCount),
-                spacing: cellSpacing
-            ) {
-                ForEach(0..<totalCells, id: \.self) { index in
-                    let fraction = index < buckets.count ? buckets[index] : 0
-                    Rectangle()
-                        .fill(colorForFraction(fraction))
-                        .frame(width: cellSize, height: cellSize)
-                        .cornerRadius(1.0)
-                        .accessibilityHidden(true)
-                }
+            for index in 0..<totalCells {
+                let fraction = index < buckets.count ? buckets[index] : 0
+                let origin = CGPoint(
+                    x: CGFloat(index % columnsCount) * unit,
+                    y: CGFloat(index / columnsCount) * unit
+                )
+                let rect = CGRect(origin: origin, size: CGSize(width: cellSize, height: cellSize))
+                let path = Path(roundedRect: rect, cornerRadius: 1.0)
+                context.fill(path, with: .color(colorForFraction(fraction)))
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(height: CGFloat(rows) * (cellSize + cellSpacing))
         .accessibilityElement(children: .ignore)
