@@ -126,7 +126,22 @@ private extension iOSContentView {
     }
 
     var serverToolbarItem: some ToolbarContent {
-        ToolbarItem(placement: .automatic) {
+        ToolbarItem(placement: .topBarLeading) {
+            Menu {
+                Button(action: pauseAllTorrents, label: {
+                    Label("Pause All", systemImage: "pause")
+                })
+                Button(action: resumeAllTorrents, label: {
+                    Label("Resume All", systemImage: "play")
+                })
+            } label: {
+                Image(systemName: "ellipsis.circle")
+            }
+        }
+    }
+
+    var actionToolbarItems: some ToolbarContent {
+        ToolbarItemGroup(placement: .automatic) {
             Menu {
                 serverSelectionMenu
                 Divider()
@@ -139,35 +154,27 @@ private extension iOSContentView {
             } label: {
                 Image(systemName: "server.rack")
             }
-        }
-    }
 
-    var actionToolbarItems: some ToolbarContent {
-        ToolbarItemGroup(placement: .automatic) {
-            Menu {
-                filterMenu
-                sortMenu
-                Divider()
-                Button(action: pauseAllTorrents, label: {
-                    Label("Pause All", systemImage: "pause")
-                })
-                Button(action: resumeAllTorrents, label: {
-                    Label("Resume All", systemImage: "play")
-                })
-                Divider()
-                Button(action: {
-                    store.showSettings.toggle()
-                }, label: {
-                    Label("Settings", systemImage: "gear")
-                })
-            } label: {
-                Image(systemName: "ellipsis.circle")
-            }
+            Button(action: {
+                store.showSettings.toggle()
+            }, label: {
+                Image(systemName: "gear")
+            })
         }
     }
 
     var bottomToolbarItems: some ToolbarContent {
         Group {
+            ToolbarItem(placement: .bottomBar) {
+                Menu {
+                    filterMenu
+                    sortMenu
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                }
+            }
+
+            ToolbarSpacer(.flexible, placement: .bottomBar)
             DefaultToolbarItem(kind: .search, placement: .bottomBar)
             ToolbarSpacer(.flexible, placement: .bottomBar)
 
@@ -175,9 +182,8 @@ private extension iOSContentView {
                 Button(action: {
                     store.isShowingAddAlert.toggle()
                 }, label: {
-                    Label("Add Torrent", systemImage: "plus")
+                    Image(systemName: "plus")
                 })
-                .foregroundStyle(.tint)
             }
         }
     }
@@ -225,7 +231,7 @@ private extension iOSContentView {
             }
         } label: {
             Text("Filter By")
-            Image(systemName: "slider.horizontal.3")
+            Image(systemName: "line.3.horizontal.decrease")
         }
         .environment(\.menuOrder, .fixed)
     }
