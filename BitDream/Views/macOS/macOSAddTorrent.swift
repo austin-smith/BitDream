@@ -276,7 +276,7 @@ private extension macOSAddTorrent {
         let saveLocation = downloadDir
 
         Task { @MainActor in
-            var failures: [(String, String)] = []
+            var failures: [AddTorrentBatchFailure] = []
 
             for torrentFile in torrentFiles {
                 do {
@@ -285,31 +285,20 @@ private extension macOSAddTorrent {
                         saveLocation: saveLocation
                     )
                 } catch {
-                    let message = TransmissionUserFacingError.message(for: error) ?? error.localizedDescription
-                    failures.append((torrentFile.name, message))
+                    guard let failure = addTorrentBatchFailure(fileName: torrentFile.name, error: error) else {
+                        continue
+                    }
+
+                    failures.append(failure)
                 }
             }
 
             guard failures.isEmpty else {
-                if failures.count == 1, let failure = failures.first {
-                    handleAddTorrentError(
-                        "Failed to add '\(failure.0)': \(failure.1)",
-                        errorMessage: $errorMessage,
-                        showingError: $showingError
-                    )
-                } else {
-                    let summary = failures
-                        .prefix(5)
-                        .map { "\($0.0): \($0.1)" }
-                        .joined(separator: "\n")
-                    let remainingCount = failures.count - min(failures.count, 5)
-                    let suffix = remainingCount > 0 ? "\n…and \(remainingCount) more" : ""
-                    handleAddTorrentError(
-                        "Failed to add \(failures.count) torrent files.\n\n\(summary)\(suffix)",
-                        errorMessage: $errorMessage,
-                        showingError: $showingError
-                    )
-                }
+                handleAddTorrentError(
+                    addTorrentBatchFailureSummary(failures),
+                    errorMessage: $errorMessage,
+                    showingError: $showingError
+                )
                 return
             }
 

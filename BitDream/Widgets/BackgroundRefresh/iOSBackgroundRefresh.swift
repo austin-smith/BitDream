@@ -56,7 +56,7 @@ enum BackgroundRefreshManager {
         schedule() // schedule the next one ASAP to keep cadence
 
         let taskBox = AppRefreshTaskBox(task: task)
-        let refreshHandle = enqueueWidgetRefresh { success in
+        let refreshHandle = WidgetRefreshScheduler.enqueue { success in
             taskBox.complete(success: success)
         }
 

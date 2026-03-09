@@ -1,7 +1,5 @@
 import Foundation
 
-public typealias TransmissionConfig = URLComponents
-
 internal enum TransmissionCredentialSource: Hashable, Sendable {
     case resolvedPassword(String)
     case keychainCredential(String)
@@ -13,34 +11,6 @@ internal struct TransmissionConnectionDescriptor: Hashable, Sendable {
     let port: Int
     let username: String
     let credentialSource: TransmissionCredentialSource
-
-    init(
-        scheme: String,
-        host: String,
-        port: Int,
-        username: String,
-        credentialSource: TransmissionCredentialSource
-    ) {
-        self.scheme = scheme
-        self.host = host
-        self.port = port
-        self.username = username
-        self.credentialSource = credentialSource
-    }
-
-    init(config: TransmissionConfig, auth: TransmissionAuth) {
-        self.init(
-            scheme: config.scheme ?? "",
-            host: config.host ?? "",
-            port: config.port ?? 0,
-            username: auth.username,
-            credentialSource: .resolvedPassword(auth.password)
-        )
-    }
-
-    init(info: (config: TransmissionConfig, auth: TransmissionAuth)) {
-        self.init(config: info.config, auth: info.auth)
-    }
 }
 
 internal struct TransmissionEndpoint: Hashable, Sendable {
@@ -48,7 +18,6 @@ internal struct TransmissionEndpoint: Hashable, Sendable {
     let host: String
     let port: Int
     let rpcURL: URL
-    let endpointKey: String
 
     init(scheme: String, host: String, port: Int) throws {
         let normalizedScheme = scheme.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -84,19 +53,6 @@ internal struct TransmissionEndpoint: Hashable, Sendable {
         self.host = normalizedHost
         self.port = port
         self.rpcURL = rpcURL
-        self.endpointKey = rpcURL.absoluteString
-    }
-
-    init(config: TransmissionConfig) throws {
-        guard let port = config.port else {
-            throw TransmissionError.invalidEndpointConfiguration
-        }
-
-        try self.init(
-            scheme: config.scheme ?? "",
-            host: config.host ?? "",
-            port: port
-        )
     }
 }
 

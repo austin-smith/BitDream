@@ -25,8 +25,7 @@ enum BackgroundActivityScheduler {
         newScheduler.qualityOfService = .utility
 
         newScheduler.schedule { completion in
-            // Perform widget refresh
-            performWidgetRefresh {
+            _ = WidgetRefreshScheduler.enqueue { _ in
                 completion(.finished)
             }
         }
@@ -54,7 +53,7 @@ enum BackgroundActivityScheduler {
         newScheduler.qualityOfService = .utility
 
         newScheduler.schedule { completion in
-            performWidgetRefresh {
+            _ = WidgetRefreshScheduler.enqueue { _ in
                 completion(.finished)
             }
         }

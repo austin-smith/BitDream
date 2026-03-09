@@ -22,16 +22,8 @@ let successEmptyBody = """
 }
 """
 
-func makeConfig() -> TransmissionConfig {
-    var config = TransmissionConfig()
-    config.scheme = "http"
-    config.host = "example.com"
-    config.port = 9091
-    return config
-}
-
 func makeEndpoint() throws -> TransmissionEndpoint {
-    try TransmissionEndpoint(config: makeConfig())
+    try TransmissionEndpoint(scheme: "http", host: "example.com", port: 9091)
 }
 
 func makeAuth() -> TransmissionAuth {
@@ -267,6 +259,7 @@ actor ConcurrentRefreshSender: TransmissionRPCRequestSending {
 actor ConcurrentUnauthorizedRefreshSender: TransmissionRPCRequestSending {
     private var requests: [CapturedRequest] = []
     private var staleTokenResponses = 0
+    private var staleRequestContinuations: [CheckedContinuation<Void, Never>] = []
 
     func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         requests.append(CapturedRequest(request))
@@ -274,8 +267,19 @@ actor ConcurrentUnauthorizedRefreshSender: TransmissionRPCRequestSending {
         switch request.value(forHTTPHeaderField: transmissionSessionTokenHeader) {
         case "stale-token":
             staleTokenResponses += 1
-            if staleTokenResponses == 1 {
+            let responseNumber = staleTokenResponses
+
+            if responseNumber == 1 {
+                await withCheckedContinuation { continuation in
+                    staleRequestContinuations.append(continuation)
+                }
                 return (Data(), makeHTTPResponse(for: request.url!, statusCode: 401))
+            }
+
+            let continuations = staleRequestContinuations
+            staleRequestContinuations.removeAll()
+            for continuation in continuations {
+                continuation.resume()
             }
 
             return (

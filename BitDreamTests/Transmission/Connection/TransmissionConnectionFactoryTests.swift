@@ -103,8 +103,14 @@ final class TransmissionConnectionFactoryTests: XCTestCase {
         )
     }
 
-    func testLegacyTupleDescriptorBridgeUsesResolvedPasswordSource() {
-        let descriptor = TransmissionConnectionDescriptor(config: makeConfig(), auth: makeAuth())
+    func testDescriptorStoresExplicitResolvedPasswordSource() {
+        let descriptor = TransmissionConnectionDescriptor(
+            scheme: "http",
+            host: "example.com",
+            port: 9091,
+            username: "demo",
+            credentialSource: .resolvedPassword("secret")
+        )
 
         XCTAssertEqual(descriptor.scheme, "http")
         XCTAssertEqual(descriptor.host, "example.com")
