@@ -10,6 +10,13 @@ struct iOSTorrentDetail: View {
 
     @StateObject private var supplementalStore = TorrentDetailSupplementalStore()
     @State private var showingDeleteConfirmation = false
+    @State private var labelDialog = false
+    @State private var labelInput: String = ""
+    @State private var renameDialog = false
+    @State private var renameInput: String = ""
+    @State private var moveDialog = false
+    @State private var movePath: String = ""
+    @State private var moveShouldMove = true
     @State private var showingError = false
     @State private var errorMessage = ""
 
@@ -36,7 +43,7 @@ struct iOSTorrentDetail: View {
             await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage)
         }
         .toolbar {
-            TorrentDetailToolbar(torrent: torrent, store: store)
+            detailToolbar
         }
         .alert("Delete Torrent", isPresented: $showingDeleteConfirmation) {
             Button(role: .destructive) {
@@ -52,6 +59,9 @@ struct iOSTorrentDetail: View {
             Text("Do you want to delete the file(s) from the disk?")
         }
         .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
+        .sheet(isPresented: $renameDialog, content: renameSheet)
+        .sheet(isPresented: $moveDialog, content: moveSheet)
+        .sheet(isPresented: $labelDialog, content: labelSheet)
     }
 
     private func performDelete(deleteLocalData: Bool) {
@@ -70,6 +80,80 @@ struct iOSTorrentDetail: View {
                 message: $errorMessage
             )
         )
+    }
+
+    private var detailToolbar: some ToolbarContent {
+        ToolbarItem {
+            Menu {
+                IOSTorrentActionsMenu(
+                    torrent: torrent,
+                    store: store,
+                    onShowMove: showMoveDialog,
+                    onShowRename: showRenameDialog,
+                    onShowLabels: showLabelDialog,
+                    onShowDelete: { showingDeleteConfirmation = true },
+                    onError: presentError
+                )
+            } label: {
+                Image(systemName: "ellipsis.circle")
+            }
+        }
+    }
+
+    private func renameSheet() -> some View {
+        NavigationView {
+            IOSTorrentRenameSheet(
+                torrent: torrent,
+                store: store,
+                renameInput: $renameInput,
+                isPresented: $renameDialog,
+                onError: presentError
+            )
+        }
+    }
+
+    private func moveSheet() -> some View {
+        NavigationView {
+            IOSTorrentMoveSheet(
+                torrent: torrent,
+                store: store,
+                movePath: $movePath,
+                moveShouldMove: $moveShouldMove,
+                isPresented: $moveDialog,
+                onError: presentError
+            )
+        }
+    }
+
+    private func labelSheet() -> some View {
+        NavigationView {
+            iOSLabelEditView(
+                labelInput: $labelInput,
+                existingLabels: torrent.labels,
+                store: store,
+                torrentId: torrent.id
+            )
+        }
+    }
+
+    private func showRenameDialog() {
+        renameInput = torrent.name
+        renameDialog = true
+    }
+
+    private func showMoveDialog() {
+        movePath = store.defaultDownloadDir
+        moveDialog = true
+    }
+
+    private func showLabelDialog() {
+        labelInput = torrent.labels.joined(separator: ", ")
+        labelDialog = true
+    }
+
+    private func presentError(_ error: String) {
+        errorMessage = error
+        showingError = true
     }
 
     @MainActor

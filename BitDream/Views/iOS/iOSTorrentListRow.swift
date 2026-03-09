@@ -177,7 +177,7 @@ struct iOSTorrentListRow: View {
 }
 
 @MainActor
-private struct IOSTorrentActionsMenu: View {
+struct IOSTorrentActionsMenu: View {
     let torrent: Torrent
     let store: TransmissionStore
     let onShowMove: () -> Void
@@ -318,7 +318,7 @@ private struct IOSTorrentActionsMenu: View {
 }
 
 @MainActor
-private struct IOSTorrentRenameSheet: View {
+struct IOSTorrentRenameSheet: View {
     let torrent: Torrent
     let store: TransmissionStore
     @Binding var renameInput: String
@@ -375,7 +375,7 @@ private struct IOSTorrentRenameSheet: View {
 }
 
 @MainActor
-private struct IOSTorrentMoveSheet: View {
+struct IOSTorrentMoveSheet: View {
     let torrent: Torrent
     let store: TransmissionStore
     @Binding var movePath: String
