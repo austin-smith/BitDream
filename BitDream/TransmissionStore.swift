@@ -105,7 +105,6 @@ final class TransmissionStore: NSObject, ObservableObject {
     @Published var lastErrorMessage: String = ""
     @Published var nextRetryAt: Date?
 
-    @Published var showConnectionErrorAlert: Bool = false
 
     @Published var sessionConfiguration: TransmissionSessionResponseArguments?
     @Published private(set) var settingsConnectionGeneration = UUID()
@@ -502,7 +501,6 @@ extension TransmissionStore {
     func clearReconnectPresentationState() {
         nextRetryAt = nil
         cancelRetryTask()
-        showConnectionErrorAlert = false
     }
 
     func clearPendingRetrySchedule() {
@@ -561,22 +559,12 @@ extension TransmissionStore {
                 let remainingDelay = nextRetryAt.timeIntervalSince(now)
                 scheduleRetryTask(after: remainingDelay, generation: currentConnectionGeneration)
             }
-            #if os(iOS)
-            showConnectionErrorAlert = true
-            #else
-            showConnectionErrorAlert = false
-            #endif
-            return
+                return
         }
 
         let scheduledDelay = reconnectBackoff.nextDelay()
         scheduleRetryTask(after: scheduledDelay, generation: currentConnectionGeneration)
 
-        #if os(iOS)
-        showConnectionErrorAlert = true
-        #else
-        showConnectionErrorAlert = false
-        #endif
     }
 
     // Add a method to update the poll interval and restart the timer
