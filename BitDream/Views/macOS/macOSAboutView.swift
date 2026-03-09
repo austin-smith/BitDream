@@ -9,14 +9,8 @@ struct macOSAboutView: View {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     }
 
-    private var buildNumber: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
-    }
-
     private var copyrightYear: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy"
-        return formatter.string(from: Date())
+        String(Calendar.current.component(.year, from: Date()))
     }
 
     var body: some View {
@@ -49,7 +43,6 @@ struct macOSAboutView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
-                    .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
 
                 // Version Information - Ghostty style
