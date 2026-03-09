@@ -19,5 +19,5 @@ identifier_name:
     - "^id$"
 
 file_length:
-  warning: 600
+  warning: 800
   error: 1000

@@ -277,6 +277,38 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
         await load(for: torrentID, using: store, onError: onError)
     }
 
+    func load(
+        for torrentID: Int,
+        using store: TransmissionStore,
+        showingError: Binding<Bool>,
+        errorMessage: Binding<String>
+    ) async {
+        await load(
+            for: torrentID,
+            using: store,
+            onError: makeTransmissionBindingErrorHandler(
+                isPresented: showingError,
+                message: errorMessage
+            )
+        )
+    }
+
+    func loadIfIdle(
+        for torrentID: Int,
+        using store: TransmissionStore,
+        showingError: Binding<Bool>,
+        errorMessage: Binding<String>
+    ) async {
+        await loadIfIdle(
+            for: torrentID,
+            using: store,
+            onError: makeTransmissionBindingErrorHandler(
+                isPresented: showingError,
+                message: errorMessage
+            )
+        )
+    }
+
     @discardableResult
     private func markFailure(for torrentID: Int, generation: Int) -> Bool {
         mutateState { $0.markFailed(for: torrentID, generation: generation) }
@@ -534,6 +566,29 @@ struct TorrentStatusBadge: View {
                     .stroke(statusColor(for: torrent).opacity(0.3), lineWidth: 0.5)
             )
             .cornerRadius(6)
+    }
+}
+
+// Shared label tag component for detail views
+struct DetailViewLabelTag: View {
+    let label: String
+    var isLarge: Bool = false
+
+    var body: some View {
+        Text(label)
+            .font(isLarge ? .subheadline : .caption)
+            .fontWeight(.medium)
+            .padding(.horizontal, isLarge ? 8 : 6)
+            .padding(.vertical, isLarge ? 4 : 3)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.accentColor.opacity(0.12))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+            )
+            .foregroundColor(.primary)
     }
 }
 

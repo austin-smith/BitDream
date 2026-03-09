@@ -74,7 +74,7 @@ struct macOSTorrentDetail: View {
                 .frame(minWidth: 1000, minHeight: 700)
         }
         .task(id: torrent.id) {
-            await loadSupplementalData(for: torrent.id)
+            await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage)
         }
         .toolbar {
             // Use shared toolbar
@@ -94,22 +94,6 @@ struct macOSTorrentDetail: View {
             Text("Do you want to delete the file(s) from the disk?")
         }
         .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
-    }
-
-    @MainActor
-    private func loadSupplementalData(for torrentID: Int) async {
-        await supplementalStore.load(for: torrentID, using: store) { message in
-            errorMessage = message
-            showingError = true
-        }
-    }
-
-    @MainActor
-    private func loadSupplementalDataIfIdle(for torrentID: Int) async {
-        await supplementalStore.loadIfIdle(for: torrentID, using: store) { message in
-            errorMessage = message
-            showingError = true
-        }
     }
 
     @MainActor
@@ -164,8 +148,8 @@ struct macOSTorrentDetail: View {
                 loadingMessage: "Fetching the latest files for this torrent.",
                 unavailableTitle: "Files Unavailable",
                 unavailableMessage: "The latest file details could not be loaded.",
-                onLoadIfIdle: { await loadSupplementalDataIfIdle(for: torrent.id) },
-                onRetry: { Task { await loadSupplementalData(for: torrent.id) } }
+                onLoadIfIdle: { await supplementalStore.loadIfIdle(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) },
+                onRetry: { Task { await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) } }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -180,7 +164,7 @@ struct macOSTorrentDetail: View {
                 store: store,
                 peers: supplementalPayload.peers,
                 peersFrom: supplementalPayload.peersFrom,
-                onRefresh: { await loadSupplementalData(for: torrent.id) },
+                onRefresh: { await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) },
                 onDone: { isShowingPeersSheet = false }
             )
         } else {
@@ -190,8 +174,8 @@ struct macOSTorrentDetail: View {
                 loadingMessage: "Fetching the latest peers for this torrent.",
                 unavailableTitle: "Peers Unavailable",
                 unavailableMessage: "The latest peer details could not be loaded.",
-                onLoadIfIdle: { await loadSupplementalDataIfIdle(for: torrent.id) },
-                onRetry: { Task { await loadSupplementalData(for: torrent.id) } }
+                onLoadIfIdle: { await supplementalStore.loadIfIdle(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) },
+                onRetry: { Task { await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) } }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -329,29 +313,6 @@ private struct MacOSTorrentDetailContent: View {
             }
             .padding(20)
         }
-    }
-}
-
-// Enhanced LabelTag component for detail views
-struct DetailViewLabelTag: View {
-    let label: String
-    var isLarge: Bool = false
-
-    var body: some View {
-        Text(label)
-            .font(isLarge ? .subheadline : .caption)
-            .fontWeight(.medium)
-            .padding(.horizontal, isLarge ? 8 : 6)
-            .padding(.vertical, isLarge ? 4 : 3)
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.accentColor.opacity(0.12))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 4)
-                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
-            )
-            .foregroundColor(.primary)
     }
 }
 
