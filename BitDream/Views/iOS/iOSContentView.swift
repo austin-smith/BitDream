@@ -141,14 +141,26 @@ private extension iOSContentView {
     var actionToolbarItems: some ToolbarContent {
         ToolbarItemGroup(placement: .automatic) {
             Menu {
-                serverSelectionMenu
-                Divider()
                 Button(action: { store.setup.toggle() }, label: {
-                    Label("Add", systemImage: "plus")
+                    Label("Add Server", systemImage: "plus")
                 })
                 Button(action: { store.editServers.toggle() }, label: {
-                    Label("Edit", systemImage: "square.and.pencil")
+                    Label("Edit Servers", systemImage: "square.and.pencil")
                 })
+                Section("Servers") {
+                    ForEach(hosts, id: \.serverID) { host in
+                        Button {
+                            store.setHost(host: host)
+                        } label: {
+                            Label(
+                                host.name ?? "Unnamed Server",
+                                systemImage: store.host?.serverID == host.serverID
+                                    ? "checkmark.circle.fill"
+                                    : "circle"
+                            )
+                        }
+                    }
+                }
             } label: {
                 Image(systemName: "server.rack")
             }
@@ -185,26 +197,6 @@ private extension iOSContentView {
                     Image(systemName: "plus")
                 })
             }
-        }
-    }
-
-    var serverSelectionMenu: some View {
-        Menu {
-            Picker("Server", selection: .init(
-                get: { store.host },
-                set: { host in
-                    if let host {
-                        store.setHost(host: host)
-                    }
-                }
-            )) {
-                ForEach(hosts, id: \.serverID) { host in
-                    Text(host.name ?? "Unnamed Server")
-                        .tag(host as Host?)
-                }
-            }
-        } label: {
-            Label("Server", systemImage: "arrow.triangle.2.circlepath")
         }
     }
 
