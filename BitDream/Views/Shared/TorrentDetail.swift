@@ -265,15 +265,35 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
         let generation = managedLoadGeneration
 
         managedLoadTask?.cancel()
-        managedLoadTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            await self.load(for: torrentID, using: store, onError: onError)
+        let requestGeneration = mutateState { state in
+            state.beginLoading(for: torrentID)
+        }
 
-            guard self.managedLoadGeneration == generation else {
-                return
+        managedLoadTask = Task { [weak self] in
+            let snapshot = await performStructuredTransmissionOperation(
+                operation: { try await store.loadTorrentDetail(id: torrentID) },
+                onError: { [weak self] message in
+                    guard let self else { return }
+                    guard self.markFailure(for: torrentID, generation: requestGeneration) else {
+                        return
+                    }
+                    onError(message)
+                }
+            )
+
+            guard let self else { return }
+
+            if let snapshot {
+                self.applyManagedSnapshot(
+                    snapshot,
+                    for: torrentID,
+                    requestGeneration: requestGeneration
+                )
+            } else {
+                _ = self.markCancellation(for: torrentID, generation: requestGeneration)
             }
 
-            self.managedLoadTask = nil
+            self.clearManagedLoadTask(ifMatching: generation)
         }
     }
 
@@ -390,6 +410,28 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
     @discardableResult
     private func markCancellation(for torrentID: Int, generation: Int) -> Bool {
         mutateState { $0.markCancelled(for: torrentID, generation: generation) }
+    }
+
+    private func applyManagedSnapshot(
+        _ snapshot: TransmissionTorrentDetailSnapshot,
+        for torrentID: Int,
+        requestGeneration: Int
+    ) {
+        mutateState { state in
+            _ = state.apply(
+                snapshot: snapshot,
+                for: torrentID,
+                generation: requestGeneration
+            )
+        }
+    }
+
+    private func clearManagedLoadTask(ifMatching generation: Int) {
+        guard managedLoadGeneration == generation else {
+            return
+        }
+
+        managedLoadTask = nil
     }
 
     @discardableResult
