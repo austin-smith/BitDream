@@ -23,6 +23,7 @@ struct iOSContentView: View {
     @State var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = true
     @State private var searchText: String = ""
+    @State private var showPrefs: Bool = false
 
     var body: some View {
         NavigationSplitView {
@@ -163,11 +164,13 @@ private extension iOSContentView {
     var bottomToolbarItems: some ToolbarContent {
         Group {
             ToolbarItem(placement: .bottomBar) {
-                Menu {
-                    filterMenu
-                    sortMenu
+                Button {
+                    showPrefs.toggle()
                 } label: {
                     Image(systemName: "slider.horizontal.3")
+                }
+                .popover(isPresented: $showPrefs) {
+                    prefsPopoverContent
                 }
             }
 
@@ -205,79 +208,67 @@ private extension iOSContentView {
         }
     }
 
-    var filterMenu: some View {
-        Menu {
-            Section(header: Text("Include")) {
-                Button("All") {
-                    filterBySelection = TorrentStatusCalc.allCases
+    var prefsPopoverContent: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Button("All") {
+                        filterBySelection = TorrentStatusCalc.allCases
+                    }
+                    Button("Downloading") {
+                        filterBySelection = [.downloading]
+                    }
+                    Button("Complete") {
+                        filterBySelection = [.complete]
+                    }
+                    Button("Paused") {
+                        filterBySelection = [.paused]
+                    }
+                    Button("Exclude Complete") {
+                        filterBySelection = TorrentStatusCalc.allCases.filter { $0 != .complete }
+                    }
+                } header: {
+                    Text("Filter")
                 }
-                Button("Downloading") {
-                    filterBySelection = [.downloading]
-                }
-                Button("Complete") {
-                    filterBySelection = [.complete]
-                }
-                Button("Paused") {
-                    filterBySelection = [.paused]
-                }
-            }
-            Section(header: Text("Exclude")) {
-                Button("Complete") {
-                    filterBySelection = TorrentStatusCalc.allCases.filter { $0 != .complete }
-                }
-            }
-        } label: {
-            Text("Filter By")
-            Image(systemName: "line.3.horizontal.decrease")
-        }
-        .environment(\.menuOrder, .fixed)
-    }
 
-    var sortMenu: some View {
-        Menu {
-            ForEach(SortProperty.allCases, id: \.self) { property in
-                Button {
-                    sortProperty = property
-                } label: {
-                    HStack {
-                        Text(property.rawValue)
-                        Spacer()
-                        if sortProperty == property {
-                            Image(systemName: "checkmark")
+                Section {
+                    ForEach(SortProperty.allCases, id: \.self) { property in
+                        Button {
+                            sortProperty = property
+                        } label: {
+                            HStack {
+                                Text(property.rawValue)
+                                Spacer()
+                                if sortProperty == property {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.accent)
+                                }
+                            }
                         }
                     }
+                    Picker("Order", selection: $sortOrder) {
+                        Text("Ascending").tag(SortOrder.ascending)
+                        Text("Descending").tag(SortOrder.descending)
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowSeparator(.hidden)
+                } header: {
+                    Text("Sort")
                 }
             }
-
-            Divider()
-
-            Button {
-                sortOrder = .ascending
-            } label: {
-                HStack {
-                    Text("Ascending")
-                    Spacer()
-                    if sortOrder == .ascending {
-                        Image(systemName: "checkmark")
+            .buttonStyle(.plain)
+            .listStyle(.insetGrouped)
+            .navigationTitle("Filter & Sort")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        showPrefs = false
                     }
                 }
             }
-
-            Button {
-                sortOrder = .descending
-            } label: {
-                HStack {
-                    Text("Descending")
-                    Spacer()
-                    if sortOrder == .descending {
-                        Image(systemName: "checkmark")
-                    }
-                }
-            }
-        } label: {
-            Label("Sort", systemImage: "arrow.up.arrow.down")
         }
-        .environment(\.menuOrder, .fixed)
+        .presentationDragIndicator(.visible)
     }
 
     func pauseAllTorrents() {
