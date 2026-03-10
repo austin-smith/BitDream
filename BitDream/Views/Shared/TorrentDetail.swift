@@ -99,6 +99,36 @@ internal struct TorrentDetailSupplementalPayload: Sendable, Equatable {
             piecesHaveCount: piecesHaveCount
         )
     }
+
+    var hasRenderablePieceData: Bool {
+        pieceCount > 0 && !piecesHaveSet.isEmpty
+    }
+}
+
+internal enum TorrentPiecesSectionState: Equatable {
+    case loading
+    case content(TorrentDetailSupplementalPayload)
+    case empty
+    case failed
+
+    static func resolve(
+        status: TorrentDetailSupplementalLoadStatus,
+        payload: TorrentDetailSupplementalPayload,
+        shouldDisplayPayload: Bool
+    ) -> Self {
+        guard shouldDisplayPayload else {
+            return status == .failed ? .failed : .loading
+        }
+
+        switch status {
+        case .failed:
+            return payload.hasRenderablePieceData ? .content(payload) : .failed
+        case .loaded:
+            return payload.hasRenderablePieceData ? .content(payload) : .empty
+        case .idle, .loading:
+            return payload.hasRenderablePieceData ? .content(payload) : .loading
+        }
+    }
 }
 
 internal struct TorrentDetailSupplementalState: Sendable {
@@ -199,9 +229,15 @@ internal struct TorrentDetailSupplementalState: Sendable {
 @MainActor
 internal final class TorrentDetailSupplementalStore: ObservableObject {
     @Published private(set) var state = TorrentDetailSupplementalState()
+    private var managedLoadTask: Task<Void, Never>?
+    private var managedLoadGeneration = 0
 
     init(state: TorrentDetailSupplementalState = TorrentDetailSupplementalState()) {
         self.state = state
+    }
+
+    deinit {
+        managedLoadTask?.cancel()
     }
 
     var payload: TorrentDetailSupplementalPayload {
@@ -218,6 +254,47 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
 
     func shouldDisplayPayload(for torrentID: Int) -> Bool {
         state.shouldDisplayPayload(for: torrentID)
+    }
+
+    func replaceLoad(
+        for torrentID: Int,
+        using store: TransmissionStore,
+        onError: @escaping @MainActor @Sendable (String) -> Void
+    ) {
+        managedLoadGeneration += 1
+        let generation = managedLoadGeneration
+
+        managedLoadTask?.cancel()
+        let requestGeneration = mutateState { state in
+            state.beginLoading(for: torrentID)
+        }
+
+        managedLoadTask = Task { [weak self] in
+            let snapshot = await performStructuredTransmissionOperation(
+                operation: { try await store.loadTorrentDetail(id: torrentID) },
+                onError: { [weak self] message in
+                    guard let self else { return }
+                    guard self.markFailure(for: torrentID, generation: requestGeneration) else {
+                        return
+                    }
+                    onError(message)
+                }
+            )
+
+            guard let self else { return }
+
+            if let snapshot {
+                self.applyManagedSnapshot(
+                    snapshot,
+                    for: torrentID,
+                    requestGeneration: requestGeneration
+                )
+            } else {
+                _ = self.markCancellation(for: torrentID, generation: requestGeneration)
+            }
+
+            self.clearManagedLoadTask(ifMatching: generation)
+        }
     }
 
     @discardableResult
@@ -293,6 +370,22 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
         )
     }
 
+    func replaceLoad(
+        for torrentID: Int,
+        using store: TransmissionStore,
+        showingError: Binding<Bool>,
+        errorMessage: Binding<String>
+    ) {
+        replaceLoad(
+            for: torrentID,
+            using: store,
+            onError: makeTransmissionBindingErrorHandler(
+                isPresented: showingError,
+                message: errorMessage
+            )
+        )
+    }
+
     func loadIfIdle(
         for torrentID: Int,
         using store: TransmissionStore,
@@ -317,6 +410,28 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
     @discardableResult
     private func markCancellation(for torrentID: Int, generation: Int) -> Bool {
         mutateState { $0.markCancelled(for: torrentID, generation: generation) }
+    }
+
+    private func applyManagedSnapshot(
+        _ snapshot: TransmissionTorrentDetailSnapshot,
+        for torrentID: Int,
+        requestGeneration: Int
+    ) {
+        mutateState { state in
+            _ = state.apply(
+                snapshot: snapshot,
+                for: torrentID,
+                generation: requestGeneration
+            )
+        }
+    }
+
+    private func clearManagedLoadTask(ifMatching generation: Int) {
+        guard managedLoadGeneration == generation else {
+            return
+        }
+
+        managedLoadTask = nil
     }
 
     @discardableResult

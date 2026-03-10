@@ -24,8 +24,8 @@ struct macOSContentDetail: View {
         VStack(spacing: 0) {
             StatsHeaderView(store: store)
 
-            if store.connectionStatus == .reconnecting {
-                ConnectionBannerView(status: store.connectionStatus, retryAt: store.nextRetryAt)
+            if store.host != nil, store.connectionStatus != .connected {
+                macOSConnectionBannerView(store: store)
             }
 
             VStack {
@@ -213,43 +213,6 @@ struct macOSContentInspector: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-    }
-}
-
-private struct ConnectionBannerView: View {
-    @Environment(\.openWindow) private var openWindow
-
-    let status: TransmissionStore.ConnectionStatus
-    let retryAt: Date?
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: connectionStatusSymbol(for: status))
-                .foregroundColor(connectionStatusColor(for: status))
-                .font(.system(size: 16, weight: .semibold))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(connectionStatusTitle(for: status))
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    Text(connectionRetryText(status: status, retryAt: retryAt, at: context.date))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
-            }
-            Spacer()
-            Button("Connection Info") {
-                openWindow(id: "connection-info")
-            }
-            .buttonStyle(.bordered)
-            .help("Open Connection Info window")
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(.ultraThinMaterial)
-        .overlay(Divider(), alignment: .bottom)
     }
 }
 

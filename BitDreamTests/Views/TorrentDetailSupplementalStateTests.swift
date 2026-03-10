@@ -256,6 +256,64 @@ final class TorrentDetailSupplementalStateTests: XCTestCase {
         XCTAssertEqual(state.visiblePayload(for: 24).files.map(\.name), ["retained-file"])
         XCTAssertEqual(state.visiblePayload(for: 25), .empty)
     }
+
+    func testPiecesSectionStateResolvesLoadingWhenPayloadIsUnavailable() {
+        let state = TorrentPiecesSectionState.resolve(
+            status: .idle,
+            payload: .empty,
+            shouldDisplayPayload: false
+        )
+
+        XCTAssertEqual(state, .loading)
+    }
+
+    func testPiecesSectionStateResolvesContentWhenPayloadHasRenderablePieces() {
+        let payload = TorrentDetailSupplementalPayload(snapshot: makeSnapshot(pieceCount: 3))
+
+        let state = TorrentPiecesSectionState.resolve(
+            status: .loaded,
+            payload: payload,
+            shouldDisplayPayload: true
+        )
+
+        XCTAssertEqual(state, .content(payload))
+    }
+
+    func testPiecesSectionStateResolvesEmptyWhenLoadedPayloadHasNoRenderablePieces() {
+        let payload = TorrentDetailSupplementalPayload(
+            snapshot: makeSnapshot(pieceCount: 0, piecesBitfieldBase64: "")
+        )
+
+        let state = TorrentPiecesSectionState.resolve(
+            status: .loaded,
+            payload: payload,
+            shouldDisplayPayload: true
+        )
+
+        XCTAssertEqual(state, .empty)
+    }
+
+    func testPiecesSectionStateResolvesFailedWhenInitialLoadFailsWithoutPayload() {
+        let state = TorrentPiecesSectionState.resolve(
+            status: .failed,
+            payload: .empty,
+            shouldDisplayPayload: false
+        )
+
+        XCTAssertEqual(state, .failed)
+    }
+
+    func testPiecesSectionStateKeepsContentVisibleWhenRefreshFailsAfterSuccessfulLoad() {
+        let payload = TorrentDetailSupplementalPayload(snapshot: makeSnapshot(pieceCount: 3))
+
+        let state = TorrentPiecesSectionState.resolve(
+            status: .failed,
+            payload: payload,
+            shouldDisplayPayload: true
+        )
+
+        XCTAssertEqual(state, .content(payload))
+    }
 }
 
 private func makeSnapshot(
