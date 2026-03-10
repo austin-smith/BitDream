@@ -155,7 +155,7 @@ struct macOSTorrentDetail: View {
                 unavailableTitle: "Files Unavailable",
                 unavailableMessage: "The latest file details could not be loaded.",
                 onLoadIfIdle: { await supplementalStore.loadIfIdle(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) },
-                onRetry: { Task { await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) } }
+                onRetry: { supplementalStore.replaceLoad(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -181,7 +181,7 @@ struct macOSTorrentDetail: View {
                 unavailableTitle: "Peers Unavailable",
                 unavailableMessage: "The latest peer details could not be loaded.",
                 onLoadIfIdle: { await supplementalStore.loadIfIdle(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) },
-                onRetry: { Task { await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) } }
+                onRetry: { supplementalStore.replaceLoad(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

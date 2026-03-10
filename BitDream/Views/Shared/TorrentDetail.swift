@@ -229,9 +229,15 @@ internal struct TorrentDetailSupplementalState: Sendable {
 @MainActor
 internal final class TorrentDetailSupplementalStore: ObservableObject {
     @Published private(set) var state = TorrentDetailSupplementalState()
+    private var managedLoadTask: Task<Void, Never>?
+    private var managedLoadGeneration = 0
 
     init(state: TorrentDetailSupplementalState = TorrentDetailSupplementalState()) {
         self.state = state
+    }
+
+    deinit {
+        managedLoadTask?.cancel()
     }
 
     var payload: TorrentDetailSupplementalPayload {
@@ -248,6 +254,27 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
 
     func shouldDisplayPayload(for torrentID: Int) -> Bool {
         state.shouldDisplayPayload(for: torrentID)
+    }
+
+    func replaceLoad(
+        for torrentID: Int,
+        using store: TransmissionStore,
+        onError: @escaping @MainActor @Sendable (String) -> Void
+    ) {
+        managedLoadGeneration += 1
+        let generation = managedLoadGeneration
+
+        managedLoadTask?.cancel()
+        managedLoadTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.load(for: torrentID, using: store, onError: onError)
+
+            guard self.managedLoadGeneration == generation else {
+                return
+            }
+
+            self.managedLoadTask = nil
+        }
     }
 
     @discardableResult
@@ -314,6 +341,22 @@ internal final class TorrentDetailSupplementalStore: ObservableObject {
         errorMessage: Binding<String>
     ) async {
         await load(
+            for: torrentID,
+            using: store,
+            onError: makeTransmissionBindingErrorHandler(
+                isPresented: showingError,
+                message: errorMessage
+            )
+        )
+    }
+
+    func replaceLoad(
+        for torrentID: Int,
+        using store: TransmissionStore,
+        showingError: Binding<Bool>,
+        errorMessage: Binding<String>
+    ) {
+        replaceLoad(
             for: torrentID,
             using: store,
             onError: makeTransmissionBindingErrorHandler(

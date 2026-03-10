@@ -28,10 +28,9 @@ struct iOSTorrentDetail: View {
         supplementalStore.shouldDisplayPayload(for: torrent.id)
     }
 
-    @MainActor
-    private func loadSupplementalDetails() async {
-        await supplementalStore.load(
-            for: torrent.id,
+    private func replaceSupplementalLoad(for torrentID: Int) {
+        supplementalStore.replaceLoad(
+            for: torrentID,
             using: store,
             showingError: $showingError,
             errorMessage: $errorMessage
@@ -55,15 +54,11 @@ struct iOSTorrentDetail: View {
             peersDestination: peersDestination,
             onDelete: { showingDeleteConfirmation = true },
             onRetryPiecesLoad: {
-                Task {
-                    await loadSupplementalDetails()
-                }
+                replaceSupplementalLoad(for: torrent.id)
             }
         )
-        .onChange(of: torrent.id, initial: true) { _, _ in
-            Task {
-                await loadSupplementalDetails()
-            }
+        .onChange(of: torrent.id, initial: true) { _, newTorrentID in
+            replaceSupplementalLoad(for: newTorrentID)
         }
         .toolbar {
             detailToolbar
@@ -215,7 +210,7 @@ struct iOSTorrentDetail: View {
                 unavailableTitle: "Files Unavailable",
                 unavailableMessage: "The latest file details could not be loaded.",
                 onLoadIfIdle: { await supplementalStore.loadIfIdle(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) },
-                onRetry: { Task { await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) } }
+                onRetry: { replaceSupplementalLoad(for: torrent.id) }
             )
             .navigationTitle("Files")
             .navigationBarTitleDisplayMode(.inline)
@@ -243,7 +238,7 @@ struct iOSTorrentDetail: View {
                 unavailableTitle: "Peers Unavailable",
                 unavailableMessage: "The latest peer details could not be loaded.",
                 onLoadIfIdle: { await supplementalStore.loadIfIdle(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) },
-                onRetry: { Task { await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) } }
+                onRetry: { replaceSupplementalLoad(for: torrent.id) }
             )
             .navigationTitle("Peers")
             .navigationBarTitleDisplayMode(.inline)
