@@ -142,7 +142,7 @@ private extension TorrentBulkLabelEditTests {
             sizeWhenDone: 0,
             status: TorrentStatus.stopped.rawValue,
             totalSize: 0,
-            uploadRatio: 0,
+            uploadRatioRaw: 0,
             uploadedEver: 0,
             downloadedEver: 0
         )
