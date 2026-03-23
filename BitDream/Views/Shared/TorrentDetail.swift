@@ -573,7 +573,7 @@ func formatTorrentDetails(torrent: Torrent) -> TorrentDetailsDisplay {
     let downloadedFormatted = formatByteCount(torrent.downloadedCalc)
     let sizeWhenDoneFormatted = formatByteCount(torrent.sizeWhenDone)
     let uploadedFormatted = formatByteCount(torrent.uploadedEver)
-    let uploadRatio = String(format: "%.2f", torrent.uploadRatio)
+    let uploadRatio = torrent.uploadRatio.displayText
 
     let activityDate = formatTorrentDetailDate(torrent.activityDate)
     let addedDate = formatTorrentDetailDate(torrent.addedDate)
@@ -600,7 +600,7 @@ struct TorrentDetailHeaderView: View {
 
             HStack(spacing: 8) {
                 RatioChip(
-                    ratio: torrent.uploadRatio,
+                    uploadRatio: torrent.uploadRatio,
                     size: .compact
                 )
 

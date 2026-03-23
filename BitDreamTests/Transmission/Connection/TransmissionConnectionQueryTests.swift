@@ -15,6 +15,10 @@ final class TransmissionConnectionQueryTests: XCTestCase {
         let torrents = try await connection.fetchTorrentSummary()
 
         XCTAssertFalse(torrents.isEmpty)
+        let sampleTorrent = try XCTUnwrap(torrents.first(where: { $0.id == 2 }))
+        XCTAssertEqual(sampleTorrent.uploadRatioRaw, 0)
+        XCTAssertEqual(sampleTorrent.uploadRatio, .value(0))
+        XCTAssertEqual(sampleTorrent.uploadRatio.displayText, "0.00")
         let requests = await sender.capturedRequests()
         XCTAssertEqual(try capturedRequestFields(requests[0]), TransmissionTorrentQuerySpec.torrentSummary.fields)
     }
@@ -33,6 +37,36 @@ final class TransmissionConnectionQueryTests: XCTestCase {
 
         let requests = await sender.capturedRequests()
         XCTAssertEqual(try capturedRequestFields(requests[0]), TransmissionTorrentQuerySpec.widgetSummary.fields)
+    }
+
+    func testFetchTorrentSummaryDistinguishesUnavailableAndInfiniteRawRatioValues() async throws {
+        let sender = QueueSender(steps: [
+            .http(
+                statusCode: 200,
+                body: makeTorrentSummaryWithRatioSentinelsBody()
+            )
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try makeEndpoint(),
+            auth: makeAuth(),
+            transport: TransmissionTransport(sender: sender)
+        )
+
+        let torrents = try await connection.fetchTorrentSummary()
+
+        let unavailableTorrent = try XCTUnwrap(torrents.first(where: { $0.id == 1 }))
+        XCTAssertEqual(unavailableTorrent.uploadRatioRaw, -1)
+        XCTAssertEqual(unavailableTorrent.uploadRatio, .unavailable)
+        XCTAssertEqual(unavailableTorrent.uploadRatio.displayText, "None")
+        XCTAssertEqual(unavailableTorrent.uploadRatio.ringProgressValue, 0)
+        XCTAssertFalse(unavailableTorrent.uploadRatio.usesCompletionColor)
+
+        let infiniteTorrent = try XCTUnwrap(torrents.first(where: { $0.id == 2 }))
+        XCTAssertEqual(infiniteTorrent.uploadRatioRaw, -2)
+        XCTAssertEqual(infiniteTorrent.uploadRatio, .infinite)
+        XCTAssertEqual(infiniteTorrent.uploadRatio.displayText, "1.00+")
+        XCTAssertEqual(infiniteTorrent.uploadRatio.ringProgressValue, 1)
+        XCTAssertTrue(infiniteTorrent.uploadRatio.usesCompletionColor)
     }
 
     func testFetchTorrentFilesUsesNamedFieldsAndDecodesFirstTorrent() async throws {
@@ -362,6 +396,96 @@ private func makeTorrentPeersSuccessBody() -> String {
         ]
       },
       "result": "success"
+    }
+    """
+}
+
+private func makeTorrentSummaryWithRatioSentinelsBody() -> String {
+    """
+    {
+      "arguments": {
+        "torrents": [
+          \(makeUnavailableRatioTorrentBody()),
+          \(makeInfiniteRatioTorrentBody())
+        ]
+      },
+      "result": "success"
+    }
+    """
+}
+
+private func makeUnavailableRatioTorrentBody() -> String {
+    """
+    {
+      "activityDate": 0,
+      "addedDate": 0,
+      "desiredAvailable": 0,
+      "error": 0,
+      "errorString": "",
+      "eta": 0,
+      "haveUnchecked": 0,
+      "haveValid": 0,
+      "id": 1,
+      "isFinished": false,
+      "isStalled": false,
+      "labels": [],
+      "leftUntilDone": 0,
+      "magnetLink": "",
+      "metadataPercentComplete": 1,
+      "name": "Unavailable",
+      "peersConnected": 0,
+      "peersGettingFromUs": 0,
+      "peersSendingToUs": 0,
+      "percentDone": 0,
+      "primary-mime-type": null,
+      "downloadDir": "/downloads",
+      "queuePosition": 0,
+      "rateDownload": 0,
+      "rateUpload": 0,
+      "sizeWhenDone": 0,
+      "status": 0,
+      "totalSize": 0,
+      "uploadRatio": -1,
+      "uploadedEver": 0,
+      "downloadedEver": 0
+    }
+    """
+}
+
+private func makeInfiniteRatioTorrentBody() -> String {
+    """
+    {
+      "activityDate": 0,
+      "addedDate": 0,
+      "desiredAvailable": 0,
+      "error": 0,
+      "errorString": "",
+      "eta": 0,
+      "haveUnchecked": 0,
+      "haveValid": 0,
+      "id": 2,
+      "isFinished": false,
+      "isStalled": false,
+      "labels": [],
+      "leftUntilDone": 0,
+      "magnetLink": "",
+      "metadataPercentComplete": 1,
+      "name": "Infinite",
+      "peersConnected": 0,
+      "peersGettingFromUs": 0,
+      "peersSendingToUs": 0,
+      "percentDone": 0,
+      "primary-mime-type": null,
+      "downloadDir": "/downloads",
+      "queuePosition": 0,
+      "rateDownload": 0,
+      "rateUpload": 0,
+      "sizeWhenDone": 0,
+      "status": 0,
+      "totalSize": 0,
+      "uploadRatio": -2,
+      "uploadedEver": 1,
+      "downloadedEver": 0
     }
     """
 }

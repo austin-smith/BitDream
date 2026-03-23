@@ -116,7 +116,7 @@ private extension TransmissionStorePlaybackOperationTests {
             sizeWhenDone: 0,
             status: status.rawValue,
             totalSize: 0,
-            uploadRatio: 0,
+            uploadRatioRaw: 0,
             uploadedEver: 0,
             downloadedEver: 0
         )

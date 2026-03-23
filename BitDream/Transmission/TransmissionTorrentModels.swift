@@ -48,6 +48,84 @@ public enum TorrentStatusCalc: String, CaseIterable {
     case unknown = "Unknown"
 }
 
+enum TorrentUploadRatio: Equatable, Sendable {
+    case unavailable
+    case infinite
+    case value(Double)
+
+    // Transmission uses raw sentinel values here: -1 means "ratio unavailable"
+    // and -2 means "uploaded without any recorded download history."
+    private static let unavailableRawValue = -1.0
+    private static let infiniteRawValue = -2.0
+
+    init(rawValue: Double) {
+        if rawValue == Self.unavailableRawValue {
+            self = .unavailable
+        } else if rawValue == Self.infiniteRawValue {
+            self = .infinite
+        } else {
+            self = .value(rawValue)
+        }
+    }
+
+    var displayValue: Double {
+        switch self {
+        case .unavailable:
+            // No ratio to show yet, so keep the ring empty.
+            return 0
+        case .infinite:
+            // The chip caps out at a full ring, so this shows as complete.
+            return 1
+        case .value(let value):
+            return value
+        }
+    }
+
+    var displayText: String {
+        switch self {
+        case .unavailable:
+            // Avoid pretending this is a real numeric ratio.
+            return "None"
+        case .infinite:
+            // Keep this readable without surfacing the raw sentinel value.
+            return "1.00+"
+        case .value(let value):
+            return String(format: "%.2f", value)
+        }
+    }
+
+    var ringProgressValue: Double {
+        switch self {
+        case .unavailable:
+            return 0
+        case .infinite:
+            return 1
+        case .value(let value):
+            return min(value, 1.0)
+        }
+    }
+
+    var usesCompletionColor: Bool {
+        switch self {
+        case .infinite:
+            return true
+        case .unavailable:
+            return false
+        case .value(let value):
+            return value >= 1.0
+        }
+    }
+
+    var isAvailable: Bool {
+        switch self {
+        case .unavailable:
+            return false
+        case .infinite, .value:
+            return true
+        }
+    }
+}
+
 // MARK: - Generic Request/Response Models
 
 /// Generic request struct for all Transmission RPC methods
@@ -92,10 +170,14 @@ public struct Torrent: Codable, Hashable, Identifiable, Sendable {
     let sizeWhenDone: Int64
     let status: Int
     let totalSize: Int64
-    let uploadRatio: Double
+    // Keep the raw RPC value so we do not lose which sentinel Transmission sent.
+    let uploadRatioRaw: Double
     let uploadedEver: Int64
     let downloadedEver: Int64
     var downloadedCalc: Int64 { haveUnchecked + haveValid}
+    // Views should use the interpreted ratio state instead of reading the raw
+    // RPC value directly.
+    var uploadRatio: TorrentUploadRatio { TorrentUploadRatio(rawValue: uploadRatioRaw) }
     var statusCalc: TorrentStatusCalc {
         if status == TorrentStatus.stopped.rawValue && percentDone == 1 {
             return TorrentStatusCalc.complete
@@ -159,7 +241,7 @@ public struct Torrent: Codable, Hashable, Identifiable, Sendable {
         case sizeWhenDone
         case status
         case totalSize
-        case uploadRatio
+        case uploadRatioRaw = "uploadRatio"
         case uploadedEver
         case downloadedEver
     }

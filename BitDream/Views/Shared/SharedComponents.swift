@@ -103,9 +103,29 @@ struct SpeedChip: View {
 // MARK: - RatioChip Component
 
 struct RatioChip: View {
-    let ratio: Double
+    private let ringProgress: Double
+    private let displayText: String
+    private let showsCompletionColor: Bool
     var size: SpeedChipSize = .compact
     var helpText: String?
+
+    init(ratio: Double, size: SpeedChipSize = .compact, helpText: String? = nil) {
+        self.ringProgress = min(ratio, 1.0)
+        self.displayText = String(format: "%.2f", ratio)
+        self.showsCompletionColor = ratio >= 1.0
+        self.size = size
+        self.helpText = helpText
+    }
+
+    init(uploadRatio: TorrentUploadRatio, size: SpeedChipSize = .compact, helpText: String? = nil) {
+        // Torrent ratios can come through as raw sentinel values, so the chip
+        // takes the already-interpreted state here.
+        self.ringProgress = uploadRatio.ringProgressValue
+        self.displayText = uploadRatio.displayText
+        self.showsCompletionColor = uploadRatio.usesCompletionColor
+        self.size = size
+        self.helpText = helpText
+    }
 
     private var progressRingSize: CGFloat {
         switch size {
@@ -122,13 +142,13 @@ struct RatioChip: View {
                     .frame(width: progressRingSize, height: progressRingSize)
 
                 Circle()
-                    .trim(from: 0, to: min(ratio, 1.0))
-                    .stroke(ratio >= 1.0 ? .green : .orange, lineWidth: 2)
+                    .trim(from: 0, to: ringProgress)
+                    .stroke(showsCompletionColor ? .green : .orange, lineWidth: 2)
                     .frame(width: progressRingSize, height: progressRingSize)
                     .rotationEffect(.degrees(-90))
             }
 
-            Text(String(format: "%.2f", ratio))
+            Text(displayText)
                 .monospacedDigit()
         }
         .font(size.font)
