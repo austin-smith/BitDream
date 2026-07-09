@@ -37,6 +37,7 @@ enum AppDefaults {
     static let menuBarTransferWidgetEnabled: Bool = true
     static let menuBarShowActiveCount: Bool = true
     static let menuBarSortMode: MenuBarSortMode = .activity
+    static let dockShowCompletedBadge: Bool = true
     static let pollInterval: Double = 5.0
     static let ratioDisplayMode: RatioDisplayMode = .cumulative
     static let startupConnectionBehavior: StartupConnectionBehavior = .lastUsed
@@ -64,6 +65,7 @@ enum UserDefaultsKeys {
     static let menuBarTransferWidgetEnabled = "menuBarTransferWidgetEnabled"
     static let menuBarShowActiveCount = "menuBarShowActiveCount"
     static let menuBarSortMode = "menuBarSortMode"
+    static let dockShowCompletedBadge = "dockShowCompletedBadge"
     static let ratioDisplayMode = "ratioDisplayMode"
     static let selectedHost = "selectedHost"
     static let startupConnectionBehavior = "startupConnectionBehavior"
