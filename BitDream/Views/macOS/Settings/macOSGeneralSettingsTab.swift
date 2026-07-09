@@ -12,6 +12,7 @@ struct macOSGeneralSettingsTab: View {
     @AppStorage(UserDefaultsKeys.menuBarShowActiveCount) private var menuBarShowActiveCount: Bool = AppDefaults.menuBarShowActiveCount
     @AppStorage(UserDefaultsKeys.menuBarSortMode) private var menuBarSortModeRaw: String = AppDefaults.menuBarSortMode.rawValue
     @AppStorage(UserDefaultsKeys.startupConnectionBehavior) private var startupBehaviorRaw: String = AppDefaults.startupConnectionBehavior.rawValue
+    @AppStorage(UserDefaultsKeys.dockShowCompletedBadge) private var dockShowCompletedBadge: Bool = AppDefaults.dockShowCompletedBadge
 
     private var menuBarSortMode: Binding<MenuBarSortMode> {
         Binding<MenuBarSortMode>(
@@ -160,8 +161,8 @@ struct macOSGeneralSettingsTab: View {
                     divider
 
                     settingsSection("Notifications") {
-                        Toggle("Show app badge for completed torrents", isOn: .constant(true))
-                            .disabled(true)
+                        Toggle("Show Dock badge for completed torrents", isOn: $dockShowCompletedBadge)
+                            .help("Show the number of completed torrents on BitDream's Dock icon.")
 
                         Toggle("Show notifications for completed torrents", isOn: .constant(false))
                             .disabled(true)

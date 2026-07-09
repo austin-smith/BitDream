@@ -91,12 +91,6 @@ struct macOSContentView: View {
                 }
             }
         }
-        .onReceive(store.$torrents) { _ in
-            updateAppBadge()
-        }
-        .onAppear {
-            updateAppBadge()
-        }
     }
 
     // Enhanced view (state changes + search + toolbar)
@@ -266,10 +260,6 @@ private extension macOSContentView {
         return store.torrents.first { $0.id == selectedId }
     }
 
-    var completedTorrentsCount: Int {
-        getCompletedTorrentsCount(in: store)
-    }
-
     var hasActiveFilters: Bool {
         !includedLabels.isEmpty || !excludedLabels.isEmpty || showOnlyNoLabels
     }
@@ -329,10 +319,6 @@ private extension macOSContentView {
             torrentMatchesSearch(torrent, query: searchText)
         }
         return filteredBySearch.count
-    }
-
-    func updateAppBadge() {
-        updateMacOSAppBadge(count: completedTorrentsCount)
     }
 
     func removeSelectedTorrentsFromMenu(deleteData: Bool) {

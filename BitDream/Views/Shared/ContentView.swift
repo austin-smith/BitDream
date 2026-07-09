@@ -320,20 +320,6 @@ extension Array where Element == Torrent {
     }
 }
 
-#if os(macOS)
-// Helper function to update the app badge on macOS
-@MainActor
-func updateMacOSAppBadge(count: Int) {
-    NSApplication.shared.dockTile.badgeLabel = count > 0 ? "\(count)" : ""
-}
-
-// Helper function to get completed torrents count
-@MainActor
-func getCompletedTorrentsCount(in store: TransmissionStore) -> Int {
-    return store.torrents.filter { $0.statusCalc == .complete }.count
-}
-#endif
-
 // Helper function to calculate total ratio across all torrents
 @MainActor
 func calculateTotalRatio(store: TransmissionStore) -> Double {

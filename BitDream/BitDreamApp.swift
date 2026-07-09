@@ -15,6 +15,7 @@ struct BitDreamApp: App {
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppFileOpenDelegate.self) private var appFileOpenDelegate
     @StateObject private var menuBarStatusItemController = MenuBarStatusItemBridge()
+    @StateObject private var dockBadgeController = DockBadgeController()
     @StateObject private var appUpdater = AppUpdater()
     #endif
 
@@ -111,6 +112,7 @@ private extension BitDreamApp {
                     appFileOpenDelegate.configure(with: store)
                     ensureStartupConnectionBehaviorApplied(store: store, modelContext: persistenceController.container.mainContext)
                     syncMenuBarStatusItem()
+                    dockBadgeController.configure(store: store)
                     appUpdater.start()
                 }
                 .onChange(of: menuBarTransferWidgetEnabled) { _, isEnabled in
