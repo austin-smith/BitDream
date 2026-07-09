@@ -23,6 +23,7 @@ struct BitDreamApp: App {
     @State private var appearanceHUDText: String = ""
     @State private var hideHUDWork: DispatchWorkItem?
     @AppStorage(UserDefaultsKeys.menuBarTransferWidgetEnabled) private var menuBarTransferWidgetEnabled: Bool = AppDefaults.menuBarTransferWidgetEnabled
+    @AppStorage(UserDefaultsKeys.menuBarShowActiveCount) private var menuBarShowActiveCount: Bool = AppDefaults.menuBarShowActiveCount
 
     #if os(iOS)
     @Environment(\.scenePhase) private var scenePhase
@@ -114,6 +115,9 @@ private extension BitDreamApp {
                 }
                 .onChange(of: menuBarTransferWidgetEnabled) { _, isEnabled in
                     syncMenuBarStatusItem(isEnabled: isEnabled)
+                }
+                .onChange(of: menuBarShowActiveCount) { _, _ in
+                    syncMenuBarStatusItem()
                 }
                 .onReceive(
                     NotificationCenter.default

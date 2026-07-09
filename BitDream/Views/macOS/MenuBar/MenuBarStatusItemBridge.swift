@@ -30,6 +30,7 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
 
         if isEnabled {
             installStatusItemIfNeeded()
+            updateStatusItemButton()
             updateMenuContent()
         } else {
             tearDownStatusItem()
@@ -44,6 +45,7 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
 
         button.image = NSImage(named: "MenuBarIcon")
         button.image?.isTemplate = true
+        button.imagePosition = .imageLeading
         button.toolTip = "BitDream Torrents"
 
         let menu = NSMenu()
@@ -77,6 +79,28 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
         item.isEnabled = true
         statusMenu.addItem(item)
         contentMenuItem = item
+    }
+
+    private func updateStatusItemButton() {
+        guard let button = statusItem?.button else { return }
+
+        let showCount = (UserDefaults.standard.object(forKey: UserDefaultsKeys.menuBarShowActiveCount) as? Bool)
+            ?? AppDefaults.menuBarShowActiveCount
+        let count = activeTransferCount()
+        if showCount, count > 0 {
+            // Status bar buttons report a small default font; menu bar text renders at 14pt.
+            button.attributedTitle = NSAttributedString(
+                string: " \(count)",
+                attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 14, weight: .regular)]
+            )
+        } else {
+            button.title = ""
+        }
+    }
+
+    private func activeTransferCount() -> Int {
+        guard let store, store.connectionStatus == .connected else { return 0 }
+        return store.torrents.filter(\.isActiveTransfer).count
     }
 
     private func updateMenuContent() {
@@ -125,8 +149,11 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
         storeChangeCancellable = store.objectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
-                guard let self, self.isMenuOpen else { return }
-                self.scheduleMenuRelayout()
+                guard let self else { return }
+                self.updateStatusItemButton()
+                if self.isMenuOpen {
+                    self.scheduleMenuRelayout()
+                }
             }
     }
 

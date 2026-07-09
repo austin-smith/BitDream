@@ -9,6 +9,7 @@ struct macOSGeneralSettingsTab: View {
     @ObservedObject private var themeManager = ThemeManager.shared
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = AppDefaults.showContentTypeIcons
     @AppStorage(UserDefaultsKeys.menuBarTransferWidgetEnabled) private var menuBarTransferWidgetEnabled: Bool = AppDefaults.menuBarTransferWidgetEnabled
+    @AppStorage(UserDefaultsKeys.menuBarShowActiveCount) private var menuBarShowActiveCount: Bool = AppDefaults.menuBarShowActiveCount
     @AppStorage(UserDefaultsKeys.menuBarSortMode) private var menuBarSortModeRaw: String = AppDefaults.menuBarSortMode.rawValue
     @AppStorage(UserDefaultsKeys.startupConnectionBehavior) private var startupBehaviorRaw: String = AppDefaults.startupConnectionBehavior.rawValue
 
@@ -93,16 +94,22 @@ struct macOSGeneralSettingsTab: View {
                     settingsSection("Menu Bar") {
                         Toggle("Show BitDream in menu bar", isOn: $menuBarTransferWidgetEnabled)
 
-                        HStack {
-                            Text("Sort torrents by")
-                            Spacer()
-                            Picker("", selection: menuBarSortMode) {
-                                ForEach(MenuBarSortMode.allCases, id: \.self) { mode in
-                                    Text(mode.label).tag(mode)
+                        VStack(alignment: .leading, spacing: 12) {
+                            Toggle("Show active torrent count", isOn: $menuBarShowActiveCount)
+
+                            HStack {
+                                Text("Sort torrents by")
+                                Spacer()
+                                Picker("", selection: menuBarSortMode) {
+                                    ForEach(MenuBarSortMode.allCases, id: \.self) { mode in
+                                        Text(mode.label).tag(mode)
+                                    }
                                 }
+                                .pickerStyle(.menu)
                             }
-                            .pickerStyle(.menu)
                         }
+                        .padding(.leading, 20)
+                        .disabled(!menuBarTransferWidgetEnabled)
                     }
 
                     divider
