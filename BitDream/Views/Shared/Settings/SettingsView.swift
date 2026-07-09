@@ -29,6 +29,7 @@ struct SettingsView: View {
         // Persist AppStorage-backed flags
         UserDefaults.standard.set(AppDefaults.showContentTypeIcons, forKey: UserDefaultsKeys.showContentTypeIcons)
         UserDefaults.standard.set(AppDefaults.menuBarTransferWidgetEnabled, forKey: UserDefaultsKeys.menuBarTransferWidgetEnabled)
+        UserDefaults.standard.set(AppDefaults.menuBarShowActiveCount, forKey: UserDefaultsKeys.menuBarShowActiveCount)
         UserDefaults.standard.set(AppDefaults.menuBarSortMode.rawValue, forKey: UserDefaultsKeys.menuBarSortMode)
         UserDefaults.standard.set(AppDefaults.startupConnectionBehavior.rawValue, forKey: UserDefaultsKeys.startupConnectionBehavior)
 

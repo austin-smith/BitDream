@@ -35,6 +35,7 @@ enum AppDefaults {
     static let themeMode: ThemeMode = .system
     static let showContentTypeIcons: Bool = true
     static let menuBarTransferWidgetEnabled: Bool = true
+    static let menuBarShowActiveCount: Bool = true
     static let menuBarSortMode: MenuBarSortMode = .activity
     static let pollInterval: Double = 5.0
     static let ratioDisplayMode: RatioDisplayMode = .cumulative
@@ -61,6 +62,7 @@ enum UserDefaultsKeys {
     static let torrentListCompactMode = "torrentListCompactMode"
     static let showContentTypeIcons = "showContentTypeIcons"
     static let menuBarTransferWidgetEnabled = "menuBarTransferWidgetEnabled"
+    static let menuBarShowActiveCount = "menuBarShowActiveCount"
     static let menuBarSortMode = "menuBarSortMode"
     static let ratioDisplayMode = "ratioDisplayMode"
     static let selectedHost = "selectedHost"
