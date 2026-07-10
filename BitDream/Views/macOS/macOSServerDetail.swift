@@ -1,41 +1,55 @@
 import Foundation
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 #if os(macOS)
-struct ValidationTextFieldStyle: TextFieldStyle {
-    var isInvalid: Bool
-
-    // SwiftUI's TextFieldStyle protocol requires this underscored witness name.
-    // swiftlint:disable:next identifier_name
-    func _body(configuration: TextField<Self._Label>) -> some View {
-        configuration
-            .textFieldStyle(RoundedBorderTextFieldStyle())
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.red, lineWidth: 1)
-                    .opacity(isInvalid ? 1 : 0)
-            )
-    }
+private enum macOSServerFormFocusField: Hashable {
+    case name
+    case host
+    case port
+    case username
+    case password
 }
 
-struct macOSServerDetail: View {
-    @Environment(\.dismiss) private var dismiss
-    @ObservedObject var store: TransmissionStore
-    let modelContext: ModelContext
-    let hosts: [Host]
-    @State var host: Host?
-    var isAddNew: Bool
+private struct macOSServerFormValues: Equatable {
+    var name = ""
+    var host = ""
+    var port = ServerDetail.defaultPort
+    var username = ""
+    var password = ""
+    var isDefault = false
+    var isSSL = false
+}
 
-    @State var nameInput: String = ""
-    @State var hostInput: String = ""
-    @State var portInput: Int = ServerDetail.defaultPort
-    @State var userInput: String = ""
-    @State var passInput: String = ""
-    @State var isDefault: Bool = false
-    @State var isSSL: Bool = false
+struct macOSServerEditor: View {
+    @ObservedObject var store: TransmissionStore
+    let hosts: [Host]
+    let host: Host?
+    let isAddNew: Bool
+    let title: String?
+    let saveButtonTitle: String
+    let cancelButtonTitle: String?
+    let onCancel: (() -> Void)?
+    let onSaved: (Host) -> Void
+    let onDelete: (() -> Void)?
+    var onConnect: (() -> Void)?
+    var canConnect: Bool = false
+    @Binding var hasUnsavedChanges: Bool
+    @Binding var isSaving: Bool
+    let onError: (String) -> Void
+
+    @State private var nameInput = ""
+    @State private var hostInput = ""
+    @State private var portInput = ServerDetail.defaultPort
+    @State private var userInput = ""
+    @State private var passInput = ""
+    @State private var isDefault = false
+    @State private var isSSL = false
     @State private var hasAttemptedSave = false
-    @State private var showingDeleteConfirmation = false
+    @State private var initialValues = macOSServerFormValues()
+    @State private var hasConfiguredValues = false
+
+    @FocusState private var focusedField: macOSServerFormFocusField?
 
     private var isHostValid: Bool {
         !hostInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -45,235 +59,303 @@ struct macOSServerDetail: View {
         portInput >= 1 && portInput <= 65535
     }
 
+    private var currentValues: macOSServerFormValues {
+        macOSServerFormValues(
+            name: nameInput,
+            host: hostInput,
+            port: portInput,
+            username: userInput,
+            password: passInput,
+            isDefault: isDefault,
+            isSSL: isSSL
+        )
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if let title {
+                Text(title)
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+
+                Divider()
+            }
+
+            Form {
+                Section {
+                    TextField("Name", text: $nameInput, prompt: Text("Office NAS"))
+                        .focused($focusedField, equals: .name)
+
+                    Toggle(isOn: $isDefault) {
+                        Text("Default")
+                        Text("Preferred server when connecting at launch.")
+                    }
+                    .disabled(hosts.count == 0 || (hosts.count == 1 && !isAddNew))
+                }
+
+                Section {
+                    TextField("Address", text: $hostInput, prompt: Text("127.0.0.1"))
+                        .autocorrectionDisabled()
+                        .focused($focusedField, equals: .host)
+
+                    HStack {
+                        TextField(
+                            "Port",
+                            value: $portInput,
+                            format: .number.grouping(.never),
+                            prompt: Text("9091")
+                        )
+                        .focused($focusedField, equals: .port)
+
+                        Stepper("Port", value: $portInput, in: 1...65535)
+                            .labelsHidden()
+                    }
+
+                    Toggle("Use SSL", isOn: $isSSL)
+                } header: {
+                    Text("Connection")
+                } footer: {
+                    connectionValidationFooter
+                }
+
+                Section("Authentication") {
+                    TextField("Username", text: $userInput, prompt: Text("Optional"))
+                        .autocorrectionDisabled()
+                        .focused($focusedField, equals: .username)
+
+                    SecureField("Password", text: $passInput, prompt: Text("Optional"))
+                        .focused($focusedField, equals: .password)
+                }
+
+            }
+            .formStyle(.grouped)
+            .disabled(isSaving)
+
+            Divider()
+
+            footerBar
+        }
+        .onAppear(perform: configureInitialValues)
+        .onChange(of: currentValues) { _, newValues in
+            guard hasConfiguredValues else { return }
+            hasUnsavedChanges = newValues != initialValues
+        }
+    }
+
+    @ViewBuilder
+    private var connectionValidationFooter: some View {
+        if hasAttemptedSave && !isHostValid {
+            Text(ServerDetail.hostRequiredMessage)
+                .foregroundStyle(.red)
+        } else if hasAttemptedSave && !isPortValid {
+            Text(ServerDetail.invalidPortMessage)
+                .foregroundStyle(.red)
+        }
+    }
+
+    private var footerBar: some View {
+        HStack {
+            if !isAddNew, let onConnect {
+                Button("Connect", action: onConnect)
+                    .disabled(!canConnect || isSaving)
+                    .help(connectButtonHelp)
+            }
+
+            if !isAddNew, let onDelete {
+                Button("Delete…", role: .destructive, action: onDelete)
+                    .disabled(isSaving)
+            }
+
+            Spacer()
+
+            if let cancelButtonTitle, let onCancel {
+                Button(cancelButtonTitle, action: onCancel)
+                    .keyboardShortcut(.cancelAction)
+                    .disabled(isSaving)
+            }
+
+            Button(saveButtonTitle, action: performSave)
+                .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.defaultAction)
+                .disabled(isSaving)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+    }
+
+    private var connectButtonHelp: String {
+        if hasUnsavedChanges {
+            return "Save changes before connecting to this server"
+        }
+        return canConnect ? "Connect to this server" : "Already connected to this server"
+    }
+
+    private func configureInitialValues() {
+        if let host, !isAddNew {
+            loadServerData(host: host) { name, `default`, hostname, port, ssl, user, pass in
+                applyInitialValues(
+                    macOSServerFormValues(
+                        name: name,
+                        host: hostname,
+                        port: port,
+                        username: user,
+                        password: pass,
+                        isDefault: `default`,
+                        isSSL: ssl
+                    )
+                )
+            }
+        } else {
+            applyInitialValues(
+                macOSServerFormValues(isDefault: store.host == nil)
+            )
+            focusedField = .host
+        }
+    }
+
+    private func applyInitialValues(_ values: macOSServerFormValues) {
+        hasConfiguredValues = false
+        nameInput = values.name
+        hostInput = values.host
+        portInput = values.port
+        userInput = values.username
+        passInput = values.password
+        isDefault = values.isDefault
+        isSSL = values.isSSL
+        initialValues = values
+        hasAttemptedSave = false
+        hasUnsavedChanges = false
+        isSaving = false
+        hasConfiguredValues = true
+    }
+
+    private func performSave() {
+        guard validateFields() else {
+            focusedField = firstInvalidField
+            return
+        }
+
+        isSaving = true
+
+        let draft = HostDraft(
+            name: nameInput,
+            server: hostInput,
+            port: portInput,
+            username: userInput,
+            isSSL: isSSL,
+            isDefault: isDefault,
+            password: passInput
+        )
+
+        if isAddNew {
+            saveNewServer(
+                draft: draft,
+                store: store
+            ) { createdHost in
+                finishSave(with: createdHost)
+            } onError: { message in
+                handleSaveError(message)
+            }
+            return
+        }
+
+        guard let host else {
+            isSaving = false
+            return
+        }
+
+        updateExistingServer(
+            host: host,
+            draft: draft,
+            store: store
+        ) {
+            finishSave(with: host)
+        } onError: { message in
+            handleSaveError(message)
+        }
+    }
+
+    private func finishSave(with savedHost: Host) {
+        initialValues = currentValues
+        hasUnsavedChanges = false
+        isSaving = false
+        onSaved(savedHost)
+    }
+
+    private func handleSaveError(_ message: String) {
+        isSaving = false
+        onError(message)
+    }
+
     private func validateFields() -> Bool {
         hasAttemptedSave = true
         return isHostValid && isPortValid
     }
 
-    var body: some View {
-        // macOS version with native form styling
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text(isAddNew ? "Add Server" : "Edit Server")
-                    .font(.headline)
-                    .padding()
-                Spacer()
-            }
-            .background(Color(NSColor.windowBackgroundColor))
-
-            Divider()
-
-            // Form content
-            ScrollView(.vertical, showsIndicators: true) {
-                VStack(alignment: .leading, spacing: 20) {
-                    // Friendly Name
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Friendly Name")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-
-                        TextField("", text: $nameInput)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .frame(maxWidth: .infinity)
-                    }
-
-                    // Default server
-                    VStack(alignment: .leading, spacing: 8) {
-                        Toggle("Default", isOn: $isDefault)
-                            .disabled(hosts.count == 0 || (hosts.count == 1 && (!isAddNew)))
-
-                        Text("Automatically connect to this server on app startup.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-
-                    // Host section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Host")
-                            .font(.headline)
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Hostname")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-
-                            TextField("127.0.0.1", text: $hostInput)
-                                .textFieldStyle(ValidationTextFieldStyle(isInvalid: hasAttemptedSave && !isHostValid))
-                                .autocorrectionDisabled()
-                                .frame(maxWidth: .infinity)
-                        }
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Port")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-
-                            HStack {
-                                TextField("", value: $portInput, format: .number.grouping(.never))
-                                    .textFieldStyle(ValidationTextFieldStyle(isInvalid: hasAttemptedSave && !isPortValid))
-                                    .frame(maxWidth: .infinity)
-
-                                Stepper("", value: $portInput, in: 1...65535)
-                            }
-                        }
-
-                        Toggle("Use SSL", isOn: $isSSL)
-                    }
-
-                    // Authentication section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Authentication")
-                            .font(.headline)
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Username")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-
-                            TextField("", text: $userInput)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .autocorrectionDisabled()
-                                .frame(maxWidth: .infinity)
-                        }
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Password")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-
-                            SecureField("", text: $passInput)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-
-                    // Delete button (if editing)
-                    if !isAddNew {
-                        Button(action: {
-                            showingDeleteConfirmation = true
-                        }, label: {
-                            HStack {
-                                Image(systemName: "trash")
-                                Text("Delete Server")
-                            }
-                            .foregroundColor(.red)
-                            .padding(.vertical, 4)
-                        })
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 15)
-                .frame(maxWidth: .infinity)
-            }
-
-            Divider()
-
-            // Footer with buttons
-            HStack {
-                Spacer()
-
-                Button("Cancel") {
-                    dismiss()
-                }
-                .keyboardShortcut(.escape)
-
-                Button("Save") {
-                    if isAddNew {
-                        if validateFields() {
-                            let draft = HostDraft(
-                                name: nameInput,
-                                server: hostInput,
-                                port: portInput,
-                                username: userInput,
-                                isSSL: isSSL,
-                                isDefault: isDefault,
-                                password: passInput
-                            )
-                            saveNewServer(
-                                draft: draft,
-                                modelContext: modelContext,
-                                store: store
-                            ) {
-                                dismiss()
-                            } onError: { message in
-                                store.globalAlertTitle = "Error"
-                                store.globalAlertMessage = message
-                                store.showGlobalAlert = true
-                            }
-                        }
-                    } else {
-                        if validateFields() {
-                            if let host = host {
-                                let draft = HostDraft(
-                                    name: nameInput,
-                                    server: hostInput,
-                                    port: portInput,
-                                    username: userInput,
-                                    isSSL: isSSL,
-                                    isDefault: isDefault,
-                                    password: passInput
-                                )
-                                updateExistingServer(
-                                    host: host,
-                                    draft: draft,
-                                    store: store
-                                ) {
-                                    dismiss()
-                                } onError: { message in
-                                    store.globalAlertTitle = "Error"
-                                    store.globalAlertMessage = message
-                                    store.showGlobalAlert = true
-                                }
-                            }
-                        }
-                    }
-                }
-                .keyboardShortcut(.return)
-                .buttonStyle(.borderedProminent)
-            }
-            .padding()
-            .background(Color(NSColor.windowBackgroundColor))
+    private var firstInvalidField: macOSServerFormFocusField? {
+        if !isHostValid {
+            return .host
         }
-        .frame(width: 400, alignment: .top)
-        .frame(idealHeight: 600)
-        .fixedSize(horizontal: true, vertical: false)
+        if !isPortValid {
+            return .port
+        }
+        return nil
+    }
+}
+
+struct macOSServerDetail: View {
+    @Environment(\.dismiss) private var dismiss
+
+    @ObservedObject var store: TransmissionStore
+    let modelContext: ModelContext
+    let hosts: [Host]
+    @State var host: Host?
+    var isAddNew: Bool
+
+    @State private var showingDeleteConfirmation = false
+    @State private var hasUnsavedChanges = false
+    @State private var isSaving = false
+
+    var body: some View {
+        macOSServerEditor(
+            store: store,
+            hosts: hosts,
+            host: host,
+            isAddNew: isAddNew,
+            title: isAddNew ? "Add Server" : "Edit Server",
+            saveButtonTitle: "Save",
+            cancelButtonTitle: "Cancel",
+            onCancel: { dismiss() },
+            onSaved: { _ in dismiss() },
+            onDelete: isAddNew ? nil : { showingDeleteConfirmation = true },
+            hasUnsavedChanges: $hasUnsavedChanges,
+            isSaving: $isSaving,
+            onError: presentError
+        )
+        .frame(width: 460, height: 560)
+        .interactiveDismissDisabled(isSaving)
         .alert("Delete Server", isPresented: $showingDeleteConfirmation) {
             Button("Delete", role: .destructive) {
-                if let host = host {
+                if let host {
                     deleteServerFromDetail(host: host, store: store, hosts: hosts, modelContext: modelContext) {
                         dismiss()
                     } onError: { message in
-                        store.globalAlertTitle = "Error"
-                        store.globalAlertMessage = message
-                        store.showGlobalAlert = true
+                        presentError(message)
                     }
                 }
             }
-            Button("Cancel", role: .cancel) { }
+            Button("Cancel", role: .cancel) {}
         } message: {
             Text("Are you sure you want to delete this server? This action cannot be undone.")
         }
-        .onAppear {
-            if !isAddNew {
-                if let host = host {
-                    loadServerData(host: host) { name, def, hostIn, port, ssl, user, pass in
-                        nameInput = name
-                        isDefault = def
-                        hostInput = hostIn
-                        portInput = port
-                        isSSL = ssl
-                        userInput = user
-                        passInput = pass
-                    }
-                }
-            }
+    }
 
-            if store.host == nil {
-                isDefault = true
-            }
-        }
+    private func presentError(_ message: String) {
+        store.globalAlertTitle = "Error"
+        store.globalAlertMessage = message
+        store.showGlobalAlert = true
     }
 }
 #endif

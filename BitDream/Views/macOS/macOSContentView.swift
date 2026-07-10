@@ -8,6 +8,7 @@ import SwiftData
 
 struct macOSContentView: View {
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
     let modelContext: ModelContext
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
@@ -57,9 +58,6 @@ struct macOSContentView: View {
         baseView
         .sheet(isPresented: $store.setup, content: {
             ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)
-        })
-        .sheet(isPresented: $store.editServers, content: {
-            ServerList(store: store, modelContext: modelContext, hosts: hosts)
         })
         .sheet(isPresented: $store.isShowingAddAlert, onDismiss: {
             // Advance queued magnet links when the sheet closes
@@ -190,7 +188,7 @@ struct macOSContentView: View {
                 store.setup.toggle()
             },
             onManageServers: {
-                store.editServers.toggle()
+                openWindow(id: "manage-servers")
             },
             onOpenSettings: {
                 openSettings()

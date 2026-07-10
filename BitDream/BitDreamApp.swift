@@ -77,6 +77,7 @@ private extension BitDreamApp {
     @SceneBuilder
     var macOSScenes: some Scene {
         mainWindowScene
+        manageServersScene
         connectionInfoScene
         statisticsScene
         aboutScene
@@ -239,6 +240,19 @@ private extension BitDreamApp {
                 hideHUDWork: $hideHUDWork
             )
         }
+        .modelContainer(persistenceController.container)
+    }
+
+    var manageServersScene: some Scene {
+        Window("Manage Servers", id: "manage-servers") {
+            macOSManageServersWindow()
+                .environmentObject(store)
+                .tint(themeManager.accentColor)
+                .environmentObject(themeManager)
+                .immediateTheme(manager: themeManager)
+        }
+        .defaultSize(width: 760, height: 480)
+        .windowResizability(.contentMinSize)
         .modelContainer(persistenceController.container)
     }
 

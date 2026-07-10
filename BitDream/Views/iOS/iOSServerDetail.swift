@@ -53,7 +53,7 @@ struct iOSServerDetail: View {
                         .multilineTextAlignment(.trailing)
                 }
 
-                Section(footer: Text("Automatically connect to this server on app startup.")) {
+                Section(footer: Text("Preferred server when connecting at launch.")) {
                     Toggle("Default", isOn: $isDefault)
                         // disable the "Default" toggle if this is the only server
                         // it is either the first server being added, or the only one that exists
@@ -163,9 +163,8 @@ struct iOSServerDetail: View {
                                 )
                                 saveNewServer(
                                     draft: draft,
-                                    modelContext: modelContext,
                                     store: store
-                                ) {
+                                ) { _ in
                                     dismiss()
                                 } onError: { message in
                                     validationMessage = message

@@ -11,7 +11,7 @@ struct ServerDetail: View {
     @State var host: Host?
     var isAddNew: Bool
 
-    static let defaultPort = 9091
+    nonisolated static let defaultPort = 9091
 
     // Validation messages
     static let hostRequiredMessage = "Hostname is required"
@@ -47,13 +47,12 @@ private func userFacingHostPersistenceMessage(_ error: Error) -> String {
     return error.localizedDescription
 }
 
-/// Saves a new server through the host repository
+/// Saves a new server through the host repository.
 @MainActor
 func saveNewServer(
     draft: HostDraft,
-    modelContext: ModelContext,
     store: TransmissionStore,
-    completion: @MainActor @escaping () -> Void,
+    completion: @MainActor @escaping (Host) -> Void,
     onError: @MainActor @escaping (String) -> Void = { _ in }
 ) {
     // Validate required fields
@@ -66,16 +65,8 @@ func saveNewServer(
             if store.host == nil {
                 store.setHost(host: host)
             }
-            completion()
+            completion(host)
         } catch {
-            if let persistenceError = error as? HostPersistenceError,
-               case .catalogSyncFailure = persistenceError {
-                if store.host == nil {
-                    ensureStartupConnectionBehaviorApplied(store: store, modelContext: modelContext)
-                }
-                completion()
-                return
-            }
             onError(userFacingHostPersistenceMessage(error))
         }
     }
