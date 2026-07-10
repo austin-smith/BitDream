@@ -283,42 +283,6 @@ enum SidebarSelection: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - Shared Extensions
-
-// Extension to filter and sort torrents
-extension Array where Element == Torrent {
-    func filtered(by filterSelection: [TorrentStatusCalc]) -> [Torrent] {
-        if filterSelection == TorrentStatusCalc.allCases {
-            return self
-        }
-        return self.filter { torrent in
-            filterSelection.contains { $0 == torrent.statusCalc }
-        }
-    }
-
-    func filtered(by selectedLabels: Set<String>, enabled: Bool) -> [Torrent] {
-        guard enabled else { return self }
-        guard !selectedLabels.isEmpty else { return self }
-
-        return self.filter { torrent in
-            // Show torrents that have at least one of the selected labels
-            torrent.labels.contains { torrentLabel in
-                selectedLabels.contains { selectedLabel in
-                    torrentLabel.lowercased() == selectedLabel.lowercased()
-                }
-            }
-        }
-    }
-
-    func filtered(by statusFilter: [TorrentStatusCalc], labelFilter: Set<String>, labelFilterEnabled: Bool) -> [Torrent] {
-        return self.filtered(by: statusFilter).filtered(by: labelFilter, enabled: labelFilterEnabled)
-    }
-
-    func sorted(by property: SortProperty, order: SortOrder) -> [Torrent] {
-        return sortTorrents(self, by: property, order: order)
-    }
-}
-
 // Helper function to calculate total ratio across all torrents
 @MainActor
 func calculateTotalRatio(store: TransmissionStore) -> Double {
