@@ -1,91 +1,161 @@
-import Foundation
 import SwiftUI
-import SwiftData
 
 #if os(iOS)
+/// Sheet listing the configured servers with add, edit, connect, and delete actions.
 struct iOSServerList: View {
     @Environment(\.dismiss) private var dismiss
-    let modelContext: ModelContext
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
 
-    @State private var showingAddServer = false
+    @State private var presentedEditor: EditorPresentation?
+    @State private var serverToDelete: Host?
+    @State private var isConfirmingDelete = false
+    @State private var errorMessage: String?
+
+    private enum EditorPresentation: Identifiable {
+        case add
+        case edit(Host)
+
+        var id: String {
+            switch self {
+            case .add:
+                return "add"
+            case .edit(let host):
+                return "edit-\(host.serverID)"
+            }
+        }
+    }
+
+    private var sortedHosts: [Host] {
+        hosts.sortedByDisplayName()
+    }
 
     var body: some View {
-        // Use a simple VStack instead of nested navigation containers
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text("Servers")
-                    .font(.headline)
-                    .padding()
-                Spacer()
-                Button(action: {
-                    dismiss()
-                }, label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
-                })
-                .padding()
-            }
-
-            // Content
+        NavigationStack {
             List {
-                if hosts.isEmpty {
-                    emptyServerListView
-                } else {
-                    ForEach(hosts) { host in
-                        NavigationLink(host.name ?? "Unnamed Server", destination: ServerDetail(store: store, modelContext: modelContext, hosts: hosts, host: host, isAddNew: false))
+                ForEach(sortedHosts) { host in
+                    row(for: host)
+                }
+            }
+            .navigationTitle("Servers")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Add Server", systemImage: "plus") {
+                        presentedEditor = .add
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close", systemImage: "xmark", role: .close) {
+                        dismiss()
                     }
                 }
             }
-
-            // Footer
-            HStack {
-                NavigationLink(destination: ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)) {
-                    Label("Add New", systemImage: "plus")
+            .overlay {
+                if hosts.isEmpty {
+                    ContentUnavailableView {
+                        Label("No Servers", systemImage: "server.rack")
+                    } description: {
+                        Text("Add a server to get started with BitDream.")
+                    } actions: {
+                        Button("Add Server") {
+                            presentedEditor = .add
+                        }
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .padding()
-
-                Spacer()
             }
-            .background(Color(.secondarySystemBackground))
+            .confirmationDialog(
+                "Delete Server",
+                isPresented: $isConfirmingDelete,
+                presenting: serverToDelete,
+                actions: { host in
+                    Button("Delete \(host.displayName)", role: .destructive) {
+                        performDelete(host)
+                    }
+                },
+                message: { host in
+                    deleteConfirmationMessage(for: host, store: store)
+                }
+            )
+            .alert("Error", isPresented: isPresentingError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(errorMessage ?? "")
+            }
+            .sheet(item: $presentedEditor) { presentation in
+                switch presentation {
+                case .add:
+                    iOSServerEditor(store: store, hosts: hosts, host: nil)
+                case .edit(let host):
+                    iOSServerEditor(store: store, hosts: hosts, host: host)
+                }
+            }
         }
-        .background(Color(.systemBackground))
     }
 
-    // Empty state view for when there are no servers
-    private var emptyServerListView: some View {
-        VStack(spacing: 20) {
-            Spacer()
+    private func row(for host: Host) -> some View {
+        let isConnected = host.serverID == store.host?.serverID
 
-            Image(systemName: "server.rack")
-                .font(.system(size: 50))
-                .foregroundColor(.secondary.opacity(0.5))
-
-            Text("No Servers Added")
-                .font(.headline)
-                .foregroundColor(.primary)
-
-            Text("Add a server to get started with BitDream")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-
-            NavigationLink(destination: ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)) {
-                Label("Add Your First Server", systemImage: "plus")
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .padding(.top, 10)
-
-            Spacer()
+        return Button {
+            presentedEditor = .edit(host)
+        } label: {
+            ServerRowLabel(host: host, isConnected: isConnected)
         }
-        .frame(maxWidth: .infinity)
+        .tint(.primary)
+        .swipeActions(edge: .leading) {
+            if !isConnected {
+                Button("Connect", systemImage: "bolt.fill") {
+                    store.setHost(host: host)
+                }
+                .tint(.green)
+            }
+        }
+        .swipeActions(edge: .trailing) {
+            Button("Delete", systemImage: "trash", role: .destructive) {
+                promptDelete(host)
+            }
+        }
+        .contextMenu {
+            Button("Connect") {
+                store.setHost(host: host)
+            }
+            .disabled(isConnected)
+
+            Divider()
+
+            Button("Delete…", role: .destructive) {
+                promptDelete(host)
+            }
+        }
+    }
+
+    private var isPresentingError: Binding<Bool> {
+        Binding(
+            get: { errorMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    errorMessage = nil
+                }
+            }
+        )
+    }
+
+    private func promptDelete(_ host: Host) {
+        serverToDelete = host
+        isConfirmingDelete = true
+    }
+
+    private func performDelete(_ host: Host) {
+        Task {
+            do {
+                try await deleteServer(host: host, store: store, hosts: hosts)
+                serverToDelete = nil
+            } catch {
+                serverToDelete = nil
+                errorMessage = userFacingHostPersistenceMessage(error)
+            }
+        }
     }
 }
 #endif

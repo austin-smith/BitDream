@@ -68,7 +68,6 @@ extension UserDefaults {
 }
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
     @Query(sort: \Host.name, order: .forward) private var hosts: [Host]
 
     // Use the store passed from the environment
@@ -76,9 +75,9 @@ struct ContentView: View {
 
     var body: some View {
         #if os(iOS)
-        iOSContentView(modelContext: modelContext, hosts: hosts, store: store)
+        iOSContentView(hosts: hosts, store: store)
         #elseif os(macOS)
-        macOSContentView(modelContext: modelContext, hosts: hosts, store: store)
+        macOSContentView(hosts: hosts, store: store)
         #endif
     }
 }

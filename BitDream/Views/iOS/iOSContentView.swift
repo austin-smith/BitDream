@@ -1,19 +1,10 @@
 import SwiftUI
 import Foundation
-import SwiftData
 
 #if os(iOS)
 struct iOSContentView: View {
-    let modelContext: ModelContext
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
-
-    // Add explicit initializer with internal access level
-    init(modelContext: ModelContext, hosts: [Host], store: TransmissionStore) {
-        self.modelContext = modelContext
-        self.hosts = hosts
-        self.store = store
-    }
 
     // Store the selected torrent IDs
     @State private var selectedTorrentIds: Set<Int> = []
@@ -69,11 +60,10 @@ struct iOSContentView: View {
             }
         }
         .sheet(isPresented: $store.setup, content: {
-            ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)
+            iOSServerEditor(store: store, hosts: hosts, host: nil)
         })
         .sheet(isPresented: $store.editServers, content: {
-            ServerList(store: store, modelContext: modelContext, hosts: hosts)
-                .toolbar {}
+            iOSServerList(hosts: hosts, store: store)
         })
         .sheet(isPresented: $store.isShowingAddAlert, content: {
             AddTorrent(store: store)

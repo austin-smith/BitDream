@@ -122,7 +122,7 @@ final class HostRepository: HostPersisting {
             throw HostPersistenceError.saveFailure(error.localizedDescription)
         }
 
-        try await syncCatalogAfterUserMutation()
+        await syncCatalogAfterUserMutation()
         return host
     }
 
@@ -169,7 +169,7 @@ final class HostRepository: HostPersisting {
             throw HostPersistenceError.saveFailure(error.localizedDescription)
         }
 
-        try await syncCatalogAfterUserMutation()
+        await syncCatalogAfterUserMutation()
         return host
     }
 
@@ -192,7 +192,7 @@ final class HostRepository: HostPersisting {
             logger.error("Failed to remove credentials for deleted server ID: \(serverID)")
         }
 
-        try await syncCatalogAfterUserMutation()
+        await syncCatalogAfterUserMutation()
     }
 
     func setDefault(serverID: String) async throws {
@@ -225,7 +225,7 @@ final class HostRepository: HostPersisting {
             throw HostPersistenceError.saveFailure(error.localizedDescription)
         }
 
-        try await syncCatalogAfterUserMutation()
+        await syncCatalogAfterUserMutation()
     }
 
     func persistVersionIfNeeded(serverID: String, version: String) async {
@@ -282,12 +282,11 @@ private extension HostRepository {
         writeServersIndex(servers: summaries)
     }
 
-    func syncCatalogAfterUserMutation() async throws {
+    func syncCatalogAfterUserMutation() async {
         do {
             try await syncCatalogInternal()
         } catch {
             logger.error("Catalog sync failed after user mutation: \(error.localizedDescription)")
-            throw catalogSyncFailure(from: error)
         }
     }
 
@@ -367,15 +366,6 @@ private extension HostRepository {
         if modelContext.hasChanges {
             modelContext.rollback()
         }
-    }
-
-    func catalogSyncFailure(from error: Error) -> HostPersistenceError {
-        if let persistenceError = error as? HostPersistenceError,
-           case .catalogSyncFailure = persistenceError {
-            return persistenceError
-        }
-
-        return HostPersistenceError.catalogSyncFailure(error.localizedDescription)
     }
 
     func restoreKeychainAfterFailedSave(

@@ -33,29 +33,23 @@ final class ServerDetailHelperTests: XCTestCase {
         let selectedHost = makeHost(serverID: "server-1", server: "old.example.com")
         let updatedHost = makeHost(serverID: "server-1", server: "new.example.com")
         let repository = TestHostRepository { _, _ in updatedHost }
-        var didComplete = false
-        var errorMessage: String?
 
         store.setHost(host: selectedHost)
         let didConnectInitially = await waitUntil { store.defaultDownloadDir == "/downloads/old" }
         XCTAssertTrue(didConnectInitially)
 
-        updateExistingServer(
+        let savedHost = try await updateExistingServer(
             host: selectedHost,
             draft: makeDraft(server: "new.example.com"),
             store: store,
             hostRepository: repository
-        ) {
-            didComplete = true
-        } onError: { message in
-            errorMessage = message
-        }
+        )
 
         let didReconnectSelectedHost = await waitUntil {
-            didComplete && store.defaultDownloadDir == "/downloads/new"
+            store.defaultDownloadDir == "/downloads/new"
         }
         XCTAssertTrue(didReconnectSelectedHost)
-        XCTAssertNil(errorMessage)
+        XCTAssertEqual(savedHost.server, "new.example.com")
         XCTAssertEqual(store.host?.server, "new.example.com")
     }
 
@@ -80,28 +74,22 @@ final class ServerDetailHelperTests: XCTestCase {
         let repository = TestHostRepository { _, _ in
             updatedOtherHost
         }
-        var didComplete = false
-
         store.setHost(host: selectedHost)
         let didConnectInitially = await waitUntil { store.defaultDownloadDir == "/downloads/selected" }
         XCTAssertTrue(didConnectInitially)
         let initialRequestCount = (await sender.capturedRequests()).count
 
-        updateExistingServer(
+        let savedHost = try await updateExistingServer(
             host: otherHost,
             draft: makeDraft(server: "other-new.example.com"),
             store: store,
             hostRepository: repository
-        ) {
-            didComplete = true
-        }
-
-        let didFinishUpdate = await waitUntil { didComplete }
-        XCTAssertTrue(didFinishUpdate)
+        )
         await Task.yield()
         await Task.yield()
 
         let finalRequestCount = (await sender.capturedRequests()).count
+        XCTAssertEqual(savedHost.serverID, "other-server")
         XCTAssertEqual(store.host?.serverID, "selected-server")
         XCTAssertEqual(store.defaultDownloadDir, "/downloads/selected")
         XCTAssertEqual(finalRequestCount, initialRequestCount)
@@ -135,29 +123,23 @@ final class ServerDetailHelperTests: XCTestCase {
         let store = makeStore(sender: sender)
         let selectedHost = makeHost(serverID: "server-1", server: "old.example.com")
         let repository = TestHostRepository { _, _ in selectedHost.server = "new.example.com"; throw HostPersistenceError.catalogSyncFailure("catalog sync failed") }
-        var didComplete = false
-        var errorMessage: String?
 
         store.setHost(host: selectedHost)
         let didConnectInitially = await waitUntil { store.defaultDownloadDir == "/downloads/old" }
         XCTAssertTrue(didConnectInitially)
 
-        updateExistingServer(
+        let savedHost = try await updateExistingServer(
             host: selectedHost,
             draft: makeDraft(server: "new.example.com"),
             store: store,
             hostRepository: repository
-        ) {
-            didComplete = true
-        } onError: { message in
-            errorMessage = message
-        }
+        )
 
         let didReconnectAfterCatalogFailure = await waitUntil {
-            didComplete && store.defaultDownloadDir == "/downloads/new"
+            store.defaultDownloadDir == "/downloads/new"
         }
         XCTAssertTrue(didReconnectAfterCatalogFailure)
-        XCTAssertNil(errorMessage)
+        XCTAssertEqual(savedHost.server, "new.example.com")
         XCTAssertEqual(store.host?.server, "new.example.com")
     }
 
@@ -178,30 +160,25 @@ final class ServerDetailHelperTests: XCTestCase {
         let store = makeStore(sender: sender)
         let selectedHost = makeHost(serverID: "selected-server", server: "selected.example.com")
         let repository = TestHostRepository { _, _ in throw HostPersistenceError.saveFailure("save failed") }
-        var didComplete = false
-        var errorMessage: String?
 
         store.setHost(host: selectedHost)
         let didConnectInitially = await waitUntil { store.defaultDownloadDir == "/downloads/selected" }
         XCTAssertTrue(didConnectInitially)
         let initialRequestCount = (await sender.capturedRequests()).count
 
-        updateExistingServer(
-            host: selectedHost,
-            draft: makeDraft(server: "selected-new.example.com"),
-            store: store,
-            hostRepository: repository
-        ) {
-            didComplete = true
-        } onError: { message in
-            errorMessage = message
+        do {
+            _ = try await updateExistingServer(
+                host: selectedHost,
+                draft: makeDraft(server: "selected-new.example.com"),
+                store: store,
+                hostRepository: repository
+            )
+            XCTFail("Expected the save to fail")
+        } catch {
+            XCTAssertEqual(userFacingHostPersistenceMessage(error), "Could not save server changes.")
         }
 
-        let didReportError = await waitUntil { errorMessage != nil }
-        XCTAssertTrue(didReportError)
         let finalRequestCount = (await sender.capturedRequests()).count
-        XCTAssertFalse(didComplete)
-        XCTAssertEqual(errorMessage, "Could not save server changes.")
         XCTAssertEqual(store.host?.server, "selected.example.com")
         XCTAssertEqual(store.defaultDownloadDir, "/downloads/selected")
         XCTAssertEqual(finalRequestCount, initialRequestCount)
