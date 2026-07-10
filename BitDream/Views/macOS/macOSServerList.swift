@@ -152,13 +152,11 @@ private enum MacOSServerListAlert {
 
 /// Root view for the Manage Servers auxiliary window.
 struct macOSManageServersWindow: View {
-    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var store: TransmissionStore
     @Query(sort: \Host.name, order: .forward) private var hosts: [Host]
 
     var body: some View {
         macOSServerList(
-            modelContext: modelContext,
             hosts: hosts,
             store: store
         )
@@ -166,7 +164,6 @@ struct macOSManageServersWindow: View {
 }
 
 struct macOSServerList: View {
-    let modelContext: ModelContext
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
 
@@ -177,13 +174,7 @@ struct macOSServerList: View {
     @State private var activeAlert: MacOSServerListAlert?
 
     private var sortedHosts: [Host] {
-        hosts.sorted { lhs, rhs in
-            let nameComparison = displayName(for: lhs).localizedStandardCompare(displayName(for: rhs))
-            if nameComparison != .orderedSame {
-                return nameComparison == .orderedAscending
-            }
-            return endpoint(for: lhs).localizedStandardCompare(endpoint(for: rhs)) == .orderedAscending
-        }
+        hosts.sortedByDisplayName()
     }
 
     private var selectedHost: Host? {
@@ -217,7 +208,7 @@ struct macOSServerList: View {
             isPresented: $confirmingDelete,
             presenting: serverToDelete,
             actions: { host in
-                Button("Delete \(displayName(for: host))", role: .destructive) {
+                Button("Delete \(host.displayName)", role: .destructive) {
                     performDelete(host)
                 }
             },
@@ -264,7 +255,7 @@ private extension macOSServerList {
         VStack(spacing: 0) {
             List(selection: serverSelection) {
                 ForEach(sortedHosts) { host in
-                    macOSManageServersRow(
+                    ServerRowLabel(
                         host: host,
                         isConnected: host.serverID == store.host?.serverID
                     )
@@ -347,7 +338,6 @@ private extension macOSServerList {
                     store: store,
                     hosts: hosts,
                     host: selectedHost,
-                    isAddNew: editorNavigation.isCreatingNew,
                     title: nil,
                     saveButtonTitle: editorNavigation.isCreatingNew ? "Add Server" : "Save Changes",
                     cancelButtonTitle: editorNavigation.isCreatingNew && !hosts.isEmpty ? "Cancel" : nil,
@@ -373,7 +363,7 @@ private extension macOSServerList {
 
     private var detailHeader: some View {
         HStack(spacing: 8) {
-            Text(editorNavigation.isCreatingNew ? "New Server" : displayName(for: selectedHost))
+            Text(editorNavigation.isCreatingNew ? "New Server" : (selectedHost?.displayName ?? ""))
                 .font(.title3.weight(.semibold))
                 .lineLimit(1)
 
@@ -399,16 +389,6 @@ private extension macOSServerList {
               let raw = selectedHost?.version?.trimmingCharacters(in: .whitespacesAndNewlines),
               !raw.isEmpty else { return nil }
         return "v\(raw)"
-    }
-
-    private func displayName(for host: Host?) -> String {
-        guard let host else { return "" }
-        let trimmedName = host.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmedName.isEmpty ? (host.server ?? "Unnamed Server") : trimmedName
-    }
-
-    private func endpoint(for host: Host) -> String {
-        "\(host.server ?? "Unknown host"):\(host.port)"
     }
 
     private func syncSelection() {
@@ -517,18 +497,21 @@ private extension macOSServerList {
     }
 
     private func performDelete(_ host: Host) {
-        deleteServer(host: host, store: store, hosts: hosts, modelContext: modelContext) {
-            let remainingServerIDs = sortedHosts
-                .filter { $0.serverID != host.serverID }
-                .map(\.serverID)
-            editorNavigation.didDelete(
-                serverID: host.serverID,
-                remainingServerIDs: remainingServerIDs
-            )
-            serverToDelete = nil
-        } onError: { message in
-            serverToDelete = nil
-            presentError(message)
+        Task {
+            do {
+                try await deleteServer(host: host, store: store, hosts: hosts)
+                let remainingServerIDs = sortedHosts
+                    .filter { $0.serverID != host.serverID }
+                    .map(\.serverID)
+                editorNavigation.didDelete(
+                    serverID: host.serverID,
+                    remainingServerIDs: remainingServerIDs
+                )
+                serverToDelete = nil
+            } catch {
+                serverToDelete = nil
+                presentError(userFacingHostPersistenceMessage(error))
+            }
         }
     }
 
@@ -538,51 +521,4 @@ private extension macOSServerList {
     }
 }
 
-private struct macOSManageServersRow: View {
-    let host: Host
-    let isConnected: Bool
-
-    var body: some View {
-        HStack(spacing: 8) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(displayName)
-                    .lineLimit(1)
-
-                Text("\(host.server ?? "Unknown host"):\(String(host.port))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-
-            Spacer()
-
-            if host.isDefault {
-                Text("Default")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            if isConnected {
-                Image(systemName: "circle.fill")
-                    .font(.system(size: 8))
-                    .foregroundStyle(.green)
-                    .help("Connected")
-            }
-        }
-        .padding(.vertical, 2)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(accessibilityLabel)
-    }
-
-    private var displayName: String {
-        let trimmedName = host.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmedName.isEmpty ? (host.server ?? "Unnamed Server") : trimmedName
-    }
-
-    private var accessibilityLabel: String {
-        let defaultLabel = host.isDefault ? ", default server" : ""
-        let connectedLabel = isConnected ? ", connected" : ""
-        return "\(displayName), \(host.server ?? "Unknown host"), port \(host.port)\(defaultLabel)\(connectedLabel)"
-    }
-}
 #endif

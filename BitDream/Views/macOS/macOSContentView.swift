@@ -1,6 +1,5 @@
 import SwiftUI
 import Foundation
-import SwiftData
 
 #if os(macOS)
 
@@ -9,7 +8,6 @@ import SwiftData
 struct macOSContentView: View {
     @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
-    let modelContext: ModelContext
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
 
@@ -57,7 +55,7 @@ struct macOSContentView: View {
     private var viewWithSheets: some View {
         baseView
         .sheet(isPresented: $store.setup, content: {
-            ServerDetail(store: store, modelContext: modelContext, hosts: hosts, isAddNew: true)
+            macOSServerDetail(store: store, hosts: hosts, host: nil)
         })
         .sheet(isPresented: $store.isShowingAddAlert, onDismiss: {
             // Advance queued magnet links when the sheet closes
