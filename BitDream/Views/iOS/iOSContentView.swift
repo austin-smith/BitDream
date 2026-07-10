@@ -9,9 +9,10 @@ struct iOSContentView: View {
     // Store the selected torrent IDs
     @State private var selectedTorrentIds: Set<Int> = []
 
-    @State var sortProperty: SortProperty = UserDefaults.standard.sortProperty
-    @State var sortOrder: SortOrder = UserDefaults.standard.sortOrder
-    @State var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
+    @State private var sortProperty: SortProperty = UserDefaults.standard.sortProperty
+    @State private var sortOrder: SortOrder = UserDefaults.standard.sortOrder
+    @State private var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
+    @State private var labelFilter = TorrentLabelFilter()
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = true
     @State private var searchText: String = ""
     @State private var showPrefs: Bool = false
@@ -59,6 +60,13 @@ struct iOSContentView: View {
                 Text("Select a Dream")
             }
         }
+        .onChange(of: store.availableLabels) { _, availableLabels in
+            reconcileSelectedLabels(with: availableLabels)
+        }
+        .onChange(of: store.host?.serverID) { _, _ in
+            labelFilter.clear()
+            selectedTorrentIds.removeAll()
+        }
         .sheet(isPresented: $store.setup, content: {
             iOSServerEditor(store: store, hosts: hosts, host: nil)
         })
@@ -79,6 +87,19 @@ struct iOSContentView: View {
 }
 
 private extension iOSContentView {
+    var displayedTorrents: [Torrent] {
+        filterAndSortTorrents(
+            store.torrents,
+            options: TorrentDisplayOptions(
+                statusFilter: filterBySelection,
+                labelFilter: labelFilter,
+                searchText: searchText,
+                sortProperty: sortProperty,
+                sortOrder: sortOrder
+            )
+        )
+    }
+
     var selectedTorrentsSet: Set<Torrent> {
         Set(selectedTorrentIds.compactMap { id in
             store.torrents.first { $0.id == id }
@@ -92,14 +113,7 @@ private extension iOSContentView {
                     .foregroundColor(.gray)
                     .padding()
             } else {
-                let filteredByStatus = store.torrents.filtered(by: filterBySelection)
-                let filteredBySearch = searchText.isEmpty
-                    ? filteredByStatus
-                    : filteredByStatus.filter { torrent in
-                        torrent.name.localizedCaseInsensitiveContains(searchText)
-                    }
-                let sortedTorrents = sortTorrents(filteredBySearch, by: sortProperty, order: sortOrder)
-                ForEach(sortedTorrents, id: \.id) { torrent in
+                ForEach(displayedTorrents, id: \.id) { torrent in
                     TorrentListRow(
                         torrent: torrent,
                         store: store,
@@ -172,7 +186,15 @@ private extension iOSContentView {
                     Image(systemName: "slider.horizontal.3")
                 }
                 .popover(isPresented: $showPrefs) {
-                    prefsPopoverContent
+                    iOSFilterAndSortView(
+                        statusFilter: $filterBySelection,
+                        labelFilter: $labelFilter,
+                        sortProperty: $sortProperty,
+                        sortOrder: $sortOrder,
+                        availableLabels: store.availableLabels,
+                        labelCounts: availableLabelCounts,
+                        noLabelCount: store.torrents.count(where: { $0.labels.isEmpty })
+                    )
                 }
             }
 
@@ -190,69 +212,6 @@ private extension iOSContentView {
         }
     }
 
-    var prefsPopoverContent: some View {
-        NavigationStack {
-            List {
-                Section {
-                    Button("All") {
-                        filterBySelection = TorrentStatusCalc.allCases
-                    }
-                    Button("Downloading") {
-                        filterBySelection = [.downloading]
-                    }
-                    Button("Complete") {
-                        filterBySelection = [.complete]
-                    }
-                    Button("Paused") {
-                        filterBySelection = [.paused]
-                    }
-                    Button("Exclude Complete") {
-                        filterBySelection = TorrentStatusCalc.allCases.filter { $0 != .complete }
-                    }
-                } header: {
-                    Text("Filter")
-                }
-
-                Section {
-                    ForEach(SortProperty.allCases, id: \.self) { property in
-                        Button {
-                            sortProperty = property
-                        } label: {
-                            HStack {
-                                Text(property.rawValue)
-                                Spacer()
-                                if sortProperty == property {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.accent)
-                                }
-                            }
-                        }
-                    }
-                    Picker("Order", selection: $sortOrder) {
-                        Text("Ascending").tag(SortOrder.ascending)
-                        Text("Descending").tag(SortOrder.descending)
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowSeparator(.hidden)
-                } header: {
-                    Text("Sort")
-                }
-            }
-            .buttonStyle(.plain)
-            .listStyle(.insetGrouped)
-            .navigationTitle("Filter & Sort")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        showPrefs = false
-                    }
-                }
-            }
-        }
-        .presentationDragIndicator(.visible)
-    }
-
     func pauseAllTorrents() {
         performTransmissionDebugAction(
             .pauseAllTorrents,
@@ -266,6 +225,23 @@ private extension iOSContentView {
             .resumeAllTorrents,
             store: store,
             operation: { try await store.resumeAllTorrents() }
+        )
+    }
+
+    func reconcileSelectedLabels(with availableLabels: [String]) {
+        var reconciledFilter = labelFilter
+        reconciledFilter.reconcile(with: availableLabels)
+
+        if reconciledFilter != labelFilter {
+            labelFilter = reconciledFilter
+        }
+    }
+
+    var availableLabelCounts: [String: Int] {
+        Dictionary(
+            uniqueKeysWithValues: store.availableLabels.map { label in
+                (label, store.torrentCount(for: label))
+            }
         )
     }
 }
