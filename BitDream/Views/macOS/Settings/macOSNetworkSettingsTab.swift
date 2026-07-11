@@ -13,3 +13,11 @@ struct macOSNetworkSettingsTab: View {
     }
 }
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Network Settings", traits: .fixedLayout(width: 760, height: 700)) {
+    @Previewable @StateObject var editModel = SettingsViewModel()
+    macOSNetworkSettingsTab(config: PreviewFixtures.sessionConfiguration, editModel: editModel)
+        .padding()
+}
+#endif

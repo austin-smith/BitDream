@@ -267,3 +267,16 @@ private extension iOSTorrentFileDetail {
 }
 
 #endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Torrent Files") {
+    PreviewContainer { environment in
+        iOSTorrentFileDetail(
+            files: PreviewFixtures.files,
+            fileStats: PreviewFixtures.fileStats,
+            torrentId: PreviewFixtures.torrents[0].id,
+            store: environment.store
+        )
+    }
+}
+#endif

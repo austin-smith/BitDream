@@ -330,3 +330,38 @@ struct TorrentDropDelegate: DropDelegate {
 }
 
 #endif
+
+#if os(macOS) && DEBUG
+private struct macOSContentDetailPreviewHost: View {
+    let store: TransmissionStore
+    @State private var selectedTorrentIDs = Set<Int>()
+    @State private var sortProperty = SortProperty.name
+    @State private var sortOrder = SortOrder.ascending
+    @State private var isDropTargeted = false
+    @State private var draggedTorrentInfo: [TorrentInfo] = []
+    @FocusState private var focusedTarget: macOSContentView.FocusTarget?
+
+    var body: some View {
+        macOSContentDetail(
+            store: store,
+            torrents: PreviewFixtures.torrents,
+            isCompactMode: false,
+            selectedTorrentIds: $selectedTorrentIDs,
+            sortProperty: $sortProperty,
+            sortOrder: $sortOrder,
+            selectedTorrents: [],
+            showContentTypeIcons: true,
+            accentColor: .blue,
+            isDropTargeted: $isDropTargeted,
+            draggedTorrentInfo: $draggedTorrentInfo,
+            focusedTarget: $focusedTarget
+        )
+    }
+}
+
+#Preview("macOS Content Detail", traits: .fixedLayout(width: 1_000, height: 620)) {
+    PreviewContainer { environment in
+        macOSContentDetailPreviewHost(store: environment.store)
+    }
+}
+#endif

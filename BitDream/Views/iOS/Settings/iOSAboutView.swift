@@ -92,10 +92,13 @@ struct iOSAboutView: View {
     }
 }
 
-#Preview {
-    NavigationView {
-        iOSAboutView()
-            .environmentObject(ThemeManager.shared)
+#if DEBUG
+#Preview("iOS About") {
+    PreviewContainer { _ in
+        NavigationStack {
+            iOSAboutView()
+        }
     }
 }
+#endif
 #endif

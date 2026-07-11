@@ -43,3 +43,11 @@ struct macOSConnectionBannerView: View {
     }
 }
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Reconnecting Banner", traits: .fixedLayout(width: 720, height: 70)) {
+    PreviewContainer(scenario: .reconnecting) { environment in
+        macOSConnectionBannerView(store: environment.store)
+    }
+}
+#endif

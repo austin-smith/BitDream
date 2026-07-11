@@ -164,6 +164,7 @@ struct macOSManageServersWindow: View {
 }
 
 struct macOSServerList: View {
+    @Environment(\.hostRepositoryProvider) private var hostRepositoryProvider
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
 
@@ -499,7 +500,12 @@ private extension macOSServerList {
     private func performDelete(_ host: Host) {
         Task {
             do {
-                try await deleteServer(host: host, store: store, hosts: hosts)
+                try await deleteServer(
+                    host: host,
+                    store: store,
+                    hosts: hosts,
+                    hostRepository: hostRepositoryProvider.resolve()
+                )
                 let remainingServerIDs = sortedHosts
                     .filter { $0.serverID != host.serverID }
                     .map(\.serverID)
@@ -521,4 +527,12 @@ private extension macOSServerList {
     }
 }
 
+#endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Server List", traits: .fixedLayout(width: 900, height: 600)) {
+    PreviewContainer { environment in
+        macOSServerList(hosts: environment.hosts, store: environment.store)
+    }
+}
 #endif

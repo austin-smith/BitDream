@@ -470,3 +470,11 @@ struct macOSSectionHeader: View {
     }
 }
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Torrent Detail", traits: .fixedLayout(width: 900, height: 720)) {
+    PreviewContainer { environment in
+        macOSTorrentDetail(store: environment.store, torrent: PreviewFixtures.torrents[0])
+    }
+}
+#endif

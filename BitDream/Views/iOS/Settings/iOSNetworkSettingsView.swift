@@ -198,3 +198,13 @@ struct iOSNetworkSettingsView: View {
     }
 }
 #endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Network Settings") {
+    PreviewContainer { environment in
+        NavigationStack {
+            iOSNetworkSettingsView(store: environment.store)
+        }
+    }
+}
+#endif

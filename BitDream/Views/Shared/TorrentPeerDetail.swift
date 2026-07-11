@@ -35,6 +35,17 @@ struct BoolCheckIcon: View {
     }
 }
 
+#if DEBUG
+#Preview("Peer Badges", traits: .sizeThatFitsLayout) {
+    HStack {
+        ProtocolBadge(text: "uTP")
+        BoolCheckIcon(value: true, label: "Encrypted")
+        BoolCheckIcon(value: false, label: "Incoming")
+    }
+    .padding()
+}
+#endif
+
 // MARK: - Shared Peer Helpers
 
 /// Build a user-friendly help/tooltip text for a peer's state flags

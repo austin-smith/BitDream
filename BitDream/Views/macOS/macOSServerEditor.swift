@@ -10,6 +10,7 @@ private enum macOSServerFormFocusField: Hashable {
 }
 
 struct macOSServerEditor: View {
+    @Environment(\.hostRepositoryProvider) private var hostRepositoryProvider
     @ObservedObject var store: TransmissionStore
     let hosts: [Host]
     let host: Host?
@@ -155,7 +156,10 @@ struct macOSServerEditor: View {
     private func performSave() {
         Task {
             do {
-                switch try await model.save(store: store) {
+                switch try await model.save(
+                    store: store,
+                    hostRepository: hostRepositoryProvider.resolve()
+                ) {
                 case .validationFailed(let field):
                     focusedField = focusTarget(for: field)
                 case .saved(let savedHost):
@@ -176,6 +180,30 @@ struct macOSServerEditor: View {
         case nil:
             return nil
         }
+    }
+}
+#endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Server Editor", traits: .fixedLayout(width: 460, height: 560)) {
+    @Previewable @State var hasUnsavedChanges = false
+    @Previewable @State var isSaving = false
+
+    PreviewContainer { environment in
+        macOSServerEditor(
+            store: environment.store,
+            hosts: environment.hosts,
+            host: environment.hosts[0],
+            title: "Edit Server",
+            saveButtonTitle: "Save",
+            cancelButtonTitle: "Cancel",
+            onCancel: {},
+            onSaved: { _ in },
+            onDelete: {},
+            hasUnsavedChanges: $hasUnsavedChanges,
+            isSaving: $isSaving,
+            onError: { _ in }
+        )
     }
 }
 #endif

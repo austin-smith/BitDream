@@ -518,3 +518,26 @@ private func deleteTorrents(
 }
 
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Rename Torrent", traits: .fixedLayout(width: 480, height: 220)) {
+    @Previewable @State var renameInput = PreviewFixtures.torrents[0].name
+    @Previewable @State var renameTargetID: Int? = PreviewFixtures.torrents[0].id
+    @Previewable @State var isPresented = true
+    @Previewable @State var showingError = false
+    @Previewable @State var errorMessage = ""
+
+    PreviewContainer { environment in
+        RenameSheetContent(
+            store: environment.store,
+            selectedTorrents: [PreviewFixtures.torrents[0]],
+            renameInput: $renameInput,
+            renameTargetId: $renameTargetID,
+            isPresented: $isPresented,
+            showingError: $showingError,
+            errorMessage: $errorMessage
+        )
+        .padding()
+    }
+}
+#endif

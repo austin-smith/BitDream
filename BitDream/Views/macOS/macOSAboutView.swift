@@ -93,3 +93,11 @@ struct macOSAboutView: View {
 }
 
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS About", traits: .fixedLayout(width: 420, height: 480)) {
+    PreviewContainer { _ in
+        macOSAboutView()
+    }
+}
+#endif

@@ -92,3 +92,11 @@ struct macOSConnectionInfoView: View {
     }
 }
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Connection Info") {
+    PreviewContainer(scenario: .reconnecting) { _ in
+        macOSConnectionInfoView()
+    }
+}
+#endif

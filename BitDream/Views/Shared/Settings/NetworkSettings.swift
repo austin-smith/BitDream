@@ -238,3 +238,11 @@ struct NetworkContent: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("Network Settings", traits: .fixedLayout(width: 700, height: 720)) {
+    @Previewable @StateObject var editModel = SettingsViewModel()
+    NetworkContent(config: PreviewFixtures.sessionConfiguration, editModel: editModel)
+        .padding()
+}
+#endif

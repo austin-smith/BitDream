@@ -775,6 +775,14 @@ struct DetailViewLabelTag: View {
     }
 }
 
+#if DEBUG
+#Preview("Torrent Detail") {
+    PreviewContainer { environment in
+        TorrentDetail(store: environment.store, torrent: PreviewFixtures.torrents[0])
+    }
+}
+#endif
+
 private func formatTorrentDetailDate(_ timestamp: Int) -> String {
     let date = Date(timeIntervalSince1970: Double(timestamp))
     return date.formatted(

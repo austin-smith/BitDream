@@ -213,3 +213,17 @@ struct SeedingContent: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("Torrent Settings", traits: .fixedLayout(width: 700, height: 760)) {
+    @Previewable @StateObject var editModel = SettingsViewModel()
+    ScrollView {
+        VStack(alignment: .leading, spacing: 24) {
+            FileManagementContent(config: PreviewFixtures.sessionConfiguration, editModel: editModel)
+            QueueManagementContent(config: PreviewFixtures.sessionConfiguration, editModel: editModel)
+            SeedingContent(config: PreviewFixtures.sessionConfiguration, editModel: editModel)
+        }
+        .padding()
+    }
+}
+#endif

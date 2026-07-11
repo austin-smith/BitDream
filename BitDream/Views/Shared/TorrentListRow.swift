@@ -230,6 +230,20 @@ struct LabelTag: View {
     }
 }
 
+#if DEBUG
+#Preview("Torrent List Row", traits: .fixedLayout(width: 700, height: 110)) {
+    PreviewContainer { environment in
+        TorrentListRow(
+            torrent: PreviewFixtures.torrents[0],
+            store: environment.store,
+            selectedTorrents: [PreviewFixtures.torrents[0]],
+            showContentTypeIcons: true
+        )
+        .padding()
+    }
+}
+#endif
+
 // Shared function to create label tags view
 @MainActor
 func createLabelTagsView(for torrent: Torrent) -> some View {

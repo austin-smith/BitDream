@@ -504,3 +504,11 @@ private struct IOSTorrentPiecesMessageView: View {
 }
 
 #endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Torrent Detail") {
+    PreviewContainer { environment in
+        iOSTorrentDetail(store: environment.store, torrent: PreviewFixtures.torrents[0])
+    }
+}
+#endif

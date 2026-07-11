@@ -233,3 +233,22 @@ private enum iOSStatusFilterOption: String, CaseIterable, Identifiable {
     }
 }
 #endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Filter and Sort") {
+    @Previewable @State var statusFilter = TorrentStatusCalc.allCases
+    @Previewable @State var labelFilter = TorrentLabelFilter()
+    @Previewable @State var sortProperty = SortProperty.name
+    @Previewable @State var sortOrder = SortOrder.ascending
+
+    iOSFilterAndSortView(
+        statusFilter: $statusFilter,
+        labelFilter: $labelFilter,
+        sortProperty: $sortProperty,
+        sortOrder: $sortOrder,
+        availableLabels: ["Archive", "ISO", "Linux", "Movies"],
+        labelCounts: ["Archive": 1, "ISO": 1, "Linux": 1, "Movies": 1],
+        noLabelCount: 1
+    )
+}
+#endif

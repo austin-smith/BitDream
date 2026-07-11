@@ -90,3 +90,9 @@ struct macOSMenuBarTorrentRow: View {
 }
 
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("Menu Bar Torrent Row", traits: .fixedLayout(width: 360, height: 90)) {
+    macOSMenuBarTorrentRow(torrent: PreviewFixtures.torrents[0], onOpen: {})
+}
+#endif

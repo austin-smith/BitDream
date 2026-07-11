@@ -213,3 +213,15 @@ extension View {
         modifier(TransmissionErrorAlert(isPresented: isPresented, message: message))
     }
 }
+
+#if DEBUG
+#Preview("Transmission Error Alert", traits: .sizeThatFitsLayout) {
+    @Previewable @State var isPresented = true
+    Button("Show Error") { isPresented = true }
+        .transmissionErrorAlert(
+            isPresented: $isPresented,
+            message: "The preview server is unavailable."
+        )
+        .padding()
+}
+#endif

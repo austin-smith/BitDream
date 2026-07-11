@@ -57,3 +57,12 @@ struct iOSConnectionBannerView: View {
     }
 }
 #endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Reconnecting Banner", traits: .sizeThatFitsLayout) {
+    PreviewContainer(scenario: .reconnecting) { environment in
+        iOSConnectionBannerView(store: environment.store)
+            .frame(width: 420)
+    }
+}
+#endif

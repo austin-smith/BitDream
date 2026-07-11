@@ -33,3 +33,11 @@ struct ErrorDialog: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("Error Dialog", traits: .fixedLayout(width: 420, height: 320)) {
+    PreviewContainer(scenario: .error) { environment in
+        ErrorDialog(store: environment.store)
+    }
+}
+#endif

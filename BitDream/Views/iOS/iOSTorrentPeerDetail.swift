@@ -168,3 +168,19 @@ struct iOSTorrentPeerDetail: View {
     var body: some View { EmptyView() }
 }
 #endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Torrent Peers") {
+    PreviewContainer { environment in
+        iOSTorrentPeerDetail(
+            torrentName: PreviewFixtures.torrents[0].name,
+            torrentId: PreviewFixtures.torrents[0].id,
+            store: environment.store,
+            peers: PreviewFixtures.peers,
+            peersFrom: PreviewFixtures.peersFrom,
+            onRefresh: {},
+            onDone: {}
+        )
+    }
+}
+#endif
