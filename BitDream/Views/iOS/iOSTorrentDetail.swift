@@ -131,7 +131,7 @@ struct iOSTorrentDetail: View {
     }
 
     private func renameSheet() -> some View {
-        NavigationView {
+        NavigationStack {
             IOSTorrentRenameSheet(
                 torrent: torrent,
                 store: store,
@@ -143,7 +143,7 @@ struct iOSTorrentDetail: View {
     }
 
     private func moveSheet() -> some View {
-        NavigationView {
+        NavigationStack {
             IOSTorrentMoveSheet(
                 torrent: torrent,
                 store: store,
@@ -156,7 +156,7 @@ struct iOSTorrentDetail: View {
     }
 
     private func labelSheet() -> some View {
-        NavigationView {
+        NavigationStack {
             iOSLabelEditView(
                 labelInput: $labelInput,
                 existingLabels: torrent.labels,
@@ -269,126 +269,124 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
     let onRetryPiecesLoad: () -> Void
 
     var body: some View {
-        NavigationStack {
-            VStack {
-                TorrentDetailHeaderView(torrent: torrent)
+        VStack {
+            TorrentDetailHeaderView(torrent: torrent)
 
-                Form {
-                    Section(header: Text("General")) {
-                        HStack(alignment: .top) {
-                            Text("Name")
-                            Spacer(minLength: 50)
-                            Text(torrent.name)
-                                .foregroundColor(.gray)
-                                .multilineTextAlignment(.trailing)
-                                .lineLimit(5)
-                        }
-                        HStack {
-                            Text("Status")
-                            Spacer()
-                            TorrentStatusBadge(torrent: torrent)
-                        }
-                        HStack {
-                            Text("Date Added")
-                            Spacer()
-                            Text(details.addedDate)
-                                .foregroundColor(.gray)
-                        }
+            Form {
+                Section(header: Text("General")) {
+                    HStack(alignment: .top) {
+                        Text("Name")
+                        Spacer(minLength: 50)
+                        Text(torrent.name)
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.trailing)
+                            .lineLimit(5)
+                    }
+                    HStack {
+                        Text("Status")
+                        Spacer()
+                        TorrentStatusBadge(torrent: torrent)
+                    }
+                    HStack {
+                        Text("Date Added")
+                        Spacer()
+                        Text(details.addedDate)
+                            .foregroundColor(.gray)
+                    }
 
-                        NavigationLink {
-                            filesDestination
-                        } label: {
-                            LabeledContent(
-                                "Files",
-                                value: NumberFormatter.localizedString(
-                                    from: NSNumber(value: supplementalPayload.files.count),
-                                    number: .decimal
-                                )
+                    NavigationLink {
+                        filesDestination
+                    } label: {
+                        LabeledContent(
+                            "Files",
+                            value: NumberFormatter.localizedString(
+                                from: NSNumber(value: supplementalPayload.files.count),
+                                number: .decimal
                             )
-                        }
-
-                        NavigationLink {
-                            peersDestination
-                        } label: {
-                            LabeledContent("Peers", value: "\(supplementalPayload.peers.count)")
-                        }
-                    }
-
-                    Section(header: Text("Stats")) {
-                        HStack {
-                            Text("Size When Done")
-                            Spacer()
-                            Text(details.sizeWhenDoneFormatted)
-                                .foregroundColor(.gray)
-                        }
-                        HStack {
-                            Text("Progress")
-                            Spacer()
-                            Text(details.percentComplete)
-                                .foregroundColor(.gray)
-                        }
-                        HStack {
-                            Text("Downloaded")
-                            Spacer()
-                            Text(details.downloadedFormatted)
-                                .foregroundColor(.gray)
-                        }
-                        HStack {
-                            Text("Uploaded")
-                            Spacer()
-                            Text(details.uploadedFormatted)
-                                .foregroundColor(.gray)
-                        }
-                        HStack {
-                            Text("Upload Ratio")
-                            Spacer()
-                            Text(details.uploadRatio)
-                                .foregroundColor(.gray)
-                        }
-                    }
-
-                    Section(header: Text("Pieces")) {
-                        IOSTorrentPiecesSectionContent(
-                            state: piecesSectionState,
-                            onRetry: onRetryPiecesLoad
                         )
+                    }
+
+                    NavigationLink {
+                        peersDestination
+                    } label: {
+                        LabeledContent("Peers", value: "\(supplementalPayload.peers.count)")
+                    }
+                }
+
+                Section(header: Text("Stats")) {
+                    HStack {
+                        Text("Size When Done")
+                        Spacer()
+                        Text(details.sizeWhenDoneFormatted)
+                            .foregroundColor(.gray)
+                    }
+                    HStack {
+                        Text("Progress")
+                        Spacer()
+                        Text(details.percentComplete)
+                            .foregroundColor(.gray)
+                    }
+                    HStack {
+                        Text("Downloaded")
+                        Spacer()
+                        Text(details.downloadedFormatted)
+                            .foregroundColor(.gray)
+                    }
+                    HStack {
+                        Text("Uploaded")
+                        Spacer()
+                        Text(details.uploadedFormatted)
+                            .foregroundColor(.gray)
+                    }
+                    HStack {
+                        Text("Upload Ratio")
+                        Spacer()
+                        Text(details.uploadRatio)
+                            .foregroundColor(.gray)
+                    }
+                }
+
+                Section(header: Text("Pieces")) {
+                    IOSTorrentPiecesSectionContent(
+                        state: piecesSectionState,
+                        onRetry: onRetryPiecesLoad
+                    )
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section(header: Text("Additional Info")) {
+                    HStack {
+                        Text("Availability")
+                        Spacer()
+                        Text(details.percentAvailable)
+                            .foregroundColor(.gray)
+                    }
+                    HStack {
+                        Text("Last Activity")
+                        Spacer()
+                        Text(details.activityDate)
+                            .foregroundColor(.gray)
+                    }
+                }
+
+                if !torrent.labels.isEmpty {
+                    Section(header: Text("Labels")) {
+                        FlowLayout(spacing: 6) {
+                            ForEach(torrent.labels.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }, id: \.self) { label in
+                                DetailViewLabelTag(label: label, isLarge: false)
+                            }
+                        }
+                        .padding(.vertical, 8)
                         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     }
+                }
 
-                    Section(header: Text("Additional Info")) {
+                Button(role: .destructive, action: onDelete) {
+                    HStack {
                         HStack {
-                            Text("Availability")
+                            Image(systemName: "trash")
+                            Text("Delete…")
                             Spacer()
-                            Text(details.percentAvailable)
-                                .foregroundColor(.gray)
-                        }
-                        HStack {
-                            Text("Last Activity")
-                            Spacer()
-                            Text(details.activityDate)
-                                .foregroundColor(.gray)
-                        }
-                    }
-
-                    if !torrent.labels.isEmpty {
-                        Section(header: Text("Labels")) {
-                            FlowLayout(spacing: 6) {
-                                ForEach(torrent.labels.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }, id: \.self) { label in
-                                    DetailViewLabelTag(label: label, isLarge: false)
-                                }
-                            }
-                            .padding(.vertical, 8)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                        }
-                    }
-
-                    Button(role: .destructive, action: onDelete) {
-                        HStack {
-                            HStack {
-                                Image(systemName: "trash")
-                                Text("Delete…")
-                                Spacer()
-                            }
                         }
                     }
                 }

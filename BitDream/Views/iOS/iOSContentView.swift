@@ -3,14 +3,11 @@ import Foundation
 
 #if os(iOS)
 struct iOSContentView: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
     private let userDefaults: UserDefaults
 
-    // Store the selected torrent ID
-    @State private var selectedTorrentID: Int?
+    @State private var torrentPath: [Int] = []
 
     @State private var sortProperty: SortProperty
     @State private var sortOrder: SortOrder
@@ -34,22 +31,23 @@ struct iOSContentView: View {
     }
 
     var body: some View {
-        Group {
-            if horizontalSizeClass == .compact {
-                compactNavigation
-            } else {
-                regularNavigation
-            }
+        NavigationStack(path: $torrentPath) {
+            torrentListScreen
+                .navigationDestination(for: Int.self) { torrentID in
+                    if let torrent = store.torrents.first(where: { $0.id == torrentID }) {
+                        TorrentDetail(store: store, torrent: torrent)
+                    }
+                }
         }
         .onChange(of: store.availableLabels) { _, availableLabels in
             reconcileSelectedLabels(with: availableLabels)
         }
         .onChange(of: store.host?.serverID) { _, _ in
             labelFilter.clear()
-            selectedTorrentID = nil
+            torrentPath.removeAll()
         }
         .onChange(of: store.torrents.map(\.id)) { _, torrentIDs in
-            reconcileSelection(with: torrentIDs)
+            reconcileNavigationPath(with: torrentIDs)
         }
         .sheet(isPresented: $store.setup, content: {
             iOSServerEditor(store: store, hosts: hosts, host: nil)
@@ -71,29 +69,6 @@ struct iOSContentView: View {
 }
 
 private extension iOSContentView {
-    var compactNavigation: some View {
-        NavigationStack(path: torrentPath) {
-            torrentListScreen
-                .navigationDestination(for: Int.self) { torrentID in
-                    if let torrent = store.torrents.first(where: { $0.id == torrentID }) {
-                        TorrentDetail(store: store, torrent: torrent)
-                    }
-                }
-        }
-    }
-
-    var regularNavigation: some View {
-        NavigationSplitView {
-            torrentListScreen
-        } detail: {
-            if let selectedTorrent {
-                TorrentDetail(store: store, torrent: selectedTorrent)
-            } else {
-                Text("Select a Dream")
-            }
-        }
-    }
-
     var torrentListScreen: some View {
         VStack(spacing: 0) {
             StatsHeaderView(store: store)
@@ -142,52 +117,19 @@ private extension iOSContentView {
         )
     }
 
-    var selectedTorrent: Torrent? {
-        guard let selectedTorrentID else { return nil }
-        return store.torrents.first { $0.id == selectedTorrentID }
-    }
-
-    var torrentPath: Binding<[Int]> {
-        Binding(
-            get: { selectedTorrentID.map { [$0] } ?? [] },
-            set: { selectedTorrentID = $0.last }
-        )
-    }
-
-    @ViewBuilder
     var torrentList: some View {
-        if horizontalSizeClass == .compact {
-            List {
-                compactTorrentRows
-            }
-        } else {
-            List(selection: $selectedTorrentID) {
-                regularTorrentRows
-            }
+        List {
+            torrentRows
         }
     }
 
-    var compactTorrentRows: some View {
-        Group {
-            if store.torrents.isEmpty {
-                emptyTorrentList
-            } else {
-                ForEach(displayedTorrents, id: \.id) { torrent in
-                    torrentRow(for: torrent, destinationID: torrent.id)
-                        .listRowSeparator(.visible)
-                }
-            }
-        }
-    }
-
-    var regularTorrentRows: some View {
+    var torrentRows: some View {
         Group {
             if store.torrents.isEmpty {
                 emptyTorrentList
             } else {
                 ForEach(displayedTorrents, id: \.id) { torrent in
                     torrentRow(for: torrent)
-                        .tag(torrent.id)
                         .listRowSeparator(.visible)
                 }
             }
@@ -200,12 +142,11 @@ private extension iOSContentView {
             .padding()
     }
 
-    func torrentRow(for torrent: Torrent, destinationID: Int? = nil) -> some View {
+    func torrentRow(for torrent: Torrent) -> some View {
         iOSTorrentListRow(
             torrent: torrent,
             store: store,
-            showContentTypeIcons: showContentTypeIcons,
-            destinationID: destinationID
+            showContentTypeIcons: showContentTypeIcons
         )
     }
 
@@ -307,9 +248,9 @@ private extension iOSContentView {
         }
     }
 
-    func reconcileSelection(with torrentIDs: [Int]) {
-        guard let selectedTorrentID, !torrentIDs.contains(selectedTorrentID) else { return }
-        self.selectedTorrentID = nil
+    func reconcileNavigationPath(with torrentIDs: [Int]) {
+        let availableTorrentIDs = Set(torrentIDs)
+        torrentPath.removeAll { !availableTorrentIDs.contains($0) }
     }
 
     var hasActiveFilters: Bool {

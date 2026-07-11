@@ -6,7 +6,6 @@ struct iOSTorrentListRow: View {
     var torrent: Torrent
     var store: TransmissionStore
     var showContentTypeIcons: Bool
-    var destinationID: Int?
 
     @State private var deleteDialog: Bool = false
     @State private var labelDialog: Bool = false
@@ -20,42 +19,33 @@ struct iOSTorrentListRow: View {
     @State private var errorMessage = ""
 
     var body: some View {
-        listRow
-            .swipeActions(edge: .trailing) {
-                swipeActions
-            }
-            .contextMenu { actionsMenu }
-            .id(torrent.id)
-            .confirmationDialog(
-                "Delete Torrent",
-                isPresented: $deleteDialog,
-                titleVisibility: .visible
-            ) {
-                Button("Delete file(s)", role: .destructive) {
-                    performDelete(erase: true)
-                }
-                Button("Remove from list only") {
-                    performDelete(erase: false)
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Do you want to delete the file(s) from the disk?")
-            }
-            .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
-            .sheet(isPresented: $renameDialog, content: renameSheet)
-            .sheet(isPresented: $moveDialog, content: moveSheet)
-            .sheet(isPresented: $labelDialog, content: labelSheet)
-    }
-
-    @ViewBuilder
-    private var listRow: some View {
-        if let destinationID {
-            NavigationLink(value: destinationID) {
-                paddedRowContent
-            }
-        } else {
+        NavigationLink(value: torrent.id) {
             paddedRowContent
         }
+        .swipeActions(edge: .trailing) {
+            swipeActions
+        }
+        .contextMenu { actionsMenu }
+        .id(torrent.id)
+        .confirmationDialog(
+            "Delete Torrent",
+            isPresented: $deleteDialog,
+            titleVisibility: .visible
+        ) {
+            Button("Delete file(s)", role: .destructive) {
+                performDelete(erase: true)
+            }
+            Button("Remove from list only") {
+                performDelete(erase: false)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Do you want to delete the file(s) from the disk?")
+        }
+        .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
+        .sheet(isPresented: $renameDialog, content: renameSheet)
+        .sheet(isPresented: $moveDialog, content: moveSheet)
+        .sheet(isPresented: $labelDialog, content: labelSheet)
     }
 
     private var paddedRowContent: some View {
@@ -127,7 +117,7 @@ struct iOSTorrentListRow: View {
     }
 
     private func renameSheet() -> some View {
-        NavigationView {
+        NavigationStack {
             IOSTorrentRenameSheet(
                 torrent: torrent,
                 store: store,
@@ -139,7 +129,7 @@ struct iOSTorrentListRow: View {
     }
 
     private func moveSheet() -> some View {
-        NavigationView {
+        NavigationStack {
             IOSTorrentMoveSheet(
                 torrent: torrent,
                 store: store,
@@ -152,7 +142,7 @@ struct iOSTorrentListRow: View {
     }
 
     private func labelSheet() -> some View {
-        NavigationView {
+        NavigationStack {
             iOSLabelEditView(
                 labelInput: $labelInput,
                 existingLabels: torrent.labels,
@@ -607,8 +597,7 @@ struct iOSTorrentListRow: View {
         iOSTorrentListRow(
             torrent: PreviewFixtures.torrents[0],
             store: environment.store,
-            showContentTypeIcons: true,
-            destinationID: nil
+            showContentTypeIcons: true
         )
         .padding()
     }
