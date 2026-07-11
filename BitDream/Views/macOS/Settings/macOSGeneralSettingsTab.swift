@@ -118,9 +118,9 @@ struct macOSGeneralSettingsTab: View {
                     divider
 
                     settingsSection("Dock Badge") {
-                        Toggle("Completed torrents", isOn: $dockShowCompletedBadge)
-                        Toggle("Total download rate", isOn: $dockShowDownloadSpeed)
-                        Toggle("Total upload rate", isOn: $dockShowUploadSpeed)
+                        Toggle("Show completed torrents count", isOn: $dockShowCompletedBadge)
+                        Toggle("Show download rate", isOn: $dockShowDownloadSpeed)
+                        Toggle("Show upload rate", isOn: $dockShowUploadSpeed)
                     }
 
                     divider
