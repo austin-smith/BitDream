@@ -61,22 +61,16 @@ internal extension TransmissionConnection {
     }
 
     func fetchTorrentDetailSnapshot(id: Int) async throws -> TransmissionTorrentDetailSnapshot {
-        async let filesResponse = fetchTorrentFiles(id: id)
-        async let peersResponse = fetchTorrentPeers(id: id)
-        async let piecesResponse = fetchTorrentPieces(id: id)
-
-        let files = try await filesResponse
-        let peers = try await peersResponse
-        let pieces = try await piecesResponse
+        let detail = try await fetchTorrentDetail(id: id)
 
         return TransmissionTorrentDetailSnapshot(
-            files: files.files,
-            fileStats: files.fileStats,
-            peers: peers.peers,
-            peersFrom: peers.peersFrom,
-            pieceCount: pieces.pieceCount,
-            pieceSize: pieces.pieceSize,
-            piecesBitfieldBase64: pieces.pieces
+            files: detail.files,
+            fileStats: detail.fileStats,
+            peers: detail.peers,
+            peersFrom: detail.peersFrom,
+            pieceCount: detail.pieceCount,
+            pieceSize: detail.pieceSize,
+            piecesBitfieldBase64: detail.pieces
         )
     }
 

@@ -132,9 +132,7 @@ final class TransmissionStoreTorrentOperationTests: XCTestCase {
                 ],
                 "torrent-get": [
                     .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json")),
-                    .blocked(id: "old-detail", statusCode: 200, body: makeTorrentDetailSuccessBody()),
-                    .http(statusCode: 200, body: makeTorrentDetailSuccessBody()),
-                    .http(statusCode: 200, body: makeTorrentDetailSuccessBody())
+                    .blocked(id: "old-detail", statusCode: 200, body: makeTorrentDetailSuccessBody())
                 ],
                 "session-get": [
                     .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/old", version: "4.0.0"))

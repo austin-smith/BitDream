@@ -2,6 +2,18 @@ import Foundation
 import XCTest
 @testable import BitDream
 
+let testTorrentDetailConnectionGeneration = UUID()
+
+func makeTestTorrentDetailIdentity(
+    _ torrentID: Int,
+    connectionGeneration: UUID = testTorrentDetailConnectionGeneration
+) -> TorrentDetailIdentity {
+    TorrentDetailIdentity(
+        torrentID: torrentID,
+        connectionGeneration: connectionGeneration
+    )
+}
+
 let successStatsBody = """
 {
   "arguments": {

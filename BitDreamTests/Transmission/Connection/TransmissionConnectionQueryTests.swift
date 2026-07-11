@@ -161,8 +161,6 @@ final class TransmissionConnectionQueryTests: XCTestCase {
     func testFetchTorrentDetailSnapshotUsesNamedQueriesAndDecodesResponse() async throws {
         let sender = MethodQueueSender(stepsByMethod: [
             "torrent-get": [
-                .http(statusCode: 200, body: makeTorrentDetailSuccessBody()),
-                .http(statusCode: 200, body: makeTorrentDetailSuccessBody()),
                 .http(statusCode: 200, body: makeTorrentDetailSuccessBody())
             ]
         ])
@@ -181,18 +179,16 @@ final class TransmissionConnectionQueryTests: XCTestCase {
         XCTAssertEqual(snapshot.piecesBitfieldBase64, "Zm9v")
 
         let requests = await sender.capturedRequests()
-        XCTAssertEqual(requests.count, 3)
-        let fields = try requests.map(capturedRequestFields)
-        XCTAssertTrue(fields.contains(TransmissionTorrentQuerySpec.torrentFiles(id: 42).fields))
-        XCTAssertTrue(fields.contains(TransmissionTorrentQuerySpec.torrentPeers(id: 42).fields))
-        XCTAssertTrue(fields.contains(TransmissionTorrentQuerySpec.torrentPieces(id: 42).fields))
+        XCTAssertEqual(requests.count, 1)
+        XCTAssertEqual(
+            try capturedRequestFields(requests[0]),
+            TransmissionTorrentQuerySpec.torrentDetail(id: 42).fields
+        )
     }
 
     func testFetchTorrentDetailSnapshotPropagatesErrors() async throws {
         let sender = MethodQueueSender(stepsByMethod: [
             "torrent-get": [
-                .http(statusCode: 200, body: #"{"result":"server busy","arguments":{}}"#),
-                .http(statusCode: 200, body: #"{"result":"server busy","arguments":{}}"#),
                 .http(statusCode: 200, body: #"{"result":"server busy","arguments":{}}"#)
             ]
         ])
