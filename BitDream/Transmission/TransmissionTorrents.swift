@@ -49,6 +49,16 @@ internal enum TransmissionTorrentQuerySpec {
     static func torrentPieces(id: Int) -> TransmissionTorrentDetailQuerySpec {
         TransmissionTorrentDetailQuerySpec(fields: ["pieceCount", "pieceSize", "pieces"], id: id)
     }
+
+    static func torrentDetail(id: Int) -> TransmissionTorrentDetailQuerySpec {
+        TransmissionTorrentDetailQuerySpec(
+            fields: [
+                "files", "fileStats", "peers", "peersFrom",
+                "pieceCount", "pieceSize", "pieces"
+            ],
+            id: id
+        )
+    }
 }
 
 internal extension TransmissionConnection {
@@ -117,6 +127,20 @@ internal extension TransmissionConnection {
             method: "torrent-get",
             arguments: TransmissionTorrentQuerySpec.torrentPieces(id: id).arguments,
             responseType: TorrentPiecesResponseTorrents.self
+        )
+
+        guard let torrent = response.torrents.first else {
+            throw TransmissionError.invalidResponse
+        }
+
+        return torrent
+    }
+
+    func fetchTorrentDetail(id: Int) async throws -> TorrentDetailResponseData {
+        let response = try await sendRequiredArguments(
+            method: "torrent-get",
+            arguments: TransmissionTorrentQuerySpec.torrentDetail(id: id).arguments,
+            responseType: TorrentDetailResponseTorrents.self
         )
 
         guard let torrent = response.torrents.first else {

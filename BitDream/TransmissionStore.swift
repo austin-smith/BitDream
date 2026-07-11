@@ -3,6 +3,11 @@ import Foundation
 import SwiftData
 import OSLog
 
+internal struct TorrentDetailRefreshTrigger: Equatable, Sendable {
+    let connectionGeneration: UUID
+    let revision: UInt64
+}
+
 #if os(macOS)
 enum AddTorrentInitialMode {
     case magnet
@@ -107,7 +112,8 @@ final class TransmissionStore: NSObject, ObservableObject {
 
 
     @Published var sessionConfiguration: TransmissionSessionResponseArguments?
-    @Published private(set) var settingsConnectionGeneration = UUID()
+    @Published private(set) var settingsConnectionGeneration: UUID
+    @Published private(set) var torrentDetailRefreshTrigger: TorrentDetailRefreshTrigger
 
     @Published var pollInterval: Double = AppDefaults.pollInterval // Default poll interval in seconds
     @Published var shouldActivateSearch: Bool = false
@@ -139,16 +145,19 @@ final class TransmissionStore: NSObject, ObservableObject {
     private let resolveConnection: @Sendable (TransmissionConnectionDescriptor) async throws -> TransmissionConnection
     private let snapshotWriter: WidgetSnapshotWriter
     private let sleep: @Sendable (TimeInterval) async throws -> Void
+    private let monotonicTime: @Sendable () -> TimeInterval
+    private let torrentDetailRefreshInterval: TimeInterval
     private let persistVersion: @MainActor @Sendable (String, String) async -> Void
 
     private var activeConnection: ActiveConnection?
     private var activationFailure: ActivationFailure?
-    private var currentConnectionGeneration = UUID()
+    private var currentConnectionGeneration: UUID
     private var activationTask: Task<Void, Never>?
     private var fullRefreshTask: Task<Void, Never>?
     private var pollTask: Task<Void, Never>?
     private var retryTask: Task<Void, Never>?
     private var sessionRefreshTask: Task<Void, Never>?
+    private var nextTorrentDetailRefreshTime: TimeInterval?
 
     private var reconnectBackoff = ExponentialBackoff(base: 1, maxDelay: 30)
     private let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "network")
@@ -164,15 +173,26 @@ final class TransmissionStore: NSObject, ObservableObject {
         resolveConnection: (@Sendable (TransmissionConnectionDescriptor) async throws -> TransmissionConnection)? = nil,
         snapshotWriter: WidgetSnapshotWriter = .live,
         sleep: @escaping @Sendable (TimeInterval) async throws -> Void = TransmissionStore.liveSleep,
+        monotonicTime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
+        torrentDetailRefreshInterval: TimeInterval = AppDefaults.torrentDetailRefreshInterval,
         persistVersion: @escaping @MainActor @Sendable (String, String) async -> Void = { serverID, version in
             await HostRepository.shared.persistVersionIfNeeded(serverID: serverID, version: version)
         }
     ) {
+        let initialConnectionGeneration = UUID()
+        self.currentConnectionGeneration = initialConnectionGeneration
+        self.settingsConnectionGeneration = initialConnectionGeneration
+        self.torrentDetailRefreshTrigger = TorrentDetailRefreshTrigger(
+            connectionGeneration: initialConnectionGeneration,
+            revision: 0
+        )
         self.resolveConnection = resolveConnection ?? { descriptor in
             try await connectionFactory.connection(for: descriptor)
         }
         self.snapshotWriter = snapshotWriter
         self.sleep = sleep
+        self.monotonicTime = monotonicTime
+        self.torrentDetailRefreshInterval = max(1, torrentDetailRefreshInterval)
         self.persistVersion = persistVersion
         super.init()
         // Load persisted poll interval if available
@@ -585,6 +605,11 @@ extension TransmissionStore {
     func clearSelectedHost() {
         currentConnectionGeneration = UUID()
         settingsConnectionGeneration = currentConnectionGeneration
+        torrentDetailRefreshTrigger = TorrentDetailRefreshTrigger(
+            connectionGeneration: currentConnectionGeneration,
+            revision: 0
+        )
+        nextTorrentDetailRefreshTime = nil
         cancelRefreshLifecycle()
         resetReconnectState()
 
@@ -668,6 +693,11 @@ extension TransmissionStore {
         let generation = UUID()
         currentConnectionGeneration = generation
         settingsConnectionGeneration = generation
+        torrentDetailRefreshTrigger = TorrentDetailRefreshTrigger(
+            connectionGeneration: generation,
+            revision: 0
+        )
+        nextTorrentDetailRefreshTime = nil
 
         cancelRefreshLifecycle()
         markConnecting()
@@ -747,7 +777,7 @@ extension TransmissionStore {
                 return
             }
 
-            apply(snapshot: snapshot, for: connectionState)
+            applyPollingSnapshot(snapshot, for: connectionState, refreshTorrentDetails: false)
         } catch {
             handleReadError(error, generation: connectionState.generation)
         }
@@ -768,7 +798,7 @@ extension TransmissionStore {
     }
 
     private func apply(snapshot: TransmissionAppRefreshSnapshot, for connectionState: ActiveConnection) {
-        apply(snapshot: snapshot.polling, for: connectionState)
+        applyPollingSnapshot(snapshot.polling, for: connectionState, refreshTorrentDetails: true)
         switch snapshot.sessionSettingsResult {
         case .success(let sessionSettings):
             apply(sessionSettings: sessionSettings, for: connectionState)
@@ -778,9 +808,17 @@ extension TransmissionStore {
         }
     }
 
-    private func apply(snapshot: TransmissionPollingSnapshot, for connectionState: ActiveConnection) {
+    private func applyPollingSnapshot(
+        _ snapshot: TransmissionPollingSnapshot,
+        for connectionState: ActiveConnection,
+        refreshTorrentDetails: Bool
+    ) {
         sessionStats = snapshot.sessionStats
         torrents = snapshot.torrents
+        refreshTorrentDetailsIfNeeded(
+            for: connectionState,
+            force: refreshTorrentDetails
+        )
         snapshotWriter.writeSessionSnapshot(
             connectionState.hostID,
             connectionState.serverName,
@@ -789,6 +827,22 @@ extension TransmissionStore {
             true
         )
         markConnected()
+    }
+
+    private func refreshTorrentDetailsIfNeeded(
+        for connectionState: ActiveConnection,
+        force: Bool
+    ) {
+        let currentTime = monotonicTime()
+        guard force || nextTorrentDetailRefreshTime.map({ currentTime >= $0 }) ?? true else {
+            return
+        }
+
+        torrentDetailRefreshTrigger = TorrentDetailRefreshTrigger(
+            connectionGeneration: connectionState.generation,
+            revision: torrentDetailRefreshTrigger.revision &+ 1
+        )
+        nextTorrentDetailRefreshTime = currentTime + torrentDetailRefreshInterval
     }
 
     private func startPolling(for connectionState: ActiveConnection) {

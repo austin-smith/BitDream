@@ -4,6 +4,38 @@ import XCTest
 
 @MainActor
 final class TransmissionStoreFullRefreshTests: XCTestCase {
+    func testSuccessfulRefreshAdvancesTorrentDetailRefreshTrigger() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [
+            "session-stats": [
+                .http(statusCode: 200, body: successStatsBody),
+                .http(statusCode: 200, body: successStatsBody)
+            ],
+            "torrent-get": [
+                .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json")),
+                .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))
+            ],
+            "session-get": [
+                .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads", version: "4.0.0")),
+                .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads", version: "4.0.0"))
+            ]
+        ])
+        let store = makeStore(sender: sender)
+        let initialTrigger = store.torrentDetailRefreshTrigger
+
+        store.setHost(host: makeHost(serverID: "server-1", server: "example.com"))
+        let didConnect = await waitUntil { store.connectionStatus == .connected }
+        XCTAssertTrue(didConnect)
+        let connectedTrigger = store.torrentDetailRefreshTrigger
+
+        await store.refreshNow()
+        let refreshedTrigger = store.torrentDetailRefreshTrigger
+
+        XCTAssertNotEqual(connectedTrigger.connectionGeneration, initialTrigger.connectionGeneration)
+        XCTAssertEqual(connectedTrigger.revision, 1)
+        XCTAssertEqual(refreshedTrigger.connectionGeneration, connectedTrigger.connectionGeneration)
+        XCTAssertEqual(refreshedTrigger.revision, 2)
+    }
+
     func testInitialFullRefreshConnectsWhenSessionSettingsFail() async throws {
         let sender = MethodQueueSender(stepsByMethod: [
             "session-stats": [

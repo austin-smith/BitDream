@@ -16,11 +16,18 @@ struct macOSTorrentDetail: View {
     @State private var errorMessage = ""
 
     private var supplementalPayload: TorrentDetailSupplementalPayload {
-        supplementalStore.payload(for: torrent.id)
+        supplementalStore.payload(for: supplementalIdentity)
     }
 
     private var shouldDisplaySupplementalPayload: Bool {
-        supplementalStore.shouldDisplayPayload(for: torrent.id)
+        supplementalStore.shouldDisplayPayload(for: supplementalIdentity)
+    }
+
+    private var supplementalIdentity: TorrentDetailIdentity {
+        TorrentDetailIdentity(
+            torrentID: torrent.id,
+            connectionGeneration: store.torrentDetailRefreshTrigger.connectionGeneration
+        )
     }
 
     var body: some View {
@@ -79,8 +86,13 @@ struct macOSTorrentDetail: View {
             peersSheetContent
                 .frame(minWidth: 1000, minHeight: 700)
         }
-        .task(id: torrent.id) {
-            await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage)
+        .task(id: supplementalIdentity) {
+            await supplementalStore.observeRefreshes(
+                for: supplementalIdentity,
+                using: store,
+                showingInitialLoadError: $showingError,
+                errorMessage: $errorMessage
+            )
         }
         .toolbar {
             // Use shared toolbar
@@ -109,7 +121,7 @@ struct macOSTorrentDetail: View {
     ) {
         supplementalStore.applyCommittedFileStatsMutation(
             mutation,
-            for: torrent.id,
+            for: supplementalIdentity,
             fileIndices: fileIndices
         )
     }
@@ -154,8 +166,8 @@ struct macOSTorrentDetail: View {
                 loadingMessage: "Fetching the latest files for this torrent.",
                 unavailableTitle: "Files Unavailable",
                 unavailableMessage: "The latest file details could not be loaded.",
-                onLoadIfIdle: { await supplementalStore.loadIfIdle(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) },
-                onRetry: { supplementalStore.replaceLoad(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) }
+                onLoadIfIdle: { await supplementalStore.loadIfIdle(for: supplementalIdentity, using: store, showingError: $showingError, errorMessage: $errorMessage) },
+                onRetry: { supplementalStore.replaceLoad(for: supplementalIdentity, using: store, showingError: $showingError, errorMessage: $errorMessage) }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -170,7 +182,7 @@ struct macOSTorrentDetail: View {
                 store: store,
                 peers: supplementalPayload.peers,
                 peersFrom: supplementalPayload.peersFrom,
-                onRefresh: { await supplementalStore.load(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) },
+                onRefresh: { await supplementalStore.load(for: supplementalIdentity, using: store, showingError: $showingError, errorMessage: $errorMessage) },
                 onDone: { isShowingPeersSheet = false }
             )
         } else {
@@ -180,8 +192,8 @@ struct macOSTorrentDetail: View {
                 loadingMessage: "Fetching the latest peers for this torrent.",
                 unavailableTitle: "Peers Unavailable",
                 unavailableMessage: "The latest peer details could not be loaded.",
-                onLoadIfIdle: { await supplementalStore.loadIfIdle(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) },
-                onRetry: { supplementalStore.replaceLoad(for: torrent.id, using: store, showingError: $showingError, errorMessage: $errorMessage) }
+                onLoadIfIdle: { await supplementalStore.loadIfIdle(for: supplementalIdentity, using: store, showingError: $showingError, errorMessage: $errorMessage) },
+                onRetry: { supplementalStore.replaceLoad(for: supplementalIdentity, using: store, showingError: $showingError, errorMessage: $errorMessage) }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

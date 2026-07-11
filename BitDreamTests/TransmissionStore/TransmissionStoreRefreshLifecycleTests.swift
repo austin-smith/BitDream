@@ -43,6 +43,45 @@ final class TransmissionStoreRefreshLifecycleTests: XCTestCase {
         XCTAssertEqual(recorder.sessionSnapshotCount, 1)
     }
 
+    func testPollingRefreshesTorrentDetailsOnlyWhenDetailCadenceIsDue() async throws {
+        let torrentSummary = try loadTransmissionFixture(named: "torrent-get.response.json")
+        let sender = MethodQueueSender(stepsByMethod: [
+            "session-stats": Array(
+                repeating: .http(statusCode: 200, body: successStatsBody),
+                count: 3
+            ),
+            "torrent-get": Array(
+                repeating: .http(statusCode: 200, body: torrentSummary),
+                count: 3
+            ),
+            "session-get": [
+                .http(
+                    statusCode: 200,
+                    body: try sessionSettingsBody(downloadDir: "/downloads", version: "4.0.0")
+                )
+            ]
+        ])
+        let sleepController = ScriptedSleep(steps: [.immediate, .immediate, .suspend])
+        let monotonicTime = ScriptedMonotonicTime(values: [0, 10, 30])
+        let store = makeStore(
+            sender: sender,
+            sleepController: sleepController,
+            monotonicTime: monotonicTime.next,
+            torrentDetailRefreshInterval: 30
+        )
+
+        store.setHost(host: makeHost(serverID: "server-1", server: "example.com"))
+
+        let didCompleteTwoPolls = await waitUntil {
+            let requestCount = await sender.capturedRequests().count
+            let sleepCount = await sleepController.callCount()
+            return requestCount == 7 && sleepCount == 3
+        }
+        XCTAssertTrue(didCompleteTwoPolls)
+        XCTAssertEqual(store.torrentDetailRefreshTrigger.revision, 2)
+        XCTAssertEqual(monotonicTime.callCount, 3)
+    }
+
     func testReconnectOnSameHostIsNotANoOp() async throws {
         let sender = MethodQueueSender(stepsByMethod: [
             "session-stats": [
@@ -337,7 +376,11 @@ private extension TransmissionStoreRefreshLifecycleTests {
     func makeStore(
         sender: some TransmissionRPCRequestSending,
         sleepController: ScriptedSleep,
-        recorder: TestWidgetSnapshotRecorder = TestWidgetSnapshotRecorder()
+        recorder: TestWidgetSnapshotRecorder = TestWidgetSnapshotRecorder(),
+        monotonicTime: @escaping @Sendable () -> TimeInterval = {
+            ProcessInfo.processInfo.systemUptime
+        },
+        torrentDetailRefreshInterval: TimeInterval = AppDefaults.torrentDetailRefreshInterval
     ) -> TransmissionStore {
         let factory = TransmissionConnectionFactory(
             transport: TransmissionTransport(sender: sender),
@@ -357,6 +400,8 @@ private extension TransmissionStoreRefreshLifecycleTests {
             sleep: { seconds in
                 try await sleepController.sleep(seconds: seconds)
             },
+            monotonicTime: monotonicTime,
+            torrentDetailRefreshInterval: torrentDetailRefreshInterval,
             persistVersion: { _, _ in }
         )
     }
@@ -387,6 +432,31 @@ private extension TransmissionStoreRefreshLifecycleTests {
             await Task.yield()
         }
         return false
+    }
+}
+
+private final class ScriptedMonotonicTime: @unchecked Sendable {
+    private let lock = NSLock()
+    private var values: [TimeInterval]
+    private var calls = 0
+
+    var callCount: Int {
+        lock.withLock { calls }
+    }
+
+    init(values: [TimeInterval]) {
+        precondition(!values.isEmpty)
+        self.values = values
+    }
+
+    func next() -> TimeInterval {
+        lock.withLock {
+            calls += 1
+            guard values.count > 1 else {
+                return values[0]
+            }
+            return values.removeFirst()
+        }
     }
 }
 

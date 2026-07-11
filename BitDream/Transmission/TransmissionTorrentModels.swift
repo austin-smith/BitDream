@@ -514,3 +514,19 @@ public struct TorrentPiecesResponseData: Codable, Sendable {
 public struct TorrentPiecesResponseTorrents: Codable, Sendable {
     public let torrents: [TorrentPiecesResponseData]
 }
+
+/// Complete supplemental detail returned for one torrent.
+public struct TorrentDetailResponseData: Codable, Sendable {
+    public let files: [TorrentFile]
+    public let fileStats: [TorrentFileStats]
+    public let peers: [Peer]
+    public let peersFrom: PeersFrom?
+    public let pieceCount: Int
+    public let pieceSize: Int64
+    public let pieces: String
+}
+
+/// Response wrapper for a supplemental torrent detail query.
+public struct TorrentDetailResponseTorrents: Codable, Sendable {
+    public let torrents: [TorrentDetailResponseData]
+}
