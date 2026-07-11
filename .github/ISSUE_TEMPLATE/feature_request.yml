@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose a focused improvement or new capability.
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search open and closed issues first, and keep the request focused on one change.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or goal
+      description: Explain what is difficult, missing, or not possible today.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the desired behavior and what would make the request complete.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add related issues, screenshots, mockups, examples, or references.

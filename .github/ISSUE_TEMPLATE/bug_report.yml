@@ -1,0 +1,40 @@
+name: Bug report
+description: Report broken behavior, a regression, or a crash.
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search open and closed issues first, and keep the report focused on one problem.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Explain what happened and what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Provide the smallest reliable reproduction you have.
+      placeholder: |
+        1.
+        2.
+        3.
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Include the platform, OS version, BitDream version, and Transmission version when known.
+      placeholder: macOS 26.0, BitDream 1.0, Transmission 4.1.0
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Additional evidence
+      description: Add relevant screenshots, recordings, logs, or crash reports. Redact sensitive information.
