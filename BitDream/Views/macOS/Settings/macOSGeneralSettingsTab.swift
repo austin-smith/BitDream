@@ -12,7 +12,9 @@ struct macOSGeneralSettingsTab: View {
     @AppStorage(UserDefaultsKeys.menuBarShowActiveCount) private var menuBarShowActiveCount: Bool = AppDefaults.menuBarShowActiveCount
     @AppStorage(UserDefaultsKeys.menuBarSortMode) private var menuBarSortModeRaw: String = AppDefaults.menuBarSortMode.rawValue
     @AppStorage(UserDefaultsKeys.startupConnectionBehavior) private var startupBehaviorRaw: String = AppDefaults.startupConnectionBehavior.rawValue
-    @AppStorage(UserDefaultsKeys.dockShowCompletedBadge) private var dockShowCompletedBadge: Bool = AppDefaults.dockShowCompletedBadge
+    @AppStorage(UserDefaultsKeys.dockShowCompletedBadge) private var dockShowCompletedBadge = AppDefaults.dockShowCompletedBadge
+    @AppStorage(UserDefaultsKeys.dockShowDownloadSpeed) private var dockShowDownloadSpeed = AppDefaults.dockShowDownloadSpeed
+    @AppStorage(UserDefaultsKeys.dockShowUploadSpeed) private var dockShowUploadSpeed = AppDefaults.dockShowUploadSpeed
 
     private var menuBarSortMode: Binding<MenuBarSortMode> {
         Binding<MenuBarSortMode>(
@@ -115,6 +117,14 @@ struct macOSGeneralSettingsTab: View {
 
                     divider
 
+                    settingsSection("Dock Badge") {
+                        Toggle("Show completed torrents count", isOn: $dockShowCompletedBadge)
+                        Toggle("Show download rate", isOn: $dockShowDownloadSpeed)
+                        Toggle("Show upload rate", isOn: $dockShowUploadSpeed)
+                    }
+
+                    divider
+
                     settingsSection("Connection Settings") {
                         HStack {
                             Text("Startup connection")
@@ -161,9 +171,6 @@ struct macOSGeneralSettingsTab: View {
                     divider
 
                     settingsSection("Notifications") {
-                        Toggle("Show Dock badge for completed torrents", isOn: $dockShowCompletedBadge)
-                            .help("Show the number of completed torrents on BitDream's Dock icon.")
-
                         Toggle("Show notifications for completed torrents", isOn: .constant(false))
                             .disabled(true)
 

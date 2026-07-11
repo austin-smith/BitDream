@@ -38,6 +38,8 @@ enum AppDefaults {
     static let menuBarShowActiveCount: Bool = true
     static let menuBarSortMode: MenuBarSortMode = .activity
     static let dockShowCompletedBadge: Bool = true
+    static let dockShowDownloadSpeed: Bool = false
+    static let dockShowUploadSpeed: Bool = false
     static let pollInterval: Double = 5.0
     static let torrentDetailRefreshInterval: TimeInterval = 30.0
     static let ratioDisplayMode: RatioDisplayMode = .cumulative
@@ -67,6 +69,8 @@ enum UserDefaultsKeys {
     static let menuBarShowActiveCount = "menuBarShowActiveCount"
     static let menuBarSortMode = "menuBarSortMode"
     static let dockShowCompletedBadge = "dockShowCompletedBadge"
+    static let dockShowDownloadSpeed = "dockShowDownloadSpeed"
+    static let dockShowUploadSpeed = "dockShowUploadSpeed"
     static let ratioDisplayMode = "ratioDisplayMode"
     static let selectedHost = "selectedHost"
     static let startupConnectionBehavior = "startupConnectionBehavior"
