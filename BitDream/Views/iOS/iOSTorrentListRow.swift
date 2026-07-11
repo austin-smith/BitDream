@@ -6,6 +6,7 @@ struct iOSTorrentListRow: View {
     var torrent: Torrent
     var store: TransmissionStore
     var showContentTypeIcons: Bool
+    var destinationID: Int?
 
     @State private var deleteDialog: Bool = false
     @State private var labelDialog: Bool = false
@@ -19,9 +20,7 @@ struct iOSTorrentListRow: View {
     @State private var errorMessage = ""
 
     var body: some View {
-        rowContent
-            .contentShape(Rectangle())
-            .padding(10)
+        listRow
             .swipeActions(edge: .trailing) {
                 swipeActions
             }
@@ -46,6 +45,23 @@ struct iOSTorrentListRow: View {
             .sheet(isPresented: $renameDialog, content: renameSheet)
             .sheet(isPresented: $moveDialog, content: moveSheet)
             .sheet(isPresented: $labelDialog, content: labelSheet)
+    }
+
+    @ViewBuilder
+    private var listRow: some View {
+        if let destinationID {
+            NavigationLink(value: destinationID) {
+                paddedRowContent
+            }
+        } else {
+            paddedRowContent
+        }
+    }
+
+    private var paddedRowContent: some View {
+        rowContent
+            .contentShape(Rectangle())
+            .padding(10)
     }
 
     private var rowContent: some View {

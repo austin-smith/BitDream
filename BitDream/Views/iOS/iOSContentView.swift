@@ -3,11 +3,13 @@ import Foundation
 
 #if os(iOS)
 struct iOSContentView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
 
-    // Store the selected torrent IDs
-    @State private var selectedTorrentIds: Set<Int> = []
+    // Store the selected torrent ID
+    @State private var selectedTorrentID: Int?
 
     @State private var sortProperty: SortProperty = UserDefaults.standard.sortProperty
     @State private var sortOrder: SortOrder = UserDefaults.standard.sortOrder
@@ -18,46 +20,11 @@ struct iOSContentView: View {
     @State private var showPrefs: Bool = false
 
     var body: some View {
-        NavigationSplitView {
-            VStack(spacing: 0) {
-                StatsHeaderView(store: store)
-
-                Group {
-                    if store.host != nil, store.connectionStatus != .connected {
-                        iOSConnectionBannerView(store: store)
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-                }
-                .animation(.default, value: store.connectionStatus)
-
-                // Show list regardless of connection status
-                List(selection: $selectedTorrentIds) {
-                    torrentRows
-                }
-                .listStyle(PlainListStyle())
-            }
-            .navigationTitle("Dreams")
-            .navigationBarTitleDisplayMode(.inline)
-            .refreshable {
-                await store.refreshNow()
-            }
-            .searchable(text: $searchText, prompt: "Search torrents")
-            .toolbar {
-                serverToolbarItem
-                actionToolbarItems
-                bottomToolbarItems
-            }
-            .onChange(of: sortProperty) { _, newValue in
-                UserDefaults.standard.sortProperty = newValue
-            }
-            .onChange(of: sortOrder) { _, newValue in
-                UserDefaults.standard.sortOrder = newValue
-            }
-        } detail: {
-            if let selectedTorrent = selectedTorrentsSet.first {
-                TorrentDetail(store: store, torrent: selectedTorrent)
+        Group {
+            if horizontalSizeClass == .compact {
+                compactNavigation
             } else {
-                Text("Select a Dream")
+                regularNavigation
             }
         }
         .onChange(of: store.availableLabels) { _, availableLabels in
@@ -65,7 +32,10 @@ struct iOSContentView: View {
         }
         .onChange(of: store.host?.serverID) { _, _ in
             labelFilter.clear()
-            selectedTorrentIds.removeAll()
+            selectedTorrentID = nil
+        }
+        .onChange(of: store.torrents.map(\.id)) { _, torrentIDs in
+            reconcileSelection(with: torrentIDs)
         }
         .sheet(isPresented: $store.setup, content: {
             iOSServerEditor(store: store, hosts: hosts, host: nil)
@@ -87,6 +57,64 @@ struct iOSContentView: View {
 }
 
 private extension iOSContentView {
+    var compactNavigation: some View {
+        NavigationStack(path: torrentPath) {
+            torrentListScreen
+                .navigationDestination(for: Int.self) { torrentID in
+                    if let torrent = store.torrents.first(where: { $0.id == torrentID }) {
+                        TorrentDetail(store: store, torrent: torrent)
+                    }
+                }
+        }
+    }
+
+    var regularNavigation: some View {
+        NavigationSplitView {
+            torrentListScreen
+        } detail: {
+            if let selectedTorrent {
+                TorrentDetail(store: store, torrent: selectedTorrent)
+            } else {
+                Text("Select a Dream")
+            }
+        }
+    }
+
+    var torrentListScreen: some View {
+        VStack(spacing: 0) {
+            StatsHeaderView(store: store)
+
+            Group {
+                if store.host != nil, store.connectionStatus != .connected {
+                    iOSConnectionBannerView(store: store)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .animation(.default, value: store.connectionStatus)
+
+            // Show list regardless of connection status
+            torrentList
+                .listStyle(PlainListStyle())
+        }
+        .navigationTitle("Dreams")
+        .navigationBarTitleDisplayMode(.inline)
+        .refreshable {
+            await store.refreshNow()
+        }
+        .searchable(text: $searchText, prompt: "Search torrents")
+        .toolbar {
+            serverToolbarItem
+            actionToolbarItems
+            bottomToolbarItems
+        }
+        .onChange(of: sortProperty) { _, newValue in
+            UserDefaults.standard.sortProperty = newValue
+        }
+        .onChange(of: sortOrder) { _, newValue in
+            UserDefaults.standard.sortOrder = newValue
+        }
+    }
+
     var displayedTorrents: [Torrent] {
         filterAndSortTorrents(
             store.torrents,
@@ -100,31 +128,71 @@ private extension iOSContentView {
         )
     }
 
-    var selectedTorrentsSet: Set<Torrent> {
-        Set(selectedTorrentIds.compactMap { id in
-            store.torrents.first { $0.id == id }
-        })
+    var selectedTorrent: Torrent? {
+        guard let selectedTorrentID else { return nil }
+        return store.torrents.first { $0.id == selectedTorrentID }
     }
 
-    var torrentRows: some View {
+    var torrentPath: Binding<[Int]> {
+        Binding(
+            get: { selectedTorrentID.map { [$0] } ?? [] },
+            set: { selectedTorrentID = $0.last }
+        )
+    }
+
+    @ViewBuilder
+    var torrentList: some View {
+        if horizontalSizeClass == .compact {
+            List {
+                compactTorrentRows
+            }
+        } else {
+            List(selection: $selectedTorrentID) {
+                regularTorrentRows
+            }
+        }
+    }
+
+    var compactTorrentRows: some View {
         Group {
             if store.torrents.isEmpty {
-                Text("No dreams available")
-                    .foregroundColor(.gray)
-                    .padding()
+                emptyTorrentList
             } else {
                 ForEach(displayedTorrents, id: \.id) { torrent in
-                    TorrentListRow(
-                        torrent: torrent,
-                        store: store,
-                        selectedTorrents: selectedTorrentsSet,
-                        showContentTypeIcons: showContentTypeIcons
-                    )
-                    .tag(torrent.id)
-                    .listRowSeparator(.visible)
+                    torrentRow(for: torrent, destinationID: torrent.id)
+                        .listRowSeparator(.visible)
                 }
             }
         }
+    }
+
+    var regularTorrentRows: some View {
+        Group {
+            if store.torrents.isEmpty {
+                emptyTorrentList
+            } else {
+                ForEach(displayedTorrents, id: \.id) { torrent in
+                    torrentRow(for: torrent)
+                        .tag(torrent.id)
+                        .listRowSeparator(.visible)
+                }
+            }
+        }
+    }
+
+    var emptyTorrentList: some View {
+        Text("No dreams available")
+            .foregroundColor(.gray)
+            .padding()
+    }
+
+    func torrentRow(for torrent: Torrent, destinationID: Int? = nil) -> some View {
+        iOSTorrentListRow(
+            torrent: torrent,
+            store: store,
+            showContentTypeIcons: showContentTypeIcons,
+            destinationID: destinationID
+        )
     }
 
     var serverToolbarItem: some ToolbarContent {
@@ -144,30 +212,12 @@ private extension iOSContentView {
 
     var actionToolbarItems: some ToolbarContent {
         ToolbarItemGroup(placement: .automatic) {
-            Menu {
-                Button(action: { store.setup.toggle() }, label: {
-                    Label("Add Server", systemImage: "plus")
-                })
-                Button(action: { store.editServers.toggle() }, label: {
-                    Label("Edit Servers", systemImage: "square.and.pencil")
-                })
-                Section("Servers") {
-                    ForEach(hosts, id: \.serverID) { host in
-                        Button {
-                            store.setHost(host: host)
-                        } label: {
-                            Label(
-                                host.name ?? "Unnamed Server",
-                                systemImage: store.host?.serverID == host.serverID
-                                    ? "checkmark.circle.fill"
-                                    : "circle"
-                            )
-                        }
-                    }
-                }
+            Button {
+                store.editServers = true
             } label: {
                 Image(systemName: "server.rack")
             }
+            .accessibilityLabel("Servers")
 
             Button(action: {
                 store.showSettings.toggle()
@@ -183,8 +233,14 @@ private extension iOSContentView {
                 Button {
                     showPrefs.toggle()
                 } label: {
-                    Image(systemName: "slider.horizontal.3")
+                    Label(
+                        "Filter and Sort",
+                        systemImage: hasActiveFilters
+                            ? "line.3.horizontal.decrease.circle.fill"
+                            : "line.3.horizontal.decrease.circle"
+                    )
                 }
+                .accessibilityValue(hasActiveFilters ? "Active" : "Inactive")
                 .popover(isPresented: $showPrefs) {
                     iOSFilterAndSortView(
                         statusFilter: $filterBySelection,
@@ -206,7 +262,7 @@ private extension iOSContentView {
                 Button(action: {
                     store.isShowingAddAlert.toggle()
                 }, label: {
-                    Image(systemName: "plus")
+                    Label("Add Torrent", systemImage: "plus")
                 })
             }
         }
@@ -235,6 +291,15 @@ private extension iOSContentView {
         if reconciledFilter != labelFilter {
             labelFilter = reconciledFilter
         }
+    }
+
+    func reconcileSelection(with torrentIDs: [Int]) {
+        guard let selectedTorrentID, !torrentIDs.contains(selectedTorrentID) else { return }
+        self.selectedTorrentID = nil
+    }
+
+    var hasActiveFilters: Bool {
+        filterBySelection != TorrentStatusCalc.allCases || labelFilter.isActive
     }
 
     var availableLabelCounts: [String: Int] {

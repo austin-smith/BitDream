@@ -33,8 +33,24 @@ struct iOSServerList: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(sortedHosts) { host in
-                    row(for: host)
+                if !sortedHosts.isEmpty {
+                    Section {
+                        Picker(selection: activeServerID) {
+                            ForEach(sortedHosts) { host in
+                                Text(host.displayName)
+                                    .tag(Optional(host.serverID))
+                            }
+                        } label: {
+                            Label("Current Server", systemImage: "server.rack")
+                        }
+                        .pickerStyle(.navigationLink)
+                    }
+
+                    Section("Servers") {
+                        ForEach(sortedHosts) { host in
+                            row(for: host)
+                        }
+                    }
                 }
             }
             .navigationTitle("Servers")
@@ -94,6 +110,17 @@ struct iOSServerList: View {
         }
     }
 
+    private var activeServerID: Binding<String?> {
+        Binding(
+            get: { store.host?.serverID },
+            set: { serverID in
+                guard let serverID,
+                      let host = hosts.first(where: { $0.serverID == serverID }) else { return }
+                store.setHost(host: host)
+            }
+        )
+    }
+
     private func row(for host: Host) -> some View {
         let isConnected = host.serverID == store.host?.serverID
 
@@ -103,28 +130,19 @@ struct iOSServerList: View {
             ServerRowLabel(host: host, isConnected: isConnected)
         }
         .tint(.primary)
-        .swipeActions(edge: .leading) {
-            if !isConnected {
-                Button("Connect", systemImage: "bolt.fill") {
-                    store.setHost(host: host)
-                }
-                .tint(.green)
-            }
-        }
-        .swipeActions(edge: .trailing) {
-            Button("Delete", systemImage: "trash", role: .destructive) {
-                promptDelete(host)
-            }
-        }
         .contextMenu {
-            Button("Connect") {
+            Button("Connect", systemImage: "bolt.fill") {
                 store.setHost(host: host)
             }
             .disabled(isConnected)
 
+            Button("Edit", systemImage: "square.and.pencil") {
+                presentedEditor = .edit(host)
+            }
+
             Divider()
 
-            Button("Delete…", role: .destructive) {
+            Button("Delete…", systemImage: "trash", role: .destructive) {
                 promptDelete(host)
             }
         }
