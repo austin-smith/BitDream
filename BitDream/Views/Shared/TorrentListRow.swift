@@ -12,8 +12,7 @@ struct TorrentListRow: View {
         iOSTorrentListRow(
             torrent: torrent,
             store: store,
-            showContentTypeIcons: showContentTypeIcons,
-            destinationID: nil
+            showContentTypeIcons: showContentTypeIcons
         )
         #elseif os(macOS)
         macOSTorrentListExpanded(torrent: torrent, store: store, selectedTorrents: selectedTorrents, showContentTypeIcons: showContentTypeIcons)
