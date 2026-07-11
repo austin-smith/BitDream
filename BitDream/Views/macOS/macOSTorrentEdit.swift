@@ -299,3 +299,17 @@ internal func bulkLabelUpdates(
 }
 
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Torrent Edit", traits: .fixedLayout(width: 480, height: 260)) {
+    @Previewable @State var name = "Ubuntu 26.04 Desktop"
+    RenameSheetView(
+        title: "Rename Torrent",
+        name: $name,
+        currentName: "Ubuntu 26.04",
+        onCancel: {},
+        onSave: { _ in }
+    )
+    .padding()
+}
+#endif

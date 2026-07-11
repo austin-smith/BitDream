@@ -7,17 +7,31 @@ struct iOSContentView: View {
 
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
+    private let userDefaults: UserDefaults
 
     // Store the selected torrent ID
     @State private var selectedTorrentID: Int?
 
-    @State private var sortProperty: SortProperty = UserDefaults.standard.sortProperty
-    @State private var sortOrder: SortOrder = UserDefaults.standard.sortOrder
+    @State private var sortProperty: SortProperty
+    @State private var sortOrder: SortOrder
     @State private var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
     @State private var labelFilter = TorrentLabelFilter()
-    @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = true
+    @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons = AppDefaults.showContentTypeIcons
     @State private var searchText: String = ""
     @State private var showPrefs: Bool = false
+
+    init(hosts: [Host], store: TransmissionStore, userDefaults: UserDefaults = .standard) {
+        self.hosts = hosts
+        self.store = store
+        self.userDefaults = userDefaults
+        _sortProperty = State(initialValue: userDefaults.sortProperty)
+        _sortOrder = State(initialValue: userDefaults.sortOrder)
+        _showContentTypeIcons = AppStorage(
+            wrappedValue: AppDefaults.showContentTypeIcons,
+            UserDefaultsKeys.showContentTypeIcons,
+            store: userDefaults
+        )
+    }
 
     var body: some View {
         Group {
@@ -108,10 +122,10 @@ private extension iOSContentView {
             bottomToolbarItems
         }
         .onChange(of: sortProperty) { _, newValue in
-            UserDefaults.standard.sortProperty = newValue
+            userDefaults.sortProperty = newValue
         }
         .onChange(of: sortOrder) { _, newValue in
-            UserDefaults.standard.sortOrder = newValue
+            userDefaults.sortOrder = newValue
         }
     }
 
@@ -307,6 +321,18 @@ private extension iOSContentView {
             uniqueKeysWithValues: store.availableLabels.map { label in
                 (label, store.torrentCount(for: label))
             }
+        )
+    }
+}
+#endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Content") {
+    PreviewContainer { environment in
+        iOSContentView(
+            hosts: environment.hosts,
+            store: environment.store,
+            userDefaults: environment.userDefaults
         )
     }
 }

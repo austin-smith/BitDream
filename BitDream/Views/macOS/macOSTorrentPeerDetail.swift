@@ -111,3 +111,19 @@ struct macOSTorrentPeerDetail: View {
     var body: some View { EmptyView() }
 }
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Torrent Peers", traits: .fixedLayout(width: 1_000, height: 620)) {
+    PreviewContainer { environment in
+        macOSTorrentPeerDetail(
+            torrentName: PreviewFixtures.torrents[0].name,
+            torrentId: PreviewFixtures.torrents[0].id,
+            store: environment.store,
+            peers: PreviewFixtures.peers,
+            peersFrom: PreviewFixtures.peersFrom,
+            onRefresh: {},
+            onDone: {}
+        )
+    }
+}
+#endif

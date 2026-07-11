@@ -13,3 +13,11 @@ struct macOSSpeedLimitsSettingsTab: View {
     }
 }
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Speed Limit Settings", traits: .fixedLayout(width: 760, height: 620)) {
+    @Previewable @StateObject var editModel = SettingsViewModel()
+    macOSSpeedLimitsSettingsTab(config: PreviewFixtures.sessionConfiguration, editModel: editModel)
+        .padding()
+}
+#endif

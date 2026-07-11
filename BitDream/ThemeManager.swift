@@ -49,17 +49,19 @@ final class ThemeManager: ObservableObject {
     // Keys for storing preferences
     private let accentColorKey = "accentColorKey"
     private let themeModeKey = "themeModeKey"
+    private let userDefaults: UserDefaults
 
-    init() {
+    init(userDefaults: UserDefaults = .standard) {
+        self.userDefaults = userDefaults
         // Load saved accent color from UserDefaults or use default
-        let savedHex = UserDefaults.standard.string(forKey: accentColorKey) ?? AccentColorOption.defaultColor.rawValue
+        let savedHex = userDefaults.string(forKey: accentColorKey) ?? AccentColorOption.defaultColor.rawValue
 
         // Initialize with default values first
         self.currentAccentColorOption = .blue
         self.accentColor = Color(hex: AccentColorOption.defaultColor.rawValue)
 
         // Load saved theme mode or use system default
-        if let savedThemeMode = UserDefaults.standard.string(forKey: themeModeKey),
+        if let savedThemeMode = userDefaults.string(forKey: themeModeKey),
            let mode = ThemeMode(rawValue: savedThemeMode) {
             self.themeMode = mode
         } else {
@@ -78,14 +80,14 @@ final class ThemeManager: ObservableObject {
         self.accentColor = option.color
 
         // Save to UserDefaults
-        UserDefaults.standard.set(option.rawValue, forKey: accentColorKey)
+        userDefaults.set(option.rawValue, forKey: accentColorKey)
     }
 
     func setThemeMode(_ mode: ThemeMode) {
         self.themeMode = mode
 
         // Save to UserDefaults
-        UserDefaults.standard.set(mode.rawValue, forKey: themeModeKey)
+        userDefaults.set(mode.rawValue, forKey: themeModeKey)
     }
 
     func cycleThemeMode() {
@@ -117,7 +119,7 @@ final class ThemeManager: ObservableObject {
         } else {
             // If hex doesn't match any predefined option, create a custom color
             self.accentColor = Color(hex: hex)
-            UserDefaults.standard.set(hex, forKey: accentColorKey)
+            userDefaults.set(hex, forKey: accentColorKey)
         }
     }
 }

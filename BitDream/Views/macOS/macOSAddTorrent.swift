@@ -443,7 +443,11 @@ private struct TorrentSourceCard: View {
 }
 
 // MARK: - Preview
+#if DEBUG
 #Preview("Add Torrent") {
-    macOSAddTorrent(store: TransmissionStore())
+    PreviewContainer { environment in
+        macOSAddTorrent(store: environment.store)
+    }
 }
+#endif
 #endif

@@ -242,3 +242,11 @@ private struct TorrentRowsHeightPreferenceKey: PreferenceKey {
 }
 
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("Menu Bar Torrent Widget") {
+    PreviewContainer { _ in
+        macOSMenuBarTorrentWidget()
+    }
+}
+#endif

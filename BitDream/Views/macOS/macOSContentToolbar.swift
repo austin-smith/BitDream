@@ -243,3 +243,39 @@ private struct macOSContentFilterMenu: View {
 }
 
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Content Toolbar", traits: .fixedLayout(width: 900, height: 180)) {
+    @Previewable @State var sortProperty = SortProperty.name
+    @Previewable @State var sortOrder = SortOrder.ascending
+    @Previewable @State var showingFilterPopover = false
+    @Previewable @State var includedLabels = Set<String>()
+    @Previewable @State var excludedLabels = Set<String>()
+    @Previewable @State var showOnlyNoLabels = false
+    @Previewable @State var isCompactMode = false
+    @Previewable @State var isInspectorVisible = true
+
+    NavigationStack {
+        Text("Torrent List")
+            .toolbar {
+                macOSContentToolbar(
+                    sortProperty: $sortProperty,
+                    sortOrder: $sortOrder,
+                    showingFilterPopover: $showingFilterPopover,
+                    hasActiveFilters: false,
+                    activeFilterCount: 0,
+                    accentColor: .blue,
+                    availableLabels: ["Linux", "Movies"],
+                    includedLabels: $includedLabels,
+                    excludedLabels: $excludedLabels,
+                    showOnlyNoLabels: $showOnlyNoLabels,
+                    noLabelCount: 1,
+                    countForLabel: { _ in 1 },
+                    isCompactMode: $isCompactMode,
+                    isInspectorVisible: $isInspectorVisible,
+                    onAddTorrent: {}
+                )
+            }
+    }
+}
+#endif

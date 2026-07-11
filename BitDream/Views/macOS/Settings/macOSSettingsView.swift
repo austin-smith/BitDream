@@ -5,10 +5,9 @@ import Foundation
 typealias PlatformSettingsView = macOSSettingsView
 
 struct macOSSettingsView: View {
+    @EnvironmentObject private var themeManager: ThemeManager
     @ObservedObject var store: TransmissionStore
     @StateObject private var editModel = SettingsViewModel()
-
-    @ObservedObject private var themeManager = ThemeManager.shared
 
     var body: some View {
         TabView {
@@ -89,8 +88,11 @@ private struct SettingsServerTab<Content: View>: View {
     }
 }
 
-#Preview {
-    macOSSettingsView(store: TransmissionStore())
-        .environmentObject(AppUpdater())
+#if DEBUG
+#Preview("macOS Settings") {
+    PreviewContainer { environment in
+        macOSSettingsView(store: environment.store)
+    }
 }
+#endif
 #endif

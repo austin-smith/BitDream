@@ -123,6 +123,16 @@ struct SettingsSaveStateView: View {
     }
 }
 
+#if DEBUG
+#Preview("Settings Save States", traits: .sizeThatFitsLayout) {
+    VStack(alignment: .leading, spacing: 12) {
+        SettingsSaveStateView(state: .pending)
+        SettingsSaveStateView(state: .saving)
+    }
+    .padding()
+}
+#endif
+
 extension View {
     @MainActor
     func bindSettingsViewModel(

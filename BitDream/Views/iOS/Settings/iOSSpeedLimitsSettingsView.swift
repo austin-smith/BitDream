@@ -153,3 +153,13 @@ struct iOSSpeedLimitsSettingsView: View {
     }
 }
 #endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Speed Limit Settings") {
+    PreviewContainer { environment in
+        NavigationStack {
+            iOSSpeedLimitsSettingsView(store: environment.store)
+        }
+    }
+}
+#endif

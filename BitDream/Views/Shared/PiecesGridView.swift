@@ -93,3 +93,10 @@ private func computeColumns(availableWidth: CGFloat, cellSize: CGFloat, cellSpac
     // Ensure at least 8 columns for visual density; width-bounded so it won't overflow
     return max(8, Int(floor((availableWidth + cellSpacing) / unit)))
 }
+
+#if DEBUG
+#Preview("Pieces Grid", traits: .fixedLayout(width: 420, height: 100)) {
+    PiecesGridView(piecesHaveSet: (0..<256).map { $0 % 5 != 0 }, rows: 8)
+        .padding()
+}
+#endif

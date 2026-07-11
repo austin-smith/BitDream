@@ -45,3 +45,11 @@ struct macOSTorrentSettingsTab: View {
     }
 }
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Torrent Settings", traits: .fixedLayout(width: 760, height: 760)) {
+    @Previewable @StateObject var editModel = SettingsViewModel()
+    macOSTorrentSettingsTab(config: PreviewFixtures.sessionConfiguration, editModel: editModel)
+        .padding()
+}
+#endif

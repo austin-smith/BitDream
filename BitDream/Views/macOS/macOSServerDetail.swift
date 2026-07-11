@@ -3,6 +3,7 @@ import SwiftUI
 #if os(macOS)
 struct macOSServerDetail: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.hostRepositoryProvider) private var hostRepositoryProvider
 
     @ObservedObject var store: TransmissionStore
     let hosts: [Host]
@@ -34,7 +35,12 @@ struct macOSServerDetail: View {
                 if let host {
                     Task {
                         do {
-                            try await deleteServer(host: host, store: store, hosts: hosts)
+                            try await deleteServer(
+                                host: host,
+                                store: store,
+                                hosts: hosts,
+                                hostRepository: hostRepositoryProvider.resolve()
+                            )
                             dismiss()
                         } catch {
                             presentError(userFacingHostPersistenceMessage(error))
@@ -52,6 +58,18 @@ struct macOSServerDetail: View {
         store.globalAlertTitle = "Error"
         store.globalAlertMessage = message
         store.showGlobalAlert = true
+    }
+}
+#endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Server Detail") {
+    PreviewContainer { environment in
+        macOSServerDetail(
+            store: environment.store,
+            hosts: environment.hosts,
+            host: environment.hosts[0]
+        )
     }
 }
 #endif

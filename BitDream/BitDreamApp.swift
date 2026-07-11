@@ -12,6 +12,9 @@ struct BitDreamApp: App {
     // Create a shared store instance that will be used by both the main app and settings
     @StateObject private var store = TransmissionStore()
     @StateObject private var themeManager = ThemeManager.shared
+    #if os(iOS)
+    @StateObject private var appIconManager = AppIconManager.shared
+    #endif
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppFileOpenDelegate.self) private var appFileOpenDelegate
     @StateObject private var menuBarStatusItemController = MenuBarStatusItemBridge()
@@ -314,6 +317,7 @@ private extension BitDreamApp {
                 .environmentObject(store) // Pass the shared store to the ContentView
                 .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
+                .environmentObject(appIconManager)
                 .immediateTheme(manager: themeManager)
                 .task {
                     await HostRepository.shared.bootstrap()
@@ -352,5 +356,12 @@ private struct AppearanceHUDView: View {
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
         )
     }
+}
+#endif
+
+#if os(macOS) && DEBUG
+#Preview("Appearance HUD", traits: .sizeThatFitsLayout) {
+    AppearanceHUDView(text: "Dark Appearance")
+        .padding()
 }
 #endif

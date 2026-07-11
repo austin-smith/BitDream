@@ -203,3 +203,17 @@ extension View {
         }
     }
 }
+
+#if DEBUG
+#Preview("Shared Transfer Components", traits: .sizeThatFitsLayout) {
+    VStack(alignment: .leading, spacing: 12) {
+        HStack {
+            SpeedChip(speed: 18_400_000, direction: .download)
+            SpeedChip(speed: 5_620_000, direction: .upload)
+            RatioChip(ratio: 1.5)
+        }
+        FileProgressView(percentDone: 0.64, showDetailedText: true)
+    }
+    .padding()
+}
+#endif

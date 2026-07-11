@@ -12,6 +12,7 @@ private enum iOSServerFormField: Hashable {
 /// Sheet for adding a new server or editing an existing one.
 struct iOSServerEditor: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.hostRepositoryProvider) private var hostRepositoryProvider
     @ObservedObject var store: TransmissionStore
     let hosts: [Host]
     let host: Host?
@@ -173,7 +174,10 @@ struct iOSServerEditor: View {
     private func save() {
         Task {
             do {
-                switch try await model.save(store: store) {
+                switch try await model.save(
+                    store: store,
+                    hostRepository: hostRepositoryProvider.resolve()
+                ) {
                 case .validationFailed(let field):
                     focusedField = focusTarget(for: field)
                 case .saved:
@@ -196,7 +200,12 @@ struct iOSServerEditor: View {
     private func performDelete(_ host: Host) {
         Task {
             do {
-                try await deleteServer(host: host, store: store, hosts: hosts)
+                try await deleteServer(
+                    host: host,
+                    store: store,
+                    hosts: hosts,
+                    hostRepository: hostRepositoryProvider.resolve()
+                )
                 dismiss()
             } catch {
                 errorMessage = userFacingHostPersistenceMessage(error)
@@ -213,6 +222,18 @@ struct iOSServerEditor: View {
         case nil:
             return nil
         }
+    }
+}
+#endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Edit Server") {
+    PreviewContainer { environment in
+        iOSServerEditor(
+            store: environment.store,
+            hosts: environment.hosts,
+            host: environment.hosts[0]
+        )
     }
 }
 #endif

@@ -600,3 +600,17 @@ struct iOSTorrentListRow: View {
     }
 }
 #endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Torrent List Row", traits: .sizeThatFitsLayout) {
+    PreviewContainer { environment in
+        iOSTorrentListRow(
+            torrent: PreviewFixtures.torrents[0],
+            store: environment.store,
+            showContentTypeIcons: true,
+            destinationID: nil
+        )
+        .padding()
+    }
+}
+#endif

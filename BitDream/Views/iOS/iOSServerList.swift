@@ -4,6 +4,7 @@ import SwiftUI
 /// Sheet listing the configured servers with add, edit, connect, and delete actions.
 struct iOSServerList: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.hostRepositoryProvider) private var hostRepositoryProvider
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
 
@@ -167,13 +168,26 @@ struct iOSServerList: View {
     private func performDelete(_ host: Host) {
         Task {
             do {
-                try await deleteServer(host: host, store: store, hosts: hosts)
+                try await deleteServer(
+                    host: host,
+                    store: store,
+                    hosts: hosts,
+                    hostRepository: hostRepositoryProvider.resolve()
+                )
                 serverToDelete = nil
             } catch {
                 serverToDelete = nil
                 errorMessage = userFacingHostPersistenceMessage(error)
             }
         }
+    }
+}
+#endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Servers") {
+    PreviewContainer { environment in
+        iOSServerList(hosts: environment.hosts, store: environment.store)
     }
 }
 #endif

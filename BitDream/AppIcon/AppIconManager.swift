@@ -11,26 +11,51 @@ final class AppIconManager: ObservableObject {
     @Published var lastError: String?
 
     var supportsAlternateIcons: Bool {
-        UIApplication.shared.supportsAlternateIcons
+        supportsAlternateIconsProvider()
     }
 
     private var foregroundObserver: NSObjectProtocol?
+    private let supportsAlternateIconsProvider: () -> Bool
+    private let currentIconNameProvider: () -> String?
+    private let setAlternateIconName: (String?, @escaping @Sendable (Error?) -> Void) -> Void
 
-    private init() {
-        currentIconName = UIApplication.shared.alternateIconName
-        foregroundObserver = NotificationCenter.default.addObserver(
-            forName: UIApplication.willEnterForegroundNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.refreshCurrentIcon()
+    init(
+        supportsAlternateIcons: @escaping () -> Bool = { UIApplication.shared.supportsAlternateIcons },
+        currentIconName: @escaping () -> String? = { UIApplication.shared.alternateIconName },
+        setAlternateIconName: @escaping (String?, @escaping @Sendable (Error?) -> Void) -> Void = { name, completion in
+            UIApplication.shared.setAlternateIconName(name, completionHandler: completion)
+        },
+        observesApplicationForeground: Bool = true
+    ) {
+        self.supportsAlternateIconsProvider = supportsAlternateIcons
+        self.currentIconNameProvider = currentIconName
+        self.setAlternateIconName = setAlternateIconName
+        self.currentIconName = currentIconName()
+
+        if observesApplicationForeground {
+            foregroundObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.willEnterForegroundNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.refreshCurrentIcon()
+                }
             }
         }
     }
 
+    static func inert(currentIconName: String? = nil) -> AppIconManager {
+        AppIconManager(
+            supportsAlternateIcons: { true },
+            currentIconName: { currentIconName },
+            setAlternateIconName: { _, completion in completion(nil) },
+            observesApplicationForeground: false
+        )
+    }
+
     func refreshCurrentIcon() {
-        currentIconName = UIApplication.shared.alternateIconName
+        currentIconName = currentIconNameProvider()
     }
 
     func selectIcon(name: String?) {
@@ -45,7 +70,7 @@ final class AppIconManager: ObservableObject {
         guard currentIconName != name else { return }
 
         isChanging = true
-        UIApplication.shared.setAlternateIconName(name) { [weak self] error in
+        setAlternateIconName(name) { [weak self] error in
             Task { @MainActor in
                 guard let self else { return }
                 self.isChanging = false

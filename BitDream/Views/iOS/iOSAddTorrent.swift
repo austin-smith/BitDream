@@ -96,3 +96,11 @@ struct iOSAddTorrent: View {
     }
 }
 #endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Add Torrent") {
+    PreviewContainer { environment in
+        iOSAddTorrent(store: environment.store)
+    }
+}
+#endif

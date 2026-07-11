@@ -430,14 +430,18 @@ struct FooterView: View {
 
 // MARK: - Preview
 
+#if DEBUG
 #Preview("macOS Torrent Files") {
-    macOSTorrentFileDetail(
-        files: TorrentFilePreviewData.sampleFiles,
-        fileStats: TorrentFilePreviewData.sampleFileStats,
-        torrentId: 1,
-        store: TransmissionStore()
-    )
-    .frame(width: 1000, height: 700)
+    PreviewContainer { environment in
+        macOSTorrentFileDetail(
+            files: PreviewFixtures.files,
+            fileStats: PreviewFixtures.fileStats,
+            torrentId: 1,
+            store: environment.store
+        )
+        .frame(width: 1000, height: 700)
+    }
 }
+#endif
 
 #endif

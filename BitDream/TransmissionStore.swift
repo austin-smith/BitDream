@@ -118,7 +118,7 @@ final class TransmissionStore: NSObject, ObservableObject {
     @Published var pollInterval: Double = AppDefaults.pollInterval // Default poll interval in seconds
     @Published var shouldActivateSearch: Bool = false
     @Published var shouldToggleInspector: Bool = false
-    @Published var isInspectorVisible: Bool = UserDefaults.standard.inspectorVisibility
+    @Published var isInspectorVisible: Bool
 
 #if os(macOS)
     // Controls how the Add Torrent flow should start when invoked from menu
@@ -148,6 +148,9 @@ final class TransmissionStore: NSObject, ObservableObject {
     private let monotonicTime: @Sendable () -> TimeInterval
     private let torrentDetailRefreshInterval: TimeInterval
     private let persistVersion: @MainActor @Sendable (String, String) async -> Void
+    private let userDefaults: UserDefaults
+    private let automaticallyRetriesConnection: Bool
+    private let updateBackgroundActivityInterval: @MainActor @Sendable (Double) -> Void
 
     private var activeConnection: ActiveConnection?
     private var activationFailure: ActivationFailure?
@@ -175,6 +178,13 @@ final class TransmissionStore: NSObject, ObservableObject {
         sleep: @escaping @Sendable (TimeInterval) async throws -> Void = TransmissionStore.liveSleep,
         monotonicTime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
         torrentDetailRefreshInterval: TimeInterval = AppDefaults.torrentDetailRefreshInterval,
+        userDefaults: UserDefaults = .standard,
+        automaticallyRetriesConnection: Bool = true,
+        updateBackgroundActivityInterval: @escaping @MainActor @Sendable (Double) -> Void = { interval in
+            #if os(macOS)
+            BackgroundActivityScheduler.updateInterval(interval)
+            #endif
+        },
         persistVersion: @escaping @MainActor @Sendable (String, String) async -> Void = { serverID, version in
             await HostRepository.shared.persistVersionIfNeeded(serverID: serverID, version: version)
         }
@@ -193,10 +203,14 @@ final class TransmissionStore: NSObject, ObservableObject {
         self.sleep = sleep
         self.monotonicTime = monotonicTime
         self.torrentDetailRefreshInterval = max(1, torrentDetailRefreshInterval)
+        self.userDefaults = userDefaults
+        self.automaticallyRetriesConnection = automaticallyRetriesConnection
+        self.updateBackgroundActivityInterval = updateBackgroundActivityInterval
         self.persistVersion = persistVersion
+        self.isInspectorVisible = userDefaults.inspectorVisibility
         super.init()
         // Load persisted poll interval if available
-        if let saved = UserDefaults.standard.object(forKey: UserDefaultsKeys.pollInterval) as? Double {
+        if let saved = userDefaults.object(forKey: UserDefaultsKeys.pollInterval) as? Double {
             self.pollInterval = max(1.0, saved)
         } else {
             self.pollInterval = AppDefaults.pollInterval
@@ -574,6 +588,11 @@ extension TransmissionStore {
             cancelPollTask()
         }
 
+        guard automaticallyRetriesConnection else {
+            clearReconnectPresentationState()
+            return
+        }
+
         if let nextRetryAt, nextRetryAt > now {
             if retryTask == nil {
                 let remainingDelay = nextRetryAt.timeIntervalSince(now)
@@ -590,16 +609,13 @@ extension TransmissionStore {
     // Add a method to update the poll interval and restart the timer
     func updatePollInterval(_ newInterval: Double) {
         pollInterval = max(1.0, newInterval)
-        UserDefaults.standard.set(pollInterval, forKey: UserDefaultsKeys.pollInterval)
+        userDefaults.set(pollInterval, forKey: UserDefaultsKeys.pollInterval)
 
         if let activeConnection, connectionStatus == .connected {
             startPolling(for: activeConnection)
         }
 
-        // Update the macOS background scheduler with new interval
-        #if os(macOS)
-        BackgroundActivityScheduler.updateInterval(newInterval)
-        #endif
+        updateBackgroundActivityInterval(newInterval)
     }
 
     func clearSelectedHost() {
@@ -624,6 +640,10 @@ extension TransmissionStore {
         lastRefreshAt = nil
         lastErrorMessage = ""
         connectionStatus = .connecting
+    }
+
+    func clearPersistedSelectedHost() {
+        userDefaults.removeObject(forKey: UserDefaultsKeys.selectedHost)
     }
 
     // MARK: - Label Management
@@ -703,7 +723,7 @@ extension TransmissionStore {
         markConnecting()
         self.host = host
         activeConnection = nil
-        UserDefaults.standard.set(host.serverID, forKey: UserDefaultsKeys.selectedHost)
+        userDefaults.set(host.serverID, forKey: UserDefaultsKeys.selectedHost)
         clearReconnectPresentationState()
         if trigger.resetsReconnectBackoff {
             resetReconnectBackoff()

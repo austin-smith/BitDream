@@ -64,3 +64,21 @@ struct macOSContentSidebar: View {
 }
 
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Sidebar", traits: .fixedLayout(width: 300, height: 620)) {
+    @Previewable @State var selection = SidebarSelection.allDreams
+    let hosts = PreviewFixtures.makeHosts()
+    macOSContentSidebar(
+        hosts: hosts,
+        sidebarSelection: $selection,
+        selectedHostID: hosts[0].serverID,
+        accentColor: .blue,
+        torrentCount: { _ in 5 },
+        onSelectHost: { _ in },
+        onAddServer: {},
+        onManageServers: {},
+        onOpenSettings: {}
+    )
+}
+#endif

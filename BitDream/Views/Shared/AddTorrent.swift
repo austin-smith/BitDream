@@ -16,6 +16,14 @@ struct AddTorrent: View {
     }
 }
 
+#if DEBUG
+#Preview("Add Torrent") {
+    PreviewContainer { environment in
+        AddTorrent(store: environment.store)
+    }
+}
+#endif
+
 // MARK: - Shared Helper Functions
 
 /// Function to handle errors in the torrent adding process

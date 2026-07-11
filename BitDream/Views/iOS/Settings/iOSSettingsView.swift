@@ -7,11 +7,11 @@ typealias PlatformSettingsView = iOSSettingsView
 
 struct iOSSettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.appUserDefaults) private var userDefaults
+    @EnvironmentObject private var appIconManager: AppIconManager
+    @EnvironmentObject private var themeManager: ThemeManager
 
     @ObservedObject var store: TransmissionStore
-
-    @ObservedObject private var themeManager = ThemeManager.shared
-    @StateObject private var appIconManager = AppIconManager.shared
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = AppDefaults.showContentTypeIcons
     @AppStorage(UserDefaultsKeys.startupConnectionBehavior) private var startupBehaviorRaw: String = AppDefaults.startupConnectionBehavior.rawValue
 
@@ -81,7 +81,11 @@ struct iOSSettingsView: View {
 
                 Section(header: Text("Reset")) {
                     Button("Reset All Settings") {
-                        SettingsView.resetAllSettings(store: store)
+                        SettingsView.resetAllSettings(
+                            store: store,
+                            themeManager: themeManager,
+                            userDefaults: userDefaults
+                        )
                     }
                     .foregroundColor(.accentColor)
                 }
@@ -110,6 +114,7 @@ struct iOSSettingsView: View {
 }
 
 private struct AccentColorPicker: View {
+    @EnvironmentObject private var themeManager: ThemeManager
     @Binding var selection: AccentColorOption
 
     var body: some View {
@@ -137,7 +142,7 @@ private struct AccentColorPicker: View {
                 .onTapGesture {
                     withAnimation(.easeInOut(duration: 0.1)) {
                         selection = option
-                        ThemeManager.shared.setAccentColor(option)
+                        themeManager.setAccentColor(option)
                     }
                 }
             }
@@ -247,7 +252,11 @@ private struct CurrentAppIconPreview: View {
     }
 }
 
-#Preview {
-    iOSSettingsView(store: TransmissionStore())
+#if DEBUG
+#Preview("iOS Settings") {
+    PreviewContainer { environment in
+        iOSSettingsView(store: environment.store)
+    }
 }
+#endif
 #endif

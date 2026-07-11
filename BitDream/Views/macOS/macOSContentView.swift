@@ -8,23 +8,23 @@ import Foundation
 struct macOSContentView: View {
     @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
+    @EnvironmentObject private var themeManager: ThemeManager
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
+    private let userDefaults: UserDefaults
 
-    @ObservedObject private var themeManager = ThemeManager.shared
-
-    @State var sortProperty: SortProperty = UserDefaults.standard.sortProperty
-    @State var sortOrder: SortOrder = UserDefaults.standard.sortOrder
+    @State var sortProperty: SortProperty
+    @State var sortOrder: SortOrder
     @State private var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
     @State private var sidebarSelection: SidebarSelection = .allDreams
-    @State private var isInspectorVisible: Bool = UserDefaults.standard.inspectorVisibility
-    @State private var columnVisibility: NavigationSplitViewVisibility = UserDefaults.standard.sidebarVisibility
+    @State private var isInspectorVisible: Bool
+    @State private var columnVisibility: NavigationSplitViewVisibility
     @State private var searchText: String = ""
     @State private var includedLabels: Set<String> = []
     @State private var excludedLabels: Set<String> = []
     @State private var showOnlyNoLabels: Bool = false
-    @AppStorage(UserDefaultsKeys.torrentListCompactMode) private var isCompactMode: Bool = false
-    @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = true
+    @AppStorage(UserDefaultsKeys.torrentListCompactMode) private var isCompactMode = false
+    @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons = AppDefaults.showContentTypeIcons
 
     // Selection state - kept local to avoid "Publishing changes from within view updates" warning
     // Exposed to menu commands via @FocusedValue
@@ -40,6 +40,26 @@ struct macOSContentView: View {
     @State private var isDropTargeted = false
     @State private var draggedTorrentInfo: [TorrentInfo] = []
     @State private var showingFilterPopover = false
+
+    init(hosts: [Host], store: TransmissionStore, userDefaults: UserDefaults = .standard) {
+        self.hosts = hosts
+        self.store = store
+        self.userDefaults = userDefaults
+        _sortProperty = State(initialValue: userDefaults.sortProperty)
+        _sortOrder = State(initialValue: userDefaults.sortOrder)
+        _isInspectorVisible = State(initialValue: userDefaults.inspectorVisibility)
+        _columnVisibility = State(initialValue: userDefaults.sidebarVisibility)
+        _isCompactMode = AppStorage(
+            wrappedValue: false,
+            UserDefaultsKeys.torrentListCompactMode,
+            store: userDefaults
+        )
+        _showContentTypeIcons = AppStorage(
+            wrappedValue: AppDefaults.showContentTypeIcons,
+            UserDefaultsKeys.showContentTypeIcons,
+            store: userDefaults
+        )
+    }
 
     // Base view with basic modifiers
     private var baseView: some View {
@@ -93,11 +113,11 @@ struct macOSContentView: View {
     private var enhancedView: some View {
         viewWithHandlers
         .onChange(of: columnVisibility) { _, newValue in
-            UserDefaults.standard.sidebarVisibility = newValue
+            userDefaults.sidebarVisibility = newValue
             focusedTarget = .contentList
         }
         .onChange(of: isInspectorVisible) { _, newValue in
-            UserDefaults.standard.inspectorVisibility = newValue
+            userDefaults.inspectorVisibility = newValue
             // Defer state change to avoid publishing during view update
             Task { @MainActor in
                 store.isInspectorVisible = newValue
@@ -105,10 +125,10 @@ struct macOSContentView: View {
             focusedTarget = .contentList
         }
         .onChange(of: sortProperty) { _, newValue in
-            UserDefaults.standard.sortProperty = newValue
+            userDefaults.sortProperty = newValue
         }
         .onChange(of: sortOrder) { _, newValue in
-            UserDefaults.standard.sortOrder = newValue
+            userDefaults.sortOrder = newValue
         }
         .onChange(of: store.shouldActivateSearch) { _, newValue in
             if newValue {
@@ -349,12 +369,12 @@ enum LabelFilterAction {
 }
 
 struct LabelFilterChip: View {
+    @EnvironmentObject private var themeManager: ThemeManager
     let label: String
     let count: Int
     let isIncluded: Bool
     let isExcluded: Bool
     let onAction: (LabelFilterAction) -> Void
-    @ObservedObject private var themeManager = ThemeManager.shared
 
     private var backgroundColor: Color {
         if isIncluded {
@@ -426,6 +446,18 @@ struct LabelFilterChip: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
         .buttonStyle(.plain)
         .help(isIncluded ? "Click to exclude '\(label)'" : isExcluded ? "Click to clear filter" : "Click to include '\(label)'")
+    }
+}
+#endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Content", traits: .fixedLayout(width: 1_200, height: 760)) {
+    PreviewContainer { environment in
+        macOSContentView(
+            hosts: environment.hosts,
+            store: environment.store,
+            userDefaults: environment.userDefaults
+        )
     }
 }
 #endif

@@ -3,10 +3,11 @@ import Foundation
 
 #if os(macOS)
 struct macOSGeneralSettingsTab: View {
+    @Environment(\.appUserDefaults) private var userDefaults
     @EnvironmentObject private var appUpdater: AppUpdater
+    @EnvironmentObject private var themeManager: ThemeManager
     @ObservedObject var store: TransmissionStore
 
-    @ObservedObject private var themeManager = ThemeManager.shared
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = AppDefaults.showContentTypeIcons
     @AppStorage(UserDefaultsKeys.menuBarTransferWidgetEnabled) private var menuBarTransferWidgetEnabled: Bool = AppDefaults.menuBarTransferWidgetEnabled
     @AppStorage(UserDefaultsKeys.menuBarShowActiveCount) private var menuBarShowActiveCount: Bool = AppDefaults.menuBarShowActiveCount
@@ -187,7 +188,11 @@ struct macOSGeneralSettingsTab: View {
 
                     settingsSection("Reset") {
                         Button("Reset All Settings") {
-                            SettingsView.resetAllSettings(store: store) {
+                            SettingsView.resetAllSettings(
+                                store: store,
+                                themeManager: themeManager,
+                                userDefaults: userDefaults
+                            ) {
                                 appUpdater.resetToDefaults()
                             }
                         }
@@ -215,6 +220,14 @@ struct macOSGeneralSettingsTab: View {
     private var divider: some View {
         Divider()
             .padding(.vertical, 4)
+    }
+}
+#endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS General Settings", traits: .fixedLayout(width: 760, height: 700)) {
+    PreviewContainer { environment in
+        macOSGeneralSettingsTab(store: environment.store)
     }
 }
 #endif

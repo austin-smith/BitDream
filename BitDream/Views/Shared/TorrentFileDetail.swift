@@ -229,27 +229,6 @@ func applyLocalFilePriority(
     return result
 }
 
-// MARK: - Preview Data
-
-/// Shared test data for previews
-struct TorrentFilePreviewData {
-    static let sampleFiles: [TorrentFile] = [
-        TorrentFile(bytesCompleted: 1024 * 1024 * 50, length: 1024 * 1024 * 100, name: "Movie.2024/Movie.2024.mkv"),
-        TorrentFile(bytesCompleted: 1024 * 1024 * 25, length: 1024 * 1024 * 25, name: "Movie.2024/Subtitles/English.srt"),
-        TorrentFile(bytesCompleted: 1024 * 1024 * 75, length: 1024 * 1024 * 200, name: "Movie.2024/extras/behind_scenes.mp4"),
-        TorrentFile(bytesCompleted: 0, length: 1024 * 1024 * 10, name: "Movie.2024/poster.jpg"),
-        TorrentFile(bytesCompleted: 0, length: 1024 * 1024 * 50, name: "Movie.2024/soundtrack.mp3")
-    ]
-
-    static let sampleFileStats: [TorrentFileStats] = [
-        TorrentFileStats(bytesCompleted: 1024 * 1024 * 50, wanted: true, priority: -1),  // Low priority
-        TorrentFileStats(bytesCompleted: 1024 * 1024 * 25, wanted: true, priority: 0),   // Normal priority
-        TorrentFileStats(bytesCompleted: 1024 * 1024 * 75, wanted: true, priority: 1),   // High priority
-        TorrentFileStats(bytesCompleted: 0, wanted: true, priority: -1),                 // Low priority
-        TorrentFileStats(bytesCompleted: 0, wanted: false, priority: -1)                 // Unwanted file with low priority
-    ]
-}
-
 // MARK: - Shared Components
 
 /// Priority badge component for consistent styling across platforms
@@ -312,6 +291,28 @@ struct FileTypeChip: View {
         .cornerRadius(4)
     }
 }
+
+#if DEBUG
+#Preview("Torrent File Detail") {
+    PreviewContainer { environment in
+        TorrentFileDetail(
+            files: PreviewFixtures.files,
+            fileStats: PreviewFixtures.fileStats,
+            torrentId: PreviewFixtures.torrents[0].id,
+            store: environment.store
+        )
+    }
+}
+
+#Preview("File Badges", traits: .sizeThatFitsLayout) {
+    HStack {
+        PriorityBadge(priority: .high)
+        StatusBadge(wanted: false)
+        FileTypeChip(filename: "ubuntu-26.04.iso")
+    }
+    .padding()
+}
+#endif
 
 // FileProgressView moved to SharedComponents.swift
 

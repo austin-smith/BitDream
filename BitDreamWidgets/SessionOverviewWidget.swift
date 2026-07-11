@@ -208,3 +208,16 @@ private struct SessionOverviewBackground: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("Widget Background", traits: .fixedLayout(width: 360, height: 169)) {
+    SessionOverviewBackground(
+        entry: SessionOverviewEntry(
+            date: .now,
+            snapshot: nil,
+            isStale: false,
+            isPlaceholder: true
+        )
+    )
+}
+#endif

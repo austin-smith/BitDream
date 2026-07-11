@@ -122,3 +122,11 @@ struct macOSStatisticsView: View {
 
 }
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Statistics") {
+    PreviewContainer { _ in
+        macOSStatisticsView()
+    }
+}
+#endif

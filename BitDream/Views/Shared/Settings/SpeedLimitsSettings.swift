@@ -166,3 +166,11 @@ struct SpeedLimitsContent: View {
         }
     }
 }
+
+#if DEBUG
+#Preview("Speed Limit Settings", traits: .fixedLayout(width: 700, height: 620)) {
+    @Previewable @StateObject var editModel = SettingsViewModel()
+    SpeedLimitsContent(config: PreviewFixtures.sessionConfiguration, editModel: editModel)
+        .padding()
+}
+#endif

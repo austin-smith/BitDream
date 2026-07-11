@@ -113,3 +113,11 @@ private struct DockSpeedBadge: View {
     }
 }
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("Dock Speed Tile", traits: .fixedLayout(width: 128, height: 128)) {
+    DockSpeedTileView(
+        content: DockSpeedTileContent(downloadSpeed: 18_400_000, uploadSpeed: 5_620_000)
+    )
+}
+#endif

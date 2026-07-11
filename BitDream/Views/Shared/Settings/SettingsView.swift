@@ -5,6 +5,8 @@ import Foundation
 /// This view simply delegates to the appropriate platform-specific implementation
 struct SettingsView: View {
     @ObservedObject var store: TransmissionStore
+    @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.appUserDefaults) private var userDefaults
 
     // Shared poll interval options
     static let pollIntervalOptions: [Double] = [1.0, 2.0, 5.0, 10.0, 30.0, 60.0]
@@ -21,20 +23,24 @@ struct SettingsView: View {
     }
 
     // Shared reset for both platforms
-    static func resetAllSettings(store: TransmissionStore, afterReset: () -> Void = {}) {
-        let theme = ThemeManager.shared
-        theme.setAccentColor(AppDefaults.accentColor)
-        theme.setThemeMode(AppDefaults.themeMode)
+    static func resetAllSettings(
+        store: TransmissionStore,
+        themeManager: ThemeManager = .shared,
+        userDefaults: UserDefaults = .standard,
+        afterReset: () -> Void = {}
+    ) {
+        themeManager.setAccentColor(AppDefaults.accentColor)
+        themeManager.setThemeMode(AppDefaults.themeMode)
 
         // Persist AppStorage-backed flags
-        UserDefaults.standard.set(AppDefaults.showContentTypeIcons, forKey: UserDefaultsKeys.showContentTypeIcons)
-        UserDefaults.standard.set(AppDefaults.menuBarTransferWidgetEnabled, forKey: UserDefaultsKeys.menuBarTransferWidgetEnabled)
-        UserDefaults.standard.set(AppDefaults.menuBarShowActiveCount, forKey: UserDefaultsKeys.menuBarShowActiveCount)
-        UserDefaults.standard.set(AppDefaults.menuBarSortMode.rawValue, forKey: UserDefaultsKeys.menuBarSortMode)
-        UserDefaults.standard.set(AppDefaults.dockShowCompletedBadge, forKey: UserDefaultsKeys.dockShowCompletedBadge)
-        UserDefaults.standard.set(AppDefaults.dockShowDownloadSpeed, forKey: UserDefaultsKeys.dockShowDownloadSpeed)
-        UserDefaults.standard.set(AppDefaults.dockShowUploadSpeed, forKey: UserDefaultsKeys.dockShowUploadSpeed)
-        UserDefaults.standard.set(AppDefaults.startupConnectionBehavior.rawValue, forKey: UserDefaultsKeys.startupConnectionBehavior)
+        userDefaults.set(AppDefaults.showContentTypeIcons, forKey: UserDefaultsKeys.showContentTypeIcons)
+        userDefaults.set(AppDefaults.menuBarTransferWidgetEnabled, forKey: UserDefaultsKeys.menuBarTransferWidgetEnabled)
+        userDefaults.set(AppDefaults.menuBarShowActiveCount, forKey: UserDefaultsKeys.menuBarShowActiveCount)
+        userDefaults.set(AppDefaults.menuBarSortMode.rawValue, forKey: UserDefaultsKeys.menuBarSortMode)
+        userDefaults.set(AppDefaults.dockShowCompletedBadge, forKey: UserDefaultsKeys.dockShowCompletedBadge)
+        userDefaults.set(AppDefaults.dockShowDownloadSpeed, forKey: UserDefaultsKeys.dockShowDownloadSpeed)
+        userDefaults.set(AppDefaults.dockShowUploadSpeed, forKey: UserDefaultsKeys.dockShowUploadSpeed)
+        userDefaults.set(AppDefaults.startupConnectionBehavior.rawValue, forKey: UserDefaultsKeys.startupConnectionBehavior)
 
         // Poll interval via TransmissionStore API
         store.updatePollInterval(AppDefaults.pollInterval)
@@ -43,6 +49,8 @@ struct SettingsView: View {
 
     var body: some View {
         PlatformSettingsView(store: store)
+            .environmentObject(themeManager)
+            .environment(\.appUserDefaults, userDefaults)
     }
 }
 
@@ -60,6 +68,10 @@ extension Binding where Value == StartupConnectionBehavior {
     }
 }
 
-#Preview {
-    SettingsView(store: TransmissionStore())
+#if DEBUG
+#Preview("Platform Settings") {
+    PreviewContainer { environment in
+        SettingsView(store: environment.store)
+    }
 }
+#endif

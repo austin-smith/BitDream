@@ -75,7 +75,7 @@ private func completeServerDeletion(host: Host, store: TransmissionStore, hosts:
     if let nextHost = hosts.first(where: { $0.serverID != host.serverID }) {
         store.setHost(host: nextHost)
     } else {
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedHost)
+        store.clearPersistedSelectedHost()
         store.clearSelectedHost()
     }
 }

@@ -464,3 +464,22 @@ private extension macOSTorrentListCompact {
     }
 }
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Compact Torrent List", traits: .fixedLayout(width: 1_000, height: 420)) {
+    @Previewable @State var selection = Set<Int>()
+    @Previewable @State var sortProperty = SortProperty.name
+    @Previewable @State var sortOrder = SortOrder.ascending
+
+    PreviewContainer { environment in
+        macOSTorrentListCompact(
+            torrents: PreviewFixtures.torrents,
+            selection: $selection,
+            sortProperty: $sortProperty,
+            sortOrder: $sortOrder,
+            store: environment.store,
+            showContentTypeIcons: true
+        )
+    }
+}
+#endif

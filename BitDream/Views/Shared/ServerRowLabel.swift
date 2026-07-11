@@ -43,3 +43,13 @@ struct ServerRowLabel: View {
         return "\(host.displayName), \(host.server ?? "Unknown host"), port \(host.port)\(defaultLabel)\(connectedLabel)"
     }
 }
+
+#if DEBUG
+#Preview("Server Row", traits: .sizeThatFitsLayout) {
+    PreviewContainer { environment in
+        ServerRowLabel(host: environment.hosts[0], isConnected: true)
+            .padding()
+            .frame(width: 420)
+    }
+}
+#endif

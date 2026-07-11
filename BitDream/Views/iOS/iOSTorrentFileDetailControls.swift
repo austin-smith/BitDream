@@ -252,15 +252,19 @@ struct FilterSheet: View {
     }
 }
 
+#if DEBUG
 #Preview("iOS Torrent Files") {
-    NavigationView {
-        iOSTorrentFileDetail(
-            files: TorrentFilePreviewData.sampleFiles,
-            fileStats: TorrentFilePreviewData.sampleFileStats,
-            torrentId: 1,
-            store: TransmissionStore()
-        )
+    PreviewContainer { environment in
+        NavigationStack {
+            iOSTorrentFileDetail(
+                files: PreviewFixtures.files,
+                fileStats: PreviewFixtures.fileStats,
+                torrentId: 1,
+                store: environment.store
+            )
+        }
     }
 }
+#endif
 
 #endif

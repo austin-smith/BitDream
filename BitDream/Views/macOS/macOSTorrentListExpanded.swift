@@ -76,3 +76,16 @@ struct macOSTorrentListExpanded: View {
     }
 }
 #endif
+
+#if os(macOS) && DEBUG
+#Preview("macOS Expanded Torrent Row", traits: .fixedLayout(width: 700, height: 110)) {
+    PreviewContainer { environment in
+        macOSTorrentListExpanded(
+            torrent: PreviewFixtures.torrents[0],
+            store: environment.store,
+            selectedTorrents: [PreviewFixtures.torrents[0]],
+            showContentTypeIcons: true
+        )
+    }
+}
+#endif

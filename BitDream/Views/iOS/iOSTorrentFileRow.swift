@@ -106,3 +106,21 @@ struct iOSTorrentFileRow: View {
 }
 
 #endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Torrent File Row", traits: .sizeThatFitsLayout) {
+    let file = PreviewFixtures.files[0]
+    let stats = PreviewFixtures.fileStats[0]
+    let row = TorrentFileRow(
+        file: file,
+        stats: stats,
+        percentDone: file.percentDone,
+        priority: stats.priority,
+        wanted: stats.wanted,
+        displayName: file.name,
+        fileIndex: 0
+    )
+    iOSTorrentFileRow(row: row, setFileWanted: { _, _ in }, setFilePriority: { _, _ in })
+        .padding()
+}
+#endif

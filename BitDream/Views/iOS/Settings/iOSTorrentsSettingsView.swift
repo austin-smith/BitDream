@@ -185,3 +185,13 @@ struct iOSTorrentsSettingsView: View {
     }
 }
 #endif
+
+#if os(iOS) && DEBUG
+#Preview("iOS Torrent Settings") {
+    PreviewContainer { environment in
+        NavigationStack {
+            iOSTorrentsSettingsView(store: environment.store)
+        }
+    }
+}
+#endif

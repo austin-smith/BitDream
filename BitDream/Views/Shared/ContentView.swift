@@ -68,6 +68,7 @@ extension UserDefaults {
 }
 
 struct ContentView: View {
+    @Environment(\.appUserDefaults) private var userDefaults
     @Query(sort: \Host.name, order: .forward) private var hosts: [Host]
 
     // Use the store passed from the environment
@@ -75,9 +76,9 @@ struct ContentView: View {
 
     var body: some View {
         #if os(iOS)
-        iOSContentView(hosts: hosts, store: store)
+        iOSContentView(hosts: hosts, store: store, userDefaults: userDefaults)
         #elseif os(macOS)
-        macOSContentView(hosts: hosts, store: store)
+        macOSContentView(hosts: hosts, store: store, userDefaults: userDefaults)
         #endif
     }
 }
@@ -178,8 +179,8 @@ func makeRatioSummarySnapshot(store: TransmissionStore, displayMode: RatioDispla
 
 // Stats header view used on both platforms
 struct StatsHeaderView: View {
+    @EnvironmentObject private var themeManager: ThemeManager
     @ObservedObject var store: TransmissionStore
-    @ObservedObject private var themeManager = ThemeManager.shared
     @AppStorage(UserDefaultsKeys.ratioDisplayMode) private var ratioDisplayModeRaw: String = AppDefaults.ratioDisplayMode.rawValue
 
     // MARK: - Computed totals and ratio
@@ -246,6 +247,21 @@ struct StatsHeaderView: View {
         .padding(.vertical, 8)
     }
 }
+
+#if DEBUG
+#Preview("Content — Connected") {
+    PreviewContainer { _ in
+        ContentView()
+    }
+}
+
+#Preview("Statistics Header", traits: .sizeThatFitsLayout) {
+    PreviewContainer { environment in
+        StatsHeaderView(store: environment.store)
+            .padding()
+    }
+}
+#endif
 
 // MARK: - Shared Enums
 
