@@ -64,8 +64,8 @@ struct DockSpeedTileView: View {
 
     private var accessibilityLabel: String {
         let rates = [
-            content.downloadSpeed.map { "Download speed, \(formatSpeed($0))" },
-            content.uploadSpeed.map { "Upload speed, \(formatSpeed($0))" }
+            content.uploadSpeed.map { "Upload speed, \(formatSpeed($0))" },
+            content.downloadSpeed.map { "Download speed, \(formatSpeed($0))" }
         ].compactMap { $0 }
         return (["BitDream"] + rates).joined(separator: ". ")
     }
