@@ -32,6 +32,8 @@ struct SettingsView: View {
         UserDefaults.standard.set(AppDefaults.menuBarShowActiveCount, forKey: UserDefaultsKeys.menuBarShowActiveCount)
         UserDefaults.standard.set(AppDefaults.menuBarSortMode.rawValue, forKey: UserDefaultsKeys.menuBarSortMode)
         UserDefaults.standard.set(AppDefaults.dockShowCompletedBadge, forKey: UserDefaultsKeys.dockShowCompletedBadge)
+        UserDefaults.standard.set(AppDefaults.dockShowDownloadSpeed, forKey: UserDefaultsKeys.dockShowDownloadSpeed)
+        UserDefaults.standard.set(AppDefaults.dockShowUploadSpeed, forKey: UserDefaultsKeys.dockShowUploadSpeed)
         UserDefaults.standard.set(AppDefaults.startupConnectionBehavior.rawValue, forKey: UserDefaultsKeys.startupConnectionBehavior)
 
         // Poll interval via TransmissionStore API
