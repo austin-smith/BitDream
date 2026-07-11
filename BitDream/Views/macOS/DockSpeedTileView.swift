@@ -49,12 +49,13 @@ struct DockSpeedTileView: View {
                 VStack(spacing: 2) {
                     Spacer(minLength: 0)
                     if let uploadSpeed = content.uploadSpeed {
-                        DockSpeedBadge(speed: uploadSpeed, direction: .upload, width: geometry.size.width)
+                        DockSpeedBadge(speed: uploadSpeed, direction: .upload)
                     }
                     if let downloadSpeed = content.downloadSpeed {
-                        DockSpeedBadge(speed: downloadSpeed, direction: .download, width: geometry.size.width)
+                        DockSpeedBadge(speed: downloadSpeed, direction: .download)
                     }
                 }
+                .padding(.horizontal, 4)
             }
         }
         .accessibilityElement(children: .combine)
@@ -73,7 +74,6 @@ struct DockSpeedTileView: View {
 private struct DockSpeedBadge: View {
     let speed: Int64
     let direction: SpeedDirection
-    let width: CGFloat
 
     var body: some View {
         let formattedSpeed = formatCompactByteCount(speed)
@@ -91,6 +91,7 @@ private struct DockSpeedBadge: View {
                     Text(formattedSpeed.value)
                     Text(formattedSpeed.unit)
                 }
+                .frame(width: 72)
                 .font(.system(size: 25, weight: .bold, design: .monospaced))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -98,7 +99,7 @@ private struct DockSpeedBadge: View {
             .foregroundStyle(.white)
             .padding(.horizontal, 10)
         }
-        .frame(width: width, height: 30)
+        .frame(maxWidth: .infinity, minHeight: 30, maxHeight: 30)
         .accessibilityLabel("\(direction.helpText), \(formatSpeed(speed))")
     }
 
