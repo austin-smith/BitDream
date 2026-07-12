@@ -48,7 +48,12 @@ struct iOSSidebarView: View {
                             onSelectHost(host)
                         }
                     }
-                    SidebarRow(title: "Add Server", systemImage: "plus", action: onAddServer)
+                    SidebarRow(
+                        title: "Add Server",
+                        systemImage: "plus.circle.fill",
+                        isAction: true,
+                        action: onAddServer
+                    )
                 }
                 .padding(.horizontal, 8)
             }
@@ -106,6 +111,7 @@ private struct SidebarRow: View {
     var badge: Int?
     var isSelected = false
     var showsCheckmark = false
+    var isAction = false
     let action: () -> Void
 
     var body: some View {
@@ -113,7 +119,7 @@ private struct SidebarRow: View {
             HStack(spacing: 12) {
                 Image(systemName: systemImage)
                     .frame(width: 24)
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+                    .foregroundStyle((isSelected || isAction) ? Color.accentColor : Color.primary)
 
                 Text(title)
                     .foregroundStyle(.primary)

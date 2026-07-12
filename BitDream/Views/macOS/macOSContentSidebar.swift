@@ -41,7 +41,12 @@ struct macOSContentSidebar: View {
                 }
 
                 Button(action: onAddServer) {
-                    Label("Add Server", systemImage: "plus")
+                    Label {
+                        Text("Add Server")
+                    } icon: {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundStyle(accentColor)
+                    }
                 }
                 .buttonStyle(.plain)
             }
