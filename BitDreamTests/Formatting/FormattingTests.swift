@@ -51,6 +51,11 @@ final class FormattingTests: XCTestCase {
 
     // MARK: - formatByteCount / formatSpeed
 
+    func testZeroUsesKilobyteUnit() {
+        XCTAssertEqual(formatByteCount(0), "0 kB")
+        XCTAssertEqual(formatSpeed(0), "0 kB/s")
+    }
+
     func testFormatByteCountRoundsSubKilobyteUpToOneKilobyte() {
         XCTAssertEqual(formatByteCount(500), formatByteCount(1_000))
     }
