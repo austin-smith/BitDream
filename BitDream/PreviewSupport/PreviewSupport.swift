@@ -25,6 +25,7 @@ final class PreviewEnvironment {
     #endif
     #if os(macOS)
     let appUpdater: AppUpdater
+    let serverEditingCoordinator: MacOSServerEditingCoordinator
     #endif
 
     init(scenario: PreviewScenario = .connected) {
@@ -48,6 +49,7 @@ final class PreviewEnvironment {
         #endif
         #if os(macOS)
         self.appUpdater = AppUpdater(updatesEnabled: false)
+        self.serverEditingCoordinator = MacOSServerEditingCoordinator()
         #endif
     }
 
@@ -84,6 +86,7 @@ struct PreviewContainer<Content: View>: View {
         #if os(macOS)
         content(previewEnvironment)
             .environmentObject(previewEnvironment.appUpdater)
+            .environmentObject(previewEnvironment.serverEditingCoordinator)
         #elseif os(iOS)
         content(previewEnvironment)
             .environmentObject(previewEnvironment.appIconManager)

@@ -3,6 +3,23 @@ import XCTest
 
 #if os(macOS)
 final class MacOSServerEditorNavigationStateTests: XCTestCase {
+    @MainActor
+    func testEditingCoordinatorConsumesOnlyTheHandledRequest() throws {
+        let coordinator = MacOSServerEditingCoordinator()
+        let hosts = PreviewFixtures.makeHosts()
+
+        coordinator.requestEditing(hosts[0])
+        let staleRequest = try XCTUnwrap(coordinator.request)
+        coordinator.requestEditing(hosts[1])
+        let currentRequest = try XCTUnwrap(coordinator.request)
+
+        coordinator.consume(staleRequest)
+        XCTAssertEqual(coordinator.request, currentRequest)
+
+        coordinator.consume(currentRequest)
+        XCTAssertNil(coordinator.request)
+    }
+
     func testDirtyTransitionRequiresConfirmationBeforeChangingSelection() {
         var state = MacOSServerEditorNavigationState()
         state.apply(.server("server-a"))

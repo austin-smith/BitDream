@@ -8,6 +8,7 @@ struct iOSSidebarView: View {
     let selectedHostID: String?
     let torrentCount: (SidebarSelection) -> Int
     let onSelectHost: (Host) -> Void
+    let onEditServer: (Host) -> Void
     let onAddServer: () -> Void
     let onManageServers: () -> Void
     let onOpenSettings: () -> Void
@@ -46,6 +47,14 @@ struct iOSSidebarView: View {
                             showsCheckmark: host.serverID == selectedHostID
                         ) {
                             onSelectHost(host)
+                        }
+                        .contextMenu {
+                            Button("Edit Server", systemImage: "square.and.pencil") {
+                                onEditServer(host)
+                            }
+                        }
+                        .accessibilityAction(named: "Edit Server") {
+                            onEditServer(host)
                         }
                     }
                     SidebarRow(
@@ -160,6 +169,7 @@ private struct SidebarRow: View {
             selectedHostID: environment.hosts.first?.serverID,
             torrentCount: { _ in 5 },
             onSelectHost: { _ in },
+            onEditServer: { _ in },
             onAddServer: {},
             onManageServers: {},
             onOpenSettings: {}

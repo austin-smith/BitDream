@@ -16,6 +16,7 @@ struct iOSContentView: View {
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons = AppDefaults.showContentTypeIcons
     @State private var searchText: String = ""
     @State private var showPrefs: Bool = false
+    @State private var serverToEdit: Host?
 
     @State private var isSidebarOpen = false
     @State private var sidebarDragOffset: CGFloat = 0
@@ -63,6 +64,9 @@ struct iOSContentView: View {
         .sheet(isPresented: $store.editServers, content: {
             iOSServerList(hosts: hosts, store: store)
         })
+        .sheet(item: $serverToEdit) { host in
+            iOSServerEditor(store: store, hosts: hosts, host: host)
+        }
         .sheet(isPresented: $store.isShowingAddAlert, content: {
             AddTorrent(store: store)
         })
@@ -93,6 +97,9 @@ private extension iOSContentView {
             onSelectHost: { host in
                 store.setHost(host: host)
                 closeSidebarAfterSelection()
+            },
+            onEditServer: { host in
+                serverToEdit = host
             },
             onAddServer: {
                 store.setup = true
