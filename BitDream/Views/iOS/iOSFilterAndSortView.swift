@@ -4,7 +4,6 @@ import SwiftUI
 struct iOSFilterAndSortView: View {
     @Environment(\.dismiss) private var dismiss
 
-    @Binding var statusFilter: [TorrentStatusCalc]
     @Binding var labelFilter: TorrentLabelFilter
     @Binding var sortProperty: SortProperty
     @Binding var sortOrder: SortOrder
@@ -17,13 +16,6 @@ struct iOSFilterAndSortView: View {
         NavigationStack {
             List {
                 Section("Filter") {
-                    Picker("Status", selection: statusOptionBinding) {
-                        ForEach(iOSStatusFilterOption.allCases) { option in
-                            Text(option.rawValue).tag(option)
-                        }
-                    }
-                    .pickerStyle(.navigationLink)
-
                     NavigationLink {
                         iOSLabelFilterView(
                             labelFilter: $labelFilter,
@@ -65,15 +57,6 @@ struct iOSFilterAndSortView: View {
 }
 
 private extension iOSFilterAndSortView {
-    var statusOptionBinding: Binding<iOSStatusFilterOption> {
-        Binding(
-            get: {
-                iOSStatusFilterOption.allCases.first { $0.statuses == statusFilter } ?? .all
-            },
-            set: { statusFilter = $0.statuses }
-        )
-    }
-
     var labelSelectionSummary: String {
         switch labelFilter.activeCount {
         case 0:
@@ -208,41 +191,15 @@ private struct iOSNoLabelsFilterRow: View {
     }
 }
 
-private enum iOSStatusFilterOption: String, CaseIterable, Identifiable {
-    case all = "All"
-    case downloading = "Downloading"
-    case complete = "Complete"
-    case paused = "Paused"
-    case excludeComplete = "Exclude Complete"
-
-    var id: Self { self }
-
-    var statuses: [TorrentStatusCalc] {
-        switch self {
-        case .all:
-            return TorrentStatusCalc.allCases
-        case .downloading:
-            return [.downloading]
-        case .complete:
-            return [.complete]
-        case .paused:
-            return [.paused]
-        case .excludeComplete:
-            return TorrentStatusCalc.allCases.filter { $0 != .complete }
-        }
-    }
-}
 #endif
 
 #if os(iOS) && DEBUG
 #Preview("iOS Filter and Sort") {
-    @Previewable @State var statusFilter = TorrentStatusCalc.allCases
     @Previewable @State var labelFilter = TorrentLabelFilter()
     @Previewable @State var sortProperty = SortProperty.name
     @Previewable @State var sortOrder = SortOrder.ascending
 
     iOSFilterAndSortView(
-        statusFilter: $statusFilter,
         labelFilter: $labelFilter,
         sortProperty: $sortProperty,
         sortOrder: $sortOrder,
