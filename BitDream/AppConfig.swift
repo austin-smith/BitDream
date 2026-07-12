@@ -33,6 +33,7 @@ enum MenuBarSortMode: String, CaseIterable {
 enum AppDefaults {
     static let accentColor: AccentColorOption = .blue
     static let themeMode: ThemeMode = .system
+    static let hapticFeedbackEnabled: Bool = true
     static let showContentTypeIcons: Bool = true
     static let menuBarTransferWidgetEnabled: Bool = true
     static let menuBarShowActiveCount: Bool = true
@@ -62,6 +63,7 @@ enum RuntimeDomain {
 }
 
 enum UserDefaultsKeys {
+    static let hapticFeedbackEnabled = "hapticFeedbackEnabled"
     static let pollInterval = "pollInterval"
     static let torrentListCompactMode = "torrentListCompactMode"
     static let showContentTypeIcons = "showContentTypeIcons"

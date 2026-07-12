@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 struct iOSAddTorrent: View {
     // MARK: - Properties
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.hapticFeedback) private var hapticFeedback
     @ObservedObject var store: TransmissionStore
 
     @State private var alertInput: String = ""
@@ -31,7 +32,10 @@ struct iOSAddTorrent: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel", action: dismiss.callAsFunction)
+                        Button("Cancel") {
+                            hapticFeedback.play(.actionTriggered)
+                            dismiss()
+                        }
                             .disabled(isAdding)
                     }
 
@@ -51,7 +55,9 @@ struct iOSAddTorrent: View {
         }
         .interactiveDismissDisabled(isAdding)
         .alert("Error", isPresented: $showingError, actions: {
-            Button("OK", role: .cancel) {}
+            Button("OK", role: .cancel) {
+                hapticFeedback.play(.actionTriggered)
+            }
         }, message: {
             Text(errorMessage ?? "An unknown error occurred")
         })
@@ -108,6 +114,7 @@ struct iOSAddTorrent: View {
     private func submitMagnetTorrent() {
         guard !isAddDisabled else { return }
 
+        hapticFeedback.play(.actionTriggered)
         isAdding = true
         alertInput = trimmedInput
 
@@ -121,9 +128,11 @@ struct iOSAddTorrent: View {
                 )
             },
             onSuccess: { (_: TransmissionTorrentAddOutcome) in
+                hapticFeedback.play(.operationSucceeded)
                 dismiss()
             },
             onError: { message in
+                hapticFeedback.play(.operationFailed)
                 presentAddTorrentSheetError(
                     detail: message,
                     errorMessage: $errorMessage,

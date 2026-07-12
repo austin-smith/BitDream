@@ -108,11 +108,49 @@ final class PreviewFixturesTests: XCTestCase {
     func testInertAppIconManagerUpdatesOnlyItsLocalState() async {
         let manager = AppIconManager.inert()
 
-        manager.selectIcon(name: "Blue")
-        await Task.yield()
+        let outcome = await withCheckedContinuation { continuation in
+            manager.selectIcon(name: "Blue") { outcome in
+                continuation.resume(returning: outcome)
+            }
+        }
 
+        XCTAssertEqual(outcome, .changed)
         XCTAssertEqual(manager.currentIconName, "Blue")
         XCTAssertNil(manager.lastError)
+    }
+
+    func testInertAppIconManagerReportsUnchangedSelection() async {
+        let manager = AppIconManager.inert(currentIconName: "Blue")
+
+        let outcome = await withCheckedContinuation { continuation in
+            manager.selectIcon(name: "Blue") { outcome in
+                continuation.resume(returning: outcome)
+            }
+        }
+
+        XCTAssertEqual(outcome, .unchanged)
+        XCTAssertEqual(manager.currentIconName, "Blue")
+        XCTAssertNil(manager.lastError)
+    }
+
+    func testResetAllSettingsRestoresHapticFeedbackDefault() throws {
+        let suiteName = "BitDreamTests.haptics.reset.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
+        let store = PreviewFixtures.makeStore(userDefaults: userDefaults)
+        let themeManager = ThemeManager(userDefaults: userDefaults)
+        userDefaults.set(false, forKey: UserDefaultsKeys.hapticFeedbackEnabled)
+
+        SettingsView.resetAllSettings(
+            store: store,
+            themeManager: themeManager,
+            userDefaults: userDefaults
+        )
+
+        XCTAssertEqual(
+            userDefaults.bool(forKey: UserDefaultsKeys.hapticFeedbackEnabled),
+            AppDefaults.hapticFeedbackEnabled
+        )
     }
     #endif
 }

@@ -103,14 +103,22 @@ final class TorrentDetailSupplementalStoreTests: XCTestCase {
         XCTAssertTrue(didConnect)
         let identity = makeIdentity(torrentID: 42, store: transmissionStore)
 
-        await supplementalStore.loadIfIdle(for: identity, using: transmissionStore) { errors.append($0) }
+        let failedOutcome = await supplementalStore.loadIfIdle(
+            for: identity,
+            using: transmissionStore
+        ) { errors.append($0) }
         XCTAssertEqual(supplementalStore.status, .failed)
 
-        await supplementalStore.load(for: identity, using: transmissionStore) { errors.append($0) }
+        let recoveredOutcome = await supplementalStore.load(
+            for: identity,
+            using: transmissionStore
+        ) { errors.append($0) }
 
         let methods = try await sender.capturedRequests().map { try requestMethod(from: $0.asURLRequest()) }
         XCTAssertEqual(methods.filter { $0 == "torrent-get" }.count, 3)
         XCTAssertEqual(errors, ["detail load failed"])
+        XCTAssertEqual(failedOutcome, .failed)
+        XCTAssertEqual(recoveredOutcome, .succeeded)
         XCTAssertEqual(supplementalStore.status, .loaded)
         XCTAssertTrue(supplementalStore.shouldDisplayPayload(for: identity))
         XCTAssertEqual(supplementalStore.payload(for: identity).files.map(\.name), ["Ubuntu.iso"])
@@ -304,11 +312,15 @@ final class TorrentDetailIdentityStoreTests: XCTestCase {
         XCTAssertTrue(didConnect)
         let staleIdentity = makeTestTorrentDetailIdentity(42, connectionGeneration: UUID())
 
-        await supplementalStore.load(for: staleIdentity, using: transmissionStore) { errors.append($0) }
+        let outcome = await supplementalStore.load(
+            for: staleIdentity,
+            using: transmissionStore
+        ) { errors.append($0) }
 
         let methods = try await sender.capturedRequests().map { try requestMethod(from: $0.asURLRequest()) }
         XCTAssertEqual(methods.filter { $0 == "torrent-get" }.count, 1)
         XCTAssertEqual(errors, [])
+        XCTAssertEqual(outcome, .cancelled)
         XCTAssertEqual(supplementalStore.status, .idle)
         XCTAssertEqual(supplementalStore.payload(for: staleIdentity), .empty)
     }

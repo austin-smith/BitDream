@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct iOSNetworkSettingsView: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
     @ObservedObject var store: TransmissionStore
     @StateObject private var editModel = SettingsViewModel()
 
@@ -22,6 +23,7 @@ struct iOSNetworkSettingsView: View {
                         }
 
                         Button("Check Port") {
+                            hapticFeedback.play(.actionTriggered)
                             Task {
                                 await editModel.testPort(ipProtocol: nil)
                             }
@@ -156,6 +158,7 @@ struct iOSNetworkSettingsView: View {
                         }
 
                         Button("Update Blocklist") {
+                            hapticFeedback.play(.actionTriggered)
                             Task {
                                 await editModel.updateBlocklist()
                             }
@@ -187,6 +190,15 @@ struct iOSNetworkSettingsView: View {
                 }
                 .navigationTitle("Network")
                 .bindSettingsViewModel(editModel, to: store)
+                .onChange(of: editModel.portTestState) { _, state in
+                    playHapticFeedback(for: state.appHapticFeedback)
+                }
+                .onChange(of: editModel.blocklistUpdateState) { _, state in
+                    playHapticFeedback(for: state.appHapticFeedback)
+                }
+                .onChange(of: editModel.saveState) { _, state in
+                    playHapticFeedback(for: state.appHapticFeedback)
+                }
             } else {
                 ContentUnavailableView(
                     "No Server Connected",
@@ -195,6 +207,11 @@ struct iOSNetworkSettingsView: View {
                 )
             }
         }
+    }
+
+    private func playHapticFeedback(for feedback: AppHapticFeedback?) {
+        guard let feedback else { return }
+        hapticFeedback.play(feedback)
     }
 }
 #endif

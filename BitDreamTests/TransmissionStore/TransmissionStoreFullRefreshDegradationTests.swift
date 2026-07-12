@@ -4,6 +4,14 @@ import XCTest
 
 @MainActor
 final class TransmissionStoreFullRefreshTests: XCTestCase {
+    func testRefreshWithoutActiveConnectionReportsUnavailable() async {
+        let store = makeStore(sender: MethodQueueSender(stepsByMethod: [:]))
+
+        let outcome = await store.refreshNow()
+
+        XCTAssertEqual(outcome, .unavailable)
+    }
+
     func testSuccessfulRefreshAdvancesTorrentDetailRefreshTrigger() async throws {
         let sender = MethodQueueSender(stepsByMethod: [
             "session-stats": [
@@ -27,13 +35,40 @@ final class TransmissionStoreFullRefreshTests: XCTestCase {
         XCTAssertTrue(didConnect)
         let connectedTrigger = store.torrentDetailRefreshTrigger
 
-        await store.refreshNow()
+        let outcome = await store.refreshNow()
         let refreshedTrigger = store.torrentDetailRefreshTrigger
 
+        XCTAssertEqual(outcome, .succeeded)
         XCTAssertNotEqual(connectedTrigger.connectionGeneration, initialTrigger.connectionGeneration)
         XCTAssertEqual(connectedTrigger.revision, 1)
         XCTAssertEqual(refreshedTrigger.connectionGeneration, connectedTrigger.connectionGeneration)
         XCTAssertEqual(refreshedTrigger.revision, 2)
+    }
+
+    func testManualRefreshReportsRequestFailure() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [
+            "session-stats": [
+                .http(statusCode: 200, body: successStatsBody),
+                .error(TestError.offline)
+            ],
+            "torrent-get": [
+                .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json")),
+                .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))
+            ],
+            "session-get": [
+                .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads", version: "4.0.0")),
+                .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads", version: "4.0.0"))
+            ]
+        ])
+        let store = makeStore(sender: sender)
+
+        store.setHost(host: makeHost(serverID: "server-1", server: "example.com"))
+        let didConnect = await waitUntil { store.connectionStatus == .connected }
+        XCTAssertTrue(didConnect)
+
+        let outcome = await store.refreshNow()
+
+        XCTAssertEqual(outcome, .failed)
     }
 
     func testInitialFullRefreshConnectsWhenSessionSettingsFail() async throws {

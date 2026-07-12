@@ -58,6 +58,7 @@ struct iOSTorrentFileRow: View {
             } label: {
                 Image(systemName: "flag")
             }
+            .iOSHapticControlActivation()
             .tint(.orange)
 
             Menu {
@@ -65,6 +66,7 @@ struct iOSTorrentFileRow: View {
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
+            .iOSHapticControlActivation()
         }
         .contextMenu {
             fullActionSections

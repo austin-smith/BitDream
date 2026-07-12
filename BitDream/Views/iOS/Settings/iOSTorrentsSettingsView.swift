@@ -2,6 +2,7 @@
 import SwiftUI
 
 struct iOSTorrentsSettingsView: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
     @ObservedObject var store: TransmissionStore
     @StateObject private var editModel = SettingsViewModel()
 
@@ -20,6 +21,7 @@ struct iOSTorrentsSettingsView: View {
                         }
 
                         Button("Check Free Space") {
+                            hapticFeedback.play(.actionTriggered)
                             Task {
                                 await editModel.checkFreeSpace()
                             }
@@ -174,6 +176,12 @@ struct iOSTorrentsSettingsView: View {
                 }
                 .navigationTitle("Torrents")
                 .bindSettingsViewModel(editModel, to: store)
+                .onChange(of: editModel.freeSpaceState) { _, state in
+                    playHapticFeedback(for: state.appHapticFeedback)
+                }
+                .onChange(of: editModel.saveState) { _, state in
+                    playHapticFeedback(for: state.appHapticFeedback)
+                }
             } else {
                 ContentUnavailableView(
                     "No Server Connected",
@@ -182,6 +190,11 @@ struct iOSTorrentsSettingsView: View {
                 )
             }
         }
+    }
+
+    private func playHapticFeedback(for feedback: AppHapticFeedback?) {
+        guard let feedback else { return }
+        hapticFeedback.play(feedback)
     }
 }
 #endif

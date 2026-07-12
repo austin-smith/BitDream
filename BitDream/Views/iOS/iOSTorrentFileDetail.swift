@@ -40,6 +40,8 @@ func sortFiles(_ files: [TorrentFileRow], by property: FileSortProperty, order: 
 }
 
 struct iOSTorrentFileDetail: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
+
     let files: [TorrentFile]
     let fileStats: [TorrentFileStats]
     let torrentId: Int
@@ -206,11 +208,18 @@ struct iOSTorrentFileDetail: View {
         .onChange(of: fileStats) { _, newValue in
             mutableFileStats = newValue
         }
+        .onChange(of: fileSelectionState) {
+            hapticFeedback.play(.selectionChanged)
+        }
         .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
     }
 }
 
 private extension iOSTorrentFileDetail {
+    var fileSelectionState: FileSelectionHapticState {
+        FileSelectionHapticState(isEditing: isEditing, selectedFileIds: selectedFileIds)
+    }
+
     func setFileWanted(_ row: TorrentFileRow, wanted: Bool) {
         setBulkWanted(fileIndices: [row.fileIndex], wanted: wanted)
     }
@@ -220,6 +229,7 @@ private extension iOSTorrentFileDetail {
     }
 
     func setBulkWanted(fileIndices: [Int], wanted: Bool) {
+        hapticFeedback.play(.actionTriggered)
         let previousStats = snapshotFileStats(for: fileIndices, mutableStats: mutableFileStats, fallbackStats: fileStats)
         mutableFileStats = applyLocalFileWanted(fileIndices: fileIndices, wanted: wanted, mutableStats: mutableFileStats, fallbackStats: fileStats)
 
@@ -233,9 +243,11 @@ private extension iOSTorrentFileDetail {
             },
             onSuccess: {
                 onCommittedFileStatsMutation(fileIndices, .wanted(wanted))
+                hapticFeedback.play(.selectionChanged)
             },
             onError: { message in
                 mutableFileStats = applyFileStatsRevert(previousStats, into: mutableFileStats, fallback: fileStats)
+                hapticFeedback.play(.operationFailed)
                 errorMessage = message
                 showingError = true
             }
@@ -243,6 +255,7 @@ private extension iOSTorrentFileDetail {
     }
 
     func setBulkPriority(fileIndices: [Int], priority: FilePriority) {
+        hapticFeedback.play(.actionTriggered)
         let previousStats = snapshotFileStats(for: fileIndices, mutableStats: mutableFileStats, fallbackStats: fileStats)
         mutableFileStats = applyLocalFilePriority(fileIndices: fileIndices, priority: priority, mutableStats: mutableFileStats, fallbackStats: fileStats)
 
@@ -256,14 +269,21 @@ private extension iOSTorrentFileDetail {
             },
             onSuccess: {
                 onCommittedFileStatsMutation(fileIndices, .priority(priority))
+                hapticFeedback.play(.selectionChanged)
             },
             onError: { message in
                 mutableFileStats = applyFileStatsRevert(previousStats, into: mutableFileStats, fallback: fileStats)
+                hapticFeedback.play(.operationFailed)
                 errorMessage = message
                 showingError = true
             }
         )
     }
+}
+
+private struct FileSelectionHapticState: Equatable {
+    let isEditing: Bool
+    let selectedFileIds: Set<String>
 }
 
 #endif

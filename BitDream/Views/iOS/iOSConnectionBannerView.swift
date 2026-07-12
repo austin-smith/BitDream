@@ -2,6 +2,7 @@ import SwiftUI
 
 #if os(iOS)
 struct iOSConnectionBannerView: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
     @ObservedObject var store: TransmissionStore
 
     private var shouldShowLastError: Bool {
@@ -42,6 +43,7 @@ struct iOSConnectionBannerView: View {
             Spacer()
 
             Button("Retry") {
+                hapticFeedback.play(.actionTriggered)
                 store.reconnect()
             }
             .buttonStyle(.bordered)

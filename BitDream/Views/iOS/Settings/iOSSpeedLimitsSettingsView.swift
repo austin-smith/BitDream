@@ -3,6 +3,7 @@ import SwiftUI
 import Foundation
 
 struct iOSSpeedLimitsSettingsView: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
     @ObservedObject var store: TransmissionStore
     @StateObject private var editModel = SettingsViewModel()
 
@@ -142,6 +143,10 @@ struct iOSSpeedLimitsSettingsView: View {
                 }
                 .navigationTitle("Speed Limits")
                 .bindSettingsViewModel(editModel, to: store)
+                .onChange(of: editModel.saveState) { _, state in
+                    guard let feedback = state.appHapticFeedback else { return }
+                    hapticFeedback.play(feedback)
+                }
             } else {
                 ContentUnavailableView(
                     "No Server Connected",
