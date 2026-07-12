@@ -52,17 +52,21 @@ struct iOSServerList: View {
                             row(for: host)
                         }
                     }
+
+                    Section {
+                        Button {
+                            presentedEditor = .add
+                        } label: {
+                            Label("New Server", systemImage: "plus")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .fontWeight(.semibold)
+                    }
                 }
             }
             .navigationTitle("Servers")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Add Server", systemImage: "plus") {
-                        presentedEditor = .add
-                    }
-                }
-
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Close", systemImage: "xmark", role: .close) {
                         dismiss()
