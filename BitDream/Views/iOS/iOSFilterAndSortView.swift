@@ -21,7 +21,8 @@ struct iOSFilterAndSortView: View {
                             labelFilter: $labelFilter,
                             availableLabels: availableLabels,
                             labelCounts: labelCounts,
-                            noLabelCount: noLabelCount
+                            noLabelCount: noLabelCount,
+                            onDone: dismiss.callAsFunction
                         )
                     } label: {
                         LabeledContent("Labels", value: labelSelectionSummary)
@@ -47,7 +48,7 @@ struct iOSFilterAndSortView: View {
             .navigationTitle("Filter & Sort")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(id: "filter-and-sort-done", placement: .confirmationAction) {
                     Button("Done", action: dismiss.callAsFunction)
                 }
             }
@@ -75,6 +76,7 @@ private struct iOSLabelFilterView: View {
     let availableLabels: [String]
     let labelCounts: [String: Int]
     let noLabelCount: Int
+    let onDone: () -> Void
 
     var body: some View {
         List {
@@ -122,6 +124,11 @@ private struct iOSLabelFilterView: View {
         }
         .navigationTitle("Labels")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(id: "label-filter-done", placement: .confirmationAction) {
+                Button("Done", action: onDone)
+            }
+        }
     }
 }
 
