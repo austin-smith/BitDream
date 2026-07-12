@@ -5,6 +5,7 @@ disabled_rules:
 excluded:
   - build
   - .build
+  - .claude
   # TODO: Refactor these files and remove the temporary lint exclusion.
   - BitDream/TransmissionStore.swift
 
