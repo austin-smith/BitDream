@@ -35,7 +35,7 @@ struct iOSContentView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let drawerWidth = proxy.size.width * 0.75
+            let drawerWidth = proxy.size.width * 0.77
             let progress = sidebarProgress(drawerWidth: drawerWidth)
 
             ZStack(alignment: .leading) {
@@ -92,7 +92,7 @@ private extension iOSContentView {
             torrentCount: { torrentCount(for: $0) },
             onSelectHost: { host in
                 store.setHost(host: host)
-                closeSidebar()
+                closeSidebarAfterSelection()
             },
             onAddServer: {
                 store.setup = true
@@ -121,12 +121,14 @@ private extension iOSContentView {
                 }
         }
         .onChange(of: sidebarSelection) { _, _ in
-            closeSidebar()
+            closeSidebarAfterSelection()
         }
         .overlay {
             if progress > 0 {
-                // Invisible tap/drag catcher; the pushed card intentionally stays undimmed
-                Color.clear
+                // White scrim fades the card toward the background; also catches taps/drags to close
+                Color(.systemBackground)
+                    .opacity(0.55 * progress)
+                    .ignoresSafeArea()
                     .contentShape(.rect)
                     .onTapGesture {
                         closeSidebar()
@@ -191,6 +193,14 @@ private extension iOSContentView {
         guard isSidebarOpen else { return }
         withAnimation(drawerAnimation) {
             isSidebarOpen = false
+        }
+    }
+
+    /// Lets the row's selection highlight land before the drawer slides away.
+    func closeSidebarAfterSelection() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(90))
+            closeSidebar()
         }
     }
 }
