@@ -8,6 +8,7 @@ enum iOSNavigationRoute: Hashable {
 
 struct iOSContentView: View {
     @Environment(\.hapticFeedback) private var hapticFeedback
+    @Environment(\.colorScheme) private var colorScheme
 
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
@@ -157,17 +158,18 @@ private extension iOSContentView {
             hapticFeedback.play(.selectionChanged)
         }
         .overlay {
-            if progress > 0 {
-                // White scrim fades the card toward the background; also catches taps/drags to close
-                Color(.systemBackground)
-                    .opacity(0.55 * progress)
-                    .ignoresSafeArea()
-                    .contentShape(.rect)
-                    .onTapGesture {
-                        closeSidebar()
-                    }
-                    .gesture(closeDragGesture(drawerWidth: drawerWidth))
-            }
+            // Scrim doubles as elevation: light mode fades the card toward white,
+            // dark mode lifts it to a slightly lighter surface; also catches taps/drags to close.
+            // Always present (opacity-only changes) — structural insertion would render it at the
+            // animation's destination instead of riding the card.
+            (colorScheme == .dark ? Color(white: 0.2) : Color(.systemBackground))
+                .opacity(0.55 * progress)
+                .contentShape(.rect)
+                .onTapGesture {
+                    closeSidebar()
+                }
+                .gesture(closeDragGesture(drawerWidth: drawerWidth))
+                .allowsHitTesting(progress > 0)
         }
         .overlay(alignment: .leading) {
             if !isSidebarOpen && navigationPath.isEmpty {
@@ -178,13 +180,9 @@ private extension iOSContentView {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 32 * progress, style: .continuous))
-        .overlay(
-            // Shadows vanish on black backgrounds; this edge keeps the card separated in dark mode
-            RoundedRectangle(cornerRadius: 32 * progress, style: .continuous)
-                .strokeBorder(Color(.separator).opacity(Double(progress)), lineWidth: 1)
-        )
         .shadow(color: .black.opacity(0.12 * progress), radius: 12)
         .offset(x: drawerWidth * progress)
+        .geometryGroup()
     }
 
     func openDragGesture(drawerWidth: CGFloat) -> some Gesture {
@@ -346,8 +344,10 @@ private extension iOSContentView {
             Button {
                 toggleSidebar()
             } label: {
+                // Bar glyphs ghost harder than the scrim alone while the drawer is open
                 SidebarToggleGlyph()
             }
+            .tint(Color.primary.opacity(isSidebarOpen && colorScheme == .light ? 0.5 : 1))
             .accessibilityLabel("Menu")
         }
     }
@@ -363,6 +363,7 @@ private extension iOSContentView {
                 })
             } label: {
                 Image(systemName: "ellipsis.circle")
+                    .foregroundStyle(Color.primary.opacity(isSidebarOpen && colorScheme == .light ? 0.5 : 1))
             }
             .iOSHapticControlActivation()
         }
