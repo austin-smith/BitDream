@@ -113,17 +113,17 @@ struct iOSAddTorrent: View {
 
         performTransmissionAction(
             operation: {
-                try await store.addTorrent(
+                defer { isAdding = false }
+
+                return try await store.addTorrent(
                     magnetLink: alertInput,
                     saveLocation: downloadDir
                 )
             },
             onSuccess: { (_: TransmissionTorrentAddOutcome) in
-                isAdding = false
                 dismiss()
             },
             onError: { message in
-                isAdding = false
                 presentAddTorrentSheetError(
                     detail: message,
                     errorMessage: $errorMessage,
