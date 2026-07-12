@@ -214,7 +214,7 @@ private extension macOSAddTorrent {
 
     var downloadLocationSection: some View {
         VStack(alignment: .leading) {
-            Text("Download Location")
+            Text("Download To")
                 .font(.headline)
                 .foregroundColor(.primary)
 
