@@ -71,6 +71,57 @@ final class TransmissionStoreFullRefreshTests: XCTestCase {
         XCTAssertEqual(outcome, .failed)
     }
 
+    func testSupersededManualRefreshReportsCancellationWhenTransportFails() async throws {
+        let torrentSummary = try loadTransmissionFixture(named: "torrent-get.response.json")
+        let sender = HostMethodScriptedSender(stepsByHostAndMethod: [
+            "old.example.com": [
+                "session-stats": [
+                    .http(statusCode: 200, body: successStatsBody),
+                    .blockedError(id: "stale-refresh", error: TestError.offline)
+                ],
+                "torrent-get": [
+                    .http(statusCode: 200, body: torrentSummary),
+                    .http(statusCode: 200, body: torrentSummary)
+                ],
+                "session-get": [
+                    .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/old", version: "4.0.0")),
+                    .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/old", version: "4.0.0"))
+                ]
+            ],
+            "new.example.com": [
+                "session-stats": [
+                    .http(statusCode: 200, body: successStatsBody)
+                ],
+                "torrent-get": [
+                    .http(statusCode: 200, body: torrentSummary)
+                ],
+                "session-get": [
+                    .http(statusCode: 200, body: try sessionSettingsBody(downloadDir: "/downloads/new", version: "4.0.0"))
+                ]
+            ]
+        ])
+        let store = makeStore(sender: sender)
+
+        store.setHost(host: makeHost(serverID: "old-server", server: "old.example.com"))
+        let didConnectInitially = await waitUntil { store.defaultDownloadDir == "/downloads/old" }
+        XCTAssertTrue(didConnectInitially)
+
+        let refreshTask = Task { await store.refreshNow() }
+        let didStartRefresh = await waitUntil {
+            await sender.capturedRequests().count == 6
+        }
+        XCTAssertTrue(didStartRefresh)
+
+        store.setHost(host: makeHost(serverID: "new-server", server: "new.example.com"))
+        await sender.resume(id: "stale-refresh")
+
+        let outcome = await refreshTask.value
+        XCTAssertEqual(outcome, .cancelled)
+
+        let didSwitch = await waitUntil { store.defaultDownloadDir == "/downloads/new" }
+        XCTAssertTrue(didSwitch)
+    }
+
     func testInitialFullRefreshConnectsWhenSessionSettingsFail() async throws {
         let sender = MethodQueueSender(stepsByMethod: [
             "session-stats": [

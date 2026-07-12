@@ -786,6 +786,11 @@ extension TransmissionStore {
             startPolling(for: connectionState)
             return .succeeded
         } catch {
+            guard !Task.isCancelled,
+                  isCurrentGeneration(connectionState.generation, hostID: connectionState.hostID) else {
+                return .cancelled
+            }
+
             let transmissionError = TransmissionErrorResolver.transmissionError(from: error)
             if case .cancelled = transmissionError {
                 return .cancelled

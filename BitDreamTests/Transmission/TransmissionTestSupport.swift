@@ -186,6 +186,7 @@ actor HostMethodScriptedSender: TransmissionRPCRequestSending {
     enum Step {
         case http(statusCode: Int, body: String, headers: [String: String] = [:])
         case blocked(id: String, statusCode: Int, body: String, headers: [String: String] = [:])
+        case blockedError(id: String, error: any Error)
         case error(any Error)
     }
 
@@ -229,6 +230,11 @@ actor HostMethodScriptedSender: TransmissionRPCRequestSending {
                 Data(body.utf8),
                 makeHTTPResponse(for: url, statusCode: statusCode, headers: headers)
             )
+        case let .blockedError(id, error):
+            await withCheckedContinuation { continuation in
+                continuations[id] = continuation
+            }
+            throw error
         case let .error(error):
             throw error
         }
