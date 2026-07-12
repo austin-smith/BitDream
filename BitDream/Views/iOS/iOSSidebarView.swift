@@ -68,12 +68,14 @@ struct iOSSidebarView: View {
             }
             .contentMargins(.bottom, 60, for: .scrollContent)
             .overlay(alignment: .bottom) {
-                HStack {
-                    FooterCircleButton(systemImage: "server.rack", label: "Manage Servers", action: onManageServers)
+                GlassEffectContainer {
+                    HStack {
+                        FooterCircleButton(systemImage: "server.rack", label: "Manage Servers", action: onManageServers)
 
-                    Spacer()
+                        Spacer()
 
-                    FooterCircleButton(systemImage: "gear", label: "Settings", action: onOpenSettings)
+                        FooterCircleButton(systemImage: "gear", label: "Settings", action: onOpenSettings)
+                    }
                 }
                 .padding(.horizontal, 16)
             }
@@ -101,17 +103,11 @@ private struct FooterCircleButton: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.title3)
-                .foregroundStyle(.primary)
                 .frame(width: 44, height: 44)
-                .background(
-                    // Tertiary stays white in light mode but elevates to gray in dark,
-                    // where shadows alone can't separate the circle from the sidebar
-                    Circle()
-                        .fill(Color(.tertiarySystemBackground))
-                        .shadow(color: .black.opacity(0.18), radius: 8, y: 2)
-                )
+                .contentShape(.circle)
         }
         .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .circle)
         .accessibilityLabel(label)
     }
 }
