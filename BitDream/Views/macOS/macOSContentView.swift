@@ -232,7 +232,10 @@ struct macOSContentView: View {
             accentColor: themeManager.accentColor,
             isDropTargeted: $isDropTargeted,
             draggedTorrentInfo: $draggedTorrentInfo,
-            focusedTarget: $focusedTarget
+            focusedTarget: $focusedTarget,
+            onShowStatistics: {
+                openWindow(id: "statistics")
+            }
         )
         .navigationTitle(sidebarSelection.rawValue)
         .navigationSubtitle(navigationSubtitle)

@@ -282,7 +282,7 @@ private extension BitDreamApp {
                 .accentColor(themeManager.accentColor)
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
-                .frame(minWidth: 420, idealWidth: 460, maxWidth: 600, minHeight: 320, idealHeight: 360, maxHeight: 800)
+                .frame(minWidth: 420, idealWidth: 460, maxWidth: 600, minHeight: 320, idealHeight: 720, maxHeight: 800)
         }
         .windowResizability(.contentSize)
         .modelContainer(persistenceController.container)

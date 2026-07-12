@@ -19,10 +19,11 @@ struct macOSContentDetail: View {
     @Binding var isDropTargeted: Bool
     @Binding var draggedTorrentInfo: [TorrentInfo]
     let focusedTarget: FocusState<macOSContentView.FocusTarget?>.Binding
+    let onShowStatistics: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            StatsHeaderView(store: store)
+            StatsHeaderView(store: store, onShowStatistics: onShowStatistics)
 
             if store.host != nil, store.connectionStatus != .connected {
                 macOSConnectionBannerView(store: store)
@@ -354,7 +355,8 @@ private struct macOSContentDetailPreviewHost: View {
             accentColor: .blue,
             isDropTargeted: $isDropTargeted,
             draggedTorrentInfo: $draggedTorrentInfo,
-            focusedTarget: $focusedTarget
+            focusedTarget: $focusedTarget,
+            onShowStatistics: { }
         )
     }
 }
