@@ -9,6 +9,9 @@ xcuserdata/
 # Visual Studio Code
 .vscode
 
+# Local agent worktrees
+.claude/
+
 ## Build artifacts
 build/
 .build/

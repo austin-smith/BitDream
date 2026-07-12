@@ -150,15 +150,37 @@ private enum MacOSServerListAlert {
     }
 }
 
+@MainActor
+final class MacOSServerEditingCoordinator: ObservableObject {
+    struct Request: Equatable {
+        let id = UUID()
+        let serverID: String
+    }
+
+    @Published private(set) var request: Request?
+
+    func requestEditing(_ host: Host) {
+        request = Request(serverID: host.serverID)
+    }
+
+    func consume(_ handledRequest: Request) {
+        guard request?.id == handledRequest.id else { return }
+        request = nil
+    }
+}
+
 /// Root view for the Manage Servers auxiliary window.
 struct macOSManageServersWindow: View {
     @EnvironmentObject var store: TransmissionStore
+    @EnvironmentObject private var serverEditingCoordinator: MacOSServerEditingCoordinator
     @Query(sort: \Host.name, order: .forward) private var hosts: [Host]
 
     var body: some View {
         macOSServerList(
             hosts: hosts,
-            store: store
+            store: store,
+            editRequest: serverEditingCoordinator.request,
+            onEditRequestHandled: serverEditingCoordinator.consume
         )
     }
 }
@@ -167,6 +189,8 @@ struct macOSServerList: View {
     @Environment(\.hostRepositoryProvider) private var hostRepositoryProvider
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
+    let editRequest: MacOSServerEditingCoordinator.Request?
+    let onEditRequestHandled: (MacOSServerEditingCoordinator.Request) -> Void
 
     @State private var editorNavigation = MacOSServerEditorNavigationState()
     @State private var isSaving = false
@@ -244,9 +268,20 @@ struct macOSServerList: View {
         } message: {
             Text(dismissalConfirmationMessage)
         }
-        .onAppear(perform: syncSelection)
+        .onAppear {
+            syncSelection()
+            selectRequestedServer()
+        }
         .onChange(of: hosts.map(\.serverID)) { _, _ in
             syncSelection()
+        }
+        .onChange(of: editRequest) { _, _ in
+            selectRequestedServer()
+        }
+        .onChange(of: isSaving) { wasSaving, isSaving in
+            if wasSaving, !isSaving {
+                selectRequestedServer()
+            }
         }
     }
 }
@@ -399,6 +434,25 @@ private extension macOSServerList {
         )
     }
 
+    private func selectRequestedServer() {
+        guard let editRequest else { return }
+        guard hosts.contains(where: { $0.serverID == editRequest.serverID }) else {
+            onEditRequestHandled(editRequest)
+            return
+        }
+
+        let destination = MacOSServerEditorNavigationState.Destination.server(editRequest.serverID)
+        if editorNavigation.currentDestination == destination {
+            onEditRequestHandled(editRequest)
+            return
+        }
+
+        let result = requestTransition(to: destination)
+        if result != .ignored {
+            onEditRequestHandled(editRequest)
+        }
+    }
+
     private func startCreatingServer() {
         requestTransition(to: .newServer)
     }
@@ -480,11 +534,15 @@ private extension macOSServerList {
         return "Your unsaved server changes will be lost."
     }
 
-    private func requestTransition(to destination: MacOSServerEditorNavigationState.Destination) {
+    @discardableResult
+    private func requestTransition(
+        to destination: MacOSServerEditorNavigationState.Destination
+    ) -> MacOSServerEditorNavigationState.TransitionRequestResult {
         let result = editorNavigation.requestTransition(to: destination, whileSaving: isSaving)
         if result == .confirmationRequired {
             activeAlert = .discardChanges
         }
+        return result
     }
 
     private func confirmDiscardAndTransition() {
@@ -532,7 +590,12 @@ private extension macOSServerList {
 #if os(macOS) && DEBUG
 #Preview("macOS Server List", traits: .fixedLayout(width: 900, height: 600)) {
     PreviewContainer { environment in
-        macOSServerList(hosts: environment.hosts, store: environment.store)
+        macOSServerList(
+            hosts: environment.hosts,
+            store: environment.store,
+            editRequest: nil,
+            onEditRequestHandled: { _ in }
+        )
     }
 }
 #endif

@@ -20,6 +20,7 @@ struct BitDreamApp: App {
     @StateObject private var menuBarStatusItemController = MenuBarStatusItemBridge()
     @StateObject private var dockBadgeController = DockBadgeController()
     @StateObject private var appUpdater = AppUpdater()
+    @StateObject private var serverEditingCoordinator = MacOSServerEditingCoordinator()
     #endif
 
     // HUD state for macOS appearance toggle feedback
@@ -91,6 +92,7 @@ private extension BitDreamApp {
         Window("BitDream", id: "main") {
             ContentView()
                 .environmentObject(store) // Pass the shared store to the ContentView
+                .environmentObject(serverEditingCoordinator)
                 .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
                 .immediateTheme(manager: themeManager)
@@ -250,6 +252,7 @@ private extension BitDreamApp {
         Window("Manage Servers", id: "manage-servers") {
             macOSManageServersWindow()
                 .environmentObject(store)
+                .environmentObject(serverEditingCoordinator)
                 .tint(themeManager.accentColor)
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)

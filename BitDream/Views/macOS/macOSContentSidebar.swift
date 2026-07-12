@@ -9,6 +9,7 @@ struct macOSContentSidebar: View {
     let accentColor: Color
     let torrentCount: (SidebarSelection) -> Int
     let onSelectHost: (Host) -> Void
+    let onEditServer: (Host) -> Void
     let onAddServer: () -> Void
     let onManageServers: () -> Void
     let onOpenSettings: () -> Void
@@ -38,10 +39,31 @@ struct macOSContentSidebar: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        Button {
+                            onEditServer(host)
+                        } label: {
+                            Label {
+                                Text("Edit Server…")
+                            } icon: {
+                                Image(systemName: "square.and.pencil")
+                                    .symbolRenderingMode(.monochrome)
+                                    .foregroundStyle(.primary)
+                            }
+                        }
+                    }
+                    .accessibilityAction(named: "Edit Server") {
+                        onEditServer(host)
+                    }
                 }
 
                 Button(action: onAddServer) {
-                    Label("Add Server", systemImage: "plus")
+                    Label {
+                        Text("Add Server")
+                    } icon: {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundStyle(accentColor)
+                    }
                 }
                 .buttonStyle(.plain)
             }
@@ -76,6 +98,7 @@ struct macOSContentSidebar: View {
         accentColor: .blue,
         torrentCount: { _ in 5 },
         onSelectHost: { _ in },
+        onEditServer: { _ in },
         onAddServer: {},
         onManageServers: {},
         onOpenSettings: {}

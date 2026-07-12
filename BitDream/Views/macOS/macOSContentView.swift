@@ -9,6 +9,7 @@ struct macOSContentView: View {
     @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
     @EnvironmentObject private var themeManager: ThemeManager
+    @EnvironmentObject private var serverEditingCoordinator: MacOSServerEditingCoordinator
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
     private let userDefaults: UserDefaults
@@ -201,6 +202,10 @@ struct macOSContentView: View {
             onSelectHost: { host in
                 store.setHost(host: host)
                 selectedTorrentIds.removeAll()
+            },
+            onEditServer: { host in
+                serverEditingCoordinator.requestEditing(host)
+                openWindow(id: "manage-servers")
             },
             onAddServer: {
                 store.setup.toggle()
