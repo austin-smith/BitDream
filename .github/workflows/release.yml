@@ -21,34 +21,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Derive release metadata
-        run: |
-          TAG="$GITHUB_REF_NAME"
-
-          if [[ ! "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?)$ ]]; then
-            echo "Tag must be in vX.Y.Z or vX.Y.Z-suffix format, received: $TAG"
-            exit 1
-          fi
-
-          VERSION="${BASH_REMATCH[1]}"
-          MARKETING_VERSION="$VERSION"
-          if [[ "$VERSION" =~ ^([0-9]+\.[0-9]+\.[0-9]+) ]]; then
-            MARKETING_VERSION="${BASH_REMATCH[1]}"
-          fi
-          IS_PRERELEASE=false
-          # Stable is exactly X.Y.Z; anything else is treated as prerelease metadata.
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            IS_PRERELEASE=true
-          fi
-
-          BUILD_NUMBER="$GITHUB_RUN_NUMBER"
-
-          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
-          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "MARKETING_VERSION=$MARKETING_VERSION" >> "$GITHUB_ENV"
-          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
-          echo "IS_PRERELEASE=$IS_PRERELEASE" >> "$GITHUB_ENV"
-
       - name: Load Sparkle build settings
         env:
           SPARKLE_APPCAST_URL: ${{ vars.SPARKLE_APPCAST_URL }}
@@ -79,6 +51,54 @@ jobs:
           SPARKLE_APPCAST_URL = $SPARKLE_APPCAST_URL
           SPARKLE_PUBLIC_KEY = $SPARKLE_PUBLIC_KEY
           EOF
+
+      - name: Validate and derive release metadata
+        run: |
+          TAG="$GITHUB_REF_NAME"
+
+          if [[ ! "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)(-([0-9A-Za-z]+([.-][0-9A-Za-z]+)*))?$ ]]; then
+            echo "Tag must be in vX.Y.Z or vX.Y.Z-suffix format, received: $TAG"
+            exit 1
+          fi
+
+          MARKETING_VERSION="${BASH_REMATCH[1]}"
+          RELEASE_VERSION="${TAG#v}"
+          IS_PRERELEASE=false
+          if [[ "$TAG" != "v$MARKETING_VERSION" ]]; then
+            IS_PRERELEASE=true
+          fi
+
+          PROJECT_VERSIONS="$(
+            xcodebuild \
+              -project BitDream.xcodeproj \
+              -scheme BitDream \
+              -configuration Release \
+              -destination "generic/platform=macOS" \
+              -showBuildSettings |
+              awk '$1 == "MARKETING_VERSION" && $2 == "=" { print $3 }' |
+              sort -u
+          )"
+          VERSION_COUNT="$(printf '%s\n' "$PROJECT_VERSIONS" | awk 'NF { count++ } END { print count + 0 }')"
+
+          if [[ "$VERSION_COUNT" -ne 1 ]]; then
+            echo "Expected exactly one project MARKETING_VERSION, but found $VERSION_COUNT."
+            printf '%s\n' "$PROJECT_VERSIONS"
+            exit 1
+          fi
+
+          if [[ "$MARKETING_VERSION" != "$PROJECT_VERSIONS" ]]; then
+            echo "Release tag $TAG does not match project MARKETING_VERSION $PROJECT_VERSIONS."
+            echo "Expected v$PROJECT_VERSIONS or v$PROJECT_VERSIONS-suffix."
+            exit 1
+          fi
+
+          BUILD_NUMBER="$GITHUB_RUN_NUMBER"
+
+          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_ENV"
+          echo "MARKETING_VERSION=$MARKETING_VERSION" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "IS_PRERELEASE=$IS_PRERELEASE" >> "$GITHUB_ENV"
 
       - name: Import Apple signing certificate
         env:
