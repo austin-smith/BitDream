@@ -27,6 +27,20 @@ func formatSpeed(_ bytesPerSecond: Int64) -> String {
     return "\(base)/s"
 }
 
+func formatTransferRatio(uploadedBytes: Int64, downloadedBytes: Int64) -> String {
+    let ratio = downloadedBytes > 0 ? Double(uploadedBytes) / Double(downloadedBytes) : 0
+    return ratio.formatted(.number.precision(.fractionLength(2)))
+}
+
+func formatActiveDuration(_ seconds: Int64) -> String {
+    let formatter = DateComponentsFormatter()
+    formatter.allowedUnits = [.day, .hour, .minute, .second]
+    formatter.unitsStyle = .abbreviated
+    formatter.zeroFormattingBehavior = .dropLeading
+
+    return formatter.string(from: TimeInterval(max(0, seconds))) ?? "0s"
+}
+
 func formatCompactByteCount(_ bytes: Int64) -> CompactByteCountComponents {
     let formatted = formattedByteCount(bytes)
     var value = ""

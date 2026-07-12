@@ -181,6 +181,7 @@ func makeRatioSummarySnapshot(store: TransmissionStore, displayMode: RatioDispla
 struct StatsHeaderView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @ObservedObject var store: TransmissionStore
+    let onShowStatistics: () -> Void
     @AppStorage(UserDefaultsKeys.ratioDisplayMode) private var ratioDisplayModeRaw: String = AppDefaults.ratioDisplayMode.rawValue
 
     // MARK: - Computed totals and ratio
@@ -196,6 +197,21 @@ struct StatsHeaderView: View {
         ratioSummary.ratio
     }
 
+    private var downloadSpeed: Int64 {
+        store.sessionStats?.downloadSpeed ?? 0
+    }
+
+    private var uploadSpeed: Int64 {
+        store.sessionStats?.uploadSpeed ?? 0
+    }
+
+    private var accessibilityValue: String {
+        let mode = ratioDisplayMode == .cumulative ? "Total ratio" : "Session ratio"
+        let ratio = overallRatio.formatted(.number.precision(.fractionLength(2)))
+        return "\(mode) \(ratio), download speed \(formatSpeed(downloadSpeed)), "
+            + "upload speed \(formatSpeed(uploadSpeed))"
+    }
+
     private var ratioTooltip: String {
         let mode = ratioDisplayMode == .cumulative ? "Total Ratio" : "Session Ratio"
         let uploaded = formatByteCount(ratioSummary.uploaded)
@@ -204,47 +220,54 @@ struct StatsHeaderView: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            RatioChip(
-                ratio: overallRatio,
-                size: .compact,
-                helpText: ratioTooltip
-            )
-            .contextMenu {
-                Button(action: { ratioDisplayModeRaw = RatioDisplayMode.cumulative.rawValue }, label: {
-                    HStack {
-                        if ratioDisplayMode == .cumulative { Image(systemName: "checkmark") }
-                        Text("Total Ratio")
-                    }
-                })
-                Button(action: { ratioDisplayModeRaw = RatioDisplayMode.current.rawValue }, label: {
-                    HStack {
-                        if ratioDisplayMode == .current { Image(systemName: "checkmark") }
-                        Text("Session Ratio")
-                    }
-                })
-            }
-
-            Spacer()
-
-            HStack(spacing: 8) {
-                SpeedChip(
-                    speed: store.sessionStats?.downloadSpeed ?? 0,
-                    direction: .download,
-                    style: .chip,
-                    size: .compact
+        Button(action: onShowStatistics) {
+            HStack(spacing: 12) {
+                RatioChip(
+                    ratio: overallRatio,
+                    size: .compact,
+                    helpText: ratioTooltip
                 )
+                .contextMenu {
+                    Button(action: { ratioDisplayModeRaw = RatioDisplayMode.cumulative.rawValue }, label: {
+                        HStack {
+                            if ratioDisplayMode == .cumulative { Image(systemName: "checkmark") }
+                            Text("Total Ratio")
+                        }
+                    })
+                    Button(action: { ratioDisplayModeRaw = RatioDisplayMode.current.rawValue }, label: {
+                        HStack {
+                            if ratioDisplayMode == .current { Image(systemName: "checkmark") }
+                            Text("Session Ratio")
+                        }
+                    })
+                }
 
-                SpeedChip(
-                    speed: store.sessionStats?.uploadSpeed ?? 0,
-                    direction: .upload,
-                    style: .chip,
-                    size: .compact
-                )
+                Spacer()
+
+                HStack(spacing: 8) {
+                    SpeedChip(
+                        speed: downloadSpeed,
+                        direction: .download,
+                        style: .chip,
+                        size: .compact
+                    )
+
+                    SpeedChip(
+                        speed: uploadSpeed,
+                        direction: .upload,
+                        style: .chip,
+                        size: .compact
+                    )
+                }
             }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .contentShape(.rect)
         }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
+        .buttonStyle(.plain)
+        .accessibilityLabel("Statistics")
+        .accessibilityValue(accessibilityValue)
+        .accessibilityHint("Shows detailed session statistics")
     }
 }
 
@@ -257,7 +280,7 @@ struct StatsHeaderView: View {
 
 #Preview("Statistics Header", traits: .sizeThatFitsLayout) {
     PreviewContainer { environment in
-        StatsHeaderView(store: environment.store)
+        StatsHeaderView(store: environment.store, onShowStatistics: { })
             .padding()
     }
 }

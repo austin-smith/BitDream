@@ -2,12 +2,16 @@ import SwiftUI
 import Foundation
 
 #if os(iOS)
+enum iOSNavigationRoute: Hashable {
+    case torrent(Int)
+}
+
 struct iOSContentView: View {
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
     private let userDefaults: UserDefaults
 
-    @State private var torrentPath: [Int] = []
+    @State private var navigationPath: [iOSNavigationRoute] = []
 
     @State private var sortProperty: SortProperty
     @State private var sortOrder: SortOrder
@@ -15,6 +19,7 @@ struct iOSContentView: View {
     @State private var labelFilter = TorrentLabelFilter()
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons = AppDefaults.showContentTypeIcons
     @State private var searchText: String = ""
+    @State private var isStatisticsPresented = false
     @State private var showPrefs: Bool = false
     @State private var serverToEdit: Host?
 
@@ -53,7 +58,7 @@ struct iOSContentView: View {
         }
         .onChange(of: store.host?.serverID) { _, _ in
             labelFilter.clear()
-            torrentPath.removeAll()
+            navigationPath.removeAll()
         }
         .onChange(of: store.torrents.map(\.id)) { _, torrentIDs in
             reconcileNavigationPath(with: torrentIDs)
@@ -77,6 +82,12 @@ struct iOSContentView: View {
         .sheet(isPresented: $store.showSettings, content: {
             SettingsView(store: store)
         })
+        .sheet(isPresented: $isStatisticsPresented) {
+            NavigationStack {
+                iOSStatisticsView(store: store)
+            }
+            .presentationDragIndicator(.visible)
+        }
     }
 }
 
@@ -119,11 +130,14 @@ private extension iOSContentView {
     }
 
     func mainContent(drawerWidth: CGFloat, progress: CGFloat) -> some View {
-        NavigationStack(path: $torrentPath) {
+        NavigationStack(path: $navigationPath) {
             torrentListScreen
-                .navigationDestination(for: Int.self) { torrentID in
-                    if let torrent = store.torrents.first(where: { $0.id == torrentID }) {
-                        TorrentDetail(store: store, torrent: torrent)
+                .navigationDestination(for: iOSNavigationRoute.self) { route in
+                    switch route {
+                    case .torrent(let torrentID):
+                        if let torrent = store.torrents.first(where: { $0.id == torrentID }) {
+                            TorrentDetail(store: store, torrent: torrent)
+                        }
                     }
                 }
         }
@@ -144,7 +158,7 @@ private extension iOSContentView {
             }
         }
         .overlay(alignment: .leading) {
-            if !isSidebarOpen && torrentPath.isEmpty {
+            if !isSidebarOpen && navigationPath.isEmpty {
                 Color.clear
                     .frame(width: 20)
                     .contentShape(.rect)
@@ -217,7 +231,7 @@ private extension iOSContentView {
 private extension iOSContentView {
     var torrentListScreen: some View {
         VStack(spacing: 0) {
-            StatsHeaderView(store: store)
+            statisticsButton
 
             Group {
                 if store.host != nil, store.connectionStatus != .connected {
@@ -248,6 +262,15 @@ private extension iOSContentView {
         .onChange(of: sortOrder) { _, newValue in
             userDefaults.sortOrder = newValue
         }
+    }
+
+    var statisticsButton: some View {
+        StatsHeaderView(
+            store: store,
+            onShowStatistics: {
+                isStatisticsPresented = true
+            }
+        )
     }
 
     var displayedTorrents: [Torrent] {
@@ -389,7 +412,12 @@ private extension iOSContentView {
 
     func reconcileNavigationPath(with torrentIDs: [Int]) {
         let availableTorrentIDs = Set(torrentIDs)
-        torrentPath.removeAll { !availableTorrentIDs.contains($0) }
+        navigationPath.removeAll { route in
+            switch route {
+            case .torrent(let torrentID):
+                !availableTorrentIDs.contains(torrentID)
+            }
+        }
     }
 
     var hasActiveFilters: Bool {

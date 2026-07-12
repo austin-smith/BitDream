@@ -19,7 +19,7 @@ struct iOSTorrentListRow: View {
     @State private var errorMessage = ""
 
     var body: some View {
-        NavigationLink(value: torrent.id) {
+        NavigationLink(value: iOSNavigationRoute.torrent(torrent.id)) {
             paddedRowContent
         }
         .swipeActions(edge: .trailing) {

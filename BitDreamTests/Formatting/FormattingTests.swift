@@ -64,4 +64,33 @@ final class FormattingTests: XCTestCase {
         XCTAssertTrue(formatSpeed(33_000).hasSuffix("/s"))
         XCTAssertTrue(formatSpeed(33_000).hasPrefix(formatByteCount(33_000)))
     }
+
+    // MARK: - Statistics formatting
+
+    func testTransferRatioUsesTwoFractionDigits() {
+        let separator = Locale.current.decimalSeparator ?? "."
+
+        XCTAssertEqual(
+            formatTransferRatio(uploadedBytes: 3, downloadedBytes: 2),
+            "1\(separator)50"
+        )
+    }
+
+    func testTransferRatioIsZeroWithoutDownloadedBytes() {
+        let separator = Locale.current.decimalSeparator ?? "."
+
+        XCTAssertEqual(
+            formatTransferRatio(uploadedBytes: 10, downloadedBytes: 0),
+            "0\(separator)00"
+        )
+    }
+
+    func testActiveDurationClampsNegativeValuesToZero() {
+        XCTAssertEqual(formatActiveDuration(-1), "0s")
+        XCTAssertEqual(formatActiveDuration(0), "0s")
+    }
+
+    func testActiveDurationPreservesAbbreviatedDateComponentsStyle() {
+        XCTAssertEqual(formatActiveDuration(90_061), "1d 1h 1m 1s")
+    }
 }
