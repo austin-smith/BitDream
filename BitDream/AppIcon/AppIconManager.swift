@@ -2,6 +2,12 @@
 import SwiftUI
 import UIKit
 
+enum AppIconSelectionOutcome: Sendable, Equatable {
+    case changed
+    case unchanged
+    case failed
+}
+
 @MainActor
 final class AppIconManager: ObservableObject {
     static let shared = AppIconManager()
@@ -58,16 +64,23 @@ final class AppIconManager: ObservableObject {
         currentIconName = currentIconNameProvider()
     }
 
-    func selectIcon(name: String?) {
+    func selectIcon(
+        name: String?,
+        completion: @escaping @MainActor @Sendable (AppIconSelectionOutcome) -> Void = { _ in }
+    ) {
         lastError = nil
 
         guard supportsAlternateIcons else {
             lastError = "Alternate icons not supported on this device."
+            completion(.failed)
             return
         }
 
         // Avoid triggering the system alert when re-selecting the same icon.
-        guard currentIconName != name else { return }
+        guard currentIconName != name else {
+            completion(.unchanged)
+            return
+        }
 
         isChanging = true
         setAlternateIconName(name) { [weak self] error in
@@ -77,9 +90,11 @@ final class AppIconManager: ObservableObject {
 
                 if let error = error {
                     self.lastError = "Failed to change icon: \(error.localizedDescription)"
+                    completion(.failed)
                 } else {
                     self.lastError = nil
                     self.currentIconName = name
+                    completion(.changed)
                 }
             }
         }

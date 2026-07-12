@@ -12,6 +12,7 @@ private enum iOSServerFormField: Hashable {
 /// Sheet for adding a new server or editing an existing one.
 struct iOSServerEditor: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.hapticFeedback) private var hapticFeedback
     @Environment(\.hostRepositoryProvider) private var hostRepositoryProvider
     @ObservedObject var store: TransmissionStore
     let hosts: [Host]
@@ -53,9 +54,12 @@ struct iOSServerEditor: View {
                     isPresented: $isConfirmingDiscard
                 ) {
                     Button("Discard Changes", role: .destructive) {
+                        hapticFeedback.play(.actionTriggered)
                         dismiss()
                     }
-                    Button("Keep Editing", role: .cancel) {}
+                    Button("Keep Editing", role: .cancel) {
+                        hapticFeedback.play(.actionTriggered)
+                    }
                 } message: {
                     Text("Your unsaved server changes will be lost.")
                 }
@@ -73,7 +77,9 @@ struct iOSServerEditor: View {
                     }
                 )
                 .alert("Error", isPresented: isPresentingError) {
-                    Button("OK", role: .cancel) {}
+                    Button("OK", role: .cancel) {
+                        hapticFeedback.play(.actionTriggered)
+                    }
                 } message: {
                     Text(errorMessage ?? "")
                 }
@@ -93,7 +99,13 @@ struct iOSServerEditor: View {
                         .focused($focusedField, equals: .name)
                 }
 
-                Toggle("Default", isOn: $model.values.isDefault)
+                Toggle("Default", isOn: Binding(
+                    get: { model.values.isDefault },
+                    set: { value in
+                        model.values.isDefault = value
+                        hapticFeedback.play(.selectionChanged)
+                    }
+                ))
                     .disabled(!model.canEditDefaultToggle(hostCount: hosts.count))
             } footer: {
                 Text("Preferred server when connecting at launch.")
@@ -116,7 +128,13 @@ struct iOSServerEditor: View {
                         .focused($focusedField, equals: .port)
                 }
 
-                Toggle("Use SSL", isOn: $model.values.isSSL)
+                Toggle("Use SSL", isOn: Binding(
+                    get: { model.values.isSSL },
+                    set: { value in
+                        model.values.isSSL = value
+                        hapticFeedback.play(.selectionChanged)
+                    }
+                ))
             } header: {
                 Text("Connection")
             } footer: {
@@ -145,6 +163,7 @@ struct iOSServerEditor: View {
             if !isAddNew {
                 Section {
                     Button("Delete Server", role: .destructive) {
+                        hapticFeedback.play(.actionTriggered)
                         isConfirmingDelete = true
                     }
                     .frame(maxWidth: .infinity)
@@ -172,6 +191,7 @@ struct iOSServerEditor: View {
     }
 
     private func save() {
+        hapticFeedback.play(.actionTriggered)
         Task {
             do {
                 switch try await model.save(
@@ -179,17 +199,21 @@ struct iOSServerEditor: View {
                     hostRepository: hostRepositoryProvider.resolve()
                 ) {
                 case .validationFailed(let field):
+                    hapticFeedback.play(.operationNeedsAttention)
                     focusedField = focusTarget(for: field)
                 case .saved:
+                    hapticFeedback.play(.operationSucceeded)
                     dismiss()
                 }
             } catch {
+                hapticFeedback.play(.operationFailed)
                 errorMessage = userFacingHostPersistenceMessage(error)
             }
         }
     }
 
     private func cancel() {
+        hapticFeedback.play(.actionTriggered)
         if model.hasUnsavedChanges {
             isConfirmingDiscard = true
         } else {
@@ -198,6 +222,7 @@ struct iOSServerEditor: View {
     }
 
     private func performDelete(_ host: Host) {
+        hapticFeedback.play(.actionTriggered)
         Task {
             do {
                 try await deleteServer(
@@ -206,8 +231,10 @@ struct iOSServerEditor: View {
                     hosts: hosts,
                     hostRepository: hostRepositoryProvider.resolve()
                 )
+                hapticFeedback.play(.operationSucceeded)
                 dismiss()
             } catch {
+                hapticFeedback.play(.operationFailed)
                 errorMessage = userFacingHostPersistenceMessage(error)
             }
         }

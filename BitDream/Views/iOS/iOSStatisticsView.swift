@@ -3,6 +3,7 @@ import SwiftUI
 #if os(iOS)
 struct iOSStatisticsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.hapticFeedback) private var hapticFeedback
     @ObservedObject var store: TransmissionStore
 
     var body: some View {
@@ -36,6 +37,7 @@ struct iOSStatisticsView: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") {
+                    hapticFeedback.play(.actionTriggered)
                     dismiss()
                 }
             }

@@ -3,6 +3,8 @@ import SwiftUI
 
 #if os(iOS)
 struct iOSTorrentListRow: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
+
     var torrent: Torrent
     var store: TransmissionStore
     var showContentTypeIcons: Bool
@@ -38,7 +40,9 @@ struct iOSTorrentListRow: View {
             Button("Remove from list only") {
                 performDelete(erase: false)
             }
-            Button("Cancel", role: .cancel) {}
+            Button("Cancel", role: .cancel) {
+                hapticFeedback.play(.actionTriggered)
+            }
         } message: {
             Text("Do you want to delete the file(s) from the disk?")
         }
@@ -96,8 +100,8 @@ struct iOSTorrentListRow: View {
             store: store,
             onShowMove: showMoveDialog,
             onShowRename: showRenameDialog,
-            onShowLabels: { labelDialog = true },
-            onShowDelete: { deleteDialog = true },
+            onShowLabels: showLabelDialog,
+            onShowDelete: showDeleteDialog,
             onError: presentError
         )
     }
@@ -114,6 +118,7 @@ struct iOSTorrentListRow: View {
         } label: {
             Image(systemName: "ellipsis.circle")
         }
+        .iOSHapticControlActivation()
     }
 
     private func renameSheet() -> some View {
@@ -153,30 +158,51 @@ struct iOSTorrentListRow: View {
     }
 
     private func togglePlayback() {
+        hapticFeedback.play(.actionTriggered)
         performTransmissionAction(
             operation: { try await store.toggleTorrentPlayback(torrent) },
+            onSuccess: {
+                hapticFeedback.play(.operationSucceeded)
+            },
             onError: presentError
         )
     }
 
     private func performDelete(erase: Bool) {
+        hapticFeedback.play(.actionTriggered)
         performTransmissionAction(
             operation: { try await store.removeTorrents(ids: [torrent.id], deleteLocalData: erase) },
+            onSuccess: {
+                hapticFeedback.play(.operationSucceeded)
+            },
             onError: presentError
         )
     }
 
     private func showRenameDialog() {
+        hapticFeedback.play(.actionTriggered)
         renameInput = torrent.name
         renameDialog = true
     }
 
     private func showMoveDialog() {
+        hapticFeedback.play(.actionTriggered)
         movePath = store.defaultDownloadDir
         moveDialog = true
     }
 
+    private func showLabelDialog() {
+        hapticFeedback.play(.actionTriggered)
+        labelDialog = true
+    }
+
+    private func showDeleteDialog() {
+        hapticFeedback.play(.actionTriggered)
+        deleteDialog = true
+    }
+
     private func presentError(_ error: String) {
+        hapticFeedback.play(.operationFailed)
         errorMessage = error
         showingError = true
     }
@@ -184,6 +210,8 @@ struct iOSTorrentListRow: View {
 
 @MainActor
 struct IOSTorrentActionsMenu: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
+
     let torrent: Torrent
     let store: TransmissionStore
     let onShowMove: () -> Void
@@ -204,6 +232,7 @@ struct IOSTorrentActionsMenu: View {
         Divider()
         Button("Copy Magnet Link", systemImage: "document.on.document") {
             copyMagnetLinkToClipboard(torrent.magnetLink)
+            hapticFeedback.play(.operationSucceeded)
         }
         Divider()
         Button("Ask For More Peers", systemImage: "arrow.left.arrow.right") {
@@ -265,66 +294,78 @@ struct IOSTorrentActionsMenu: View {
     }
 
     private func togglePlayback() {
-        runAction {
+        runAction(successFeedback: .operationSucceeded) {
             try await store.toggleTorrentPlayback(torrent)
         }
     }
 
     private func updatePriority(_ priority: TorrentPriority) {
-        runAction {
+        runAction(successFeedback: .selectionChanged) {
             try await store.updateTorrentPriority(ids: [torrent.id], priority: priority)
         }
     }
 
     private func queueMoveTopAction() {
-        runAction {
+        runAction(successFeedback: .selectionChanged) {
             try await store.moveTorrentsInQueue(.top, ids: [torrent.id])
         }
     }
 
     private func queueMoveUpAction() {
-        runAction {
+        runAction(successFeedback: .selectionChanged) {
             try await store.moveTorrentsInQueue(.upward, ids: [torrent.id])
         }
     }
 
     private func queueMoveDownAction() {
-        runAction {
+        runAction(successFeedback: .selectionChanged) {
             try await store.moveTorrentsInQueue(.downward, ids: [torrent.id])
         }
     }
 
     private func queueMoveBottomAction() {
-        runAction {
+        runAction(successFeedback: .selectionChanged) {
             try await store.moveTorrentsInQueue(.bottom, ids: [torrent.id])
         }
     }
 
     private func verifyTorrentAction() {
-        runAction {
+        runAction(successFeedback: .operationSucceeded) {
             try await store.verifyTorrents(ids: [torrent.id])
         }
     }
 
     private func resumeNow() {
-        runAction {
+        runAction(successFeedback: .operationSucceeded) {
             try await store.startTorrentsNow(ids: [torrent.id])
         }
     }
 
     private func reannounce() {
-        runAction {
+        runAction(successFeedback: .operationSucceeded) {
             try await store.reannounceTorrents(ids: [torrent.id])
         }
     }
 
-    private func runAction(_ operation: @escaping @MainActor () async throws -> Void) {
-        performTransmissionAction(operation: operation, onError: onError)
+    private func runAction(
+        successFeedback: AppHapticFeedback,
+        operation: @escaping @MainActor @Sendable () async throws -> Void
+    ) {
+        hapticFeedback.play(.actionTriggered)
+        performTransmissionAction(
+            operation: operation,
+            onSuccess: {
+                hapticFeedback.play(successFeedback)
+            },
+            onError: onError
+        )
     }
 }
 
 @MainActor
 struct IOSTorrentRenameSheet: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
+
     let torrent: Torrent
     let store: TransmissionStore
     @Binding var renameInput: String
@@ -356,7 +397,10 @@ struct IOSTorrentRenameSheet: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") { isPresented = false }
+                Button("Cancel") {
+                    hapticFeedback.play(.actionTriggered)
+                    isPresented = false
+                }
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
@@ -369,10 +413,12 @@ struct IOSTorrentRenameSheet: View {
 
     private func saveRename() {
         guard isRenameValid else { return }
+        hapticFeedback.play(.actionTriggered)
         let nameToSave = trimmedRenameInput
         performTransmissionAction(
             operation: { try await store.renameTorrentRoot(torrent, to: nameToSave) },
             onSuccess: { (_: TorrentRenameResponseArgs) in
+                hapticFeedback.play(.operationSucceeded)
                 isPresented = false
             },
             onError: onError
@@ -382,6 +428,8 @@ struct IOSTorrentRenameSheet: View {
 
 @MainActor
 struct IOSTorrentMoveSheet: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
+
     let torrent: Torrent
     let store: TransmissionStore
     @Binding var movePath: String
@@ -408,7 +456,13 @@ struct IOSTorrentMoveSheet: View {
             }
             TextField("Destination path", text: $movePath)
                 .textFieldStyle(.roundedBorder)
-            Toggle(isOn: $moveShouldMove) {
+            Toggle(isOn: Binding(
+                get: { moveShouldMove },
+                set: { value in
+                    moveShouldMove = value
+                    hapticFeedback.play(.selectionChanged)
+                }
+            )) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Move files on disk")
                     Text("When enabled, physically moves/renames the torrent's data into this folder on the server. When disabled, does not move files, and instead simply links this torrent to files already in the selected folder.")
@@ -422,7 +476,10 @@ struct IOSTorrentMoveSheet: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") { isPresented = false }
+                Button("Cancel") {
+                    hapticFeedback.play(.actionTriggered)
+                    isPresented = false
+                }
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Set Location") {
@@ -434,6 +491,7 @@ struct IOSTorrentMoveSheet: View {
     }
 
     private func setLocation() {
+        hapticFeedback.play(.actionTriggered)
         let location = movePath.trimmingCharacters(in: .whitespacesAndNewlines)
 
         performTransmissionAction(
@@ -445,6 +503,7 @@ struct IOSTorrentMoveSheet: View {
                 )
             },
             onSuccess: {
+                hapticFeedback.play(.operationSucceeded)
                 isPresented = false
             },
             onError: onError
@@ -453,6 +512,8 @@ struct IOSTorrentMoveSheet: View {
 }
 
 struct iOSLabelEditView: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
+
     @Binding var labelInput: String
     let existingLabels: [String]
     @State private var workingLabels: Set<String>
@@ -479,6 +540,7 @@ struct iOSLabelEditView: View {
     }
 
     private func saveAndDismiss() {
+        hapticFeedback.play(.actionTriggered)
         if addNewTag(from: &newTagInput, to: &workingLabels) {
             labelInput = workingLabels.joined(separator: ", ")
         }
@@ -493,9 +555,11 @@ struct iOSLabelEditView: View {
                 ])
             },
             onSuccess: {
+                hapticFeedback.play(.operationSucceeded)
                 dismiss()
             },
             onError: { message in
+                hapticFeedback.play(.operationFailed)
                 errorMessage = message
                 showingError = true
             }
@@ -516,6 +580,7 @@ struct iOSLabelEditView: View {
                             LabelTag(label: label) {
                                 workingLabels.remove(label)
                                 labelInput = workingLabels.joined(separator: ", ")
+                                hapticFeedback.play(.selectionChanged)
                             }
                         }
                     }
@@ -529,6 +594,7 @@ struct iOSLabelEditView: View {
                             .onSubmit {
                                 if addNewTag(from: &newTagInput, to: &workingLabels) {
                                     labelInput = workingLabels.joined(separator: ", ")
+                                    hapticFeedback.play(.selectionChanged)
                                 }
                             }
 
@@ -536,6 +602,7 @@ struct iOSLabelEditView: View {
                             Button(action: {
                                 if addNewTag(from: &newTagInput, to: &workingLabels) {
                                     labelInput = workingLabels.joined(separator: ", ")
+                                    hapticFeedback.play(.selectionChanged)
                                 }
                             }, label: {
                                 Image(systemName: "plus.circle.fill")
@@ -559,6 +626,7 @@ struct iOSLabelEditView: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
+                    hapticFeedback.play(.actionTriggered)
                     dismiss()
                 }
             }
@@ -573,6 +641,7 @@ struct iOSLabelEditView: View {
                 newTagInput = newValue.replacingOccurrences(of: ",", with: "")
                 if addNewTag(from: &newTagInput, to: &workingLabels) {
                     labelInput = workingLabels.joined(separator: ", ")
+                    hapticFeedback.play(.selectionChanged)
                 }
             }
         }

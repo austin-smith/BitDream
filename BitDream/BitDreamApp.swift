@@ -316,22 +316,24 @@ private extension BitDreamApp {
     #else
     var iOSScene: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(store) // Pass the shared store to the ContentView
-                .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
-                .environmentObject(themeManager) // Pass the ThemeManager to all views
-                .environmentObject(appIconManager)
-                .immediateTheme(manager: themeManager)
-                .task {
-                    await HostRepository.shared.bootstrap()
-                    ensureStartupConnectionBehaviorApplied(store: store, modelContext: persistenceController.container.mainContext)
-                    BackgroundRefreshManager.schedule()
-                }
-                .onChange(of: scenePhase) { _, newPhase in
-                    if newPhase == .background {
+            iOSHapticFeedbackHost {
+                ContentView()
+                    .environmentObject(store) // Pass the shared store to the ContentView
+                    .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
+                    .environmentObject(themeManager) // Pass the ThemeManager to all views
+                    .environmentObject(appIconManager)
+                    .immediateTheme(manager: themeManager)
+                    .task {
+                        await HostRepository.shared.bootstrap()
+                        ensureStartupConnectionBehaviorApplied(store: store, modelContext: persistenceController.container.mainContext)
                         BackgroundRefreshManager.schedule()
                     }
-                }
+                    .onChange(of: scenePhase) { _, newPhase in
+                        if newPhase == .background {
+                            BackgroundRefreshManager.schedule()
+                        }
+                    }
+            }
         }
         .modelContainer(persistenceController.container)
     }

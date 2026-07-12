@@ -156,7 +156,7 @@ final class TransmissionStore: NSObject, ObservableObject {
     private var activationFailure: ActivationFailure?
     private var currentConnectionGeneration: UUID
     private var activationTask: Task<Void, Never>?
-    private var fullRefreshTask: Task<Void, Never>?
+    private var fullRefreshTask: Task<RefreshOutcome, Never>?
     private var pollTask: Task<Void, Never>?
     private var retryTask: Task<Void, Never>?
     private var sessionRefreshTask: Task<Void, Never>?
@@ -680,27 +680,26 @@ extension TransmissionStore {
     func requestRefresh() {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            await self.refreshNow()
+            _ = await self.refreshNow()
         }
     }
 
-    func refreshNow() async {
-        guard let activeConnection else { return }
+    func refreshNow() async -> RefreshOutcome {
+        guard let activeConnection else { return .unavailable }
 
         if let existing = fullRefreshTask {
-            await existing.value
-            return
+            return await existing.value
         }
 
         cancelPollTask()
 
         let task = Task { @MainActor [weak self] in
-            guard let self else { return }
+            guard let self else { return RefreshOutcome.cancelled }
             defer { self.fullRefreshTask = nil }
-            await self.performFullRefresh(for: activeConnection)
+            return await self.performFullRefresh(for: activeConnection)
         }
         fullRefreshTask = task
-        await task.value
+        return await task.value
     }
 
     private func replaceConnection(for host: Host, trigger: ConnectionAttemptReason) {
@@ -776,17 +775,28 @@ extension TransmissionStore {
         }
     }
 
-    private func performFullRefresh(for connectionState: ActiveConnection) async {
+    private func performFullRefresh(for connectionState: ActiveConnection) async -> RefreshOutcome {
         do {
             let snapshot = try await connectionState.connection.fetchAppRefreshSnapshot()
             guard isCurrentGeneration(connectionState.generation, hostID: connectionState.hostID) else {
-                return
+                return .cancelled
             }
 
             apply(snapshot: snapshot, for: connectionState)
             startPolling(for: connectionState)
+            return .succeeded
         } catch {
+            guard !Task.isCancelled,
+                  isCurrentGeneration(connectionState.generation, hostID: connectionState.hostID) else {
+                return .cancelled
+            }
+
+            let transmissionError = TransmissionErrorResolver.transmissionError(from: error)
+            if case .cancelled = transmissionError {
+                return .cancelled
+            }
             handleReadError(error, generation: connectionState.generation)
+            return .failed
         }
     }
 

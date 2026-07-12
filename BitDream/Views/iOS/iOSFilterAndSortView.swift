@@ -3,6 +3,7 @@ import SwiftUI
 #if os(iOS)
 struct iOSFilterAndSortView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.hapticFeedback) private var hapticFeedback
 
     @Binding var labelFilter: TorrentLabelFilter
     @Binding var sortProperty: SortProperty
@@ -24,6 +25,7 @@ struct iOSFilterAndSortView: View {
                             noLabelCount: noLabelCount,
                             onDone: dismiss.callAsFunction
                         )
+                        .iOSHapticNavigationTransition()
                     } label: {
                         LabeledContent("Labels", value: labelSelectionSummary)
                     }
@@ -36,12 +38,18 @@ struct iOSFilterAndSortView: View {
                         }
                     }
                     .pickerStyle(.navigationLink)
+                    .onChange(of: sortProperty) {
+                        hapticFeedback.play(.selectionChanged)
+                    }
 
                     Picker("Order", selection: $sortOrder) {
                         Text("Ascending").tag(SortOrder.ascending)
                         Text("Descending").tag(SortOrder.descending)
                     }
                     .pickerStyle(.navigationLink)
+                    .onChange(of: sortOrder) {
+                        hapticFeedback.play(.selectionChanged)
+                    }
                 }
             }
             .listStyle(.insetGrouped)
@@ -49,7 +57,10 @@ struct iOSFilterAndSortView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(id: "filter-and-sort-done", placement: .confirmationAction) {
-                    Button("Done", action: dismiss.callAsFunction)
+                    Button("Done") {
+                        hapticFeedback.play(.actionTriggered)
+                        dismiss()
+                    }
                 }
             }
         }
@@ -71,6 +82,8 @@ private extension iOSFilterAndSortView {
 }
 
 private struct iOSLabelFilterView: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
+
     @Binding var labelFilter: TorrentLabelFilter
 
     let availableLabels: [String]
@@ -85,6 +98,7 @@ private struct iOSLabelFilterView: View {
                     let rule = labelFilter.rule(for: label)
                     Button {
                         labelFilter.advanceRule(for: label)
+                        hapticFeedback.play(.selectionChanged)
                     } label: {
                         iOSLabelRuleRow(
                             label: label,
@@ -103,6 +117,7 @@ private struct iOSLabelFilterView: View {
 
                 Button {
                     labelFilter.setShowsUnlabeledOnly(!labelFilter.showsUnlabeledOnly)
+                    hapticFeedback.play(.selectionChanged)
                 } label: {
                     iOSNoLabelsFilterRow(
                         count: noLabelCount,
@@ -118,6 +133,7 @@ private struct iOSLabelFilterView: View {
                 Section {
                     Button("Clear All Filters") {
                         labelFilter.clear()
+                        hapticFeedback.play(.selectionChanged)
                     }
                 }
             }
@@ -126,7 +142,10 @@ private struct iOSLabelFilterView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(id: "label-filter-done", placement: .confirmationAction) {
-                Button("Done", action: onDone)
+                Button("Done") {
+                    hapticFeedback.play(.actionTriggered)
+                    onDone()
+                }
             }
         }
     }

@@ -4,6 +4,7 @@ import SwiftUI
 /// Sheet listing the configured servers with add, edit, connect, and delete actions.
 struct iOSServerList: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.hapticFeedback) private var hapticFeedback
     @Environment(\.hostRepositoryProvider) private var hostRepositoryProvider
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
@@ -55,6 +56,7 @@ struct iOSServerList: View {
 
                     Section {
                         Button {
+                            hapticFeedback.play(.actionTriggered)
                             presentedEditor = .add
                         } label: {
                             Label("New Server", systemImage: "plus")
@@ -69,6 +71,7 @@ struct iOSServerList: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Close", systemImage: "xmark", role: .close) {
+                        hapticFeedback.play(.actionTriggered)
                         dismiss()
                     }
                 }
@@ -81,6 +84,7 @@ struct iOSServerList: View {
                         Text("Add a server to get started with BitDream.")
                     } actions: {
                         Button("Add Server") {
+                            hapticFeedback.play(.actionTriggered)
                             presentedEditor = .add
                         }
                     }
@@ -100,7 +104,9 @@ struct iOSServerList: View {
                 }
             )
             .alert("Error", isPresented: isPresentingError) {
-                Button("OK", role: .cancel) {}
+                Button("OK", role: .cancel) {
+                    hapticFeedback.play(.actionTriggered)
+                }
             } message: {
                 Text(errorMessage ?? "")
             }
@@ -122,6 +128,7 @@ struct iOSServerList: View {
                 guard let serverID,
                       let host = hosts.first(where: { $0.serverID == serverID }) else { return }
                 store.setHost(host: host)
+                hapticFeedback.play(.selectionChanged)
             }
         )
     }
@@ -130,6 +137,7 @@ struct iOSServerList: View {
         let isConnected = host.serverID == store.host?.serverID
 
         return Button {
+            hapticFeedback.play(.actionTriggered)
             presentedEditor = .edit(host)
         } label: {
             ServerRowLabel(host: host, isConnected: isConnected)
@@ -138,10 +146,12 @@ struct iOSServerList: View {
         .contextMenu {
             Button("Connect", systemImage: "bolt.fill") {
                 store.setHost(host: host)
+                hapticFeedback.play(.selectionChanged)
             }
             .disabled(isConnected)
 
             Button("Edit", systemImage: "square.and.pencil") {
+                hapticFeedback.play(.actionTriggered)
                 presentedEditor = .edit(host)
             }
 
@@ -165,11 +175,13 @@ struct iOSServerList: View {
     }
 
     private func promptDelete(_ host: Host) {
+        hapticFeedback.play(.actionTriggered)
         serverToDelete = host
         isConfirmingDelete = true
     }
 
     private func performDelete(_ host: Host) {
+        hapticFeedback.play(.actionTriggered)
         Task {
             do {
                 try await deleteServer(
@@ -178,9 +190,11 @@ struct iOSServerList: View {
                     hosts: hosts,
                     hostRepository: hostRepositoryProvider.resolve()
                 )
+                hapticFeedback.play(.operationSucceeded)
                 serverToDelete = nil
             } catch {
                 serverToDelete = nil
+                hapticFeedback.play(.operationFailed)
                 errorMessage = userFacingHostPersistenceMessage(error)
             }
         }

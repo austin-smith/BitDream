@@ -7,7 +7,7 @@ extension TorrentDetailSupplementalStore {
         using store: TransmissionStore,
         showingError: Binding<Bool>,
         errorMessage: Binding<String>
-    ) async {
+    ) async -> RefreshOutcome {
         await load(
             for: identity,
             using: store,
@@ -23,7 +23,7 @@ extension TorrentDetailSupplementalStore {
         using store: TransmissionStore,
         showingInitialLoadError: Binding<Bool>,
         errorMessage: Binding<String>
-    ) async {
+    ) async -> RefreshOutcome {
         await refresh(
             for: identity,
             using: store,
@@ -71,7 +71,7 @@ extension TorrentDetailSupplementalStore {
         using store: TransmissionStore,
         showingError: Binding<Bool>,
         errorMessage: Binding<String>
-    ) async {
+    ) async -> RefreshOutcome {
         await loadIfIdle(
             for: identity,
             using: store,

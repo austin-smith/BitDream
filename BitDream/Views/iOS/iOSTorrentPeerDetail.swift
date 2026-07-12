@@ -3,12 +3,14 @@ import Foundation
 
 #if os(iOS)
 struct iOSTorrentPeerDetail: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
+
     let torrentName: String
     let torrentId: Int
     let store: TransmissionStore
     let peers: [Peer]
     let peersFrom: PeersFrom?
-    let onRefresh: @MainActor () async -> Void
+    let onRefresh: @MainActor () async -> RefreshOutcome
     let onDone: () -> Void
 
     @State private var searchText: String = ""
@@ -30,7 +32,9 @@ struct iOSTorrentPeerDetail: View {
                     Text(peers.isEmpty ? "No peers yet" : "No results")
                         .foregroundColor(.secondary)
                     Button {
-                        Task { await onRefresh() }
+                        Task {
+                            await refreshPeers()
+                        }
                     } label: {
                         Label("Refresh", systemImage: "arrow.clockwise")
                     }
@@ -42,11 +46,16 @@ struct iOSTorrentPeerDetail: View {
                 .toolbar {
                     ToolbarItemGroup(placement: .navigationBarTrailing) {
                         Button {
-                            Task { await onRefresh() }
+                            Task {
+                                await refreshPeers()
+                            }
                         } label: {
                             Image(systemName: "arrow.clockwise")
                         }
-                        Button("Done", action: onDone)
+                        Button("Done") {
+                            hapticFeedback.play(.actionTriggered)
+                            onDone()
+                        }
                     }
                 }
             } else {
@@ -72,22 +81,36 @@ struct iOSTorrentPeerDetail: View {
                         }
                     }
                 }
-                .refreshable { await onRefresh() }
+                .refreshable {
+                    await refreshPeers()
+                }
                 .navigationTitle("Peers")
                 .navigationBarTitleDisplayMode(.inline)
                 .searchable(text: $searchText, prompt: "Search peers")
                 .toolbar {
                     ToolbarItemGroup(placement: .navigationBarTrailing) {
                         Button {
-                            Task { await onRefresh() }
+                            Task {
+                                await refreshPeers()
+                            }
                         } label: {
                             Image(systemName: "arrow.clockwise")
                         }
-                        Button("Done", action: onDone)
+                        Button("Done") {
+                            hapticFeedback.play(.actionTriggered)
+                            onDone()
+                        }
                     }
                 }
             }
         }
+    }
+
+    private func refreshPeers() async {
+        hapticFeedback.play(.actionTriggered)
+        let outcome = await onRefresh()
+        guard let feedback = outcome.appHapticFeedback else { return }
+        hapticFeedback.play(feedback)
     }
 }
 
@@ -163,7 +186,7 @@ struct iOSTorrentPeerDetail: View {
     let store: TransmissionStore
     let peers: [Peer]
     let peersFrom: PeersFrom?
-    let onRefresh: @MainActor () async -> Void
+    let onRefresh: @MainActor () async -> RefreshOutcome
     let onDone: () -> Void
     var body: some View { EmptyView() }
 }
@@ -178,7 +201,7 @@ struct iOSTorrentPeerDetail: View {
             store: environment.store,
             peers: PreviewFixtures.peers,
             peersFrom: PreviewFixtures.peersFrom,
-            onRefresh: {},
+            onRefresh: { .succeeded },
             onDone: {}
         )
     }

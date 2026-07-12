@@ -41,6 +41,9 @@ struct SettingsView: View {
         userDefaults.set(AppDefaults.dockShowDownloadSpeed, forKey: UserDefaultsKeys.dockShowDownloadSpeed)
         userDefaults.set(AppDefaults.dockShowUploadSpeed, forKey: UserDefaultsKeys.dockShowUploadSpeed)
         userDefaults.set(AppDefaults.startupConnectionBehavior.rawValue, forKey: UserDefaultsKeys.startupConnectionBehavior)
+        #if os(iOS)
+        userDefaults.set(AppDefaults.hapticFeedbackEnabled, forKey: UserDefaultsKeys.hapticFeedbackEnabled)
+        #endif
 
         // Poll interval via TransmissionStore API
         store.updatePollInterval(AppDefaults.pollInterval)

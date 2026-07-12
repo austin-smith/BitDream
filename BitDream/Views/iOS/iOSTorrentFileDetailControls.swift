@@ -58,6 +58,7 @@ struct BulkActionToolbar: View {
                     Text("Actions")
                         .font(.subheadline)
                 }
+                .iOSHapticControlActivation()
                 .disabled(selectedCount == 0)
             }
             .padding(.horizontal, 16)
@@ -82,6 +83,8 @@ struct BulkActionToolbar: View {
 }
 
 struct FileActionButtonsView: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
+
     let hasActiveFilters: Bool
     @Binding var sortProperty: FileSortProperty
     @Binding var sortOrder: SortOrder
@@ -92,6 +95,7 @@ struct FileActionButtonsView: View {
     var body: some View {
         HStack(spacing: 12) {
             Button {
+                hapticFeedback.play(.actionTriggered)
                 showFilterSheet = true
             } label: {
                 HStack(spacing: 4) {
@@ -103,13 +107,15 @@ struct FileActionButtonsView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .background(hasActiveFilters ? Color.accentColor : Color.accentColor.opacity(0.1))
-                .cornerRadius(16)
+                    .cornerRadius(16)
             }
 
             Menu {
                 ForEach(FileSortProperty.allCases, id: \.self) { property in
                     Button {
+                        guard sortProperty != property else { return }
                         sortProperty = property
+                        hapticFeedback.play(.selectionChanged)
                     } label: {
                         HStack {
                             Text(property.rawValue)
@@ -124,7 +130,9 @@ struct FileActionButtonsView: View {
                 Divider()
 
                 Button {
+                    guard sortOrder != .ascending else { return }
                     sortOrder = .ascending
+                    hapticFeedback.play(.selectionChanged)
                 } label: {
                     HStack {
                         Text("Ascending")
@@ -136,7 +144,9 @@ struct FileActionButtonsView: View {
                 }
 
                 Button {
+                    guard sortOrder != .descending else { return }
                     sortOrder = .descending
+                    hapticFeedback.play(.selectionChanged)
                 } label: {
                     HStack {
                         Text("Descending")
@@ -189,6 +199,7 @@ struct FileActionButtonsView: View {
 
 struct FilterSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.hapticFeedback) private var hapticFeedback
 
     @Binding var showWantedFiles: Bool
     @Binding var showSkippedFiles: Bool
@@ -237,6 +248,7 @@ struct FilterSheet: View {
                         showOther = true
                     }
                     .foregroundColor(.accentColor)
+                    .disabled(!hasActiveFilters)
                 }
             }
             .navigationTitle("Filters")
@@ -244,12 +256,61 @@ struct FilterSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
+                        hapticFeedback.play(.actionTriggered)
                         dismiss()
                     }
                 }
             }
         }
+        .onChange(of: filterSelection) {
+            hapticFeedback.play(.selectionChanged)
+        }
     }
+
+    private var filterSelection: FileFilterSelection {
+        FileFilterSelection(
+            showsWanted: showWantedFiles,
+            showsSkipped: showSkippedFiles,
+            showsComplete: showCompleteFiles,
+            showsIncomplete: showIncompleteFiles,
+            showsVideos: showVideos,
+            showsAudio: showAudio,
+            showsImages: showImages,
+            showsDocuments: showDocuments,
+            showsArchives: showArchives,
+            showsOther: showOther
+        )
+    }
+
+    private var hasActiveFilters: Bool {
+        filterSelection != .showAll
+    }
+}
+
+private struct FileFilterSelection: Equatable {
+    let showsWanted: Bool
+    let showsSkipped: Bool
+    let showsComplete: Bool
+    let showsIncomplete: Bool
+    let showsVideos: Bool
+    let showsAudio: Bool
+    let showsImages: Bool
+    let showsDocuments: Bool
+    let showsArchives: Bool
+    let showsOther: Bool
+
+    static let showAll = Self(
+        showsWanted: true,
+        showsSkipped: true,
+        showsComplete: true,
+        showsIncomplete: true,
+        showsVideos: true,
+        showsAudio: true,
+        showsImages: true,
+        showsDocuments: true,
+        showsArchives: true,
+        showsOther: true
+    )
 }
 
 #if DEBUG

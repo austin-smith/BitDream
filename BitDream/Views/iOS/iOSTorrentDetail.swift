@@ -4,6 +4,7 @@ import SwiftUI
 #if os(iOS)
 struct iOSTorrentDetail: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.hapticFeedback) private var hapticFeedback
 
     @ObservedObject var store: TransmissionStore
     var torrent: Torrent
@@ -36,6 +37,7 @@ struct iOSTorrentDetail: View {
     }
 
     private func replaceSupplementalLoad() {
+        hapticFeedback.play(.actionTriggered)
         supplementalStore.replaceLoad(
             for: supplementalIdentity,
             using: store,
@@ -59,7 +61,10 @@ struct iOSTorrentDetail: View {
             piecesSectionState: piecesSectionState,
             filesDestination: filesDestination,
             peersDestination: peersDestination,
-            onDelete: { showingDeleteConfirmation = true },
+            onDelete: {
+                hapticFeedback.play(.actionTriggered)
+                showingDeleteConfirmation = true
+            },
             onRetryPiecesLoad: {
                 replaceSupplementalLoad()
             }
@@ -84,7 +89,9 @@ struct iOSTorrentDetail: View {
             Button("Remove from list only") {
                 performDelete(deleteLocalData: false)
             }
-            Button("Cancel", role: .cancel) { }
+            Button("Cancel", role: .cancel) {
+                hapticFeedback.play(.actionTriggered)
+            }
         } message: {
             Text("Do you want to delete the file(s) from the disk?")
         }
@@ -95,6 +102,7 @@ struct iOSTorrentDetail: View {
     }
 
     private func performDelete(deleteLocalData: Bool) {
+        hapticFeedback.play(.actionTriggered)
         performTransmissionAction(
             operation: {
                 try await store.removeTorrents(
@@ -103,12 +111,10 @@ struct iOSTorrentDetail: View {
                 )
             },
             onSuccess: {
+                hapticFeedback.play(.operationSucceeded)
                 dismiss()
             },
-            onError: makeTransmissionBindingErrorHandler(
-                isPresented: $showingError,
-                message: $errorMessage
-            )
+            onError: presentError
         )
     }
 
@@ -121,12 +127,13 @@ struct iOSTorrentDetail: View {
                     onShowMove: showMoveDialog,
                     onShowRename: showRenameDialog,
                     onShowLabels: showLabelDialog,
-                    onShowDelete: { showingDeleteConfirmation = true },
+                    onShowDelete: showDeleteDialog,
                     onError: presentError
                 )
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
+            .iOSHapticControlActivation()
         }
     }
 
@@ -167,21 +174,30 @@ struct iOSTorrentDetail: View {
     }
 
     private func showRenameDialog() {
+        hapticFeedback.play(.actionTriggered)
         renameInput = torrent.name
         renameDialog = true
     }
 
     private func showMoveDialog() {
+        hapticFeedback.play(.actionTriggered)
         movePath = store.defaultDownloadDir
         moveDialog = true
     }
 
     private func showLabelDialog() {
+        hapticFeedback.play(.actionTriggered)
         labelInput = torrent.labels.joined(separator: ", ")
         labelDialog = true
     }
 
+    private func showDeleteDialog() {
+        hapticFeedback.play(.actionTriggered)
+        showingDeleteConfirmation = true
+    }
+
     private func presentError(_ error: String) {
+        hapticFeedback.play(.operationFailed)
         errorMessage = error
         showingError = true
     }
@@ -296,6 +312,7 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
 
                     NavigationLink {
                         filesDestination
+                            .iOSHapticNavigationTransition()
                     } label: {
                         LabeledContent(
                             "Files",
@@ -308,6 +325,7 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
 
                     NavigationLink {
                         peersDestination
+                            .iOSHapticNavigationTransition()
                     } label: {
                         LabeledContent("Peers", value: "\(supplementalPayload.peers.count)")
                     }

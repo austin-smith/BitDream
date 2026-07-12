@@ -4,6 +4,7 @@ import SwiftUI
 struct iOSAboutView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.openURL) var openURL
+    @Environment(\.hapticFeedback) private var hapticFeedback
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -72,6 +73,7 @@ struct iOSAboutView: View {
                             .foregroundStyle(.tertiary)
 
                         Button("Transmission") {
+                            hapticFeedback.play(.actionTriggered)
                             if let url = URL(string: "https://transmissionbt.com/") {
                                 openURL(url)
                             }

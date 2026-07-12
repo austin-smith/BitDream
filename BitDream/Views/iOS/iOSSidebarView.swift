@@ -104,8 +104,10 @@ private struct FooterCircleButton: View {
                 .foregroundStyle(.primary)
                 .frame(width: 44, height: 44)
                 .background(
+                    // Tertiary stays white in light mode but elevates to gray in dark,
+                    // where shadows alone can't separate the circle from the sidebar
                     Circle()
-                        .fill(Color(.systemBackground))
+                        .fill(Color(.tertiarySystemBackground))
                         .shadow(color: .black.opacity(0.18), radius: 8, y: 2)
                 )
         }

@@ -7,6 +7,8 @@ enum iOSNavigationRoute: Hashable {
 }
 
 struct iOSContentView: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
+
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
     private let userDefaults: UserDefaults
@@ -63,6 +65,9 @@ struct iOSContentView: View {
         .onChange(of: store.torrents.map(\.id)) { _, torrentIDs in
             reconcileNavigationPath(with: torrentIDs)
         }
+        .onChange(of: isSidebarOpen) {
+            hapticFeedback.play(.actionTriggered)
+        }
         .sheet(isPresented: $store.setup, content: {
             iOSServerEditor(store: store, hosts: hosts, host: nil)
         })
@@ -110,15 +115,19 @@ private extension iOSContentView {
                 closeSidebarAfterSelection()
             },
             onEditServer: { host in
+                hapticFeedback.play(.actionTriggered)
                 serverToEdit = host
             },
             onAddServer: {
+                hapticFeedback.play(.actionTriggered)
                 store.setup = true
             },
             onManageServers: {
+                hapticFeedback.play(.actionTriggered)
                 store.editServers = true
             },
             onOpenSettings: {
+                hapticFeedback.play(.actionTriggered)
                 store.showSettings = true
             }
         )
@@ -144,6 +153,9 @@ private extension iOSContentView {
         .onChange(of: sidebarSelection) { _, _ in
             closeSidebarAfterSelection()
         }
+        .onChange(of: navigationPath) {
+            hapticFeedback.play(.selectionChanged)
+        }
         .overlay {
             if progress > 0 {
                 // White scrim fades the card toward the background; also catches taps/drags to close
@@ -166,6 +178,11 @@ private extension iOSContentView {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 32 * progress, style: .continuous))
+        .overlay(
+            // Shadows vanish on black backgrounds; this edge keeps the card separated in dark mode
+            RoundedRectangle(cornerRadius: 32 * progress, style: .continuous)
+                .strokeBorder(Color(.separator).opacity(Double(progress)), lineWidth: 1)
+        )
         .shadow(color: .black.opacity(0.12 * progress), radius: 12)
         .offset(x: drawerWidth * progress)
     }
@@ -248,7 +265,11 @@ private extension iOSContentView {
         .navigationTitle(sidebarSelection.rawValue)
         .navigationBarTitleDisplayMode(.inline)
         .refreshable {
-            await store.refreshNow()
+            hapticFeedback.play(.actionTriggered)
+            let outcome = await store.refreshNow()
+            if let feedback = outcome.appHapticFeedback {
+                hapticFeedback.play(feedback)
+            }
         }
         .searchable(text: $searchText, prompt: "Search torrents")
         .toolbar {
@@ -268,6 +289,7 @@ private extension iOSContentView {
         StatsHeaderView(
             store: store,
             onShowStatistics: {
+                hapticFeedback.play(.actionTriggered)
                 isStatisticsPresented = true
             }
         )
@@ -342,6 +364,7 @@ private extension iOSContentView {
             } label: {
                 Image(systemName: "ellipsis.circle")
             }
+            .iOSHapticControlActivation()
         }
     }
 
@@ -349,6 +372,7 @@ private extension iOSContentView {
         Group {
             ToolbarItem(placement: .bottomBar) {
                 Button {
+                    hapticFeedback.play(.actionTriggered)
                     showPrefs.toggle()
                 } label: {
                     Label(
@@ -377,6 +401,7 @@ private extension iOSContentView {
 
             ToolbarItem(placement: .bottomBar) {
                 Button(action: {
+                    hapticFeedback.play(.actionTriggered)
                     store.isShowingAddAlert.toggle()
                 }, label: {
                     Label("Add Torrent", systemImage: "plus")
@@ -386,18 +411,38 @@ private extension iOSContentView {
     }
 
     func pauseAllTorrents() {
-        performTransmissionDebugAction(
+        performAllTorrentsAction(
             .pauseAllTorrents,
-            store: store,
             operation: { try await store.pauseAllTorrents() }
         )
     }
 
     func resumeAllTorrents() {
-        performTransmissionDebugAction(
+        performAllTorrentsAction(
             .resumeAllTorrents,
-            store: store,
             operation: { try await store.resumeAllTorrents() }
+        )
+    }
+
+    func performAllTorrentsAction(
+        _ context: TransmissionActionFailureContext,
+        operation: @escaping @MainActor @Sendable () async throws -> Void
+    ) {
+        hapticFeedback.play(.actionTriggered)
+        let errorHandler = makeTransmissionDebugErrorHandler(
+            store: store,
+            context: context
+        )
+
+        performTransmissionAction(
+            operation: operation,
+            onSuccess: {
+                hapticFeedback.play(.operationSucceeded)
+            },
+            onError: { message in
+                hapticFeedback.play(.operationFailed)
+                errorHandler(message)
+            }
         )
     }
 

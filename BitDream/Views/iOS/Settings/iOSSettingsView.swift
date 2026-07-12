@@ -7,6 +7,7 @@ typealias PlatformSettingsView = iOSSettingsView
 
 struct iOSSettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.hapticFeedback) private var hapticFeedback
     @Environment(\.appUserDefaults) private var userDefaults
     @EnvironmentObject private var appIconManager: AppIconManager
     @EnvironmentObject private var themeManager: ThemeManager
@@ -14,6 +15,7 @@ struct iOSSettingsView: View {
     @ObservedObject var store: TransmissionStore
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = AppDefaults.showContentTypeIcons
     @AppStorage(UserDefaultsKeys.startupConnectionBehavior) private var startupBehaviorRaw: String = AppDefaults.startupConnectionBehavior.rawValue
+    @AppStorage(UserDefaultsKeys.hapticFeedbackEnabled) private var isHapticFeedbackEnabled = AppDefaults.hapticFeedbackEnabled
 
     var body: some View {
         NavigationView {
@@ -25,7 +27,8 @@ struct iOSSettingsView: View {
                         }
                     }
 
-                    NavigationLink(destination: AccentColorPicker(selection: $themeManager.currentAccentColorOption)) {
+                    NavigationLink(destination: AccentColorPicker(selection: $themeManager.currentAccentColorOption)
+                        .iOSHapticNavigationTransition()) {
                         HStack {
                             Text("Accent Color")
                             Spacer()
@@ -37,7 +40,8 @@ struct iOSSettingsView: View {
                         }
                     }
 
-                    NavigationLink(destination: AppIconPickerView(appIconManager: appIconManager)) {
+                    NavigationLink(destination: AppIconPickerView(appIconManager: appIconManager)
+                        .iOSHapticNavigationTransition()) {
                         HStack {
                             Text("App Icon")
                             Spacer()
@@ -55,6 +59,15 @@ struct iOSSettingsView: View {
                     }
                 }
 
+                Section {
+                    Toggle("Haptic Feedback", isOn: $isHapticFeedbackEnabled)
+                        .sensoryFeedback(.selection, trigger: isHapticFeedbackEnabled)
+                } header: {
+                    Text("Interaction")
+                } footer: {
+                    Text("Provides tactile confirmation for important actions and outcomes.")
+                }
+
                 Section(header: Text("Refresh Settings")) {
                     Picker("Poll Interval", selection: Binding(
                         get: { store.pollInterval },
@@ -68,30 +81,36 @@ struct iOSSettingsView: View {
                 }
 
                 Section(header: Text("Server Settings")) {
-                    NavigationLink(destination: iOSTorrentsSettingsView(store: store)) {
+                    NavigationLink(destination: iOSTorrentsSettingsView(store: store)
+                        .iOSHapticNavigationTransition()) {
                         Label("Torrents", systemImage: "arrow.down.circle")
                     }
-                    NavigationLink(destination: iOSSpeedLimitsSettingsView(store: store)) {
+                    NavigationLink(destination: iOSSpeedLimitsSettingsView(store: store)
+                        .iOSHapticNavigationTransition()) {
                         Label("Speed Limits", systemImage: "speedometer")
                     }
-                    NavigationLink(destination: iOSNetworkSettingsView(store: store)) {
+                    NavigationLink(destination: iOSNetworkSettingsView(store: store)
+                        .iOSHapticNavigationTransition()) {
                         Label("Network", systemImage: "network")
                     }
                 }
 
                 Section(header: Text("Reset")) {
                     Button("Reset All Settings") {
+                        hapticFeedback.play(.actionTriggered)
                         SettingsView.resetAllSettings(
                             store: store,
                             themeManager: themeManager,
                             userDefaults: userDefaults
                         )
+                        hapticFeedback.play(.operationSucceeded)
                     }
                     .foregroundColor(.accentColor)
                 }
 
                 Section(header: Text("About")) {
-                    NavigationLink(destination: iOSAboutView()) {
+                    NavigationLink(destination: iOSAboutView()
+                        .iOSHapticNavigationTransition()) {
                         HStack {
                             Text("About BitDream")
                             Spacer()
@@ -102,9 +121,22 @@ struct iOSSettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .onChange(of: themeManager.themeMode) {
+                hapticFeedback.play(.selectionChanged)
+            }
+            .onChange(of: showContentTypeIcons) {
+                hapticFeedback.play(.selectionChanged)
+            }
+            .onChange(of: startupBehaviorRaw) {
+                hapticFeedback.play(.selectionChanged)
+            }
+            .onChange(of: store.pollInterval) {
+                hapticFeedback.play(.selectionChanged)
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
+                        hapticFeedback.play(.actionTriggered)
                         dismiss()
                     }
                 }
@@ -114,37 +146,42 @@ struct iOSSettingsView: View {
 }
 
 private struct AccentColorPicker: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
     @EnvironmentObject private var themeManager: ThemeManager
     @Binding var selection: AccentColorOption
 
     var body: some View {
         List {
             ForEach(AccentColorOption.allCases) { option in
-                HStack {
-                    Circle()
-                        .fill(option.color)
-                        .frame(width: 20, height: 20)
+                Button {
+                    guard selection != option else { return }
 
-                    Text(option.name)
-
-                    Text(option.rawValue)
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundColor(.secondary)
-
-                    Spacer()
-
-                    if selection == option {
-                        Image(systemName: "checkmark")
-                            .foregroundColor(.accentColor)
-                    }
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
                     withAnimation(.easeInOut(duration: 0.1)) {
                         selection = option
                         themeManager.setAccentColor(option)
                     }
+                    hapticFeedback.play(.selectionChanged)
+                } label: {
+                    HStack {
+                        Circle()
+                            .fill(option.color)
+                            .frame(width: 20, height: 20)
+
+                        Text(option.name)
+
+                        Text(option.rawValue)
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        if selection == option {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(.tint)
+                        }
+                    }
                 }
+                .buttonStyle(.plain)
             }
         }
         .navigationTitle("Accent Color")
@@ -160,26 +197,29 @@ private struct AppIconOption: Identifiable, Equatable {
 }
 
 private struct AppIconPickerView: View {
+    @Environment(\.hapticFeedback) private var hapticFeedback
     @ObservedObject var appIconManager: AppIconManager
     @State private var options: [AppIconOption] = []
 
     var body: some View {
         List {
             ForEach(options) { option in
-                HStack(spacing: 12) {
-                    PreviewThumbnail(name: option.previewAssetName)
-                        .frame(width: 44, height: 44)
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    Text(option.title)
-                    Spacer()
-                    if appIconManager.currentIconName == option.key {
-                        Image(systemName: "checkmark")
+                Button {
+                    selectIcon(option)
+                } label: {
+                    HStack(spacing: 12) {
+                        PreviewThumbnail(name: option.previewAssetName)
+                            .frame(width: 44, height: 44)
+                            .clipShape(.rect(cornerRadius: 8, style: .continuous))
+                        Text(option.title)
+                        Spacer()
+                        if appIconManager.currentIconName == option.key {
+                            Image(systemName: "checkmark")
+                        }
                     }
                 }
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    appIconManager.selectIcon(name: option.key)
-                }
+                .buttonStyle(.plain)
+                .disabled(appIconManager.isChanging)
             }
 
             if let lastError = appIconManager.lastError {
@@ -206,6 +246,19 @@ private struct AppIconPickerView: View {
                 title: presentation.title,
                 previewAssetName: presentation.previewAssetName
             )
+        }
+    }
+
+    private func selectIcon(_ option: AppIconOption) {
+        appIconManager.selectIcon(name: option.key) { outcome in
+            switch outcome {
+            case .changed:
+                hapticFeedback.play(.operationSucceeded)
+            case .failed:
+                hapticFeedback.play(.operationFailed)
+            case .unchanged:
+                break
+            }
         }
     }
 }
