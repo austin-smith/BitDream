@@ -405,27 +405,18 @@ private extension iOSContentView {
 /// Sidebar toggle glyph: a long line over a shorter line.
 /// Template image so the toolbar tints it like an SF Symbol.
 struct SidebarToggleGlyph: View {
-    var body: some View {
-        Image(uiImage: Self.glyph)
-    }
+    private static let lineHeight: CGFloat = 2.5
+    private static let spacing: CGFloat = 4.5
 
-    private static let glyph: UIImage = {
-        let lineHeight: CGFloat = 2.5
-        let spacing: CGFloat = 4.5
-        let size = CGSize(width: 17, height: lineHeight * 2 + spacing)
-        let image = UIGraphicsImageRenderer(size: size).image { _ in
-            UIColor.black.setFill()
-            UIBezierPath(
-                roundedRect: CGRect(x: 0, y: 0, width: 17, height: lineHeight),
-                cornerRadius: lineHeight / 2
-            ).fill()
-            UIBezierPath(
-                roundedRect: CGRect(x: 0, y: lineHeight + spacing, width: 11, height: lineHeight),
-                cornerRadius: lineHeight / 2
-            ).fill()
+    var body: some View {
+        Image(size: CGSize(width: 17, height: Self.lineHeight * 2 + Self.spacing)) { context in
+            let top = Capsule().path(in: CGRect(x: 0, y: 0, width: 17, height: Self.lineHeight))
+            let bottom = Capsule().path(in: CGRect(x: 0, y: Self.lineHeight + Self.spacing, width: 11, height: Self.lineHeight))
+            context.fill(top, with: .color(.black))
+            context.fill(bottom, with: .color(.black))
         }
-        return image.withRenderingMode(.alwaysTemplate)
-    }()
+        .renderingMode(.template)
+    }
 }
 
 #if DEBUG
