@@ -41,173 +41,175 @@ struct macOSGeneralSettingsTab: View {
     #endif
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            GroupBox {
-                VStack(alignment: .leading, spacing: 16) {
-                    settingsSection("Appearance") {
-                        HStack {
-                            Text("Theme")
-                            Spacer()
-                            Picker("", selection: $themeManager.themeMode) {
-                                ForEach(ThemeMode.allCases, id: \.self) { mode in
-                                    Text(mode.rawValue).tag(mode)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                        }
-
-                        HStack {
-                            Text("Accent Color")
-                            Spacer()
-                            Picker("", selection: $themeManager.currentAccentColorOption) {
-                                ForEach(AccentColorOption.allCases) { option in
-                                    HStack {
-                                        Circle()
-                                            .fill(option.color)
-                                            .frame(width: 12, height: 12)
-                                        Text(option.name)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 16) {
+                        settingsSection("Appearance") {
+                            HStack {
+                                Text("Theme")
+                                Spacer()
+                                Picker("", selection: $themeManager.themeMode) {
+                                    ForEach(ThemeMode.allCases, id: \.self) { mode in
+                                        Text(mode.rawValue).tag(mode)
                                     }
-                                    .tag(option)
                                 }
+                                .pickerStyle(.menu)
                             }
-                            .pickerStyle(.menu)
-                        }
-
-                        HStack(spacing: 12) {
-                            ForEach(AccentColorOption.allCases) { option in
-                                VStack {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(option.color)
-                                        .frame(width: 40, height: 40)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(themeManager.currentAccentColorOption == option ? Color.primary : Color.clear, lineWidth: 2)
-                                        )
-                                    Text(option.rawValue)
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
-                                }
-                                .onTapGesture {
-                                    themeManager.setAccentColor(option)
-                                }
-                            }
-                        }
-                        .padding(.top, 8)
-
-                        Toggle("Show file type icons", isOn: $showContentTypeIcons)
-                    }
-
-                    divider
-
-                    settingsSection("Menu Bar") {
-                        Toggle("Show BitDream in menu bar", isOn: $menuBarTransferWidgetEnabled)
-
-                        VStack(alignment: .leading, spacing: 12) {
-                            Toggle("Show active torrent count", isOn: $menuBarShowActiveCount)
 
                             HStack {
-                                Text("Sort torrents by")
+                                Text("Accent Color")
                                 Spacer()
-                                Picker("", selection: menuBarSortMode) {
-                                    ForEach(MenuBarSortMode.allCases, id: \.self) { mode in
-                                        Text(mode.label).tag(mode)
+                                Picker("", selection: $themeManager.currentAccentColorOption) {
+                                    ForEach(AccentColorOption.allCases) { option in
+                                        HStack {
+                                            Circle()
+                                                .fill(option.color)
+                                                .frame(width: 12, height: 12)
+                                            Text(option.name)
+                                        }
+                                        .tag(option)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                            }
+
+                            HStack(spacing: 12) {
+                                ForEach(AccentColorOption.allCases) { option in
+                                    VStack {
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(option.color)
+                                            .frame(width: 40, height: 40)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(themeManager.currentAccentColorOption == option ? Color.primary : Color.clear, lineWidth: 2)
+                                            )
+                                        Text(option.rawValue)
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .onTapGesture {
+                                        themeManager.setAccentColor(option)
+                                    }
+                                }
+                            }
+                            .padding(.top, 8)
+
+                            Toggle("Show file type icons", isOn: $showContentTypeIcons)
+                        }
+
+                        divider
+
+                        settingsSection("Menu Bar") {
+                            Toggle("Show BitDream in menu bar", isOn: $menuBarTransferWidgetEnabled)
+
+                            VStack(alignment: .leading, spacing: 12) {
+                                Toggle("Show active torrent count", isOn: $menuBarShowActiveCount)
+
+                                HStack {
+                                    Text("Sort torrents by")
+                                    Spacer()
+                                    Picker("", selection: menuBarSortMode) {
+                                        ForEach(MenuBarSortMode.allCases, id: \.self) { mode in
+                                            Text(mode.label).tag(mode)
+                                        }
+                                    }
+                                    .pickerStyle(.menu)
+                                }
+                            }
+                            .padding(.leading, 20)
+                            .disabled(!menuBarTransferWidgetEnabled)
+                        }
+
+                        divider
+
+                        settingsSection("Dock Badge") {
+                            Toggle("Show completed torrents count", isOn: $dockShowCompletedBadge)
+                            Toggle("Show download rate", isOn: $dockShowDownloadSpeed)
+                            Toggle("Show upload rate", isOn: $dockShowUploadSpeed)
+                        }
+
+                        divider
+
+                        settingsSection("Connection Settings") {
+                            HStack {
+                                Text("Startup connection")
+                                Spacer()
+                                Picker("", selection: .fromRawValue(rawValue: $startupBehaviorRaw, defaultValue: AppDefaults.startupConnectionBehavior)) {
+                                    Text("Last used server").tag(StartupConnectionBehavior.lastUsed)
+                                    Text("Default server").tag(StartupConnectionBehavior.defaultServer)
+                                }
+                                .pickerStyle(.menu)
+                            }
+                            .help("Choose which server BitDream connects to when it launches.")
+
+                            HStack {
+                                Text("Auto-refresh interval")
+                                Spacer()
+                                Picker("", selection: $store.pollInterval) {
+                                    ForEach(SettingsView.pollIntervalOptions, id: \.self) { interval in
+                                        Text(SettingsView.formatInterval(interval)).tag(interval)
                                     }
                                 }
                                 .pickerStyle(.menu)
                             }
                         }
-                        .padding(.leading, 20)
-                        .disabled(!menuBarTransferWidgetEnabled)
-                    }
 
-                    divider
+                        #if canImport(Sparkle)
+                        divider
+                        settingsSection("Updates") {
+                            Toggle("Automatically check for updates", isOn: automaticallyChecksForUpdates)
 
-                    settingsSection("Dock Badge") {
-                        Toggle("Show completed torrents count", isOn: $dockShowCompletedBadge)
-                        Toggle("Show download rate", isOn: $dockShowDownloadSpeed)
-                        Toggle("Show upload rate", isOn: $dockShowUploadSpeed)
-                    }
+                            HStack(alignment: .firstTextBaseline) {
+                                Button("Check for Updates…", action: appUpdater.checkForUpdates)
+                                .disabled(!appUpdater.canCheckForUpdates)
 
-                    divider
+                                Spacer()
 
-                    settingsSection("Connection Settings") {
-                        HStack {
-                            Text("Startup connection")
-                            Spacer()
-                            Picker("", selection: .fromRawValue(rawValue: $startupBehaviorRaw, defaultValue: AppDefaults.startupConnectionBehavior)) {
-                                Text("Last used server").tag(StartupConnectionBehavior.lastUsed)
-                                Text("Default server").tag(StartupConnectionBehavior.defaultServer)
+                                Text("Last checked: \(lastUpdateCheckText)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
                             }
-                            .pickerStyle(.menu)
                         }
-                        .help("Choose which server BitDream connects to when it launches.")
+                        #endif
 
-                        HStack {
-                            Text("Auto-refresh interval")
-                            Spacer()
-                            Picker("", selection: $store.pollInterval) {
-                                ForEach(SettingsView.pollIntervalOptions, id: \.self) { interval in
-                                    Text(SettingsView.formatInterval(interval)).tag(interval)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                        }
-                    }
+                        divider
 
-                    #if canImport(Sparkle)
-                    divider
-                    settingsSection("Updates") {
-                        Toggle("Automatically check for updates", isOn: automaticallyChecksForUpdates)
+                        settingsSection("Notifications") {
+                            Toggle("Show notifications for completed torrents", isOn: .constant(false))
+                                .disabled(true)
 
-                        HStack(alignment: .firstTextBaseline) {
-                            Button("Check for Updates…", action: appUpdater.checkForUpdates)
-                            .disabled(!appUpdater.canCheckForUpdates)
-
-                            Spacer()
-
-                            Text("Last checked: \(lastUpdateCheckText)")
+                            Text("Advanced settings coming soon")
                                 .font(.caption2)
-                                .foregroundStyle(.tertiary)
+                                .foregroundColor(.orange)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.orange.opacity(0.2))
+                                .cornerRadius(4)
+                        }
+
+                        divider
+
+                        settingsSection("Reset") {
+                            Button("Reset All Settings") {
+                                SettingsView.resetAllSettings(
+                                    store: store,
+                                    themeManager: themeManager,
+                                    userDefaults: userDefaults
+                                )
+                                #if canImport(Sparkle)
+                                appUpdater.resetToDefaults()
+                                #endif
+                            }
                         }
                     }
-                    #endif
-
-                    divider
-
-                    settingsSection("Notifications") {
-                        Toggle("Show notifications for completed torrents", isOn: .constant(false))
-                            .disabled(true)
-
-                        Text("Advanced settings coming soon")
-                            .font(.caption2)
-                            .foregroundColor(.orange)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.orange.opacity(0.2))
-                            .cornerRadius(4)
-                    }
-
-                    divider
-
-                    settingsSection("Reset") {
-                        Button("Reset All Settings") {
-                            SettingsView.resetAllSettings(
-                                store: store,
-                                themeManager: themeManager,
-                                userDefaults: userDefaults
-                            )
-                            #if canImport(Sparkle)
-                            appUpdater.resetToDefaults()
-                            #endif
-                        }
-                    }
+                    .padding(16)
                 }
-                .padding(16)
             }
-            Spacer()
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .scrollBounceBehavior(.basedOnSize)
     }
 
     @ViewBuilder

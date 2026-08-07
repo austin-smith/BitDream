@@ -68,22 +68,24 @@ private struct SettingsServerTab<Content: View>: View {
     let content: (TransmissionSessionResponseArguments, SettingsViewModel) -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            if let config {
-                content(config, editModel)
-                SettingsSaveStateView(state: editModel.saveState)
-                Spacer()
-            } else {
-                ContentUnavailableView(
-                    "No Server Connected",
-                    systemImage: unavailableSystemImage,
-                    description: Text(unavailableDescription)
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if let config {
+                    content(config, editModel)
+                    SettingsSaveStateView(state: editModel.saveState)
+                } else {
+                    ContentUnavailableView(
+                        "No Server Connected",
+                        systemImage: unavailableSystemImage,
+                        description: Text(unavailableDescription)
+                    )
+                    .frame(maxWidth: .infinity, minHeight: 250)
+                }
             }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .scrollBounceBehavior(.basedOnSize)
         .bindSettingsViewModel(editModel, to: store)
     }
 }
