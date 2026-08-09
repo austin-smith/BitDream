@@ -14,6 +14,12 @@
 		4BDACD192E73DB220074F714 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4BDACD182E73DB220074F714 /* SwiftUI.framework */; };
 		4BDACD2A2E73DB230074F714 /* BitDreamWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4BDACD142E73DB220074F714 /* BitDreamWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4D1000013B00000000B1C2D3 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 4D1000073B00000000B1C2D3 /* Sparkle */; };
+		6A20000B4200000000B1C2D3 /* BitDreamWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6A20000E4200000000B1C2D3 /* BitDreamWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		6A2000174200000000B1C2D3 /* BitDream/Widgets/AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BDACD502E73DBBE0074F714 /* BitDream/Widgets/AppGroup.swift */; };
+		6A2000184200000000B1C2D3 /* BitDream/Widgets/DataModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCF274D2E774EDC00F6BF76 /* BitDream/Widgets/DataModels.swift */; };
+		6A2000194200000000B1C2D3 /* BitDream/Widgets/WidgetKitBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD855492E77424B00606224 /* BitDream/Widgets/WidgetKitBridge.swift */; };
+		6A20001A4200000000B1C2D3 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4BDACD162E73DB220074F714 /* WidgetKit.framework */; };
+		6A20001B4200000000B1C2D3 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4BDACD182E73DB220074F714 /* SwiftUI.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,6 +37,13 @@
 			remoteGlobalIDString = 4B1DADDA295E6C440037E9FB;
 			remoteInfo = BitDream;
 		};
+		6A20000C4200000000B1C2D3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4B1DADD3295E6C440037E9FB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6A2000134200000000B1C2D3;
+			remoteInfo = BitDreamWidgetsAppStoreExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -40,6 +53,15 @@
 			dstSubfolder = PlugIns;
 			files = (
 				4BDACD2A2E73DB230074F714 /* BitDreamWidgetsExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+		};
+		6A20000A4200000000B1C2D3 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				6A20000B4200000000B1C2D3 /* BitDreamWidgetsExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 		};
@@ -56,6 +78,8 @@
 		4D2000013B10000000C3D4E5 /* BuildSettings.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildSettings.xcconfig; sourceTree = "<group>"; };
 		4D2000023B10000000C3D4E5 /* BuildSettings.example.local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildSettings.example.local.xcconfig; sourceTree = "<group>"; };
 		5A1000074100000000A1B2C3 /* BitDreamTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BitDreamTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A2000014200000000B1C2D3 /* BitDream.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BitDream.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A20000E4200000000B1C2D3 /* BitDreamWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BitDreamWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -69,6 +93,7 @@
 		4C9C00013F10000000B1C2D3 /* Exceptions for "BitDream" folder in "BitDream" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"Info-AppStore.plist",
 				Info.plist,
 				"Transmission/TransmissionRPC/Examples/session-get.response.json",
 				"Transmission/TransmissionRPC/Examples/session-stats.response.json",
@@ -78,6 +103,26 @@
 			);
 			target = 4B1DADDA295E6C440037E9FB /* BitDream */;
 		};
+		6A2000024200000000B1C2D3 /* Exceptions for "BitDream" folder in "BitDreamAppStore" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Info-AppStore.plist",
+				Info.plist,
+				"Transmission/TransmissionRPC/Examples/session-get.response.json",
+				"Transmission/TransmissionRPC/Examples/session-stats.response.json",
+				"Transmission/TransmissionRPC/Examples/torrent-get.response.json",
+				"Transmission/TransmissionRPC/Transmission-RPC-Spec.md",
+				Widgets/README.md,
+			);
+			target = 6A2000064200000000B1C2D3 /* BitDreamAppStore */;
+		};
+		6A20000F4200000000B1C2D3 /* Exceptions for "BitDreamWidgets" folder in "BitDreamWidgetsAppStoreExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 6A2000134200000000B1C2D3 /* BitDreamWidgetsAppStoreExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -85,6 +130,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				4C9C00013F10000000B1C2D3 /* Exceptions for "BitDream" folder in "BitDream" target */,
+				6A2000024200000000B1C2D3 /* Exceptions for "BitDream" folder in "BitDreamAppStore" target */,
 			);
 			path = BitDream;
 			sourceTree = "<group>";
@@ -98,6 +144,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				4BDACD2B2E73DB230074F714 /* Exceptions for "BitDreamWidgets" folder in "BitDreamWidgetsExtension" target */,
+				6A20000F4200000000B1C2D3 /* Exceptions for "BitDreamWidgets" folder in "BitDreamWidgetsAppStoreExtension" target */,
 			);
 			path = BitDreamWidgets;
 			sourceTree = "<group>";
@@ -128,6 +175,18 @@
 			files = (
 			);
 		};
+		6A2000044200000000B1C2D3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		6A2000114200000000B1C2D3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				6A20001B4200000000B1C2D3 /* SwiftUI.framework in Frameworks */,
+				6A20001A4200000000B1C2D3 /* WidgetKit.framework in Frameworks */,
+			);
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -151,6 +210,8 @@
 				4B1DADDB295E6C440037E9FB /* BitDream.app */,
 				5A1000074100000000A1B2C3 /* BitDreamTests.xctest */,
 				4BDACD142E73DB220074F714 /* BitDreamWidgetsExtension.appex */,
+				6A2000014200000000B1C2D3 /* BitDream.app */,
+				6A20000E4200000000B1C2D3 /* BitDreamWidgetsExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -251,6 +312,49 @@
 			productReference = 5A1000074100000000A1B2C3 /* BitDreamTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		6A2000064200000000B1C2D3 /* BitDreamAppStore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6A2000094200000000B1C2D3 /* Build configuration list for PBXNativeTarget "BitDreamAppStore" */;
+			buildPhases = (
+				6A2000034200000000B1C2D3 /* Sources */,
+				6A2000044200000000B1C2D3 /* Frameworks */,
+				6A2000054200000000B1C2D3 /* Resources */,
+				6A20000A4200000000B1C2D3 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6A20000D4200000000B1C2D3 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4B1DADDD295E6C440037E9FB /* BitDream */,
+				4B4E4C1A2E8A1F6E00418FD7 /* AppIcons */,
+			);
+			name = BitDreamAppStore;
+			packageProductDependencies = (
+			);
+			productName = BitDreamAppStore;
+			productReference = 6A2000014200000000B1C2D3 /* BitDream.app */;
+			productType = "com.apple.product-type.application";
+		};
+		6A2000134200000000B1C2D3 /* BitDreamWidgetsAppStoreExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6A2000164200000000B1C2D3 /* Build configuration list for PBXNativeTarget "BitDreamWidgetsAppStoreExtension" */;
+			buildPhases = (
+				6A2000104200000000B1C2D3 /* Sources */,
+				6A2000114200000000B1C2D3 /* Frameworks */,
+				6A2000124200000000B1C2D3 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				4BDACD1A2E73DB220074F714 /* BitDreamWidgets */,
+			);
+			name = BitDreamWidgetsAppStoreExtension;
+			productName = BitDreamWidgetsExtension;
+			productReference = 6A20000E4200000000B1C2D3 /* BitDreamWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -271,6 +375,12 @@
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = 4B1DADDA295E6C440037E9FB;
 					};
+					6A2000064200000000B1C2D3 = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					6A2000134200000000B1C2D3 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 				};
 			};
 			buildConfigurationList = 4B1DADD6295E6C440037E9FB /* Build configuration list for PBXProject "BitDream" */;
@@ -290,8 +400,10 @@
 			projectRoot = "";
 			targets = (
 				4B1DADDA295E6C440037E9FB /* BitDream */,
+				6A2000064200000000B1C2D3 /* BitDreamAppStore */,
 				5A10000F4100000000A1B2C3 /* BitDreamTests */,
 				4BDACD132E73DB220074F714 /* BitDreamWidgetsExtension */,
+				6A2000134200000000B1C2D3 /* BitDreamWidgetsAppStoreExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -308,6 +420,16 @@
 			);
 		};
 		5A10000D4100000000A1B2C3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		6A2000054200000000B1C2D3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		6A2000124200000000B1C2D3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -333,6 +455,19 @@
 			files = (
 			);
 		};
+		6A2000034200000000B1C2D3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		6A2000104200000000B1C2D3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+				6A2000174200000000B1C2D3 /* BitDream/Widgets/AppGroup.swift in Sources */,
+				6A2000194200000000B1C2D3 /* BitDream/Widgets/WidgetKitBridge.swift in Sources */,
+				6A2000184200000000B1C2D3 /* BitDream/Widgets/DataModels.swift in Sources */,
+			);
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -345,6 +480,11 @@
 			isa = PBXTargetDependency;
 			target = 4B1DADDA295E6C440037E9FB /* BitDream */;
 			targetProxy = 5A1000044100000000A1B2C3 /* PBXContainerItemProxy */;
+		};
+		6A20000D4200000000B1C2D3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6A2000134200000000B1C2D3 /* BitDreamWidgetsAppStoreExtension */;
+			targetProxy = 6A20000C4200000000B1C2D3 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -502,7 +642,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.0.2;
+				MARKETING_VERSION = 2.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.crapshack.BitDream;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -552,7 +692,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.0.2;
+				MARKETING_VERSION = 2.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.crapshack.BitDream;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "BitDream App Developer ID";
@@ -590,7 +730,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.0.2;
+				MARKETING_VERSION = 2.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.crapshack.BitDream.BitDreamWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -636,7 +776,7 @@
 				);
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 2.0.2;
+				MARKETING_VERSION = 2.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.crapshack.BitDream.BitDreamWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "BitDream Widget Developer ID";
@@ -706,6 +846,160 @@
 			};
 			name = Release;
 		};
+		6A2000074200000000B1C2D3 /* Debug configuration for PBXNativeTarget "BitDreamAppStore" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIconDefault;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = BitDream/BitDream.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"BitDream/Preview Content\"";
+				DEVELOPMENT_TEAM = T778QMSML9;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "BitDream/Info-AppStore.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = BitDream;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 2.0.3;
+				PRODUCT_BUNDLE_IDENTIFIER = com.crapshack.BitDream;
+				PRODUCT_NAME = BitDream;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		6A2000084200000000B1C2D3 /* Release configuration for PBXNativeTarget "BitDreamAppStore" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = BitDreamAppIconDefault;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CODE_SIGN_ENTITLEMENTS = BitDream/BitDream.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_ASSET_PATHS = "\"BitDream/Preview Content\"";
+				DEVELOPMENT_TEAM = T778QMSML9;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "BitDream/Info-AppStore.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = BitDream;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 2.0.3;
+				PRODUCT_BUNDLE_IDENTIFIER = com.crapshack.BitDream;
+				PRODUCT_NAME = BitDream;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		6A2000144200000000B1C2D3 /* Debug configuration for PBXNativeTarget "BitDreamWidgetsAppStoreExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = BitDreamWidgets/BitDreamWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = T778QMSML9;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BitDreamWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BitDreamWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 2.0.3;
+				PRODUCT_BUNDLE_IDENTIFIER = com.crapshack.BitDream.BitDreamWidgets;
+				PRODUCT_NAME = BitDreamWidgetsExtension;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		6A2000154200000000B1C2D3 /* Release configuration for PBXNativeTarget "BitDreamWidgetsAppStoreExtension" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = BitDreamWidgets/BitDreamWidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = T778QMSML9;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BitDreamWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = BitDreamWidgets;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 2.0.3;
+				PRODUCT_BUNDLE_IDENTIFIER = com.crapshack.BitDream.BitDreamWidgets;
+				PRODUCT_NAME = BitDreamWidgetsExtension;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -738,6 +1032,22 @@
 			buildConfigurations = (
 				5A1000104100000000A1B2C3 /* Debug configuration for PBXNativeTarget "BitDreamTests" */,
 				5A1000114100000000A1B2C3 /* Release configuration for PBXNativeTarget "BitDreamTests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		6A2000094200000000B1C2D3 /* Build configuration list for PBXNativeTarget "BitDreamAppStore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6A2000074200000000B1C2D3 /* Debug configuration for PBXNativeTarget "BitDreamAppStore" */,
+				6A2000084200000000B1C2D3 /* Release configuration for PBXNativeTarget "BitDreamAppStore" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		6A2000164200000000B1C2D3 /* Build configuration list for PBXNativeTarget "BitDreamWidgetsAppStoreExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6A2000144200000000B1C2D3 /* Debug configuration for PBXNativeTarget "BitDreamWidgetsAppStoreExtension" */,
+				6A2000154200000000B1C2D3 /* Release configuration for PBXNativeTarget "BitDreamWidgetsAppStoreExtension" */,
 			);
 			defaultConfigurationName = Release;
 		};

@@ -4,7 +4,9 @@ import Foundation
 #if os(macOS)
 struct macOSGeneralSettingsTab: View {
     @Environment(\.appUserDefaults) private var userDefaults
+    #if canImport(Sparkle)
     @EnvironmentObject private var appUpdater: AppUpdater
+    #endif
     @EnvironmentObject private var themeManager: ThemeManager
     @ObservedObject var store: TransmissionStore
 
@@ -24,7 +26,8 @@ struct macOSGeneralSettingsTab: View {
         )
     }
 
-    private var automaticallyChecksForUpdatesBinding: Binding<Bool> {
+    #if canImport(Sparkle)
+    private var automaticallyChecksForUpdates: Binding<Bool> {
         Binding<Bool>(
             get: { appUpdater.automaticallyChecksForUpdates },
             set: { appUpdater.automaticallyChecksForUpdates = $0 }
@@ -35,6 +38,7 @@ struct macOSGeneralSettingsTab: View {
         guard let date = appUpdater.lastUpdateCheckDate else { return "Never" }
         return date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened))
     }
+    #endif
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -150,15 +154,13 @@ struct macOSGeneralSettingsTab: View {
                         }
                     }
 
+                    #if canImport(Sparkle)
                     divider
-
                     settingsSection("Updates") {
-                        Toggle("Automatically check for updates", isOn: automaticallyChecksForUpdatesBinding)
+                        Toggle("Automatically check for updates", isOn: automaticallyChecksForUpdates)
 
                         HStack(alignment: .firstTextBaseline) {
-                            Button("Check for Updates…") {
-                                appUpdater.checkForUpdates()
-                            }
+                            Button("Check for Updates…", action: appUpdater.checkForUpdates)
                             .disabled(!appUpdater.canCheckForUpdates)
 
                             Spacer()
@@ -168,6 +170,7 @@ struct macOSGeneralSettingsTab: View {
                                 .foregroundStyle(.tertiary)
                         }
                     }
+                    #endif
 
                     divider
 
@@ -192,9 +195,10 @@ struct macOSGeneralSettingsTab: View {
                                 store: store,
                                 themeManager: themeManager,
                                 userDefaults: userDefaults
-                            ) {
-                                appUpdater.resetToDefaults()
-                            }
+                            )
+                            #if canImport(Sparkle)
+                            appUpdater.resetToDefaults()
+                            #endif
                         }
                     }
                 }
