@@ -23,8 +23,10 @@ final class PreviewEnvironment {
     #if os(iOS)
     let appIconManager: AppIconManager
     #endif
-    #if os(macOS)
+    #if os(macOS) && canImport(Sparkle)
     let appUpdater: AppUpdater
+    #endif
+    #if os(macOS)
     let serverEditingCoordinator: MacOSServerEditingCoordinator
     #endif
 
@@ -47,8 +49,10 @@ final class PreviewEnvironment {
         #if os(iOS)
         self.appIconManager = AppIconManager.inert()
         #endif
-        #if os(macOS)
+        #if os(macOS) && canImport(Sparkle)
         self.appUpdater = AppUpdater(updatesEnabled: false)
+        #endif
+        #if os(macOS)
         self.serverEditingCoordinator = MacOSServerEditingCoordinator()
         #endif
     }
@@ -83,9 +87,12 @@ struct PreviewContainer<Content: View>: View {
 
     @ViewBuilder
     private var configuredContent: some View {
-        #if os(macOS)
+        #if os(macOS) && canImport(Sparkle)
         content(previewEnvironment)
             .environmentObject(previewEnvironment.appUpdater)
+            .environmentObject(previewEnvironment.serverEditingCoordinator)
+        #elseif os(macOS)
+        content(previewEnvironment)
             .environmentObject(previewEnvironment.serverEditingCoordinator)
         #elseif os(iOS)
         content(previewEnvironment)

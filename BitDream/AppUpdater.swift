@@ -1,4 +1,4 @@
-#if os(macOS)
+#if os(macOS) && canImport(Sparkle)
 import Foundation
 import Sparkle
 

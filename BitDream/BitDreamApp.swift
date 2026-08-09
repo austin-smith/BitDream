@@ -19,7 +19,9 @@ struct BitDreamApp: App {
     @NSApplicationDelegateAdaptor(AppFileOpenDelegate.self) private var appFileOpenDelegate
     @StateObject private var menuBarStatusItemController = MenuBarStatusItemBridge()
     @StateObject private var dockBadgeController = DockBadgeController()
+    #if canImport(Sparkle)
     @StateObject private var appUpdater = AppUpdater()
+    #endif
     @StateObject private var serverEditingCoordinator = MacOSServerEditingCoordinator()
     #endif
 
@@ -119,7 +121,9 @@ private extension BitDreamApp {
                     ensureStartupConnectionBehaviorApplied(store: store, modelContext: persistenceController.container.mainContext)
                     syncMenuBarStatusItem()
                     dockBadgeController.configure(store: store)
+                    #if canImport(Sparkle)
                     appUpdater.start()
+                    #endif
                 }
                 .onChange(of: menuBarTransferWidgetEnabled) { _, isEnabled in
                     syncMenuBarStatusItem(isEnabled: isEnabled)
@@ -230,7 +234,11 @@ private extension BitDreamApp {
         }
         .windowResizability(.contentSize)
         .commands {
+            #if canImport(Sparkle)
             AppCommands(appUpdater: appUpdater)
+            #else
+            AppCommands()
+            #endif
             CommandGroup(replacing: .newItem) { }
             FileCommands(store: store)
             SearchCommands(store: store)
@@ -306,9 +314,15 @@ private extension BitDreamApp {
 
     var settingsScene: some Scene {
         Settings {
-            SettingsView(store: store) // Use the same store instance
+            Group {
+                #if canImport(Sparkle)
+                SettingsView(store: store)
+                    .environmentObject(appUpdater)
+                #else
+                SettingsView(store: store)
+                #endif
+            }
                 .frame(minWidth: 500, idealWidth: 550, maxWidth: 650)
-                .environmentObject(appUpdater)
                 .environmentObject(themeManager) // Pass the ThemeManager to the Settings view
                 .immediateTheme(manager: themeManager)
         }

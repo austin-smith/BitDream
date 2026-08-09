@@ -393,7 +393,9 @@ struct AppearanceCommands: Commands {
 
 struct AppCommands: Commands {
     @Environment(\.openWindow) private var openWindow
+    #if canImport(Sparkle)
     @ObservedObject var appUpdater: AppUpdater
+    #endif
 
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
@@ -403,12 +405,12 @@ struct AppCommands: Commands {
                 Label("About BitDream", systemImage: "info.circle")
             })
 
-            Button(action: {
-                appUpdater.checkForUpdates()
-            }, label: {
+            #if canImport(Sparkle)
+            Button(action: appUpdater.checkForUpdates) {
                 Label("Check for Updates…", systemImage: "square.and.arrow.down")
-            })
+            }
             .disabled(!appUpdater.canCheckForUpdates)
+            #endif
         }
     }
 }
