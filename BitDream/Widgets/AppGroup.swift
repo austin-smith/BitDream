@@ -6,7 +6,7 @@ import OSLog
 
 enum AppGroup {
     /// App Group identifier shared by the app and widget extension
-    static let identifier: String = "group.crapshack.BitDream"
+    static let identifier: String = "group.com.crapshack.BitDream"
 
     /// Container URL for the shared App Group
     static func containerURL() -> URL? {

@@ -134,7 +134,7 @@ jobs:
 
           APP_PROFILE_PLIST="$RUNNER_TEMP/BitDream-App.plist"
           WIDGET_PROFILE_PLIST="$RUNNER_TEMP/BitDream-Widget.plist"
-          REQUIRED_APP_GROUP="group.crapshack.BitDream"
+          REQUIRED_APP_GROUP="group.com.crapshack.BitDream"
 
           security cms -D -i "$APP_PROFILE_PATH" > "$APP_PROFILE_PLIST"
           security cms -D -i "$WIDGET_PROFILE_PATH" > "$WIDGET_PROFILE_PLIST"
@@ -203,9 +203,9 @@ jobs:
             <string>Developer ID Application</string>
             <key>provisioningProfiles</key>
             <dict>
-              <key>crapshack.BitDream</key>
+              <key>com.crapshack.BitDream</key>
               <string>$APP_PROFILE_UUID</string>
-              <key>crapshack.BitDream.BitDreamWidgets</key>
+              <key>com.crapshack.BitDream.BitDreamWidgets</key>
               <string>$WIDGET_PROFILE_UUID</string>
             </dict>
           </dict>
