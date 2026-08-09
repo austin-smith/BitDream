@@ -16,6 +16,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
 
     steps:
       - name: Checkout
@@ -52,53 +54,31 @@ jobs:
           SPARKLE_PUBLIC_KEY = $SPARKLE_PUBLIC_KEY
           EOF
 
-      - name: Validate and derive release metadata
+      - name: Validate release version
         run: |
-          TAG="$GITHUB_REF_NAME"
-
-          if [[ ! "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)(-([0-9A-Za-z]+([.-][0-9A-Za-z]+)*))?$ ]]; then
-            echo "Tag must be in vX.Y.Z or vX.Y.Z-suffix format, received: $TAG"
-            exit 1
-          fi
-
-          MARKETING_VERSION="${BASH_REMATCH[1]}"
-          RELEASE_VERSION="${TAG#v}"
-          IS_PRERELEASE=false
-          if [[ "$TAG" != "v$MARKETING_VERSION" ]]; then
-            IS_PRERELEASE=true
-          fi
-
-          PROJECT_VERSIONS="$(
+          BUILD_SETTINGS="$(
             xcodebuild \
               -project BitDream.xcodeproj \
               -scheme BitDream \
               -configuration Release \
               -destination "generic/platform=macOS" \
-              -showBuildSettings |
-              awk '$1 == "MARKETING_VERSION" && $2 == "=" { print $3 }' |
-              sort -u
+              -showBuildSettings
           )"
-          VERSION_COUNT="$(printf '%s\n' "$PROJECT_VERSIONS" | awk 'NF { count++ } END { print count + 0 }')"
+          MARKETING_VERSIONS="$(printf '%s\n' "$BUILD_SETTINGS" | awk '$1 == "MARKETING_VERSION" && $2 == "=" { print $3 }' | sort -u)"
+          VERSION_COUNT="$(printf '%s\n' "$MARKETING_VERSIONS" | awk 'NF { count++ } END { print count + 0 }')"
 
           if [[ "$VERSION_COUNT" -ne 1 ]]; then
-            echo "Expected exactly one project MARKETING_VERSION, but found $VERSION_COUNT."
-            printf '%s\n' "$PROJECT_VERSIONS"
+            echo "Expected exactly one MARKETING_VERSION, but found $VERSION_COUNT."
+            printf '%s\n' "$MARKETING_VERSIONS"
             exit 1
           fi
 
-          if [[ "$MARKETING_VERSION" != "$PROJECT_VERSIONS" ]]; then
-            echo "Release tag $TAG does not match project MARKETING_VERSION $PROJECT_VERSIONS."
-            echo "Expected v$PROJECT_VERSIONS or v$PROJECT_VERSIONS-suffix."
+          EXPECTED_TAG="v$MARKETING_VERSIONS"
+          if [[ "$RELEASE_TAG" != "$EXPECTED_TAG" ]]; then
+            echo "Release tag $RELEASE_TAG does not match MARKETING_VERSION $MARKETING_VERSIONS."
+            echo "Expected tag: $EXPECTED_TAG"
             exit 1
           fi
-
-          BUILD_NUMBER="$GITHUB_RUN_NUMBER"
-
-          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
-          echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_ENV"
-          echo "MARKETING_VERSION=$MARKETING_VERSION" >> "$GITHUB_ENV"
-          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
-          echo "IS_PRERELEASE=$IS_PRERELEASE" >> "$GITHUB_ENV"
 
       - name: Import Apple signing certificate
         env:
@@ -182,6 +162,9 @@ jobs:
 
       - name: Build macOS app archive
         run: |
+          # Sparkle compares CFBundleVersion, so released builds stamp the
+          # validated release version there. The project keeps a local build
+          # number for development builds.
           xcodebuild archive \
             -project BitDream.xcodeproj \
             -scheme BitDream \
@@ -192,8 +175,7 @@ jobs:
             CODE_SIGN_IDENTITY="Developer ID Application" \
             DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
-            MARKETING_VERSION="$MARKETING_VERSION" \
-            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            CURRENT_PROJECT_VERSION="${RELEASE_TAG#v}" \
             SPARKLE_APPCAST_URL="$SPARKLE_APPCAST_URL" \
             SPARKLE_PUBLIC_KEY="$SPARKLE_PUBLIC_KEY" \
             ARCHS=arm64
@@ -308,7 +290,7 @@ jobs:
           rm -f "$DMG_PATH"
 
           create-dmg \
-            --volname "BitDream ${MARKETING_VERSION}" \
+            --volname "BitDream ${RELEASE_TAG#v}" \
             --volicon "$VOLUME_ICON_PATH" \
             --window-size 660 420 \
             --background "$DMG_BACKGROUND_PATH" \
@@ -397,6 +379,12 @@ jobs:
           codesign --verify --verbose=2 "$DMG_PATH"
           xcrun stapler validate "$DMG_PATH"
 
+          BUNDLE_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP_PATH/Contents/Info.plist")"
+          if [[ "v$BUNDLE_VERSION" != "$RELEASE_TAG" ]]; then
+            echo "CFBundleVersion ($BUNDLE_VERSION) does not match the release tag ($RELEASE_TAG)."
+            exit 1
+          fi
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -405,18 +393,10 @@ jobs:
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release upload "$RELEASE_TAG" "$DMG_PATH" --clobber
           else
-            if [[ "${IS_PRERELEASE}" == "true" ]]; then
-              gh release create "$RELEASE_TAG" \
-                --title "$RELEASE_TAG" \
-                --generate-notes \
-                --prerelease \
-                "$DMG_PATH"
-            else
-              gh release create "$RELEASE_TAG" \
-                --title "$RELEASE_TAG" \
-                --generate-notes \
-                "$DMG_PATH"
-            fi
+            gh release create "$RELEASE_TAG" \
+              --title "$RELEASE_TAG" \
+              --generate-notes \
+              "$DMG_PATH"
           fi
 
       - name: Prepare Sparkle private key
@@ -459,12 +439,6 @@ jobs:
 
           rm -rf "$APPCAST_WORK_DIR" "$PAGES_DIR"
           mkdir -p "$APPCAST_WORK_DIR" "$PAGES_DIR"
-
-          if curl -fsSL "$SPARKLE_APPCAST_URL" -o "$APPCAST_WORK_DIR/appcast.xml"; then
-            echo "Using existing appcast.xml from GitHub Pages"
-          else
-            echo "No existing appcast.xml found; generating a new feed"
-          fi
 
           cp "$DMG_PATH" "$APPCAST_WORK_DIR/"
 
