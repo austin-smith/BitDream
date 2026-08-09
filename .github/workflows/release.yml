@@ -473,7 +473,7 @@ jobs:
             --download-url-prefix "$DOWNLOAD_PREFIX" \
             --link "$RELEASE_LINK" \
             --maximum-deltas 0 \
-            --maximum-versions 0 \
+            --maximum-versions 1 \
             "$APPCAST_WORK_DIR" | tee "$RUNNER_TEMP/generate-appcast.log"
 
           cp "$APPCAST_WORK_DIR/appcast.xml" "$PAGES_DIR/appcast.xml"
