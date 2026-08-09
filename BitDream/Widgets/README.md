@@ -6,7 +6,7 @@
 - Data is supplied from the host app through a lightweight snapshot written to a shared App Group container.
 
 ### Key Components
-- App Group: `group.crapshack.BitDream`
+- App Group: `group.com.crapshack.BitDream`
   - Shared container for widget snapshots and a server index file.
   - No credentials are stored in the widget extension.
 - App Intents
@@ -33,7 +33,7 @@
 
 ### iOS Background Refresh (by the book)
 - Capability: Background Modes → Background fetch (enabled on iOS target).
-- Scheduler: `BGTaskScheduler` with identifier `crapshack.BitDream.refresh`.
+- Scheduler: `BGTaskScheduler` with identifier `com.crapshack.BitDream.refresh`.
 - Flow:
   - Register on app launch.
   - Schedule on launch and when entering background.
@@ -56,7 +56,7 @@
   - iOS app target
   - macOS app target
   - Widget extension target
-- iOS only: Add `BGTaskSchedulerPermittedIdentifiers` to Info.plist with `crapshack.BitDream.refresh`.
+- iOS only: Add `BGTaskSchedulerPermittedIdentifiers` to Info.plist with `com.crapshack.BitDream.refresh`.
  - macOS widget extension: Enable App Sandbox capability (required for the extension to load/show on macOS).
 
 ### Performance and Budgeting
