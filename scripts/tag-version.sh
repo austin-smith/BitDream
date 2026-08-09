@@ -4,34 +4,23 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: ./scripts/tag-version.sh [--dry-run] [--prerelease SUFFIX]
+Usage: ./scripts/tag-version.sh [--dry-run]
 
 Create and push a release tag based on the app's MARKETING_VERSION.
 
 Options:
-  --dry-run            Run every preflight check without creating or pushing a tag.
-  --prerelease SUFFIX  Append a prerelease suffix, for example beta.1.
-  -h, --help           Show this help text.
+  --dry-run   Run every preflight check without creating or pushing a tag.
+  -h, --help  Show this help text.
 EOF
 }
 
 dry_run=false
-prerelease_suffix=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dry-run)
       dry_run=true
       shift
-      ;;
-    --prerelease)
-      if [[ $# -lt 2 || -z "$2" ]]; then
-        echo "--prerelease requires a suffix." >&2
-        usage >&2
-        exit 2
-      fi
-      prerelease_suffix="$2"
-      shift 2
       ;;
     -h|--help)
       usage
@@ -44,11 +33,6 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-
-if [[ -n "$prerelease_suffix" && ! "$prerelease_suffix" =~ ^[0-9A-Za-z]+([.-][0-9A-Za-z]+)*$ ]]; then
-  echo "Prerelease suffix must contain alphanumeric identifiers separated by dots or hyphens: $prerelease_suffix" >&2
-  exit 2
-fi
 
 for command in git xcodebuild; do
   if ! command -v "$command" >/dev/null 2>&1; then
@@ -124,9 +108,6 @@ if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 fi
 
 tag="v$version"
-if [[ -n "$prerelease_suffix" ]]; then
-  tag="$tag-$prerelease_suffix"
-fi
 
 if git show-ref --verify --quiet "refs/tags/$tag"; then
   echo "Tag already exists: $tag" >&2
@@ -146,9 +127,6 @@ fi
 short_commit="$(git rev-parse --short HEAD)"
 echo
 echo "Release version: $version"
-if [[ -n "$prerelease_suffix" ]]; then
-  echo "Prerelease:      $prerelease_suffix"
-fi
 echo "Tag:             $tag"
 echo "Commit:          $short_commit"
 
