@@ -64,12 +64,6 @@ if ! git remote get-url origin >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ ! -f Config/BuildSettings.local.xcconfig ]]; then
-  echo "Missing Config/BuildSettings.local.xcconfig." >&2
-  echo "Create it from Config/BuildSettings.example.local.xcconfig before tagging a release." >&2
-  exit 1
-fi
-
 echo "Fetching origin/main and release tags..."
 git fetch origin refs/heads/main:refs/remotes/origin/main --tags
 

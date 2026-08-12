@@ -1,7 +1,0 @@
-// Shared build settings layer for repo-wide configurable values.
-// Keep environment-specific values out of source-controlled project settings.
-SPARKLE_APPCAST_URL = __UNSET__
-SPARKLE_PUBLIC_KEY = __UNSET__
-
-// Optional local overrides for testing Sparkle update behavior.
-#include? "BuildSettings.local.xcconfig"

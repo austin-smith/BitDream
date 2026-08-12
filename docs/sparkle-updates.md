@@ -1,21 +1,17 @@
 # Sparkle Update Configuration
 
-## Required Variables
-- `SPARKLE_APPCAST_URL`: Sparkle feed URL.
-- `SPARKLE_PUBLIC_KEY`: Sparkle public key.
+## App Configuration
 
-## Build Contract
-- `INFOPLIST_KEY_SUFeedURL[sdk=macosx*]` resolves from `$(SPARKLE_APPCAST_URL)`.
-- `INFOPLIST_KEY_SUPublicEDKey[sdk=macosx*]` resolves from `$(SPARKLE_PUBLIC_KEY)`.
+`BitDream/Info.plist` contains the public Sparkle configuration:
 
-## Validation
-- Local and pull request builds use the tracked `__UNSET__` defaults when no local override file is present.
-- `Config/BuildSettings.local.xcconfig` can provide values when testing Sparkle locally.
-- The release workflow validates `SPARKLE_APPCAST_URL` format and verifies embedded app `SUFeedURL` and `SUPublicEDKey` match expected values.
+- `SUFeedURL`: Sparkle feed URL.
+- `SUPublicEDKey`: Sparkle public EdDSA key.
 
-## Release Workflow Contract
-- GitHub repository variables: `SPARKLE_APPCAST_URL`, `SPARKLE_PUBLIC_KEY`.
-- Workflow injects Sparkle settings into:
-  - app archive build (`xcodebuild archive`)
-  - appcast generation/download steps
-- Workflow verifies embedded app values match `SPARKLE_APPCAST_URL` and `SPARKLE_PUBLIC_KEY`.
+Local, pull request, and release builds all use these tracked values. The
+release workflow verifies that the archived app contains the same values.
+
+## Release Signing
+
+The Sparkle private EdDSA key is stored in the GitHub Actions secret
+`SPARKLE_PRIVATE_KEY_BASE64`. The release workflow uses it to sign appcast
+entries. Never commit the private key.

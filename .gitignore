@@ -20,5 +20,5 @@ build/
 # macOS custom folder icon
 Icon[^a-zA-Z]
 
-# Local build setting overrides
+# Legacy local build setting overrides
 Config/BuildSettings.local.xcconfig

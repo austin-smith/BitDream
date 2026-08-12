@@ -49,9 +49,9 @@
 		<key>SUEnableAutomaticChecks</key>
 		<true/>
 		<key>SUFeedURL</key>
-		<string>$(SPARKLE_APPCAST_URL)</string>
+		<string>https://austin-smith.github.io/BitDream/appcast.xml</string>
 		<key>SUPublicEDKey</key>
-		<string>$(SPARKLE_PUBLIC_KEY)</string>
+		<string>+KG79p7oudH/MKhpfJ33550iZtqjQFKptFttQf1sGyI=</string>
 		<key>UTExportedTypeDeclarations</key>
 		<array>
 		<dict>
