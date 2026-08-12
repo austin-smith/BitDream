@@ -23,18 +23,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Load Sparkle build settings
-        env:
-          SPARKLE_APPCAST_URL: ${{ vars.SPARKLE_APPCAST_URL }}
-          SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+      - name: Load Sparkle configuration
         run: |
+          SPARKLE_APPCAST_URL="$(/usr/libexec/PlistBuddy -c 'Print :SUFeedURL' BitDream/Info.plist 2>/dev/null || true)"
+          SPARKLE_PUBLIC_KEY="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' BitDream/Info.plist 2>/dev/null || true)"
+
           if [[ -z "${SPARKLE_APPCAST_URL:-}" ]]; then
-            echo "Missing required repository variable: SPARKLE_APPCAST_URL"
+            echo "BitDream/Info.plist is missing SUFeedURL"
             exit 1
           fi
 
           if [[ -z "${SPARKLE_PUBLIC_KEY:-}" ]]; then
-            echo "Missing required repository variable: SPARKLE_PUBLIC_KEY"
+            echo "BitDream/Info.plist is missing SUPublicEDKey"
             exit 1
           fi
 
@@ -46,13 +46,6 @@ jobs:
 
           echo "SPARKLE_APPCAST_URL=$SPARKLE_APPCAST_URL" >> "$GITHUB_ENV"
           echo "SPARKLE_PUBLIC_KEY=$SPARKLE_PUBLIC_KEY" >> "$GITHUB_ENV"
-
-      - name: Write CI build settings override
-        run: |
-          cat > Config/BuildSettings.local.xcconfig <<EOF
-          SPARKLE_APPCAST_URL = $SPARKLE_APPCAST_URL
-          SPARKLE_PUBLIC_KEY = $SPARKLE_PUBLIC_KEY
-          EOF
 
       - name: Validate release version
         run: |
@@ -176,8 +169,6 @@ jobs:
             DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
             CURRENT_PROJECT_VERSION="${RELEASE_TAG#v}" \
-            SPARKLE_APPCAST_URL="$SPARKLE_APPCAST_URL" \
-            SPARKLE_PUBLIC_KEY="$SPARKLE_PUBLIC_KEY" \
             ARCHS=arm64
 
       - name: Export archived app
@@ -422,11 +413,6 @@ jobs:
           DMG_PATH="BitDream-${RELEASE_TAG}-arm64.dmg"
           DOWNLOAD_PREFIX="${REPOSITORY_URL}/releases/download/${RELEASE_TAG}/"
           RELEASE_LINK="${REPOSITORY_URL}/releases/tag/${RELEASE_TAG}"
-
-          if [[ -z "${SPARKLE_APPCAST_URL:-}" ]]; then
-            echo "Missing required repository variable: SPARKLE_APPCAST_URL"
-            exit 1
-          fi
 
           GENERATE_APPCAST="$(find "$HOME/Library/Developer/Xcode/DerivedData" -path '*/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast' -print -quit)"
           if [[ -z "${GENERATE_APPCAST}" ]]; then
