@@ -322,7 +322,7 @@ private extension BitDreamApp {
                 SettingsView(store: store)
                 #endif
             }
-                .frame(minWidth: 500, idealWidth: 550, maxWidth: 650)
+                .frame(minWidth: 500, idealWidth: 550, maxWidth: 650, minHeight: 650)
                 .environmentObject(themeManager) // Pass the ThemeManager to the Settings view
                 .immediateTheme(manager: themeManager)
         }
