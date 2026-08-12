@@ -2,6 +2,7 @@ import SwiftUI
 
 @MainActor
 extension TorrentDetailSupplementalStore {
+    @discardableResult
     func load(
         for identity: TorrentDetailIdentity,
         using store: TransmissionStore,
@@ -66,6 +67,7 @@ extension TorrentDetailSupplementalStore {
         )
     }
 
+    @discardableResult
     func loadIfIdle(
         for identity: TorrentDetailIdentity,
         using store: TransmissionStore,
