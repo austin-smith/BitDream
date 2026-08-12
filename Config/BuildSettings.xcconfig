@@ -3,7 +3,5 @@
 SPARKLE_APPCAST_URL = __UNSET__
 SPARKLE_PUBLIC_KEY = __UNSET__
 
-// Required local/CI overrides.
-// Local development: create Config/BuildSettings.local.xcconfig.
-// CI: writes this file before build.
-#include "BuildSettings.local.xcconfig"
+// Optional local overrides for testing Sparkle update behavior.
+#include? "BuildSettings.local.xcconfig"

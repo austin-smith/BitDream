@@ -9,9 +9,9 @@
 - `INFOPLIST_KEY_SUPublicEDKey[sdk=macosx*]` resolves from `$(SPARKLE_PUBLIC_KEY)`.
 
 ## Validation
-- `Config/BuildSettings.local.xcconfig` is required by `Config/BuildSettings.xcconfig`.
-- Local builds fail at config load time when the required local override file is missing.
-- CI validates `SPARKLE_APPCAST_URL` format and verifies embedded app `SUFeedURL` and `SUPublicEDKey` match expected values.
+- Local and pull request builds use the tracked `__UNSET__` defaults when no local override file is present.
+- `Config/BuildSettings.local.xcconfig` can provide values when testing Sparkle locally.
+- The release workflow validates `SPARKLE_APPCAST_URL` format and verifies embedded app `SUFeedURL` and `SUPublicEDKey` match expected values.
 
 ## Release Workflow Contract
 - GitHub repository variables: `SPARKLE_APPCAST_URL`, `SPARKLE_PUBLIC_KEY`.
