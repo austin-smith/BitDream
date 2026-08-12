@@ -680,10 +680,11 @@ extension TransmissionStore {
     func requestRefresh() {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            _ = await self.refreshNow()
+            await self.refreshNow()
         }
     }
 
+    @discardableResult
     func refreshNow() async -> RefreshOutcome {
         guard let activeConnection else { return .unavailable }
 
@@ -775,6 +776,7 @@ extension TransmissionStore {
         }
     }
 
+    @discardableResult
     private func performFullRefresh(for connectionState: ActiveConnection) async -> RefreshOutcome {
         do {
             let snapshot = try await connectionState.connection.fetchAppRefreshSnapshot()
