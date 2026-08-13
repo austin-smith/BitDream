@@ -45,6 +45,8 @@ enum AppDefaults {
     static let torrentDetailRefreshInterval: TimeInterval = 30.0
     static let ratioDisplayMode: RatioDisplayMode = .cumulative
     static let startupConnectionBehavior: StartupConnectionBehavior = .lastUsed
+    static let showAppBadgeForCompletedTorrents: Bool = true
+    static let showNotificationsForCompletedTorrents: Bool = true
 }
 
 enum AppIdentity {
@@ -76,4 +78,6 @@ enum UserDefaultsKeys {
     static let ratioDisplayMode = "ratioDisplayMode"
     static let selectedHost = "selectedHost"
     static let startupConnectionBehavior = "startupConnectionBehavior"
+    static let showAppBadgeForCompletedTorrents = "showAppBadgeForCompletedTorrents"
+    static let showNotificationsForCompletedTorrents = "showNotificationsForCompletedTorrents"
 }
