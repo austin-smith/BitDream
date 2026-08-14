@@ -62,9 +62,17 @@ struct macOSAboutView: View {
                         .foregroundStyle(.tertiary)
                         .padding(.top, 12)
                 }
+
+                Button("GitHub") {
+                    if let url = URL(string: "https://github.com/austin-smith/BitDream") {
+                        openURL(url)
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
             }
 
-            // Transmission Acknowledgment - cleaner integration
+            // Transmission Acknowledgment
             VStack(spacing: 8) {
                 Divider()
                     .padding(.horizontal, 24)

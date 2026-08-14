@@ -305,7 +305,7 @@ private extension BitDreamApp {
                 .navigationTitle("About BitDream")  // Proper window title handling
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
-                .frame(width: 320, height: 400)
+                .frame(width: 320)
         }
         .windowResizability(.contentSize)
         .defaultPosition(.center)

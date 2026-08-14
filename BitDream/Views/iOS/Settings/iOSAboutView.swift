@@ -62,6 +62,15 @@ struct iOSAboutView: View {
                         .padding(.top, 12)
                 }
 
+                Button("GitHub") {
+                    hapticFeedback.play(.actionTriggered)
+                    if let url = URL(string: "https://github.com/austin-smith/BitDream") {
+                        openURL(url)
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+
                 // Transmission Acknowledgment
                 VStack(spacing: 8) {
                     Divider()
