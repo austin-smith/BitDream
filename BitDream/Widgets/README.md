@@ -13,13 +13,13 @@
   - `ServerEntity` exposes servers to the widget’s configuration UI.
   - `SessionOverviewIntent` stores the per-widget server selection.
 - Snapshot IO (App-side)
-  - Writers live in `BitDream/Widgets/ServerSnapshotIO.swift`.
+  - Writers live in `BitDream/Widgets/DataWriter.swift` and `AppGroup.swift`.
   - Files:
     - `servers.json`: list of available servers for the picker.
     - `session_<hash>.json`: per-server snapshot consumed by the widget.
 
 ### Data Flow
-1) App (TransmissionStore) refreshes Transmission state on a timer (macOS: always while app runs; iOS: when in foreground or BG task wakes).
+1) `TransmissionStore` supplies snapshots from normal app polling. Background schedulers independently use `WidgetRefreshRunner` to fetch saved servers through the host-only refresh catalog.
 2) After refresh, the app writes a JSON snapshot to the App Group.
 3) The widget provider reads the snapshot at render time and constructs the view.
 4) The app nudges WidgetKit via `WidgetCenter.reloadTimelines(ofKind:)` after writing.
@@ -28,17 +28,21 @@
 - Timeline policy: `.after(now + X minutes)` to align with WidgetKit guidance on budgeting and predictable refreshes.
 - Reload triggers:
   - Host app writes a new snapshot (foreground updates).
-  - iOS Background Tasks periodically wake the app to refresh and write snapshots.
+  - iOS may launch or resume the app for a scheduled background refresh, which fetches fresh data and writes snapshots.
   - User edits the widget’s configuration (server selection) → WidgetKit requests a new timeline.
 
-### iOS Background Refresh (by the book)
-- Capability: Background Modes → Background fetch (enabled on iOS target).
-- Scheduler: `BGTaskScheduler` with identifier `com.crapshack.BitDream.refresh`.
-- Flow:
-  - Register on app launch.
-  - Schedule on launch and when entering background.
-  - Handler fetches latest state per saved server, writes snapshots, then calls `WidgetCenter.reloadTimelines`.
-- Budget: Respects system-controlled reload budgets; cadence targeted at ~15–30 minutes but ultimately governed by iOS.
+### iOS Background Refresh
+
+- The host app declares `UIBackgroundModes = [fetch]` and `BGTaskSchedulerPermittedIdentifiers = [$(PRODUCT_BUNDLE_IDENTIFIER).refresh]` in `BitDream/Info.plist`. These iOS settings share the direct app's plist with macOS; the macOS App Store target uses its separate plist. The widget extension does not register or execute background tasks.
+- `BitDreamApp.init` registers the launch handler synchronously, before app launch completes. Registration failures are logged.
+- The app submits a request after startup bootstrap and when its scene enters the background. The launch handler submits the next request before fetching data.
+- Submission uses the completion-handler API on iOS 27 and the synchronous API on iOS 26. Submitting the same identifier replaces the pending request; no separate cancellation is needed. Submission results are logged under the `backgroundRefresh` category.
+- The requested earliest start is 15 minutes later. This is a lower bound, **not a refresh interval or deadline**. iOS can defer execution for hours or decline it entirely based on settings, usage, and system conditions. WidgetKit separately controls when a requested timeline reload appears.
+- A refresh loads saved host descriptors, obtains credentials in the host app, and fetches each server with a 15-second timeout. Network failures preserve that server's previous snapshot; other servers are still attempted. Successful session stats can be saved even if the torrent summary request fails.
+- Snapshots replace their previous files atomically. A completed batch requests one timeline reload. Expiration cancels queued or active refresh work and reports failure; the task completion guard prevents duplicate completion. Cancelled work skips subsequent snapshot writes and the batch reload.
+- Credentials use Keychain accessibility after first unlock. Test locked-device operation after unlocking once following a reboot. Background App Refresh must be enabled, and the app must have been opened to save its server configuration. Force-quitting the app prevents normal background launches until the user opens it again.
+
+Apple references: [background task setup](https://developer.apple.com/documentation/uikit/using-background-tasks-to-update-your-app), [BGAppRefreshTask requirements](https://developer.apple.com/documentation/backgroundtasks/bgapprefreshtask), [iOS 27 submission API](https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler/submittaskrequest(_:completionhandler:)), and [Apple's clarification that submission supports any thread](https://developer.apple.com/forums/thread/840876).
 
 ### macOS Behavior
 - Uses the app's existing refresh loop to keep snapshots current while the app is running.
@@ -65,10 +69,34 @@
 - Timeline intervals should be ≥ 5 minutes; WidgetKit may adjust scheduling based on usage.
 
 ### Testing
-- iOS: Xcode → Debug → Simulate Background Fetch to validate BG task execution and widget updates.
-- Verify the App Group container path returns a valid URL in both app and extension.
-- Use Widget Previews for layout across supported families (small/medium).
-- Deep links: Tap the widget to open BitDream directly to the selected server.
+
+- The iOS CI job uses GitHub's `xcode-27` runner because the new submission API requires the iOS 27 SDK. macOS jobs keep their existing runner.
+- `WidgetRefreshOperationTests` covers snapshot production, timeout behavior, partial network failure, one reload per batch, serialized refreshes, and cancellation of active and queued work.
+- Verify App Group access from both the host app and widget extension. Use Widget Previews for supported layouts.
+
+#### Physical-device background task checks
+
+Apple's [development task simulation](https://developer.apple.com/documentation/backgroundtasks/starting-and-terminating-tasks-during-development) works on physical devices. Xcode's legacy **Simulate Background Fetch** command does not exercise this `BGTaskScheduler` handler.
+
+1. Build with Xcode 27 or later and run on an iPhone. Add a reachable server, open the app once, and configure a widget for it. Check `backgroundRefresh` logs for successful submission and verify the pending request identifier is `com.crapshack.BitDream.refresh`.
+2. Set a breakpoint after successful submission in `logSubmission(error:)`. Use Apple's debugger-only command, then resume:
+
+   ```text
+   e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateLaunchForTaskWithIdentifier:@"com.crapshack.BitDream.refresh"]
+   ```
+
+3. Verify that the launch handler runs, requests its successor, writes fresh session JSON in the shared App Group, requests a timeline reload, and completes once. The JSON timestamp is the direct freshness check; WidgetKit may defer the visible reload.
+4. With a slow or unreachable server, break after `expirationHandler` is installed and simulate expiration, then resume:
+
+   ```text
+   e -l objc -- (void)[[BGTaskScheduler sharedScheduler] _simulateExpirationForTaskWithIdentifier:@"com.crapshack.BitDream.refresh"]
+   ```
+
+   Confirm cancellation, one unsuccessful completion, and no subsequent snapshot write or batch reload from that cancelled refresh.
+5. Test an offline server alongside a reachable one, no saved servers, and Background App Refresh disabled. Verify existing snapshots survive failures and submission errors are logged without crashing.
+6. Finally, run without the debugger, background the app normally, and verify a later refresh on a locked device after first unlock. Repeat on iOS 26 and 27 to cover both submission APIs. Natural execution is system-controlled; debugger simulation proves the handler, not an execution cadence.
+
+The private simulation selectors above belong only in the debugger. Never add them to app code.
 
 ### Error Tolerance
 - If a snapshot is missing or unreadable, the widget presents a configuration prompt rather than failing.
@@ -102,16 +130,13 @@
 - User-controlled via settings
 
 **Phase 3**: Background Refresh Optimization
-- iOS: Cancel old BG tasks before scheduling new ones
 - Reload coalescing: Check `getCurrentConfigurations` before reloading
 - Network reachability checks before attempting refresh
 
 ### Known gaps / next steps
 - macOS background updates when the app isn't running (Phase 2 of roadmap addresses this)
-- iOS BG hygiene: no cancellation of existing BG requests before scheduling new ones
 - Reload coalescing: `WidgetCenter.reloadTimelines` called after each snapshot write
 - Timeline relevance: `relevance()` not implemented; affects Smart Stack surfacing
 - "Last updated" affordance: not shown; consider compact timestamp label
 - Provider networking: widget extension intentionally performs no network I/O
-
 
