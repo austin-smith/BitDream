@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   release:
-    runs-on: macos-26
+    runs-on: xcode-27
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
