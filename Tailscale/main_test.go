@@ -10,8 +10,42 @@ import (
 
 	"golang.org/x/net/proxy"
 	"tailscale.com/ipn/ipnstate"
+	"tailscale.com/tailcfg"
 	"tailscale.com/types/key"
 )
+
+func TestSummaryUsesCurrentTailnetDisplayNameWithoutChangingIdentity(t *testing.T) {
+	status := &ipnstate.Status{
+		CurrentTailnet: &ipnstate.TailnetStatus{Name: "user.github", MagicDNSSuffix: "tail123.ts.net"},
+		Self:           &ipnstate.PeerStatus{ID: "node-a", UserID: 123},
+	}
+	for _, tt := range []struct {
+		name   string
+		values []tailcfg.RawMessage
+		want   string
+	}{
+		{name: "default", want: "user.github"},
+		{name: "custom", values: []tailcfg.RawMessage{`"Home Network"`}, want: "Home Network"},
+		{name: "renamed", values: []tailcfg.RawMessage{`"New Name"`}, want: "New Name"},
+		{name: "empty", values: []tailcfg.RawMessage{`""`}, want: "user.github"},
+		{name: "malformed", values: []tailcfg.RawMessage{`42`}, want: "user.github"},
+		{name: "removed", want: "user.github"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			status.Self.CapMap = nil
+			if tt.values != nil {
+				status.Self.CapMap = tailcfg.NodeCapMap{tailcfg.NodeAttrTailnetDisplayName: tt.values}
+			}
+			got := summarize(status)
+			if got.AccountName != tt.want {
+				t.Errorf("account name = %q, want %q", got.AccountName, tt.want)
+			}
+			if got.AccountID != "tail123.ts.net/123/node-a" {
+				t.Errorf("display name affected account identity: %q", got.AccountID)
+			}
+		})
+	}
+}
 
 func TestPeerDestinationNeverUsesSystemDNSOrPublicRoutes(t *testing.T) {
 	status := &ipnstate.Status{Peer: map[key.NodePublic]*ipnstate.PeerStatus{

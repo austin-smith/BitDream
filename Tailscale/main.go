@@ -24,6 +24,7 @@ import (
 	"tailscale.com/envknob"
 	"tailscale.com/ipn/ipnstate"
 	"tailscale.com/net/socks5"
+	"tailscale.com/tailcfg"
 	"tailscale.com/tsnet"
 	"tailscale.com/types/logger"
 )
@@ -166,6 +167,10 @@ func summarize(status *ipnstate.Status) snapshot {
 	if status.Self != nil && status.CurrentTailnet != nil {
 		result.AccountID = fmt.Sprintf("%s/%d/%s", status.CurrentTailnet.MagicDNSSuffix, status.Self.UserID, status.Self.ID)
 		result.AccountName = status.CurrentTailnet.Name
+		// CurrentTailnet.Name is the legacy domain, not the editable display name.
+		if names, err := tailcfg.UnmarshalNodeCapJSON[string](status.Self.CapMap, tailcfg.NodeAttrTailnetDisplayName); err == nil && len(names) > 0 && names[0] != "" {
+			result.AccountName = names[0]
+		}
 	}
 	for _, value := range status.Peer {
 		address := strings.TrimSuffix(value.DNSName, ".")
