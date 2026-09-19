@@ -155,5 +155,70 @@ final class MacOSServerEditorNavigationStateTests: XCTestCase {
         XCTAssertFalse(state.isCreatingNew)
         XCTAssertFalse(state.hasUnsavedChanges)
     }
+
+    func testDraftRemainsSelectedUntilDiscardIsConfirmed() {
+        var state = MacOSServerEditorNavigationState()
+        state.apply(.server("server-a"))
+        XCTAssertEqual(state.requestTransition(to: .newServer, whileSaving: false), .applied)
+        XCTAssertEqual(state.currentDestination, .newServer)
+        state.setHasUnsavedChanges(true)
+
+        XCTAssertEqual(state.requestTransition(to: .newServer, whileSaving: false), .ignored)
+        XCTAssertEqual(state.requestTransition(to: .server("server-b"), whileSaving: false), .confirmationRequired)
+        XCTAssertEqual(state.currentDestination, .newServer)
+
+        state.cancelPendingTransition()
+        XCTAssertEqual(state.currentDestination, .newServer)
+        XCTAssertTrue(state.hasUnsavedChanges)
+
+        _ = state.requestTransition(to: .server("server-b"), whileSaving: false)
+        state.confirmDiscardAndTransition()
+        XCTAssertEqual(state.currentDestination, .server("server-b"))
+        XCTAssertFalse(state.hasUnsavedChanges)
+    }
+
+    func testCancelDraftRestoresPreviousSelectionInsteadOfConnectedServer() {
+        var state = MacOSServerEditorNavigationState()
+        state.apply(.server("server-b"))
+        state.apply(.newServer)
+        state.setHasUnsavedChanges(true)
+
+        state.cancelCreating(
+            availableServerIDs: ["server-a", "server-b"],
+            preferredServerID: "server-a"
+        )
+
+        XCTAssertEqual(state.currentDestination, .server("server-b"))
+        XCTAssertFalse(state.hasUnsavedChanges)
+        XCTAssertNil(state.pendingDestination)
+    }
+
+    func testCancelDraftFallsBackWhenPreviousServerWasRemoved() {
+        var state = MacOSServerEditorNavigationState()
+        state.apply(.server("removed-server"))
+        state.apply(.newServer)
+
+        state.cancelCreating(
+            availableServerIDs: ["server-a", "server-b"],
+            preferredServerID: "server-b"
+        )
+
+        XCTAssertEqual(state.currentDestination, .server("server-b"))
+    }
+
+    func testCancelFirstServerDraftClearsSelectionAndAllowsStartingAgain() {
+        var state = MacOSServerEditorNavigationState()
+        state.reconcileSelection(availableServerIDs: [], preferredServerID: nil)
+        XCTAssertEqual(state.currentDestination, .newServer)
+        state.setHasUnsavedChanges(true)
+
+        state.cancelCreating(availableServerIDs: [], preferredServerID: nil)
+
+        XCTAssertNil(state.currentDestination)
+        XCTAssertFalse(state.isCreatingNew)
+        XCTAssertFalse(state.hasUnsavedChanges)
+        XCTAssertEqual(state.requestTransition(to: .newServer, whileSaving: false), .applied)
+        XCTAssertEqual(state.currentDestination, .newServer)
+    }
 }
 #endif

@@ -25,6 +25,7 @@ struct macOSServerEditor: View {
     @Binding var hasUnsavedChanges: Bool
     @Binding var isSaving: Bool
     let onError: (String) -> Void
+    var onNameChanged: ((String) -> Void)?
 
     @State private var model = ServerFormModel()
 
@@ -106,6 +107,9 @@ struct macOSServerEditor: View {
         }
         .onChange(of: model.isSaving, initial: true) { _, newValue in
             isSaving = newValue
+        }
+        .onChange(of: model.values.name, initial: true) { _, name in
+            onNameChanged?(name)
         }
     }
 

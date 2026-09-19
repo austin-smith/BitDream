@@ -92,6 +92,11 @@ For iOS build (compile check without signing):
   build
 ```
 
+## Launching for Manual Testing
+
+- For manual testing, build the current worktree with normal project signing. Never launch unsigned or ad-hoc-signed test builds.
+- Use separate `-derivedDataPath` directories for signed app builds and unsigned automated tests so their output cannot mix.
+
 ## Testing
 
 From repo root (`/Users/austinsmith/Developer/Repos/BitDream`), run macOS tests with:
