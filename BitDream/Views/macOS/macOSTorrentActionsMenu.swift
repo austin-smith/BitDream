@@ -291,7 +291,7 @@ struct TorrentActionsToolbarMenu: View {
                 )
             }
         } label: {
-            Label("Actions", systemImage: "ellipsis.circle")
+            Label("Actions", systemImage: "ellipsis")
         }
         .sheet(isPresented: $labelDialog) {
             LabelEditSheetContent(

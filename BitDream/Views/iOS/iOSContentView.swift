@@ -362,7 +362,7 @@ private extension iOSContentView {
                     Label("Resume All", systemImage: "play")
                 })
             } label: {
-                Image(systemName: "ellipsis.circle")
+                Image(systemName: "ellipsis")
                     .foregroundStyle(Color.primary.opacity(isSidebarOpen && colorScheme == .light ? 0.5 : 1))
             }
             .iOSHapticControlActivation()
@@ -372,18 +372,20 @@ private extension iOSContentView {
     var bottomToolbarItems: some ToolbarContent {
         Group {
             ToolbarItem(placement: .bottomBar) {
-                Button {
-                    hapticFeedback.play(.actionTriggered)
-                    showPrefs.toggle()
-                } label: {
-                    Label(
-                        "Filter and Sort",
-                        systemImage: hasActiveFilters
-                            ? "line.3.horizontal.decrease.circle.fill"
-                            : "line.3.horizontal.decrease.circle"
-                    )
+                // Keep the popover's navigation state stable when the button style changes.
+                ZStack {
+                    Button {
+                        hapticFeedback.play(.actionTriggered)
+                        showPrefs.toggle()
+                    } label: {
+                        Label("Filter and Sort", systemImage: "line.3.horizontal.decrease")
+                    }
+                    .if(hasActiveFilters) { button in
+                        button.buttonStyle(.borderedProminent)
+                    }
+                    .tint(hasActiveFilters ? Color.accentColor : Color.primary)
+                    .accessibilityValue(hasActiveFilters ? "Active" : "Inactive")
                 }
-                .accessibilityValue(hasActiveFilters ? "Active" : "Inactive")
                 .popover(isPresented: $showPrefs) {
                     iOSFilterAndSortView(
                         labelFilter: $labelFilter,
