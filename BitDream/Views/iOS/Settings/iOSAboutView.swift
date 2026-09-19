@@ -20,7 +20,7 @@ struct iOSAboutView: View {
                 // App Icon
                 Image("AppIconPreview-Default")
                     .resizable()
-                    .aspectRatio(contentMode: .fit)
+                    .scaledToFit()
                     .frame(width: 100, height: 100)
                     .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 6)
