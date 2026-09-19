@@ -75,10 +75,7 @@ enum AppGroupJSON {
             let directory = url.deletingLastPathComponent()
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
-            let tmpURL = directory.appendingPathComponent(UUID().uuidString)
-            try data.write(to: tmpURL, options: .atomic)
-            try? FileManager.default.removeItem(at: url)
-            try FileManager.default.moveItem(at: tmpURL, to: url)
+            try data.write(to: url, options: .atomic)
             return true
         } catch {
             logger.error("Failed to write App Group file \(url.lastPathComponent): \(error.localizedDescription)")
