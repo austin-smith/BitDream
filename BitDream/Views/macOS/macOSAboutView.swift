@@ -20,7 +20,7 @@ struct macOSAboutView: View {
                 // App Icon
                 Image(nsImage: NSApp.applicationIconImage)
                     .resizable()
-                    .aspectRatio(contentMode: .fit)
+                    .scaledToFit()
                     .frame(width: 128, height: 128)
                     .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 6)
