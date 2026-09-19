@@ -4,6 +4,7 @@ import SwiftUI
 private enum iOSServerFormField: Hashable {
     case name
     case address
+    case machine
     case port
     case username
     case password
@@ -19,6 +20,7 @@ struct iOSServerEditor: View {
     let host: Host?
 
     @State private var model = ServerFormModel()
+    @State private var tailscale = TailscaleSetupModel()
     @State private var isConfirmingDiscard = false
     @State private var isConfirmingDelete = false
     @State private var errorMessage: String?
@@ -107,11 +109,19 @@ struct iOSServerEditor: View {
                     }
                 ))
                     .disabled(!model.canEditDefaultToggle(hostCount: hosts.count))
+            } header: {
+                Text("General")
             } footer: {
                 Text("Preferred server when connecting at launch.")
             }
 
+            TailscaleConnectionSection(form: model, model: tailscale)
+
             Section {
+                if model.values.connectionRoute == "tailscale" {
+                    TailscaleMachinePicker(form: model, model: tailscale)
+                        .focused($focusedField, equals: .machine)
+                }
                 LabeledContent("Address") {
                     TextField("127.0.0.1", text: $model.values.address)
                         .multilineTextAlignment(.trailing)
@@ -119,6 +129,7 @@ struct iOSServerEditor: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .focused($focusedField, equals: .address)
+                        .disabled(model.values.connectionRoute == "tailscale" && !model.isEnteringTailscaleAddress)
                 }
 
                 LabeledContent("Port") {
@@ -136,7 +147,7 @@ struct iOSServerEditor: View {
                     }
                 ))
             } header: {
-                Text("Connection")
+                ServerConnectionHeader(usesTailscale: model.values.connectionRoute == "tailscale")
             } footer: {
                 if let message = model.validationMessage {
                     Text(message)
@@ -159,6 +170,8 @@ struct iOSServerEditor: View {
                         .focused($focusedField, equals: .password)
                 }
             }
+
+            ServerConnectionTestSection(form: model)
 
             if !isAddNew {
                 Section {
@@ -243,7 +256,7 @@ struct iOSServerEditor: View {
     private func focusTarget(for field: ServerFormModel.Field?) -> iOSServerFormField? {
         switch field {
         case .address:
-            return .address
+            return model.values.connectionRoute == "tailscale" && !model.isEnteringTailscaleAddress ? .machine : .address
         case .port:
             return .port
         case nil:

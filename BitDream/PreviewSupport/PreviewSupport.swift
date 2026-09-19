@@ -118,7 +118,7 @@ private final class PreviewHostRepository: HostPersisting {
             isDefault: draft.isDefault,
             isSSL: draft.isSSL,
             name: draft.name,
-            port: Int16(draft.port),
+            port: draft.port,
             server: draft.server,
             username: draft.username
         )
@@ -139,7 +139,7 @@ private final class PreviewHostRepository: HostPersisting {
         }
         host.name = draft.name
         host.server = draft.server
-        host.port = Int16(draft.port)
+        host.port = draft.port
         host.username = draft.username
         host.isSSL = draft.isSSL
         host.isDefault = draft.isDefault

@@ -4,6 +4,7 @@ import SwiftUI
 struct macOSAboutView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.openURL) var openURL
+    @State private var isShowingLicenses = false
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -63,10 +64,13 @@ struct macOSAboutView: View {
                         .padding(.top, 12)
                 }
 
-                Button("GitHub") {
-                    if let url = URL(string: "https://github.com/austin-smith/BitDream") {
-                        openURL(url)
+                HStack {
+                    Button("GitHub") {
+                        if let url = URL(string: "https://github.com/austin-smith/BitDream") {
+                            openURL(url)
+                        }
                     }
+                    Button("Licenses") { isShowingLicenses = true }
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.regular)
@@ -97,6 +101,10 @@ struct macOSAboutView: View {
         .padding(.vertical, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 0))
+        .sheet(isPresented: $isShowingLicenses) {
+            TailscaleNoticesView()
+                .frame(idealWidth: 600, idealHeight: 600)
+        }
     }
 }
 

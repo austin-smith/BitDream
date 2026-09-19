@@ -79,7 +79,9 @@ enum WidgetRefreshRunner {
                 isSSL: host.isSSL,
                 credentialKey: credentialKey,
                 isDefault: host.isDefault,
-                version: host.version
+                version: host.version,
+                connectionRoute: host.connectionRoute,
+                tailscaleAccountID: host.tailscaleAccountID
             )
         }
     }
@@ -94,14 +96,14 @@ enum WidgetRefreshRunner {
         let hostIdentifier = host.name.isEmpty ? host.server : host.name
 
         do {
-            let connection = try await dependencies.connectionFactory.connection(
-                for: TransmissionConnectionDescriptor(record: host)
-            )
             let snapshot = try await withTimeout(
                 seconds: backgroundWaitTimeout,
                 sleep: dependencies.sleep
             ) {
-                try await connection.fetchWidgetRefreshSnapshot()
+                let connection = try await dependencies.connectionFactory.connection(
+                    for: TransmissionConnectionDescriptor(record: host)
+                )
+                return try await connection.fetchWidgetRefreshSnapshot()
             }
 
             guard !isCancelled() else { return }

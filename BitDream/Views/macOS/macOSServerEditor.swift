@@ -4,6 +4,7 @@ import SwiftUI
 private enum macOSServerFormFocusField: Hashable {
     case name
     case address
+    case machine
     case port
     case username
     case password
@@ -28,6 +29,7 @@ struct macOSServerEditor: View {
     var onNameChanged: ((String) -> Void)?
 
     @State private var model = ServerFormModel()
+    @State private var tailscale = TailscaleSetupModel()
 
     @FocusState private var focusedField: macOSServerFormFocusField?
 
@@ -46,7 +48,7 @@ struct macOSServerEditor: View {
             }
 
             Form {
-                Section {
+                Section("General") {
                     TextField("Name", text: $model.values.name, prompt: Text("Friendly name"))
                         .focused($focusedField, equals: .name)
 
@@ -57,10 +59,17 @@ struct macOSServerEditor: View {
                     .disabled(!model.canEditDefaultToggle(hostCount: hosts.count))
                 }
 
+                TailscaleConnectionSection(form: model, model: tailscale)
+
                 Section {
+                    if model.values.connectionRoute == "tailscale" {
+                        TailscaleMachinePicker(form: model, model: tailscale)
+                            .focused($focusedField, equals: .machine)
+                    }
                     TextField("Address", text: $model.values.address, prompt: Text("127.0.0.1"))
                         .autocorrectionDisabled()
                         .focused($focusedField, equals: .address)
+                        .disabled(model.values.connectionRoute == "tailscale" && !model.isEnteringTailscaleAddress)
 
                     HStack {
                         TextField(
@@ -77,7 +86,7 @@ struct macOSServerEditor: View {
 
                     Toggle("Use SSL", isOn: $model.values.isSSL)
                 } header: {
-                    Text("Connection")
+                    ServerConnectionHeader(usesTailscale: model.values.connectionRoute == "tailscale")
                 } footer: {
                     if let message = model.validationMessage {
                         Text(message)
@@ -93,6 +102,8 @@ struct macOSServerEditor: View {
                     SecureField("Password", text: $model.values.password, prompt: Text("Optional"))
                         .focused($focusedField, equals: .password)
                 }
+                ServerConnectionTestSection(form: model)
+
             }
             .formStyle(.grouped)
             .disabled(model.isSaving)
@@ -137,7 +148,7 @@ struct macOSServerEditor: View {
             Button(saveButtonTitle, action: performSave)
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.defaultAction)
-                .disabled(model.isSaving)
+                .disabled(model.isSaving || (!isAddNew && !model.hasUnsavedChanges))
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
@@ -178,7 +189,7 @@ struct macOSServerEditor: View {
     private func focusTarget(for field: ServerFormModel.Field?) -> macOSServerFormFocusField? {
         switch field {
         case .address:
-            return .address
+            return model.values.connectionRoute == "tailscale" && !model.isEnteringTailscaleAddress ? .machine : .address
         case .port:
             return .port
         case nil:

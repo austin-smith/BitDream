@@ -14,6 +14,8 @@ final class ServerFormModel {
         var password = ""
         var isDefault = false
         var isSSL = false
+        var connectionRoute = "system"
+        var tailscaleAccountID: String?
     }
 
     enum Field: Equatable {
@@ -26,6 +28,18 @@ final class ServerFormModel {
         case saved(Host)
     }
 
+    enum TailscaleDestination: Hashable {
+        case none
+        case machine(String)
+        case manual
+    }
+
+    private enum TailscaleAddressEntry {
+        case inferred
+        case machine
+        case manual
+    }
+
     nonisolated static let defaultPort = 9091
     nonisolated static let portRange = 1...65535
 
@@ -34,6 +48,7 @@ final class ServerFormModel {
     private var initialValues = Values()
     private(set) var isSaving = false
     private(set) var hasAttemptedSave = false
+    private var tailscaleAddressEntry = TailscaleAddressEntry.inferred
 
     nonisolated init() {}
 
@@ -49,6 +64,43 @@ final class ServerFormModel {
         Self.portRange.contains(values.port)
     }
 
+    var isEnteringTailscaleAddress: Bool { tailscaleAddressEntry == .manual }
+
+    func tailscaleDestination(in peers: [TailscalePeer]) -> TailscaleDestination {
+        if isEnteringTailscaleAddress { return .manual }
+        return selectedTailscalePeerID(in: peers).map(TailscaleDestination.machine) ?? .none
+    }
+
+    /// Infer how to edit an existing destination once machines are available.
+    /// Subsequent refreshes must never switch an explicitly chosen entry method.
+    func resolveTailscaleAddressEntry(in peers: [TailscalePeer]) {
+        guard tailscaleAddressEntry == .inferred, !peers.isEmpty else { return }
+        tailscaleAddressEntry = values.address.isEmpty || selectedTailscalePeerID(in: peers) != nil
+            ? .machine : .manual
+    }
+
+    func selectTailscaleDestination(_ destination: TailscaleDestination, from peers: [TailscalePeer]) {
+        switch destination {
+        case .none: break
+        case .manual: tailscaleAddressEntry = .manual
+        case .machine(let id): selectTailscalePeer(id: id, from: peers)
+        }
+    }
+
+    /// Derive selection from the saved address so refreshes and manual edits
+    /// cannot leave a separate device selection out of sync with the RPC target.
+    func selectedTailscalePeerID(in peers: [TailscalePeer]) -> String? {
+        let matches = peers.filter { $0.matches(host: values.address) }
+        return matches.count == 1 ? matches.first?.id : nil
+    }
+
+    func selectTailscalePeer(id: String?, from peers: [TailscalePeer]) {
+        guard let peer = peers.first(where: { $0.id == id }) else { return }
+        tailscaleAddressEntry = .machine
+        values.address = peer.address
+        if values.name.isEmpty { values.name = peer.name }
+    }
+
     private var firstInvalidField: Field? {
         if !isAddressValid { return .address }
         if !isPortValid { return .port }
@@ -58,7 +110,10 @@ final class ServerFormModel {
     /// Message for the first invalid field, shown once a save has been attempted.
     var validationMessage: String? {
         guard hasAttemptedSave else { return nil }
-        if !isAddressValid { return "Address is required." }
+        if !isAddressValid {
+            return values.connectionRoute == "tailscale" && !isEnteringTailscaleAddress
+                ? "Choose a machine." : "Address is required."
+        }
         if !isPortValid { return "Port must be between 1 and 65535." }
         return nil
     }
@@ -66,6 +121,7 @@ final class ServerFormModel {
     /// Loads the form from the given host, or prepares defaults for a new server.
     func configure(host: Host?, store: TransmissionStore) {
         self.host = host
+        tailscaleAddressEntry = .inferred
 
         if let host {
             values = Values(
@@ -75,7 +131,9 @@ final class ServerFormModel {
                 username: host.username ?? "",
                 password: storedPassword(for: host),
                 isDefault: host.isDefault,
-                isSSL: host.isSSL
+                isSSL: host.isSSL,
+                connectionRoute: host.connectionRoute ?? "system",
+                tailscaleAccountID: host.tailscaleAccountID
             )
         } else {
             values = Values(isDefault: store.host == nil)
@@ -111,7 +169,9 @@ final class ServerFormModel {
             username: values.username,
             isSSL: values.isSSL,
             isDefault: values.isDefault,
-            password: values.password
+            password: values.password,
+            connectionRoute: values.connectionRoute,
+            tailscaleAccountID: values.tailscaleAccountID
         )
 
         let savedHost: Host

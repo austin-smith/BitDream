@@ -10,6 +10,8 @@ struct HostDraft {
     var isSSL: Bool
     var isDefault: Bool
     var password: String
+    var connectionRoute: String = "system"
+    var tailscaleAccountID: String?
 }
 
 enum HostPersistenceError: Error, LocalizedError {
@@ -102,9 +104,11 @@ final class HostRepository: HostPersisting {
             isDefault: normalizedDraft.isDefault,
             isSSL: normalizedDraft.isSSL,
             name: normalizedDraft.name,
-            port: Int16(normalizedDraft.port),
+            port: normalizedDraft.port,
             server: normalizedDraft.server,
-            username: normalizedDraft.username
+            username: normalizedDraft.username,
+            connectionRoute: normalizedDraft.connectionRoute,
+            tailscaleAccountID: normalizedDraft.tailscaleAccountID
         )
 
         let credentialKey = host.ensureCredentialKey()
@@ -146,10 +150,12 @@ final class HostRepository: HostPersisting {
 
         host.name = normalizedDraft.name
         host.server = normalizedDraft.server
-        host.port = Int16(normalizedDraft.port)
+        host.port = normalizedDraft.port
         host.username = normalizedDraft.username
         host.isSSL = normalizedDraft.isSSL
         host.isDefault = normalizedDraft.isDefault
+        host.connectionRoute = normalizedDraft.connectionRoute
+        host.tailscaleAccountID = normalizedDraft.tailscaleAccountID
 
         let credentialKey = host.ensureCredentialKey()
         guard KeychainService.savePassword(normalizedDraft.password, credentialKey: credentialKey) else {
@@ -268,7 +274,9 @@ private extension HostRepository {
                 isSSL: host.isSSL,
                 credentialKey: host.credentialKey ?? "",
                 isDefault: host.isDefault,
-                version: host.version
+                version: host.version,
+                connectionRoute: host.connectionRoute,
+                tailscaleAccountID: host.tailscaleAccountID
             )
         }
 
@@ -318,6 +326,12 @@ private extension HostRepository {
             throw HostPersistenceError.validation("Port must be between 1 and 65535.")
         }
 
+        guard let route = ServerConnectionRoute(rawValue: draft.connectionRoute) else {
+            throw HostPersistenceError.validation("Choose a supported connection method.")
+        }
+        if route == .tailscale && (draft.tailscaleAccountID?.isEmpty != false) {
+            throw HostPersistenceError.validation("Sign in and select a Tailscale account for this server.")
+        }
         let trimmedName = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         let finalName = trimmedName.isEmpty ? trimmedServer : trimmedName
 
@@ -328,7 +342,9 @@ private extension HostRepository {
             username: draft.username.trimmingCharacters(in: .whitespacesAndNewlines),
             isSSL: draft.isSSL,
             isDefault: draft.isDefault,
-            password: draft.password
+            password: draft.password,
+            connectionRoute: draft.connectionRoute,
+            tailscaleAccountID: draft.connectionRoute == "tailscale" ? draft.tailscaleAccountID : nil
         )
     }
 

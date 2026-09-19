@@ -30,8 +30,12 @@ internal protocol TransmissionRPCRequestSending: Sendable {
 }
 
 internal struct URLSessionTransmissionRPCRequestSender: TransmissionRPCRequestSending {
+    let session: URLSession
+
+    init(session: URLSession = .shared) { self.session = session }
+
     func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw TransmissionError.invalidResponse

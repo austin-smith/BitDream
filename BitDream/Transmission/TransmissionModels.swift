@@ -11,6 +11,8 @@ internal struct TransmissionConnectionDescriptor: Hashable, Sendable {
     let port: Int
     let username: String
     let credentialSource: TransmissionCredentialSource
+    var connectionRoute: String = "system"
+    var tailscaleAccountID: String?
 }
 
 internal struct TransmissionEndpoint: Hashable, Sendable {
