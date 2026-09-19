@@ -155,6 +155,67 @@ final class WidgetRefreshOperationTests: XCTestCase {
         XCTAssertEqual(recorder.reloadCount, 1)
     }
 
+    func testCancellingRunningRefreshPreventsSnapshotWriteAndReload() async throws {
+        let scenario = try makeSerializedRefreshScenario()
+        let completed = expectation(description: "Queue drained after cancellation")
+        let handle = WidgetRefreshScheduler.enqueue(dependencies: scenario.dependencies) { _ in
+            XCTFail("Cancelled refresh must not report normal completion")
+        }
+        let started = await waitUntil {
+            await scenario.sender.capturedRequests().count == 2
+        }
+        XCTAssertTrue(started)
+
+        handle.cancel()
+        await scenario.sender.resume(id: "first-run-stats")
+        // An empty refresh completes only after the cancelled predecessor has drained.
+        let emptyDependencies = WidgetRefreshDependencies(
+            connectionFactory: scenario.dependencies.connectionFactory,
+            snapshotWriter: scenario.dependencies.snapshotWriter,
+            loadHosts: { [] },
+            sleep: sleepUntilCancelled
+        )
+        WidgetRefreshScheduler.enqueue(dependencies: emptyDependencies) { success in
+            XCTAssertTrue(success)
+            completed.fulfill()
+        }
+        await fulfillment(of: [completed], timeout: 5)
+
+        XCTAssertTrue(handle.isCancelled)
+        XCTAssertEqual(scenario.recorder.sessionSnapshotCount, 0)
+        XCTAssertEqual(scenario.recorder.reloadCount, 0)
+    }
+
+    func testCancellingQueuedRefreshSkipsItsNetworkWork() async throws {
+        let scenario = try makeSerializedRefreshScenario()
+        let firstCompleted = expectation(description: "First refresh completed")
+        let lastCompleted = expectation(description: "Uncancelled successor completed")
+        WidgetRefreshScheduler.enqueue(dependencies: scenario.dependencies) { success in
+            XCTAssertTrue(success)
+            firstCompleted.fulfill()
+        }
+        let started = await waitUntil {
+            await scenario.sender.capturedRequests().count == 2
+        }
+        XCTAssertTrue(started)
+
+        let cancelled = WidgetRefreshScheduler.enqueue(dependencies: scenario.dependencies) { _ in
+            XCTFail("Cancelled refresh must not report normal completion")
+        }
+        cancelled.cancel()
+        WidgetRefreshScheduler.enqueue(dependencies: scenario.dependencies) { success in
+            XCTAssertTrue(success)
+            lastCompleted.fulfill()
+        }
+        await scenario.sender.resume(id: "first-run-stats")
+        await fulfillment(of: [firstCompleted, lastCompleted], timeout: 5)
+
+        let requests = await scenario.sender.capturedRequests()
+        XCTAssertEqual(requests.count, 4)
+        XCTAssertEqual(scenario.recorder.sessionSnapshotCount, 2)
+        XCTAssertEqual(scenario.recorder.reloadCount, 2)
+    }
+
     func testEnqueuedWidgetRefreshesSerializeNetworkWork() async throws {
         let scenario = try makeSerializedRefreshScenario()
         let completionRecorder = WidgetRefreshCompletionRecorder()
