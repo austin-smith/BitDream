@@ -131,7 +131,7 @@ struct iOSTorrentDetail: View {
                     onError: presentError
                 )
             } label: {
-                Image(systemName: "ellipsis.circle")
+                Image(systemName: "ellipsis")
             }
             .iOSHapticControlActivation()
         }

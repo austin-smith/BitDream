@@ -362,7 +362,7 @@ private extension iOSContentView {
                     Label("Resume All", systemImage: "play")
                 })
             } label: {
-                Image(systemName: "ellipsis.circle")
+                Image(systemName: "ellipsis")
                     .foregroundStyle(Color.primary.opacity(isSidebarOpen && colorScheme == .light ? 0.5 : 1))
             }
             .iOSHapticControlActivation()
@@ -376,13 +376,9 @@ private extension iOSContentView {
                     hapticFeedback.play(.actionTriggered)
                     showPrefs.toggle()
                 } label: {
-                    Label(
-                        "Filter and Sort",
-                        systemImage: hasActiveFilters
-                            ? "line.3.horizontal.decrease.circle.fill"
-                            : "line.3.horizontal.decrease.circle"
-                    )
+                    Label("Filter and Sort", systemImage: "line.3.horizontal.decrease")
                 }
+                .tint(hasActiveFilters ? Color.accentColor : Color.primary)
                 .accessibilityValue(hasActiveFilters ? "Active" : "Inactive")
                 .popover(isPresented: $showPrefs) {
                     iOSFilterAndSortView(

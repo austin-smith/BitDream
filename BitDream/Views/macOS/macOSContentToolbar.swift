@@ -24,7 +24,7 @@ struct macOSContentToolbar: ToolbarContent {
             Menu {
                 macOSContentSortMenu(sortProperty: $sortProperty, sortOrder: $sortOrder)
             } label: {
-                Label("Sort", systemImage: "arrow.up.arrow.down.circle")
+                Label("Sort", systemImage: "arrow.up.arrow.down")
             }
         }
 
@@ -32,7 +32,7 @@ struct macOSContentToolbar: ToolbarContent {
             Button(action: {
                 showingFilterPopover.toggle()
             }, label: {
-                Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
+                Label("Filters", systemImage: "line.3.horizontal.decrease")
                     .if(hasActiveFilters) { view in
                         view.foregroundColor(accentColor)
                     }

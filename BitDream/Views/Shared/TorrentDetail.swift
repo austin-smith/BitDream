@@ -717,7 +717,7 @@ struct TorrentDetailToolbar: ToolbarContent {
                     }
                 })
             } label: {
-                Image(systemName: "ellipsis.circle")
+                Image(systemName: "ellipsis")
             }
         }
         #endif
