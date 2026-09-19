@@ -14,10 +14,11 @@ final class TailscaleSetupModel {
 
     var isSignedIn: Bool { snapshot?.isSignedIn == true }
 
-    func refresh(startIfNeeded: Bool) async {
+    // Restore the app’s saved node identity even when this server has no account yet.
+    func refresh() async {
         guard !isWorking else { return }
         do {
-            let value = try await service.status(startIfNeeded: startIfNeeded)
+            let value = try await service.status(startIfNeeded: true)
             snapshot = value
             errorMessage = nil
             if value.isReady { authorizationURL = nil }
@@ -97,7 +98,7 @@ struct TailscaleConnectionSection: View {
             guard form.values.connectionRoute == "tailscale",
                   scenePhase == .active || model.authorizationURL != nil else { return }
             while !Task.isCancelled {
-                await model.refresh(startIfNeeded: form.values.tailscaleAccountID != nil)
+                await model.refresh()
                 if form.values.tailscaleAccountID == nil, model.snapshot?.isReady == true {
                     form.values.tailscaleAccountID = model.snapshot?.accountID
                 }
@@ -126,7 +127,7 @@ struct TailscaleConnectionSection: View {
                 // Authentication completion is observed from the node, not an
                 // invented redirect. Closing the browser does not prove failure.
                 model.authorizationURL = nil
-                await model.refresh(startIfNeeded: false)
+                await model.refresh()
             }
         }
         .confirmationDialog("Sign out of Tailscale?", isPresented: $isConfirmingSignOut) {

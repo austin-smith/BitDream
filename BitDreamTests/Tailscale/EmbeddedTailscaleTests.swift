@@ -3,6 +3,26 @@ import XCTest
 
 final class EmbeddedTailscaleTests: XCTestCase {
     @MainActor
+    func testSetupRestoresSavedLoginWithoutInteractiveSignIn() async {
+        let restored = Self.snapshot(account: "saved-account", generation: 1)
+        let driver = RestoringSnapshotDriver(restored: restored)
+        let service = EmbeddedTailscaleService(driver: driver, directory: { URL(filePath: "/unused") })
+        let model = TailscaleSetupModel(service: service)
+
+        // A new server has no account association. Opening its Tailscale settings
+        // must still start the node and discover the login persisted by the app.
+        await model.refresh()
+
+        XCTAssertTrue(model.isSignedIn)
+        XCTAssertEqual(model.snapshot?.accountID, "saved-account")
+        XCTAssertEqual(model.snapshot?.peers, restored.peers)
+        XCTAssertNil(model.authorizationURL, "Restoring a login must not open the sign-in browser")
+        XCTAssertNil(model.errorMessage)
+        let actions = await driver.actions
+        XCTAssertEqual(actions, ["start"], "Restoration must not request an interactive login")
+    }
+
+    @MainActor
     func testSetupDoesNotTreatPendingOrExpiredLoginAsSignedIn() async throws {
         let pending = TailscaleSnapshot(
             generation: 1, state: "NeedsLogin", authURL: "https://login.tailscale.com/a/test",
@@ -20,7 +40,7 @@ final class EmbeddedTailscaleTests: XCTestCase {
 
         // Canceling the browser must leave sign-in available, not imply authentication.
         model.authorizationURL = nil
-        await model.refresh(startIfNeeded: false)
+        await model.refresh()
         XCTAssertFalse(model.isSignedIn)
 
         await model.signIn()
@@ -30,13 +50,13 @@ final class EmbeddedTailscaleTests: XCTestCase {
                 accountName: "Test", peers: [], proxyPort: state == "Running" ? 1234 : nil,
                 proxyPassword: nil, error: nil
             ))
-            await model.refresh(startIfNeeded: false)
+            await model.refresh()
             XCTAssertTrue(model.isSignedIn, "Authenticated users can sign out during \(state)")
         }
         XCTAssertNil(model.authorizationURL)
 
         await driver.update(pending)
-        await model.refresh(startIfNeeded: false)
+        await model.refresh()
         XCTAssertFalse(model.isSignedIn, "An expired login must not use cached identity as proof")
     }
 
@@ -133,4 +153,22 @@ private actor SnapshotDriver: TailscaleDriving {
     init(snapshot: TailscaleSnapshot) { self.snapshot = snapshot }
     func update(_ value: TailscaleSnapshot) { snapshot = value }
     func perform(_ request: TailscaleNativeRequest) -> TailscaleSnapshot { snapshot }
+}
+
+private actor RestoringSnapshotDriver: TailscaleDriving {
+    let restored: TailscaleSnapshot
+    private var isStarted = false
+    private(set) var actions: [String] = []
+
+    init(restored: TailscaleSnapshot) { self.restored = restored }
+
+    func perform(_ request: TailscaleNativeRequest) -> TailscaleSnapshot {
+        actions.append(request.action)
+        if request.action == "start" { isStarted = true }
+        if isStarted { return restored }
+        return TailscaleSnapshot(
+            generation: 0, state: "Stopped", authURL: nil, accountID: nil,
+            accountName: nil, peers: [], proxyPort: nil, proxyPassword: nil, error: nil
+        )
+    }
 }
