@@ -4,7 +4,7 @@ import SwiftUI
 
 #if os(macOS)
 struct MacOSServerEditorNavigationState: Equatable {
-    enum Destination: Equatable {
+    enum Destination: Hashable {
         case server(String)
         case newServer
     }
@@ -19,6 +19,7 @@ struct MacOSServerEditorNavigationState: Equatable {
     private(set) var isCreatingNew = false
     private(set) var hasUnsavedChanges = false
     private(set) var pendingDestination: Destination?
+    private var selectionBeforeCreating: String?
 
     init(
         selectedServerID: String? = nil,
@@ -82,10 +83,29 @@ struct MacOSServerEditorNavigationState: Equatable {
         case .server(let serverID):
             selectedServerID = serverID
             isCreatingNew = false
+            selectionBeforeCreating = nil
         case .newServer:
+            if !isCreatingNew {
+                selectionBeforeCreating = selectedServerID
+            }
             selectedServerID = nil
             isCreatingNew = true
         }
+    }
+
+    mutating func cancelCreating(availableServerIDs: [String], preferredServerID: String?) {
+        guard isCreatingNew else { return }
+        let previousSelection = selectionBeforeCreating
+        self = Self()
+        guard !availableServerIDs.isEmpty else { return }
+
+        let restoredSelection = previousSelection.flatMap { serverID in
+            availableServerIDs.contains(serverID) ? serverID : nil
+        }
+        reconcileSelection(
+            availableServerIDs: availableServerIDs,
+            preferredServerID: restoredSelection ?? preferredServerID
+        )
     }
 
     mutating func reconcileSelection(
@@ -197,6 +217,7 @@ struct macOSServerList: View {
     @State private var confirmingDelete = false
     @State private var serverToDelete: Host?
     @State private var activeAlert: MacOSServerListAlert?
+    @State private var draftName = ""
 
     private var sortedHosts: [Host] {
         hosts.sortedByDisplayName()
@@ -275,6 +296,9 @@ struct macOSServerList: View {
         .onChange(of: hosts.map(\.serverID)) { _, _ in
             syncSelection()
         }
+        .onChange(of: editorNavigation.currentDestination) { _, _ in
+            draftName = ""
+        }
         .onChange(of: editRequest) { _, _ in
             selectRequestedServer()
         }
@@ -290,12 +314,17 @@ private extension macOSServerList {
     private var sidebar: some View {
         VStack(spacing: 0) {
             List(selection: serverSelection) {
+                if editorNavigation.isCreatingNew {
+                    draftRow
+                        .tag(MacOSServerEditorNavigationState.Destination.newServer)
+                }
+
                 ForEach(sortedHosts) { host in
                     ServerRowLabel(
                         host: host,
                         isConnected: host.serverID == store.host?.serverID
                     )
-                    .tag(host.serverID)
+                    .tag(MacOSServerEditorNavigationState.Destination.server(host.serverID))
                     .contextMenu {
                         Button("Connect") {
                             connect(to: host)
@@ -318,7 +347,7 @@ private extension macOSServerList {
             }
             .onDeleteCommand(perform: promptDeleteSelectedServer)
             .overlay {
-                if hosts.isEmpty {
+                if hosts.isEmpty && !editorNavigation.isCreatingNew {
                     ContentUnavailableView {
                         Label("No Servers", systemImage: "server.rack")
                     } description: {
@@ -329,6 +358,23 @@ private extension macOSServerList {
 
             listGutter
         }
+    }
+
+    private var draftRow: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(draftDisplayName)
+                .lineLimit(1)
+            Text("Unsaved")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var draftDisplayName: String {
+        let name = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? "New Server" : name
     }
 
     private var listGutter: some View {
@@ -342,6 +388,7 @@ private extension macOSServerList {
             }
             .help("Add a server")
             .accessibilityLabel("Add Server")
+            .disabled(editorNavigation.isCreatingNew)
 
             Button {
                 promptDeleteSelectedServer()
@@ -376,15 +423,20 @@ private extension macOSServerList {
                     host: selectedHost,
                     title: nil,
                     saveButtonTitle: editorNavigation.isCreatingNew ? "Add Server" : "Save Changes",
-                    cancelButtonTitle: editorNavigation.isCreatingNew && !hosts.isEmpty ? "Cancel" : nil,
-                    onCancel: editorNavigation.isCreatingNew && !hosts.isEmpty ? { cancelCreatingServer() } : nil,
+                    cancelButtonTitle: editorNavigation.isCreatingNew ? "Cancel" : nil,
+                    onCancel: editorNavigation.isCreatingNew ? { cancelCreatingServer() } : nil,
                     onSaved: handleEditorSaved,
                     onDelete: nil,
                     onConnect: editorNavigation.isCreatingNew ? nil : { connectSelectedServer() },
                     canConnect: canConnectSelectedServer,
                     hasUnsavedChanges: hasUnsavedChanges,
                     isSaving: $isSaving,
-                    onError: presentError
+                    onError: presentError,
+                    onNameChanged: { name in
+                        if editorNavigation.isCreatingNew {
+                            draftName = name
+                        }
+                    }
                 )
             }
             .id(editorIdentity)
@@ -458,8 +510,10 @@ private extension macOSServerList {
     }
 
     private func cancelCreatingServer() {
-        guard let serverID = preferredSelectionAfterCancel else { return }
-        editorNavigation.apply(.server(serverID))
+        editorNavigation.cancelCreating(
+            availableServerIDs: sortedHosts.map(\.serverID),
+            preferredServerID: store.host?.serverID
+        )
     }
 
     private func promptDeleteSelectedServer() {
@@ -485,12 +539,12 @@ private extension macOSServerList {
         editorNavigation.didSave(serverID: savedHost.serverID)
     }
 
-    private var serverSelection: Binding<String?> {
+    private var serverSelection: Binding<MacOSServerEditorNavigationState.Destination?> {
         Binding(
-            get: { editorNavigation.selectedServerID },
-            set: { requestedServerID in
-                guard let requestedServerID else { return }
-                requestTransition(to: .server(requestedServerID))
+            get: { editorNavigation.currentDestination },
+            set: { destination in
+                guard let destination else { return }
+                requestTransition(to: destination)
             }
         )
     }
@@ -513,14 +567,6 @@ private extension macOSServerList {
                 activeAlert = nil
             }
         )
-    }
-
-    private var preferredSelectionAfterCancel: String? {
-        if let activeServerID = store.host?.serverID,
-           hosts.contains(where: { $0.serverID == activeServerID }) {
-            return activeServerID
-        }
-        return sortedHosts.first?.serverID
     }
 
     private var dismissalConfirmationTitle: String {
