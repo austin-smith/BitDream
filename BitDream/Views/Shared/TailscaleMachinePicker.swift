@@ -4,14 +4,18 @@ struct TailscaleMachinePicker: View {
     @Bindable var form: ServerFormModel
     @Bindable var model: TailscaleSetupModel
 
-    private var peers: [TailscalePeer] { model.snapshot?.peers ?? [] }
+    private var peers: [TailscalePeer] { model.isSignedIn ? model.snapshot?.peers ?? [] : [] }
+
+    private var selection: ServerFormModel.TailscaleDestination {
+        model.isSignedIn ? form.tailscaleDestination(in: peers) : .none
+    }
 
     var body: some View {
         Picker("Machine", selection: Binding(
-            get: { form.tailscaleDestination(in: peers) },
+            get: { selection },
             set: { form.selectTailscaleDestination($0, from: peers) }
         )) {
-            if form.tailscaleDestination(in: peers) == .none {
+            if selection == .none {
                 Text(unselectedLabel)
                     .tag(ServerFormModel.TailscaleDestination.none)
                     .disabled(true)
@@ -26,12 +30,14 @@ struct TailscaleMachinePicker: View {
                 .tag(ServerFormModel.TailscaleDestination.manual)
         }
         .pickerStyle(.menu)
+        .disabled(!model.isSignedIn)
         .onChange(of: peers, initial: true) { _, peers in
             form.resolveTailscaleAddressEntry(in: peers)
         }
     }
 
     private var unselectedLabel: String {
+        guard model.isSignedIn else { return "Choose a Machine" }
         if !form.values.address.isEmpty { return form.values.address }
         return model.snapshot?.isReady == true && peers.isEmpty ? "No Machines Available" : "Choose a Machine"
     }
