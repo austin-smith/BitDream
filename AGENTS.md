@@ -94,12 +94,8 @@ For iOS build (compile check without signing):
 
 ## Launching for Manual Testing
 
-- Always launch a normally signed build when running the app for the user or performing manual UI testing. Never launch an unsigned or ad-hoc-signed build produced by automated tests or compile checks.
-- `CODE_SIGNING_ALLOWED=NO` and `CODE_SIGNING_REQUIRED=NO` are only for automated validation. Do not use either override for a build that will be launched interactively. Unsigned builds can fail Keychain access and do not represent normal app behavior.
-- Keep signed launch builds and unsigned validation builds in separate DerivedData directories using `-derivedDataPath`. This prevents validation artifacts, including test bundles, from contaminating the app used for manual testing.
-- Before launching, build the current worktree with the normal project signing configuration and verify that exact `.app` with `codesign --verify --deep --strict` and `codesign -dv --verbose=2`. Confirm an Apple signing authority and the expected team identifier; an ad-hoc signature is not sufficient.
-- If signing or signature verification fails, fix the signed build or report the blocker. Never silently disable signing to get an app running.
-- Launch the exact verified app bundle. If an older instance is running, relaunch it so the user tests the new binary, preserving unsaved user input or asking before discarding it.
+- For manual testing, build the current worktree with normal project signing. Never launch unsigned or ad-hoc-signed test builds.
+- Use separate `-derivedDataPath` directories for signed app builds and unsigned automated tests so their output cannot mix.
 
 ## Testing
 
