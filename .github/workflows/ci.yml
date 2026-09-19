@@ -16,7 +16,7 @@ concurrency:
 jobs:
   lint:
     name: Lint
-    runs-on: macos-26
+    runs-on: xcode-27
 
     steps:
       - name: Checkout
@@ -33,7 +33,7 @@ jobs:
   macos-build-and-test:
     name: macOS Build + Test
     needs: lint
-    runs-on: macos-26
+    runs-on: xcode-27
 
     steps:
       - name: Checkout
@@ -44,7 +44,7 @@ jobs:
           RESULT_BUNDLE="$RUNNER_TEMP/BitDream.xcresult"
           rm -rf "$RESULT_BUNDLE"
 
-          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test \
+          xcodebuild test \
             -project BitDream.xcodeproj \
             -scheme BitDream \
             -configuration Debug \
@@ -87,7 +87,7 @@ jobs:
   ios-build:
     name: iOS Build
     needs: lint
-    runs-on: macos-26
+    runs-on: xcode-27
 
     steps:
       - name: Checkout
@@ -95,7 +95,7 @@ jobs:
 
       - name: Build app (iOS)
         run: |
-          /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild build \
+          xcodebuild build \
             -project BitDream.xcodeproj \
             -scheme BitDream \
             -configuration Debug \
