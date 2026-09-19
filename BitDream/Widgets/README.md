@@ -70,7 +70,7 @@ Apple references: [background task setup](https://developer.apple.com/documentat
 
 ### Testing
 
-- The iOS CI job uses GitHub's `xcode-27` runner because the new submission API requires the iOS 27 SDK. macOS jobs keep their existing runner.
+- CI and releases use Xcode 27.0; the iOS background-task submission API requires the iOS 27 SDK.
 - `WidgetRefreshOperationTests` covers snapshot production, timeout behavior, partial network failure, one reload per batch, serialized refreshes, and cancellation of active and queued work.
 - Verify App Group access from both the host app and widget extension. Use Widget Previews for supported layouts.
 

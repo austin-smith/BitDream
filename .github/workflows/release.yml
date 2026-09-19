@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+env:
+  DEVELOPER_DIR: /Applications/Xcode_27.0.app/Contents/Developer
+
 permissions:
   contents: write
   pages: write
@@ -12,7 +15,7 @@ permissions:
 
 jobs:
   release:
-    runs-on: macos-26
+    runs-on: xcode-27
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
