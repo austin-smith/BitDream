@@ -138,17 +138,22 @@ struct TailscaleConnectionSection: View {
 
     @ViewBuilder
     private var tailscaleControls: some View {
-        LabeledContent("Status", value: model.snapshot?.statusDescription ?? "Not signed in")
-        if model.isSignedIn, let name = model.snapshot?.accountName {
-            LabeledContent("Tailnet", value: name)
-        }
-        if model.isSignedIn {
-            accountControls
-                .disabled(model.isWorking || model.snapshot?.isReady != true)
-        } else {
+        if !model.isSignedIn {
             HStack(spacing: 8) {
-                Button("Sign in to Tailscale") { action = .signIn }
+                Button {
+                    action = .signIn
+                } label: {
+                    Text("Sign in to Tailscale")
+                        #if os(iOS)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(.rect)
+                        #endif
+                }
+                    #if os(iOS)
+                    .buttonStyle(.automatic)
+                    #else
                     .buttonStyle(.bordered)
+                    #endif
                     .disabled(action != nil || model.isWorking || model.authorizationURL != nil)
                 if model.isWorking && action == .signIn {
                     ProgressView()
@@ -156,13 +161,45 @@ struct TailscaleConnectionSection: View {
                         .controlSize(.small)
                         .accessibilityLabel("Preparing sign-in")
                 }
+                #if os(macOS)
                 Spacer()
+                #endif
             }
         }
-        if model.isSignedIn {
+        if let snapshot = model.snapshot, snapshot.isSignedIn {
+            if let name = snapshot.accountName {
+                LabeledContent("Tailnet") {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(name)
+                            .foregroundStyle(.primary)
+                        Text(snapshot.statusDescription)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .multilineTextAlignment(.trailing)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+            } else {
+                LabeledContent("Status", value: snapshot.statusDescription)
+            }
+            accountControls
+                .disabled(model.isWorking || model.snapshot?.isReady != true)
             HStack(spacing: 8) {
-                Button("Sign Out…", role: .destructive) { isConfirmingSignOut = true }
+                Button(role: .destructive) {
+                    isConfirmingSignOut = true
+                } label: {
+                    Text("Sign Out…")
+                        #if os(iOS)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(.rect)
+                        #endif
+                }
+                    #if os(iOS)
+                    .buttonStyle(.automatic)
+                    #else
                     .buttonStyle(.bordered)
+                    #endif
                     .disabled(action != nil || model.isWorking)
                 if model.isWorking && action == .signOut {
                     ProgressView()
@@ -170,7 +207,9 @@ struct TailscaleConnectionSection: View {
                         .controlSize(.small)
                         .accessibilityLabel("Signing out")
                 }
+                #if os(macOS)
                 Spacer()
+                #endif
             }
         }
         if let message = model.errorMessage {

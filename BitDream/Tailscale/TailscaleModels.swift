@@ -63,8 +63,8 @@ struct TailscaleSnapshot: Decodable, Sendable {
 
     var statusDescription: String {
         switch state {
-        case "Running": "Connected to Tailscale"
-        case "NeedsLogin": "Sign in to Tailscale"
+        case "Running": "Connected"
+        case "NeedsLogin": "Not signed in"
         case "NeedsMachineAuth": "Waiting for device approval in Tailscale"
         case "Starting": "Connecting to Tailscale…"
         case "Stopped": "Tailscale is disconnected"
