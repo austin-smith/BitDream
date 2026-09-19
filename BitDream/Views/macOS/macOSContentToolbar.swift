@@ -29,15 +29,20 @@ struct macOSContentToolbar: ToolbarContent {
         }
 
         ToolbarItem(placement: .automatic) {
-            Button(action: {
-                showingFilterPopover.toggle()
-            }, label: {
-                Label("Filters", systemImage: "line.3.horizontal.decrease")
-                    .if(hasActiveFilters) { view in
-                        view.foregroundColor(accentColor)
-                    }
-            })
-            .help(hasActiveFilters ? "Active filters (\(activeFilterCount))" : "Filter torrents")
+            // Keep the popover attached while the button's active style changes.
+            ZStack {
+                Button(action: {
+                    showingFilterPopover.toggle()
+                }, label: {
+                    Label("Filters", systemImage: "line.3.horizontal.decrease")
+                })
+                .if(hasActiveFilters) { button in
+                    button.buttonStyle(.borderedProminent)
+                }
+                .tint(hasActiveFilters ? accentColor : Color.primary)
+                .accessibilityValue(hasActiveFilters ? "Active" : "Inactive")
+                .help(hasActiveFilters ? "Active filters (\(activeFilterCount))" : "Filter torrents")
+            }
             .popover(isPresented: $showingFilterPopover, arrowEdge: .bottom) {
                 macOSContentFilterMenu(
                     accentColor: accentColor,
