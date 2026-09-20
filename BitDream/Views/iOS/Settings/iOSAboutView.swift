@@ -5,6 +5,7 @@ struct iOSAboutView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.openURL) var openURL
     @Environment(\.hapticFeedback) private var hapticFeedback
+    @State private var isShowingLicenses = false
 
     private var appVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -62,10 +63,16 @@ struct iOSAboutView: View {
                         .padding(.top, 12)
                 }
 
-                Button("GitHub") {
-                    hapticFeedback.play(.actionTriggered)
-                    if let url = URL(string: "https://github.com/austin-smith/BitDream") {
-                        openURL(url)
+                HStack {
+                    Button("GitHub") {
+                        hapticFeedback.play(.actionTriggered)
+                        if let url = URL(string: "https://github.com/austin-smith/BitDream") {
+                            openURL(url)
+                        }
+                    }
+                    Button("Licenses") {
+                        hapticFeedback.play(.actionTriggered)
+                        isShowingLicenses = true
                     }
                 }
                 .buttonStyle(.bordered)
@@ -100,6 +107,9 @@ struct iOSAboutView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $isShowingLicenses) {
+            TailscaleNoticesView()
+        }
     }
 }
 

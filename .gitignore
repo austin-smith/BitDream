@@ -22,3 +22,6 @@ Icon[^a-zA-Z]
 
 # Legacy local build setting overrides
 Config/BuildSettings.local.xcconfig
+
+# Generated Tailscale framework (scripts/build-tailscale.sh)
+Packages/TailscaleCore/TailscaleCore.xcframework/

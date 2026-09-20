@@ -8,10 +8,12 @@ final class Host {
     var isSSL: Bool
     var credentialKey: String?
     var name: String?
-    var port: Int16
+    var port: Int
     var server: String?
     var username: String?
     var version: String?
+    var connectionRoute: String?
+    var tailscaleAccountID: String?
 
     init(
         serverID: String = UUID().uuidString,
@@ -19,10 +21,12 @@ final class Host {
         isSSL: Bool = false,
         credentialKey: String? = nil,
         name: String? = nil,
-        port: Int16 = 0,
+        port: Int = 0,
         server: String? = nil,
         username: String? = nil,
-        version: String? = nil
+        version: String? = nil,
+        connectionRoute: String? = nil,
+        tailscaleAccountID: String? = nil
     ) {
         self.serverID = serverID
         self.isDefault = isDefault
@@ -33,6 +37,8 @@ final class Host {
         self.server = server
         self.username = username
         self.version = version
+        self.connectionRoute = connectionRoute
+        self.tailscaleAccountID = tailscaleAccountID
     }
 
     @discardableResult
@@ -57,7 +63,9 @@ extension TransmissionConnectionDescriptor {
             host: host.server ?? "",
             port: Int(host.port),
             username: host.username ?? "",
-            credentialSource: .keychainCredential(KeychainService.credentialKeyIfPresent(for: host) ?? "")
+            credentialSource: .keychainCredential(KeychainService.credentialKeyIfPresent(for: host) ?? ""),
+            connectionRoute: host.connectionRoute ?? "system",
+            tailscaleAccountID: host.tailscaleAccountID
         )
     }
 }

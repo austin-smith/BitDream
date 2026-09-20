@@ -32,9 +32,7 @@ struct BitDreamApp: App {
     @AppStorage(UserDefaultsKeys.menuBarTransferWidgetEnabled) private var menuBarTransferWidgetEnabled: Bool = AppDefaults.menuBarTransferWidgetEnabled
     @AppStorage(UserDefaultsKeys.menuBarShowActiveCount) private var menuBarShowActiveCount: Bool = AppDefaults.menuBarShowActiveCount
 
-    #if os(iOS)
     @Environment(\.scenePhase) private var scenePhase
-    #endif
 
     init() {
         // Register default values for view state
@@ -124,6 +122,11 @@ private extension BitDreamApp {
                     #if canImport(Sparkle)
                     appUpdater.start()
                     #endif
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active, store.host?.connectionRoute == "tailscale" {
+                        store.reconnect()
+                    }
                 }
                 .onChange(of: menuBarTransferWidgetEnabled) { _, isEnabled in
                     syncMenuBarStatusItem(isEnabled: isEnabled)
@@ -343,6 +346,9 @@ private extension BitDreamApp {
                         BackgroundRefreshManager.schedule()
                     }
                     .onChange(of: scenePhase) { _, newPhase in
+                        if newPhase == .active, store.host?.connectionRoute == "tailscale" {
+                            store.reconnect()
+                        }
                         if newPhase == .background {
                             BackgroundRefreshManager.schedule()
                         }

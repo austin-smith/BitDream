@@ -23,6 +23,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version: '1.26.8'
+          cache-dependency-path: Tailscale/go.sum
+
+      - name: Build embedded Tailscale
+        run: scripts/build-tailscale.sh
+
       - name: Load Sparkle configuration
         run: |
           SPARKLE_APPCAST_URL="$(/usr/libexec/PlistBuddy -c 'Print :SUFeedURL' BitDream/Info.plist 2>/dev/null || true)"

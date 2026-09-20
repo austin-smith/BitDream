@@ -11,12 +11,14 @@ struct HostRefreshRecord: Codable, Equatable, Sendable, Identifiable {
     let credentialKey: String
     let isDefault: Bool
     let version: String?
+    var connectionRoute: String?
+    var tailscaleAccountID: String?
 
     var id: String { serverID }
 }
 
 struct HostRefreshCatalog: Codable, Equatable, Sendable {
-    static let currentSchemaVersion = 1
+    static let currentSchemaVersion = 2
 
     let schemaVersion: Int
     let generatedAt: Date
@@ -82,7 +84,7 @@ actor HostRefreshCatalogStore {
 
         do {
             let catalog = try decoder.decode(HostRefreshCatalog.self, from: data)
-            guard catalog.schemaVersion == HostRefreshCatalog.currentSchemaVersion else {
+            guard (1...HostRefreshCatalog.currentSchemaVersion).contains(catalog.schemaVersion) else {
                 return []
             }
             return catalog.records
@@ -114,7 +116,7 @@ actor HostRefreshCatalogStore {
 
         do {
             let catalog = try decoder.decode(HostRefreshCatalog.self, from: data)
-            guard catalog.schemaVersion == HostRefreshCatalog.currentSchemaVersion else {
+            guard (1...HostRefreshCatalog.currentSchemaVersion).contains(catalog.schemaVersion) else {
                 Self.logger.error("Ignoring catalog with unsupported schema \(catalog.schemaVersion, privacy: .public)")
                 return nil
             }
@@ -171,7 +173,9 @@ extension TransmissionConnectionDescriptor {
             host: record.server,
             port: record.port,
             username: record.username,
-            credentialSource: .keychainCredential(record.credentialKey)
+            credentialSource: .keychainCredential(record.credentialKey),
+            connectionRoute: record.connectionRoute ?? "system",
+            tailscaleAccountID: record.tailscaleAccountID
         )
     }
 }
