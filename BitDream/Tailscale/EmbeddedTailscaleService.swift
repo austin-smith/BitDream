@@ -1,5 +1,6 @@
 import Foundation
 import Network
+import OSLog
 
 actor EmbeddedTailscaleService {
     static let shared = EmbeddedTailscaleService()
@@ -10,6 +11,7 @@ actor EmbeddedTailscaleService {
     private var operationEpoch: UInt64 = 0
     private var isSigningOut = false
     private var session: URLSession?
+    private let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "tailscale-connection")
 
     init(
         driver: any TailscaleDriving = TailscaleNativeDriver(),
@@ -72,7 +74,7 @@ actor EmbeddedTailscaleService {
 
     func sender(accountID: String, endpoint: TransmissionEndpoint) async throws -> TailscaleRequestSender {
         let snapshot = try await readySnapshot(accountID: accountID)
-        try Self.validatePeer(endpoint, snapshot: snapshot)
+        try validatePeer(endpoint, snapshot: snapshot)
         return TailscaleRequestSender(
             service: self, accountID: accountID, generation: snapshot.generation, endpoint: endpoint
         )
@@ -84,10 +86,22 @@ actor EmbeddedTailscaleService {
     ) async throws -> (Data, HTTPURLResponse) {
         guard request.url == endpoint.rpcURL else { throw TailscaleError.untrustedRedirect }
         let snapshot = try await readySnapshot(accountID: accountID)
-        try Self.validatePeer(endpoint, snapshot: snapshot)
+        try validatePeer(endpoint, snapshot: snapshot)
         if session == nil { session = try Self.makeSession(snapshot: snapshot) }
         guard let session else { throw TailscaleError.unavailable }
-        let (data, response) = try await session.data(for: request)
+        let started = ContinuousClock.now
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            let code = TransmissionErrorResolver.transmissionError(from: error).diagnosticCode
+            logger.debug("Proxy request failed: \(code, privacy: .public); elapsed=\(started.duration(to: .now).description, privacy: .public)")
+            guard let error = error as? URLError, error.code == .badURL else { throw error }
+            // The endpoint is already validated. CFNetwork also reports badURL
+            // for SOCKS connection failures; it does not prove a bad address.
+            throw TailscaleError.connectionFailed
+        }
         guard let response = response as? HTTPURLResponse else { throw TransmissionError.invalidResponse }
         if (300..<400).contains(response.statusCode) { throw TailscaleError.untrustedRedirect }
         return (data, response)
@@ -108,10 +122,13 @@ actor EmbeddedTailscaleService {
         }
     }
 
-    private static func validatePeer(_ endpoint: TransmissionEndpoint, snapshot: TailscaleSnapshot) throws {
-        guard snapshot.peers.filter({ $0.matches(host: endpoint.host) }).count == 1 else {
-            throw TailscaleError.peerUnavailable
+    private func validatePeer(_ endpoint: TransmissionEndpoint, snapshot: TailscaleSnapshot) throws {
+        let matches = snapshot.peers.filter { $0.matches(host: endpoint.host) }
+        if matches.count != 1 {
+            logger.debug("Peer validation: visible=\(snapshot.peers.count), matches=\(matches.count)")
         }
+        guard !matches.isEmpty else { throw TailscaleError.peerUnavailable }
+        guard matches.count == 1 else { throw TailscaleError.ambiguousPeer }
     }
 
     private func invalidateSession() {

@@ -160,6 +160,36 @@ final class EmbeddedTailscaleTests: XCTestCase {
         XCTAssertFalse(first === replaced)
     }
 
+    func testMissingPeerCanRecoverAndAmbiguousNameRequiresAnExplicitAddress() async throws {
+        let driver = SnapshotDriver(snapshot: TailscaleSnapshot(
+            generation: 1, state: "Running", authURL: nil, accountID: "account-a",
+            accountName: "Test", peers: [], proxyPort: 1234, proxyPassword: "test", error: nil
+        ))
+        let service = EmbeddedTailscaleService(driver: driver, directory: { URL(filePath: "/unused") })
+        let endpoint = try TransmissionEndpoint(scheme: "http", host: "nas", port: 9091)
+        do {
+            _ = try await service.sender(accountID: "account-a", endpoint: endpoint)
+            XCTFail("Missing peer accepted")
+        } catch TailscaleError.peerUnavailable {}
+
+        await driver.update(Self.snapshot(account: "account-a", generation: 1))
+        _ = try await service.sender(accountID: "account-a", endpoint: endpoint)
+
+        await driver.update(TailscaleSnapshot(
+            generation: 1, state: "Running", authURL: nil, accountID: "account-a", accountName: "Test",
+            peers: [
+                TailscalePeer(id: "one", name: "NAS", address: "nas.one.ts.net", online: true),
+                TailscalePeer(id: "two", name: "NAS", address: "nas.two.ts.net", online: true)
+            ], proxyPort: 1234, proxyPassword: "test", error: nil
+        ))
+        do {
+            _ = try await service.sender(accountID: "account-a", endpoint: endpoint)
+            XCTFail("Ambiguous peer accepted")
+        } catch TailscaleError.ambiguousPeer {}
+        let fullAddress = try TransmissionEndpoint(scheme: "http", host: "nas.one.ts.net", port: 9091)
+        _ = try await service.sender(accountID: "account-a", endpoint: fullAddress)
+    }
+
     func testAuthorizationRejectsUntrustedURLs() {
         for value in ["http://login.tailscale.com/a", "https://evil.example/a", "https://user@login.tailscale.com/a"] {
             let snapshot = TailscaleSnapshot(

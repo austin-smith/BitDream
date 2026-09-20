@@ -206,6 +206,7 @@ struct StatsHeaderView: View {
     }
 
     private var accessibilityValue: String {
+        guard store.connectionStatus == .connected else { return "Live statistics unavailable" }
         let mode = ratioDisplayMode == .cumulative ? "Total ratio" : "Session ratio"
         let ratio = overallRatio.formatted(.number.precision(.fractionLength(2)))
         return "\(mode) \(ratio), download speed \(formatSpeed(downloadSpeed)), "
@@ -213,6 +214,7 @@ struct StatsHeaderView: View {
     }
 
     private var ratioTooltip: String {
+        guard store.connectionStatus == .connected else { return "Live statistics unavailable" }
         let mode = ratioDisplayMode == .cumulative ? "Total Ratio" : "Session Ratio"
         let uploaded = formatByteCount(ratioSummary.uploaded)
         let downloaded = formatByteCount(ratioSummary.downloaded)
@@ -224,6 +226,7 @@ struct StatsHeaderView: View {
             HStack(spacing: 12) {
                 RatioChip(
                     ratio: overallRatio,
+                    isAvailable: store.connectionStatus == .connected,
                     size: .compact,
                     helpText: ratioTooltip
                 )
@@ -248,6 +251,7 @@ struct StatsHeaderView: View {
                     SpeedChip(
                         speed: downloadSpeed,
                         direction: .download,
+                        isAvailable: store.connectionStatus == .connected,
                         style: .chip,
                         size: .compact
                     )
@@ -255,6 +259,7 @@ struct StatsHeaderView: View {
                     SpeedChip(
                         speed: uploadSpeed,
                         direction: .upload,
+                        isAvailable: store.connectionStatus == .connected,
                         style: .chip,
                         size: .compact
                     )

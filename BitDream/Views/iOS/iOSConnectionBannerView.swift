@@ -16,38 +16,44 @@ struct iOSConnectionBannerView: View {
                 .font(.system(size: 16, weight: .semibold))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(connectionStatusTitle(for: store.connectionStatus))
+                Text(store.connectionTitle)
                     .font(.subheadline.weight(.semibold))
 
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    Text(
-                        connectionRetryText(
-                            status: store.connectionStatus,
-                            retryAt: store.nextRetryAt,
-                            at: context.date
+                if store.nextRetryAt != nil {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Text(
+                            connectionRetryText(
+                                status: store.connectionStatus,
+                                retryAt: store.nextRetryAt,
+                                at: context.date
+                            )
                         )
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    }
                 }
-
                 if shouldShowLastError {
                     Text(store.lastErrorMessage)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
             Spacer()
 
-            Button("Retry") {
-                hapticFeedback.play(.actionTriggered)
-                store.reconnect()
+            if store.needsConnectionSettings {
+                Button("Settings") { store.editServers = true }
+                    .buttonStyle(.bordered)
+            } else if store.connectionState.failure != nil {
+                Button("Retry") {
+                    hapticFeedback.play(.actionTriggered)
+                    store.retryNow()
+                }
+                .buttonStyle(.bordered)
+                .disabled(!store.canAttemptReconnect)
             }
-            .buttonStyle(.bordered)
-            .disabled(!store.canAttemptReconnect)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)

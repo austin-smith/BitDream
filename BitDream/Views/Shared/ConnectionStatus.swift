@@ -28,17 +28,6 @@ func connectionStatusColor(for status: TransmissionStore.ConnectionStatus) -> Co
     }
 }
 
-func connectionStatusTitle(for status: TransmissionStore.ConnectionStatus) -> String {
-    switch status {
-    case .connecting:
-        return "Connecting..."
-    case .connected:
-        return "Connected"
-    case .reconnecting:
-        return "Disconnected"
-    }
-}
-
 func connectionRetryText(
     status: TransmissionStore.ConnectionStatus,
     retryAt: Date?,
@@ -50,7 +39,7 @@ func connectionRetryText(
         if status == .connecting {
             return "Connecting..."
         }
-        guard let retryAt else { return "Retrying now..." }
+        guard let retryAt else { return "" }
         let remaining = max(0, Int(retryAt.timeIntervalSince(date)))
         if remaining > 0 {
             return "Next retry in \(remaining)s"
@@ -59,12 +48,12 @@ func connectionRetryText(
 
     case .compact:
         guard let retryAt else {
-            return status == .reconnecting ? "Retrying now..." : "-"
+            return "—"
         }
         let remaining = max(0, Int(retryAt.timeIntervalSince(date)))
         if remaining > 0 {
             return "\(remaining)s"
         }
-        return status == .reconnecting ? "Retrying now..." : "-"
+        return "—"
     }
 }

@@ -315,7 +315,7 @@ private extension iOSContentView {
     var torrentRows: some View {
         Group {
             if store.torrents.isEmpty {
-                emptyTorrentList
+                if store.hasLoadedSnapshot { emptyTorrentList }
             } else {
                 ForEach(displayedTorrents, id: \.id) { torrent in
                     torrentRow(for: torrent)

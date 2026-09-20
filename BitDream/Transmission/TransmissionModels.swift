@@ -81,6 +81,8 @@ internal enum TransmissionError: Error, Sendable {
     case invalidEndpointConfiguration
     case unauthorized
     case transport(underlyingDescription: String)
+    case tailscale(TailscaleError)
+    case network(URLError.Code)
     case timeout
     case cancelled
     case httpStatus(code: Int, body: String?)

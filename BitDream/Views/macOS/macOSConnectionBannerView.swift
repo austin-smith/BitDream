@@ -11,23 +11,35 @@ struct macOSConnectionBannerView: View {
                 .foregroundStyle(connectionStatusColor(for: store.connectionStatus))
                 .font(.system(size: 16, weight: .semibold))
             VStack(alignment: .leading, spacing: 2) {
-                Text(connectionStatusTitle(for: store.connectionStatus))
+                Text(store.connectionTitle)
                     .font(.subheadline.weight(.semibold))
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    Text(
-                        connectionRetryText(
-                            status: store.connectionStatus,
-                            retryAt: store.nextRetryAt,
-                            at: context.date
+                if store.nextRetryAt != nil {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        Text(
+                            connectionRetryText(
+                                status: store.connectionStatus,
+                                retryAt: store.nextRetryAt,
+                                at: context.date
+                            )
                         )
-                    )
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                }
+                if !store.lastErrorMessage.isEmpty {
+                    Text(store.lastErrorMessage)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             Spacer()
+            if store.needsConnectionSettings {
+                Button("Settings") { openWindow(id: "manage-servers") }
+                    .buttonStyle(.bordered)
+            }
             Button("Connection Info") {
                 openWindow(id: "connection-info")
             }

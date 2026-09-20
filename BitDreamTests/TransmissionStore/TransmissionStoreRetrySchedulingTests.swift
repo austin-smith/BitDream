@@ -84,8 +84,7 @@ final class TransmissionStoreRetrySchedulingTests: XCTestCase {
         let connected = await waitUntil { store.connectionStatus == TransmissionStore.ConnectionStatus.connected }
         XCTAssertTrue(connected)
 
-        store.connectionStatus = TransmissionStore.ConnectionStatus.reconnecting
-        store.nextRetryAt = Date().addingTimeInterval(10)
+        store.connectionState = .failed(.timeout, retryAt: Date().addingTimeInterval(10))
         store.handleConnectionError(TransmissionError.transport(underlyingDescription: "Offline"))
 
         let repairedRetryScheduled = await waitUntil {
@@ -144,6 +143,34 @@ final class TransmissionStoreRetrySchedulingTests: XCTestCase {
         XCTAssertTrue(recovered)
         XCTAssertNil(store.nextRetryAt)
         XCTAssertEqual(store.lastErrorMessage, "")
+    }
+
+    func testActionableErrorCancelsThePendingRetryEvenIfItsSleepResumes() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [
+            "session-stats": [.http(statusCode: 200, body: successStatsBody)],
+            "torrent-get": [.http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json"))],
+            "session-get": [.error(TestError.offline)]
+        ])
+        let sleepController = ScriptedSleep(steps: [.suspend, .blocked(id: "cancelled-retry")])
+        let store = makeStore(sender: sender, sleepController: sleepController)
+        defer { store.clearSelectedHost() }
+        store.setHost(host: makeHost(serverID: "server-1", server: "example.com"))
+        let connected = await waitUntil {
+            let count = await sleepController.callCount()
+            return store.connectionStatus == .connected && count == 1
+        }
+        XCTAssertTrue(connected)
+        store.handleConnectionError(.timeout)
+        let scheduled = await waitUntil { await sleepController.callCount() == 2 }
+        XCTAssertTrue(scheduled)
+
+        store.handleConnectionError(.unauthorized)
+        await sleepController.resume(id: "cancelled-retry")
+        for _ in 0..<20 { await Task.yield() }
+        XCTAssertTrue(store.needsConnectionSettings)
+        XCTAssertNil(store.nextRetryAt)
+        let requests = await sender.capturedRequests()
+        XCTAssertEqual(requests.count, 3, "A cancelled retry must not start another request")
     }
 
     func testRetryNowResetsBackoffAndDoesNotInheritScheduledRetry() async throws {
