@@ -41,7 +41,9 @@ extension TransmissionError {
                  .clientCertificateRejected, .clientCertificateRequired: return false
             default: return true
             }
-        case .httpStatus(let code, _): return code == 408 || code == 429 || (500...599).contains(code)
+        case .httpStatus(let code, _):
+            // Transmission uses 409 to refresh its session token; a later read can recover.
+            return code == 408 || code == 409 || code == 429 || (500...599).contains(code)
         case .transport, .timeout: return true
         }
     }

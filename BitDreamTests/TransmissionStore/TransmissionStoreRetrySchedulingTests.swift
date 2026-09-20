@@ -145,6 +145,46 @@ final class TransmissionStoreRetrySchedulingTests: XCTestCase {
         XCTAssertEqual(store.lastErrorMessage, "")
     }
 
+    func testRepeatedSessionConflictAutomaticallyRecoversWithNewestToken() async throws {
+        let sender = MethodQueueSender(stepsByMethod: [
+            "session-stats": [
+                .http(statusCode: 409, body: "", headers: [transmissionSessionTokenHeader: "first-token"]),
+                .http(statusCode: 409, body: "", headers: [transmissionSessionTokenHeader: "newest-token"]),
+                .http(statusCode: 200, body: successStatsBody)
+            ],
+            "torrent-get": Array(
+                repeating: .http(statusCode: 200, body: try loadTransmissionFixture(named: "torrent-get.response.json")),
+                count: 2
+            ),
+            "session-get": Array(repeating: .error(TestError.offline), count: 2)
+        ])
+        let sleepController = ScriptedSleep(steps: [.blocked(id: "conflict-retry"), .suspend])
+        let store = makeStore(sender: sender, sleepController: sleepController)
+        defer { store.clearSelectedHost() }
+        store.setHost(host: makeHost(serverID: "server-1", server: "example.com"))
+
+        let failed = await waitUntil { store.connectionState.failure != nil }
+        XCTAssertTrue(failed)
+        XCTAssertEqual(store.connectionState.failure?.diagnosticCode, "http.409")
+        XCTAssertFalse(store.needsConnectionSettings)
+        XCTAssertNotNil(store.nextRetryAt)
+        let scheduled = await waitUntil { await sleepController.callCount() == 1 }
+        XCTAssertTrue(scheduled)
+        await sleepController.resume(id: "conflict-retry")
+
+        let recovered = await waitUntil { store.connectionStatus == .connected }
+        XCTAssertTrue(recovered)
+        XCTAssertNil(store.nextRetryAt)
+        let requests = await sender.capturedRequests()
+        let statsRequests = try requests.filter { request in
+            let body = try XCTUnwrap(request.body)
+            let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+            return object["method"] as? String == "session-stats"
+        }
+        XCTAssertEqual(statsRequests.count, 3)
+        XCTAssertEqual(statsRequests.last?.sessionToken, "newest-token")
+    }
+
     func testActionableErrorCancelsThePendingRetryEvenIfItsSleepResumes() async throws {
         let sender = MethodQueueSender(stepsByMethod: [
             "session-stats": [.http(statusCode: 200, body: successStatsBody)],
