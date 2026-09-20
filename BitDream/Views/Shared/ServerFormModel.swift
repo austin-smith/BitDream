@@ -202,6 +202,7 @@ final class ServerFormModel {
             )
         }
 
+        values.tailscaleAccountID = savedHost.tailscaleAccountID.map(TailscaleAccountID.canonical)
         initialValues = values
         return .saved(savedHost)
     }

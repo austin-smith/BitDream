@@ -3,6 +3,33 @@ import XCTest
 
 @MainActor
 final class ServerFormModelTests: XCTestCase {
+    func testSavingSystemRouteClearsTheFormsTailscaleAccount() async throws {
+        let store = TransmissionStore()
+        let original = Host(serverID: "saved", port: 9091, server: "server.tail.ts.net",
+                            connectionRoute: "tailscale", tailscaleAccountID: "tailscale-user/123")
+        let saved = Host(serverID: "saved", port: 9091, server: "server.tail.ts.net", connectionRoute: "system")
+        let repository = RecordingHostRepository(createdHost: saved)
+        let model = ServerFormModel()
+        model.configure(host: original, store: store)
+        model.values.connectionRoute = "system"
+
+        guard case .saved = try await model.save(store: store, hostRepository: repository) else {
+            return XCTFail("Expected save to succeed")
+        }
+        XCTAssertNil(model.values.tailscaleAccountID)
+        XCTAssertFalse(model.hasUnsavedChanges)
+
+        // The persistent editor can now configure Tailscale with the current account.
+        model.values.connectionRoute = "tailscale"
+        let current = TailscaleSnapshot(
+            generation: 1, state: "Running", authURL: nil, accountID: "tailscale-user/456",
+            accountName: "Other", peers: [], proxyPort: 1234, proxyPassword: "test", error: nil
+        )
+        model.updateTailscaleAccount(from: current)
+        XCTAssertEqual(model.values.tailscaleAccountID, current.accountID)
+        XCTAssertFalse(model.hasTailscaleAccountMismatch(with: current))
+    }
+
     func testSavedTailscaleServerKeepsItsAccountAcrossSignOutAndSignIn() {
         let model = ServerFormModel()
         let host = Host(serverID: "saved", port: 9091, server: "server.tail.ts.net",
@@ -257,7 +284,7 @@ private final class RecordingHostRepository: HostPersisting {
     }
 
     func update(serverID: String, draft: HostDraft) async throws -> BitDream.Host {
-        fatalError("Unused in tests")
+        return createdHost
     }
 
     func delete(serverID: String) async throws {
