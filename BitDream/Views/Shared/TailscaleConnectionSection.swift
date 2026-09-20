@@ -145,15 +145,13 @@ struct TailscaleConnectionSection: View {
                     action = .signIn
                 } label: {
                     Text("Sign in to Tailscale")
-                        #if os(iOS)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(.rect)
-                        #endif
                 }
                     #if os(iOS)
                     .buttonStyle(.automatic)
                     #else
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.borderless)
                     #endif
                     .disabled(action != nil || model.isWorking || model.authorizationURL != nil)
                 if model.isWorking && action == .signIn {
@@ -162,9 +160,6 @@ struct TailscaleConnectionSection: View {
                         .controlSize(.small)
                         .accessibilityLabel("Preparing sign-in")
                 }
-                #if os(macOS)
-                Spacer()
-                #endif
             }
         }
         if let snapshot = model.snapshot, snapshot.isSignedIn {
@@ -180,6 +175,9 @@ struct TailscaleConnectionSection: View {
                     .multilineTextAlignment(.trailing)
                     .fixedSize(horizontal: false, vertical: true)
                 }
+                #if os(macOS)
+                .labeledContentStyle(TailnetLabeledContentStyle())
+                #endif
                 .accessibilityElement(children: .combine)
             } else {
                 LabeledContent("Status", value: snapshot.statusDescription)
@@ -191,15 +189,14 @@ struct TailscaleConnectionSection: View {
                     isConfirmingSignOut = true
                 } label: {
                     Text("Sign Out…")
-                        #if os(iOS)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(.rect)
-                        #endif
                 }
                     #if os(iOS)
                     .buttonStyle(.automatic)
                     #else
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.borderless)
+                    .tint(.red)
                     #endif
                     .disabled(action != nil || model.isWorking)
                 if model.isWorking && action == .signOut {
@@ -208,9 +205,6 @@ struct TailscaleConnectionSection: View {
                         .controlSize(.small)
                         .accessibilityLabel("Signing out")
                 }
-                #if os(macOS)
-                Spacer()
-                #endif
             }
         }
         if let message = model.errorMessage {
@@ -227,6 +221,18 @@ struct TailscaleConnectionSection: View {
         }
     }
 }
+
+#if os(macOS)
+private struct TailnetLabeledContentStyle: LabeledContentStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(alignment: .center) {
+            configuration.label
+            Spacer()
+            configuration.content
+        }
+    }
+}
+#endif
 
 #if DEBUG
 #Preview("Network") {
