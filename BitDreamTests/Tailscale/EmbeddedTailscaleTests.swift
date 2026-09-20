@@ -102,13 +102,44 @@ final class EmbeddedTailscaleTests: XCTestCase {
     }
 
     func testDifferentAccountFailsBeforeSendingCredentials() async throws {
-        let driver = SnapshotDriver(snapshot: Self.snapshot(account: "account-b", generation: 1))
+        let driver = SnapshotDriver(snapshot: Self.snapshot(account: "tailscale-user/123", generation: 1))
         let service = EmbeddedTailscaleService(driver: driver, directory: { URL(filePath: "/unused") })
         let endpoint = try TransmissionEndpoint(scheme: "http", host: "nas.tail.ts.net", port: 9091)
+        let existingSender = try await service.sender(accountID: "tail.ts.net/123/old-node", endpoint: endpoint)
+        await driver.update(Self.snapshot(account: "tailscale-user/456", generation: 2))
+        for saved in ["tailscale-user/123", "tail.ts.net/123/old-node"] {
+            do {
+                _ = try await service.sender(accountID: saved, endpoint: endpoint)
+                XCTFail("Different account was accepted")
+            } catch TailscaleError.accountMismatch {
+            }
+        }
+        var request = URLRequest(url: endpoint.rpcURL)
+        request.setValue("Basic test-credentials", forHTTPHeaderField: "Authorization")
         do {
-            _ = try await service.sender(accountID: "account-a", endpoint: endpoint)
-            XCTFail("Different account was accepted")
+            _ = try await existingSender.send(request)
+            XCTFail("An existing sender sent credentials after the account changed")
         } catch TailscaleError.accountMismatch {
+        }
+    }
+
+    func testSameAccountReconnectsWithLegacyAndCurrentSavedServers() async throws {
+        let driver = SnapshotDriver(snapshot: Self.snapshot(account: "tailscale-user/123", generation: 1))
+        let service = EmbeddedTailscaleService(driver: driver, directory: { URL(filePath: "/unused") })
+        let endpoint = try TransmissionEndpoint(scheme: "http", host: "nas.tail.ts.net", port: 9091)
+        for saved in ["tailscale-user/123", "tail.ts.net/123/old-node", "old-name.ts.net/123/another-node"] {
+            _ = try await service.sender(accountID: saved, endpoint: endpoint)
+        }
+
+        // Expired login metadata is not a reason to tell the user they switched accounts.
+        await driver.update(TailscaleSnapshot(
+            generation: 2, state: "NeedsLogin", authURL: nil, accountID: "tailscale-user/456",
+            accountName: "Other", peers: [], proxyPort: nil, proxyPassword: nil, error: nil
+        ))
+        do {
+            _ = try await service.sender(accountID: "tail.ts.net/123/old-node", endpoint: endpoint)
+            XCTFail("Expired login was accepted")
+        } catch TailscaleError.signInRequired {
         }
     }
 

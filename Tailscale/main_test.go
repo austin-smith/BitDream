@@ -40,10 +40,33 @@ func TestSummaryUsesCurrentTailnetDisplayNameWithoutChangingIdentity(t *testing.
 			if got.AccountName != tt.want {
 				t.Errorf("account name = %q, want %q", got.AccountName, tt.want)
 			}
-			if got.AccountID != "tail123.ts.net/123/node-a" {
+			if got.AccountID != "tailscale-user/123" {
 				t.Errorf("display name affected account identity: %q", got.AccountID)
 			}
 		})
+	}
+}
+
+func TestAccountIdentitySurvivesRegistrationAndDNSChanges(t *testing.T) {
+	status := &ipnstate.Status{
+		CurrentTailnet: &ipnstate.TailnetStatus{Name: "user.github", MagicDNSSuffix: "tail123.ts.net"},
+		Self:           &ipnstate.PeerStatus{ID: "node-a", UserID: 123},
+	}
+	original := summarize(status).AccountID
+	status.Self.ID = "node-b"
+	status.CurrentTailnet.MagicDNSSuffix = "renamed-tailnet.ts.net"
+	if got := summarize(status).AccountID; got != original || got == "" {
+		t.Fatalf("same account changed identity after registration: %q -> %q", original, got)
+	}
+	status.Self.UserID = 456
+	if got := summarize(status).AccountID; got == original || got == "" {
+		t.Fatalf("different account was not distinguished: %q", got)
+	}
+	for _, userID := range []tailcfg.UserID{0, -1} {
+		status.Self.UserID = userID
+		if got := summarize(status).AccountID; got != "" {
+			t.Errorf("incomplete identity produced an account: %q", got)
+		}
 	}
 }
 

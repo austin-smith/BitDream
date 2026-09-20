@@ -98,9 +98,10 @@ actor EmbeddedTailscaleService {
         let deadline = ContinuousClock.now.advanced(by: .seconds(20))
         while true {
             let snapshot = try await status(startIfNeeded: true)
-            if let current = snapshot.accountID, current != accountID { throw TailscaleError.accountMismatch }
-            if snapshot.isReady { return snapshot }
             if snapshot.state == "NeedsLogin" { throw TailscaleError.signInRequired }
+            if snapshot.isSignedIn, let current = snapshot.accountID,
+               !TailscaleAccountID.matches(accountID, current) { throw TailscaleError.accountMismatch }
+            if snapshot.isReady { return snapshot }
             if snapshot.state == "NeedsMachineAuth" { throw TailscaleError.approvalRequired }
             guard ContinuousClock.now < deadline else { throw TailscaleError.unavailable }
             try await Task.sleep(for: .milliseconds(500))

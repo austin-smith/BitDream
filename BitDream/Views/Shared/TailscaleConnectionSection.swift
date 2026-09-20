@@ -99,9 +99,7 @@ struct TailscaleConnectionSection: View {
                   scenePhase == .active || model.authorizationURL != nil else { return }
             while !Task.isCancelled {
                 await model.refresh()
-                if form.values.tailscaleAccountID == nil, model.snapshot?.isReady == true {
-                    form.values.tailscaleAccountID = model.snapshot?.accountID
-                }
+                form.updateTailscaleAccount(from: model.snapshot)
                 do { try await Task.sleep(for: .seconds(model.authorizationURL == nil ? 5 : 1)) } catch { return }
             }
         }
@@ -109,9 +107,7 @@ struct TailscaleConnectionSection: View {
             guard let action else { return }
             switch action {
             case .signIn: await model.signIn()
-            case .signOut:
-                await model.signOut()
-                if model.errorMessage == nil { form.values.tailscaleAccountID = nil }
+            case .signOut: await model.signOut()
             }
             self.action = nil
         }
@@ -182,8 +178,11 @@ struct TailscaleConnectionSection: View {
             } else {
                 LabeledContent("Status", value: snapshot.statusDescription)
             }
-            accountControls
-                .disabled(model.isWorking || model.snapshot?.isReady != true)
+            if form.hasTailscaleAccountMismatch(with: model.snapshot) {
+                Text(TailscaleError.accountMismatch.localizedDescription)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             HStack(spacing: 8) {
                 Button(role: .destructive) {
                     isConfirmingSignOut = true
@@ -209,15 +208,6 @@ struct TailscaleConnectionSection: View {
         }
         if let message = model.errorMessage {
             Text(message).foregroundStyle(.red)
-        }
-    }
-
-    @ViewBuilder
-    private var accountControls: some View {
-        if let accountID = model.snapshot?.accountID, accountID != form.values.tailscaleAccountID {
-            Button("Use This Tailscale Identity for This Server") {
-                form.values.tailscaleAccountID = accountID
-            }
         }
     }
 }

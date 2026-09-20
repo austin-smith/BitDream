@@ -165,7 +165,11 @@ func execute(req request) (snapshot, error) {
 func summarize(status *ipnstate.Status) snapshot {
 	result := snapshot{State: status.BackendState, AuthURL: status.AuthURL}
 	if status.Self != nil && status.CurrentTailnet != nil {
-		result.AccountID = fmt.Sprintf("%s/%d/%s", status.CurrentTailnet.MagicDNSSuffix, status.Self.UserID, status.Self.ID)
+		// UserID identifies the account within Tailscale's hosted control plane.
+		// Node registration and editable DNS names must not change this binding.
+		if status.Self.UserID > 0 {
+			result.AccountID = fmt.Sprintf("tailscale-user/%d", status.Self.UserID)
+		}
 		result.AccountName = status.CurrentTailnet.Name
 		// CurrentTailnet.Name is the legacy domain, not the editable display name.
 		if names, err := tailcfg.UnmarshalNodeCapJSON[string](status.Self.CapMap, tailcfg.NodeAttrTailnetDisplayName); err == nil && len(names) > 0 && names[0] != "" {

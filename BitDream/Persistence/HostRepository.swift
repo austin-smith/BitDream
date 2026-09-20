@@ -330,7 +330,7 @@ private extension HostRepository {
             throw HostPersistenceError.validation("Choose a supported connection method.")
         }
         if route == .tailscale && (draft.tailscaleAccountID?.isEmpty != false) {
-            throw HostPersistenceError.validation("Sign in and select a Tailscale account for this server.")
+            throw HostPersistenceError.validation("Sign in to Tailscale before saving this server.")
         }
         let trimmedName = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         let finalName = trimmedName.isEmpty ? trimmedServer : trimmedName
@@ -344,7 +344,8 @@ private extension HostRepository {
             isDefault: draft.isDefault,
             password: draft.password,
             connectionRoute: draft.connectionRoute,
-            tailscaleAccountID: draft.connectionRoute == "tailscale" ? draft.tailscaleAccountID : nil
+            tailscaleAccountID: draft.connectionRoute == "tailscale"
+                ? draft.tailscaleAccountID.map(TailscaleAccountID.canonical) : nil
         )
     }
 

@@ -3,6 +3,45 @@ import XCTest
 
 @MainActor
 final class ServerFormModelTests: XCTestCase {
+    func testSavedTailscaleServerKeepsItsAccountAcrossSignOutAndSignIn() {
+        let model = ServerFormModel()
+        let host = Host(serverID: "saved", port: 9091, server: "server.tail.ts.net",
+                        connectionRoute: "tailscale", tailscaleAccountID: "tail.ts.net/123/old-node")
+        model.configure(host: host, store: TransmissionStore())
+        XCTAssertEqual(model.values.tailscaleAccountID, "tailscale-user/123")
+        XCTAssertFalse(model.hasUnsavedChanges, "Reading the old format must not require a save")
+
+        model.updateTailscaleAccount(from: nil)
+        XCTAssertEqual(model.values.tailscaleAccountID, "tailscale-user/123", "Sign-out must preserve the binding")
+        XCTAssertFalse(model.hasTailscaleAccountMismatch(with: nil))
+
+        for account in ["tailscale-user/123", "tailscale-user/456"] {
+            let snapshot = TailscaleSnapshot(
+                generation: 1, state: "Running", authURL: nil, accountID: account,
+                accountName: "Test", peers: [], proxyPort: 1234, proxyPassword: "test", error: nil
+            )
+            model.updateTailscaleAccount(from: snapshot)
+            XCTAssertEqual(model.values.tailscaleAccountID, "tailscale-user/123")
+            XCTAssertEqual(model.hasTailscaleAccountMismatch(with: snapshot), account != "tailscale-user/123")
+            XCTAssertFalse(model.hasUnsavedChanges)
+        }
+        XCTAssertEqual(host.tailscaleAccountID, "tail.ts.net/123/old-node", "The saved record is not silently rebound")
+    }
+
+    func testNewServerUsesTheCurrentAccountWithoutConfirmation() {
+        let model = ServerFormModel()
+        model.values.connectionRoute = "tailscale"
+        for account in ["tailscale-user/123", "tailscale-user/456"] {
+            let snapshot = TailscaleSnapshot(
+                generation: 1, state: "Running", authURL: nil, accountID: account,
+                accountName: "Test", peers: [], proxyPort: 1234, proxyPassword: "test", error: nil
+            )
+            model.updateTailscaleAccount(from: snapshot)
+            XCTAssertEqual(model.values.tailscaleAccountID, account)
+            XCTAssertFalse(model.hasTailscaleAccountMismatch(with: snapshot))
+        }
+    }
+
     func testManualAddressEntryRemainsExplicitAcrossMachineRefreshes() {
         let peer = TailscalePeer(id: "server", name: "Server", address: "server.tail.ts.net", online: true)
         let model = ServerFormModel()

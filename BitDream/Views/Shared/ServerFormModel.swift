@@ -66,6 +66,18 @@ final class ServerFormModel {
 
     var isEnteringTailscaleAddress: Bool { tailscaleAddressEntry == .manual }
 
+    func updateTailscaleAccount(from snapshot: TailscaleSnapshot?) {
+        guard values.connectionRoute == "tailscale", isAddNew || values.tailscaleAccountID == nil,
+              let snapshot, snapshot.isReady, let accountID = snapshot.accountID else { return }
+        values.tailscaleAccountID = TailscaleAccountID.canonical(accountID)
+    }
+
+    func hasTailscaleAccountMismatch(with snapshot: TailscaleSnapshot?) -> Bool {
+        guard let snapshot, snapshot.isSignedIn, let current = snapshot.accountID,
+              let saved = values.tailscaleAccountID else { return false }
+        return !TailscaleAccountID.matches(saved, current)
+    }
+
     func tailscaleDestination(in peers: [TailscalePeer]) -> TailscaleDestination {
         if isEnteringTailscaleAddress { return .manual }
         return selectedTailscalePeerID(in: peers).map(TailscaleDestination.machine) ?? .none
@@ -133,7 +145,7 @@ final class ServerFormModel {
                 isDefault: host.isDefault,
                 isSSL: host.isSSL,
                 connectionRoute: host.connectionRoute ?? "system",
-                tailscaleAccountID: host.tailscaleAccountID
+                tailscaleAccountID: host.tailscaleAccountID.map(TailscaleAccountID.canonical)
             )
         } else {
             values = Values(isDefault: store.host == nil)

@@ -8,6 +8,23 @@ enum ServerConnectionRoute: String, Codable, CaseIterable, Sendable {
     case tailscale
 }
 
+enum TailscaleAccountID {
+    /// Earlier builds stored DNS suffix / user ID / node ID. Match those saved
+    /// servers by user ID too, without requiring a save or a new registration.
+    /// This namespace is for the hosted Tailscale control plane used by the app.
+    static func canonical(_ value: String) -> String {
+        let parts = value.split(separator: "/", omittingEmptySubsequences: false)
+        guard parts.count == 3, parts[0].hasSuffix(".ts.net"), !parts[2].isEmpty,
+              !parts[1].isEmpty, parts[1].utf8.allSatisfy({ (48...57).contains($0) }),
+              let userID = Int64(parts[1]), userID > 0 else { return value }
+        return "tailscale-user/\(userID)"
+    }
+
+    static func matches(_ saved: String, _ current: String) -> Bool {
+        !saved.isEmpty && !current.isEmpty && canonical(saved) == canonical(current)
+    }
+}
+
 struct TailscalePeer: Decodable, Identifiable, Equatable, Sendable {
     let id: String
     let name: String
@@ -40,7 +57,7 @@ struct TailscaleSnapshot: Decodable, Sendable {
     let proxyPassword: String?
     let error: String?
 
-    var isReady: Bool { state == "Running" && accountID != nil && proxyPort != nil }
+    var isReady: Bool { state == "Running" && accountID?.isEmpty == false && proxyPort != nil }
 
     /// Authentication and network readiness are separate. NeedsLogin can still
     /// include a cached account after expiry, so account metadata alone is insufficient.
@@ -94,7 +111,7 @@ enum TailscaleError: LocalizedError, Sendable {
         case .unavailable: "Tailscale could not connect. Check your network and try again."
         case .signInRequired: "Sign in to Tailscale in this server’s connection settings."
         case .approvalRequired: "Approve this BitDream device in your Tailscale admin console."
-        case .accountMismatch: "This server belongs to a different Tailscale identity. Edit the server to select the current account."
+        case .accountMismatch: "This server was saved with a different Tailscale account or tailnet. Sign out and sign in with the account and tailnet you used to add it."
         case .connectionChanged: "The Tailscale connection changed. Reconnect to the server and try again."
         case .peerUnavailable: "This address does not match a machine visible to your Tailscale account. Select a machine or enter its full Tailscale hostname or IP address."
         case .invalidRoute: "This server’s connection method is not supported. Edit its connection settings."
