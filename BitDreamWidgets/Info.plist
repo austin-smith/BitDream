@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BitDreamVariant</key>
+	<string>$(BITDREAM_VARIANT)</string>
+	<key>BitDreamAppName</key>
+	<string>$(BITDREAM_APP_NAME)</string>
+	<key>BitDreamAppGroup</key>
+	<string>$(BITDREAM_APP_GROUP)</string>
+	<key>BitDreamURLScheme</key>
+	<string>$(BITDREAM_URL_SCHEME)</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>

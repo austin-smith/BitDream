@@ -402,7 +402,7 @@ struct AppCommands: Commands {
             Button(action: {
                 openWindow(id: "about")
             }, label: {
-                Label("About BitDream", systemImage: "info.circle")
+                Label("About \(AppIdentity.displayName)", systemImage: "info.circle")
             })
 
             #if canImport(Sparkle)

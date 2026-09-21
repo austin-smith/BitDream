@@ -16,11 +16,23 @@ public struct AppIconPresentation: Sendable {
 }
 
 public enum AppIconCatalog {
-    public static let entries: [AppIconPresentation] = [
-        AppIconPresentation(key: nil, title: "Byte-sized Dreams", previewAssetName: "AppIconPreview-Default", order: 0),
-        AppIconPresentation(key: "BitDreamAppIconBlue", title: "Blue Clouds", previewAssetName: "AppIconPreview-Blue", order: 10),
-        AppIconPresentation(key: "BitDreamAppIconPixelyClouds", title: "Cloudy Day", previewAssetName: "AppIconPreview-PixelyClouds", order: 30)
-    ]
+    public static let entries: [AppIconPresentation] = {
+        var icons = [
+            AppIconPresentation(
+                key: AppIdentity.isDevelopment ? "BitDreamAppIconDefault" : nil,
+                title: "Byte-sized Dreams", previewAssetName: "AppIconPreview-Default", order: 0
+            ),
+            AppIconPresentation(key: "BitDreamAppIconBlue", title: "Blue Clouds", previewAssetName: "AppIconPreview-Blue", order: 10),
+            AppIconPresentation(key: "BitDreamAppIconPixelyClouds", title: "Cloudy Day", previewAssetName: "AppIconPreview-PixelyClouds", order: 30)
+        ]
+        if AppIdentity.isDevelopment {
+            icons.insert(
+                AppIconPresentation(key: nil, title: "BitDream (Dev)", previewAssetName: "AppIconPreview-Dev", order: -10),
+                at: 0
+            )
+        }
+        return icons
+    }()
 
     // Return the icons exactly as defined in `entries`
     public static func presentations() -> [AppIconPresentation] {

@@ -28,10 +28,7 @@ final class AppUpdater: NSObject, ObservableObject {
 
     init(updatesEnabled: Bool = true) {
         super.init()
-        #if DEBUG
-        return
-        #else
-        guard updatesEnabled else { return }
+        guard !AppIdentity.isDevelopment, updatesEnabled else { return }
 
         updaterController = SPUStandardUpdaterController(
             startingUpdater: false,
@@ -40,7 +37,6 @@ final class AppUpdater: NSObject, ObservableObject {
         )
         observeUpdaterState()
         refreshState()
-        #endif
     }
 
     func start() {

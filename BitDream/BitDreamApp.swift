@@ -44,6 +44,9 @@ struct BitDreamApp: App {
             "themeModeKey": ThemeMode.system.rawValue // Default theme mode
         ])
 
+        // The test host must not request permissions or schedule real server work.
+        guard !persistenceController.isInMemory else { return }
+
         // Request permission to use badges on macOS
         #if os(macOS)
         UNUserNotificationCenter.current().requestAuthorization(options: [.badge]) { _, _ in }
@@ -70,6 +73,17 @@ struct BitDreamApp: App {
 }
 
 private extension BitDreamApp {
+    func openWidgetURL(_ url: URL) {
+        guard let serverID = DeepLinkBuilder.serverID(from: url) else { return }
+        let descriptor = FetchDescriptor<Host>(
+            predicate: #Predicate<Host> { $0.serverID == serverID }
+        )
+        let context = persistenceController.container.mainContext
+        if let host = try? context.fetch(descriptor).first {
+            store.setHost(host: host)
+        }
+    }
+
     #if os(macOS)
     func syncMenuBarStatusItem(isEnabled: Bool? = nil) {
         menuBarStatusItemController.configure(
@@ -89,31 +103,16 @@ private extension BitDreamApp {
     }
 
     var mainWindowScene: some Scene {
-        Window("BitDream", id: "main") {
+        Window(AppIdentity.displayName, id: "main") {
             ContentView()
                 .environmentObject(store) // Pass the shared store to the ContentView
                 .environmentObject(serverEditingCoordinator)
                 .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
                 .immediateTheme(manager: themeManager)
-                .onOpenURL { url in
-                    // Handle bitdream://server?id=<serverID>
-                    guard url.scheme == DeepLinkConfig.scheme else { return }
-                    let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-                    let serverID = components?.queryItems?.first(where: { $0.name == DeepLinkConfig.QueryKey.id })?.value
-                    guard let serverID, !serverID.isEmpty else { return }
-                    let targetServerID = serverID
-                    let descriptor = FetchDescriptor<Host>(
-                        predicate: #Predicate<Host> { host in
-                            host.serverID == targetServerID
-                        }
-                    )
-                    let context = persistenceController.container.mainContext
-                    if let host = try? context.fetch(descriptor).first {
-                        store.setHost(host: host)
-                    }
-                }
+                .onOpenURL(perform: openWidgetURL)
                 .task {
+                    guard !persistenceController.isInMemory else { return }
                     await HostRepository.shared.bootstrap()
                     appFileOpenDelegate.configure(with: store)
                     ensureStartupConnectionBehaviorApplied(store: store, modelContext: persistenceController.container.mainContext)
@@ -305,7 +304,7 @@ private extension BitDreamApp {
         // appear in the Window menu, as About windows are not user-managed utility windows
         WindowGroup(id: "about") {
             macOSAboutView()
-                .navigationTitle("About BitDream")  // Proper window title handling
+                .navigationTitle("About \(AppIdentity.displayName)")  // Proper window title handling
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
                 .frame(width: 320)
@@ -339,13 +338,16 @@ private extension BitDreamApp {
                     .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
                     .environmentObject(themeManager) // Pass the ThemeManager to all views
                     .environmentObject(appIconManager)
+                    .onOpenURL(perform: openWidgetURL)
                     .immediateTheme(manager: themeManager)
                     .task {
+                        guard !persistenceController.isInMemory else { return }
                         await HostRepository.shared.bootstrap()
                         ensureStartupConnectionBehaviorApplied(store: store, modelContext: persistenceController.container.mainContext)
                         BackgroundRefreshManager.schedule()
                     }
                     .onChange(of: scenePhase) { _, newPhase in
+                        guard !persistenceController.isInMemory else { return }
                         if newPhase == .active, store.host?.connectionRoute == "tailscale" {
                             store.reconnect()
                         }

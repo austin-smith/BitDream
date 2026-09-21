@@ -112,9 +112,9 @@ struct iOSSettingsView: View {
                     NavigationLink(destination: iOSAboutView()
                         .iOSHapticNavigationTransition()) {
                         HStack {
-                            Text("About BitDream")
+                            Text("About \(AppIdentity.displayName)")
                             Spacer()
-                            Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
+                            Text(AppIdentity.versionDescription)
                                 .foregroundColor(.gray)
                         }
                     }
