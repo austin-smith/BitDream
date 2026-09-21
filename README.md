@@ -18,6 +18,13 @@ BitDream is a native and feature-rich remote control client for Transmission web
 - Add, remove, and manage torrents remotely
 - View detailed torrent information and statistics
 - Secure connection to Transmission's RPC interface
+- Built-in Tailscale integration for private connections to your Transmission servers
+
+## Tailscale
+
+Sign in to Tailscale directly in BitDream on macOS and iOS. When adding or editing a server, choose **Tailscale** under **Connect using**, sign in, and select a machine.
+
+Your Transmission server must already be accessible through Tailscale, with remote access (RPC) enabled.
 
 ## About Transmission
 
