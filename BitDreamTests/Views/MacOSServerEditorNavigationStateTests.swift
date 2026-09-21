@@ -6,7 +6,7 @@ final class MacOSServerEditorNavigationStateTests: XCTestCase {
     @MainActor
     func testEditingCoordinatorConsumesOnlyTheHandledRequest() throws {
         let coordinator = MacOSServerEditingCoordinator()
-        let hosts = PreviewFixtures.makeHosts()
+        let hosts = [Host(serverID: "server-a"), Host(serverID: "server-b")]
 
         coordinator.requestEditing(hosts[0])
         let staleRequest = try XCTUnwrap(coordinator.request)

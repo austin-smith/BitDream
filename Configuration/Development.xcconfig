@@ -1,0 +1,12 @@
+// Shared by Debug and DevRelease, including their widget and test targets.
+BITDREAM_VARIANT = development
+BITDREAM_APP_NAME = BitDream (Dev)
+BITDREAM_APP_BUNDLE_IDENTIFIER = com.crapshack.BitDream.dev
+BITDREAM_APP_GROUP = group.com.crapshack.BitDream.dev
+BITDREAM_URL_SCHEME = bitdream-dev
+BITDREAM_WIDGET_NAME = BitDream Widgets (Dev)
+BITDREAM_DOCUMENT_HANDLER_RANK = Alternate
+
+// Dedicated Icon Composer artwork with light and dark appearances.
+BITDREAM_APP_ICON = BitDreamAppIconDev
+BITDREAM_ALTERNATE_APP_ICONS = BitDreamAppIconDefault BitDreamAppIconBlue BitDreamAppIconPixelyClouds

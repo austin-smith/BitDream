@@ -96,7 +96,7 @@ struct SessionOverviewWidget: Widget {
                 }
                 .widgetURL(deepLink)
         }
-        .configurationDisplayName("Server Monitor")
+        .configurationDisplayName(AppIdentity.isDevelopment ? "Server Monitor (Dev)" : "Server Monitor")
         .description("Monitor torrent counts and transfer speeds for your server.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }

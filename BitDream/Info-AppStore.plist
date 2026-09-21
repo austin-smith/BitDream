@@ -18,6 +18,14 @@
         </dict>
     </dict>
 
+	<key>BitDreamVariant</key>
+	<string>$(BITDREAM_VARIANT)</string>
+	<key>BitDreamAppName</key>
+	<string>$(BITDREAM_APP_NAME)</string>
+	<key>BitDreamAppGroup</key>
+	<string>$(BITDREAM_APP_GROUP)</string>
+	<key>BitDreamURLScheme</key>
+	<string>$(BITDREAM_URL_SCHEME)</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -30,7 +38,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>LSHandlerRank</key>
-			<string>Owner</string>
+			<string>$(BITDREAM_DOCUMENT_HANDLER_RANK)</string>
 		</dict>
 	</array>
 	<key>CFBundleURLTypes</key>
@@ -52,7 +60,7 @@
 			<string>BitDream</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>bitdream</string>
+				<string>$(BITDREAM_URL_SCHEME)</string>
 			</array>
 		</dict>
 	</array>

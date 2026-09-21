@@ -69,6 +69,10 @@ When in doubt, choose the simplest modern SwiftUI-first solution and preserve th
 
 ## Building
 
+- `Debug` builds **BitDream (Dev)** with separate servers, credentials, preferences, and widget data from the installed release. Run and Test use this configuration.
+- `DevRelease` keeps the Dev identity with release optimizations. Use it for optimized local builds; Profile selects it by default.
+- `Release` builds **BitDream** with the production identity, even when built locally. Archive uses this configuration.
+
 From repo root (`/Users/austinsmith/Developer/Repos/BitDream`), build with:
 
 ```bash

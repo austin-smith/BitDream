@@ -1,0 +1,10 @@
+// Preserve the identities used by existing installations and their widgets.
+BITDREAM_VARIANT = release
+BITDREAM_APP_NAME = BitDream
+BITDREAM_APP_BUNDLE_IDENTIFIER = com.crapshack.BitDream
+BITDREAM_APP_GROUP = group.com.crapshack.BitDream
+BITDREAM_URL_SCHEME = bitdream
+BITDREAM_WIDGET_NAME = BitDreamWidgets
+BITDREAM_DOCUMENT_HANDLER_RANK = Owner
+BITDREAM_APP_ICON = BitDreamAppIconDefault
+BITDREAM_ALTERNATE_APP_ICONS = BitDreamAppIconBlue BitDreamAppIconPixelyClouds

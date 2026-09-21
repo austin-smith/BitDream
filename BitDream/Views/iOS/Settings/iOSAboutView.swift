@@ -7,10 +7,6 @@ struct iOSAboutView: View {
     @Environment(\.hapticFeedback) private var hapticFeedback
     @State private var isShowingLicenses = false
 
-    private var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-    }
-
     private var copyrightYear: String {
         String(Calendar.current.component(.year, from: Date()))
     }
@@ -28,7 +24,7 @@ struct iOSAboutView: View {
 
                 // App Name and Tagline
                 VStack(spacing: 4) {
-                    Text("BitDream")
+                    Text(AppIdentity.displayName)
                         .font(.system(size: 24, weight: .bold, design: .monospaced))
                         .foregroundStyle(.primary)
 
@@ -51,7 +47,8 @@ struct iOSAboutView: View {
                         Text("Version")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.secondary)
-                        Text(appVersion)
+                        Text(AppIdentity.versionDescription)
+                            .textSelection(.enabled)
                             .font(.system(size: 14, weight: .medium, design: .monospaced))
                             .foregroundStyle(.primary)
                     }

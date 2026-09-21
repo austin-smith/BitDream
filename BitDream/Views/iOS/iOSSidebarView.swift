@@ -19,7 +19,7 @@ struct iOSSidebarView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("BitDream")
+            Text(AppIdentity.displayName)
                 .font(.title2.bold())
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
