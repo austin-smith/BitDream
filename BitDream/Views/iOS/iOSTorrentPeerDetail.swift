@@ -11,9 +11,8 @@ struct iOSTorrentPeerDetail: View {
     let peers: [Peer]
     let peersFrom: PeersFrom?
     let onRefresh: @MainActor () async -> RefreshOutcome
-    let onDone: () -> Void
 
-    @State private var searchText: String = ""
+    @Binding var searchText: String
 
     private var filteredPeers: [Peer] {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -26,7 +25,7 @@ struct iOSTorrentPeerDetail: View {
     }
 
     var body: some View {
-        NavigationStack {
+        Group {
             if filteredPeers.isEmpty {
                 VStack(spacing: 12) {
                     Text(peers.isEmpty ? "No peers yet" : "No results")
@@ -40,24 +39,6 @@ struct iOSTorrentPeerDetail: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .navigationTitle("Peers")
-                .navigationBarTitleDisplayMode(.inline)
-                .searchable(text: $searchText, prompt: "Search peers")
-                .toolbar {
-                    ToolbarItemGroup(placement: .navigationBarTrailing) {
-                        Button {
-                            Task {
-                                await refreshPeers()
-                            }
-                        } label: {
-                            Image(systemName: "arrow.clockwise")
-                        }
-                        Button("Done") {
-                            hapticFeedback.play(.actionTriggered)
-                            onDone()
-                        }
-                    }
-                }
             } else {
                 List {
                     ForEach(filteredPeers, id: \.id) { peer in
@@ -84,22 +65,16 @@ struct iOSTorrentPeerDetail: View {
                 .refreshable {
                     await refreshPeers()
                 }
-                .navigationTitle("Peers")
-                .navigationBarTitleDisplayMode(.inline)
-                .searchable(text: $searchText, prompt: "Search peers")
-                .toolbar {
-                    ToolbarItemGroup(placement: .navigationBarTrailing) {
-                        Button {
-                            Task {
-                                await refreshPeers()
-                            }
-                        } label: {
-                            Image(systemName: "arrow.clockwise")
-                        }
-                        Button("Done") {
-                            hapticFeedback.play(.actionTriggered)
-                            onDone()
-                        }
+            }
+        }
+        .navigationTitle("Peers")
+        .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText, prompt: "Search peers")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Refresh", systemImage: "arrow.clockwise") {
+                    Task {
+                        await refreshPeers()
                     }
                 }
             }
@@ -187,23 +162,25 @@ struct iOSTorrentPeerDetail: View {
     let peers: [Peer]
     let peersFrom: PeersFrom?
     let onRefresh: @MainActor () async -> RefreshOutcome
-    let onDone: () -> Void
     var body: some View { EmptyView() }
 }
 #endif
 
 #if os(iOS) && DEBUG
 #Preview("iOS Torrent Peers") {
+    @Previewable @State var searchText = ""
     PreviewContainer { environment in
-        iOSTorrentPeerDetail(
-            torrentName: PreviewFixtures.torrents[0].name,
-            torrentId: PreviewFixtures.torrents[0].id,
-            store: environment.store,
-            peers: PreviewFixtures.peers,
-            peersFrom: PreviewFixtures.peersFrom,
-            onRefresh: { .succeeded },
-            onDone: {}
-        )
+        NavigationStack {
+            iOSTorrentPeerDetail(
+                torrentName: PreviewFixtures.torrents[0].name,
+                torrentId: PreviewFixtures.torrents[0].id,
+                store: environment.store,
+                peers: PreviewFixtures.peers,
+                peersFrom: PreviewFixtures.peersFrom,
+                onRefresh: { .succeeded },
+                searchText: $searchText
+            )
+        }
     }
 }
 #endif

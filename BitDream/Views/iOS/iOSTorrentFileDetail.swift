@@ -48,44 +48,28 @@ struct iOSTorrentFileDetail: View {
     let store: TransmissionStore
     let onCommittedFileStatsMutation: @MainActor @Sendable ([Int], TorrentDetailFileStatsMutation) -> Void
 
+    @Bindable private var state: iOSTorrentFileState
+
     init(
         files: [TorrentFile],
         fileStats: [TorrentFileStats],
         torrentId: Int,
         store: TransmissionStore,
+        state: iOSTorrentFileState,
         onCommittedFileStatsMutation: @escaping @MainActor @Sendable ([Int], TorrentDetailFileStatsMutation) -> Void = { _, _ in }
     ) {
         self.files = files
         self.fileStats = fileStats
         self.torrentId = torrentId
         self.store = store
+        self.state = state
         self.onCommittedFileStatsMutation = onCommittedFileStatsMutation
     }
 
-    @State private var mutableFileStats: [TorrentFileStats] = []
-    @State private var searchText = ""
-    @State private var sortProperty: FileSortProperty = .name
-    @State private var sortOrder: SortOrder = .ascending
-
-    @State private var showWantedFiles = true
-    @State private var showSkippedFiles = true
-    @State private var showCompleteFiles = true
-    @State private var showIncompleteFiles = true
-    @State private var showVideos = true
-    @State private var showAudio = true
-    @State private var showImages = true
-    @State private var showDocuments = true
-    @State private var showArchives = true
-    @State private var showOther = true
-    @State private var showFilterSheet = false
-
-    @State private var isEditing = false
-    @State private var selectedFileIds: Set<String> = []
-    @State private var showingError = false
-    @State private var errorMessage = ""
+    private var isEditing: Bool { state.editMode.isEditing }
 
     private var fileRows: [TorrentFileRow] {
-        let processedFiles = processFilesForDisplay(files, stats: mutableFileStats.isEmpty ? fileStats : mutableFileStats)
+        let processedFiles = processFilesForDisplay(files, stats: state.mutableFileStats.isEmpty ? fileStats : state.mutableFileStats)
         return processedFiles.map { processed in
             TorrentFileRow(
                 file: processed.file,
@@ -100,46 +84,46 @@ struct iOSTorrentFileDetail: View {
     }
 
     private var hasActiveFilters: Bool {
-        !showWantedFiles || !showSkippedFiles ||
-        !showCompleteFiles || !showIncompleteFiles ||
-        !showVideos || !showAudio || !showImages ||
-        !showDocuments || !showArchives || !showOther
+        !state.showWantedFiles || !state.showSkippedFiles ||
+        !state.showCompleteFiles || !state.showIncompleteFiles ||
+        !state.showVideos || !state.showAudio || !state.showImages ||
+        !state.showDocuments || !state.showArchives || !state.showOther
     }
 
     private var filteredAndSortedFileRows: [TorrentFileRow] {
         let filtered = fileRows.filter { row in
-            if !searchText.isEmpty {
-                let searchLower = searchText.lowercased()
+            if !state.searchText.isEmpty {
+                let searchLower = state.searchText.lowercased()
                 if !row.name.lowercased().contains(searchLower) {
                     return false
                 }
             }
 
-            if row.wanted && !showWantedFiles { return false }
-            if !row.wanted && !showSkippedFiles { return false }
+            if row.wanted && !state.showWantedFiles { return false }
+            if !row.wanted && !state.showSkippedFiles { return false }
 
             let isComplete = row.percentDone >= 1.0
-            if isComplete && !showCompleteFiles { return false }
-            if !isComplete && !showIncompleteFiles { return false }
+            if isComplete && !state.showCompleteFiles { return false }
+            if !isComplete && !state.showIncompleteFiles { return false }
 
             let fileType = fileTypeCategory(row.name)
             switch fileType {
-            case .video: if !showVideos { return false }
-            case .audio: if !showAudio { return false }
-            case .image: if !showImages { return false }
-            case .document: if !showDocuments { return false }
-            case .archive: if !showArchives { return false }
-            case .executable: if !showOther { return false }
-            case .other: if !showOther { return false }
+            case .video: if !state.showVideos { return false }
+            case .audio: if !state.showAudio { return false }
+            case .image: if !state.showImages { return false }
+            case .document: if !state.showDocuments { return false }
+            case .archive: if !state.showArchives { return false }
+            case .executable: if !state.showOther { return false }
+            case .other: if !state.showOther { return false }
             }
 
             return true
         }
-        return sortFiles(filtered, by: sortProperty, order: sortOrder)
+        return sortFiles(filtered, by: state.sortProperty, order: state.sortOrder)
     }
 
     var body: some View {
-        List(selection: isEditing ? $selectedFileIds : .constant(Set<String>())) {
+        List(selection: isEditing ? $state.selectedFileIds : .constant(Set<String>())) {
             ForEach(filteredAndSortedFileRows, id: \.id) { row in
                 iOSTorrentFileRow(
                     row: row,
@@ -164,60 +148,63 @@ struct iOSTorrentFileDetail: View {
                 }
             }
         }
-        .environment(\.editMode, .constant(isEditing ? .active : .inactive))
         .navigationTitle("Files")
-        .safeAreaInset(edge: .bottom) {
+        .safeAreaBar(edge: .bottom) {
             if isEditing {
                 BulkActionToolbar(
-                    selectedCount: selectedFileIds.count,
-                    selectedFileIds: $selectedFileIds,
+                    selectedCount: state.selectedFileIds.count,
+                    selectedFileIds: $state.selectedFileIds,
                     allFileRows: filteredAndSortedFileRows,
                     setBulkWanted: setBulkWanted,
                     setBulkPriority: setBulkPriority
                 )
             }
         }
-        .searchable(text: $searchText, prompt: "Search files")
-        .safeAreaInset(edge: .top) {
-            FileActionButtonsView(
+        .searchable(text: $state.searchText, prompt: "Search files")
+        .toolbar {
+            FileActionsToolbar(
                 hasActiveFilters: hasActiveFilters,
-                sortProperty: $sortProperty,
-                sortOrder: $sortOrder,
-                isEditing: $isEditing,
-                selectedFileIds: $selectedFileIds,
-                showFilterSheet: $showFilterSheet
+                sortProperty: $state.sortProperty,
+                sortOrder: $state.sortOrder,
+                showFilterSheet: $state.showFilterSheet
             )
         }
-        .sheet(isPresented: $showFilterSheet) {
+        .environment(\.editMode, $state.editMode)
+        .sheet(isPresented: $state.showFilterSheet) {
             FilterSheet(
-                showWantedFiles: $showWantedFiles,
-                showSkippedFiles: $showSkippedFiles,
-                showCompleteFiles: $showCompleteFiles,
-                showIncompleteFiles: $showIncompleteFiles,
-                showVideos: $showVideos,
-                showAudio: $showAudio,
-                showImages: $showImages,
-                showDocuments: $showDocuments,
-                showArchives: $showArchives,
-                showOther: $showOther
+                showWantedFiles: $state.showWantedFiles,
+                showSkippedFiles: $state.showSkippedFiles,
+                showCompleteFiles: $state.showCompleteFiles,
+                showIncompleteFiles: $state.showIncompleteFiles,
+                showVideos: $state.showVideos,
+                showAudio: $state.showAudio,
+                showImages: $state.showImages,
+                showDocuments: $state.showDocuments,
+                showArchives: $state.showArchives,
+                showOther: $state.showOther
             )
         }
         .onAppear {
-            mutableFileStats = fileStats
+            state.mutableFileStats = fileStats
         }
         .onChange(of: fileStats) { _, newValue in
-            mutableFileStats = newValue
+            state.mutableFileStats = newValue
         }
         .onChange(of: fileSelectionState) {
             hapticFeedback.play(.selectionChanged)
         }
-        .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
+        .onChange(of: state.editMode) {
+            if !state.editMode.isEditing {
+                state.selectedFileIds.removeAll()
+            }
+        }
+        .transmissionErrorAlert(isPresented: $state.showingError, message: state.errorMessage)
     }
 }
 
 private extension iOSTorrentFileDetail {
     var fileSelectionState: FileSelectionHapticState {
-        FileSelectionHapticState(isEditing: isEditing, selectedFileIds: selectedFileIds)
+        FileSelectionHapticState(isEditing: isEditing, selectedFileIds: state.selectedFileIds)
     }
 
     func setFileWanted(_ row: TorrentFileRow, wanted: Bool) {
@@ -230,8 +217,8 @@ private extension iOSTorrentFileDetail {
 
     func setBulkWanted(fileIndices: [Int], wanted: Bool) {
         hapticFeedback.play(.actionTriggered)
-        let previousStats = snapshotFileStats(for: fileIndices, mutableStats: mutableFileStats, fallbackStats: fileStats)
-        mutableFileStats = applyLocalFileWanted(fileIndices: fileIndices, wanted: wanted, mutableStats: mutableFileStats, fallbackStats: fileStats)
+        let previousStats = snapshotFileStats(for: fileIndices, mutableStats: state.mutableFileStats, fallbackStats: fileStats)
+        state.mutableFileStats = applyLocalFileWanted(fileIndices: fileIndices, wanted: wanted, mutableStats: state.mutableFileStats, fallbackStats: fileStats)
 
         performTransmissionAction(
             operation: {
@@ -246,18 +233,18 @@ private extension iOSTorrentFileDetail {
                 hapticFeedback.play(.selectionChanged)
             },
             onError: { message in
-                mutableFileStats = applyFileStatsRevert(previousStats, into: mutableFileStats, fallback: fileStats)
+                state.mutableFileStats = applyFileStatsRevert(previousStats, into: state.mutableFileStats, fallback: fileStats)
                 hapticFeedback.play(.operationFailed)
-                errorMessage = message
-                showingError = true
+                state.errorMessage = message
+                state.showingError = true
             }
         )
     }
 
     func setBulkPriority(fileIndices: [Int], priority: FilePriority) {
         hapticFeedback.play(.actionTriggered)
-        let previousStats = snapshotFileStats(for: fileIndices, mutableStats: mutableFileStats, fallbackStats: fileStats)
-        mutableFileStats = applyLocalFilePriority(fileIndices: fileIndices, priority: priority, mutableStats: mutableFileStats, fallbackStats: fileStats)
+        let previousStats = snapshotFileStats(for: fileIndices, mutableStats: state.mutableFileStats, fallbackStats: fileStats)
+        state.mutableFileStats = applyLocalFilePriority(fileIndices: fileIndices, priority: priority, mutableStats: state.mutableFileStats, fallbackStats: fileStats)
 
         performTransmissionAction(
             operation: {
@@ -272,10 +259,10 @@ private extension iOSTorrentFileDetail {
                 hapticFeedback.play(.selectionChanged)
             },
             onError: { message in
-                mutableFileStats = applyFileStatsRevert(previousStats, into: mutableFileStats, fallback: fileStats)
+                state.mutableFileStats = applyFileStatsRevert(previousStats, into: state.mutableFileStats, fallback: fileStats)
                 hapticFeedback.play(.operationFailed)
-                errorMessage = message
-                showingError = true
+                state.errorMessage = message
+                state.showingError = true
             }
         )
     }
@@ -290,13 +277,17 @@ private struct FileSelectionHapticState: Equatable {
 
 #if os(iOS) && DEBUG
 #Preview("iOS Torrent Files") {
+    @Previewable @State var state = iOSTorrentFileState()
     PreviewContainer { environment in
-        iOSTorrentFileDetail(
-            files: PreviewFixtures.files,
-            fileStats: PreviewFixtures.fileStats,
-            torrentId: PreviewFixtures.torrents[0].id,
-            store: environment.store
-        )
+        NavigationStack {
+            iOSTorrentFileDetail(
+                files: PreviewFixtures.files,
+                fileStats: PreviewFixtures.fileStats,
+                torrentId: PreviewFixtures.torrents[0].id,
+                store: environment.store,
+                state: state
+            )
+        }
     }
 }
 #endif

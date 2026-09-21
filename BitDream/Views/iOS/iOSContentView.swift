@@ -2,32 +2,26 @@ import SwiftUI
 import Foundation
 
 #if os(iOS)
-enum iOSNavigationRoute: Hashable {
-    case torrent(Int)
-}
-
 struct iOSContentView: View {
     @Environment(\.hapticFeedback) private var hapticFeedback
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
     private let userDefaults: UserDefaults
 
-    @State private var navigationPath: [iOSNavigationRoute] = []
+    @State private var navigation = iOSNavigationState()
+    @State private var detailState = iOSTorrentDetailState()
+    @State private var isSidebarOpen = false
 
     @State private var sortProperty: SortProperty
     @State private var sortOrder: SortOrder
-    @State private var sidebarSelection: SidebarSelection = .allDreams
     @State private var labelFilter = TorrentLabelFilter()
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons = AppDefaults.showContentTypeIcons
     @State private var searchText: String = ""
     @State private var isStatisticsPresented = false
     @State private var showPrefs: Bool = false
     @State private var serverToEdit: Host?
-
-    @State private var isSidebarOpen = false
-    @State private var sidebarDragOffset: CGFloat = 0
 
     init(hosts: [Host], store: TransmissionStore, userDefaults: UserDefaults = .standard) {
         self.hosts = hosts
@@ -43,28 +37,50 @@ struct iOSContentView: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            let drawerWidth = proxy.size.width * 0.77
-            let progress = sidebarProgress(drawerWidth: drawerWidth)
-
-            ZStack(alignment: .leading) {
-                Color(.systemBackground)
-
-                sidebar(drawerWidth: drawerWidth, progress: progress, safeAreaInsets: proxy.safeAreaInsets)
-
-                mainContent(drawerWidth: drawerWidth, progress: progress)
+        iOSSidebarTray(isOpen: $isSidebarOpen, allowsOpeningGesture: navigation.stackPath.isEmpty) {
+            sidebar
+        } content: {
+            NavigationStack(path: Binding(
+                get: { navigation.stackPath },
+                set: { navigation.setStackPath($0) }
+            )) {
+                torrentListScreen
+                    .navigationDestination(for: iOSTorrentDetailRoute.self) { route in
+                        torrentDestination(route)
+                    }
             }
-            .ignoresSafeArea()
+            .inspector(isPresented: Binding(
+                get: { navigation.isInspectorPresented },
+                set: { navigation.setInspectorPresented($0) }
+            )) {
+                torrentInspector
+            }
+        }
+        .modifier(IOSTorrentDetailPresentation(store: store, torrent: selectedTorrent, state: detailState))
+        .onChange(of: horizontalSizeClass, initial: true) { _, sizeClass in
+            navigation.presentation = sizeClass == .regular ? .inspector : .stack
         }
         .onChange(of: store.availableLabels) { _, availableLabels in
             reconcileSelectedLabels(with: availableLabels)
         }
         .onChange(of: store.host?.serverID) { _, _ in
             labelFilter.clear()
-            navigationPath.removeAll()
+            navigation.clearTorrentSelection()
         }
         .onChange(of: store.torrents.map(\.id)) { _, torrentIDs in
-            reconcileNavigationPath(with: torrentIDs)
+            navigation.reconcileTorrentSelection(availableIDs: torrentIDs)
+        }
+        .onChange(of: navigation.selectedTorrentID) { _, selectedID in
+            if selectedID != nil {
+                hapticFeedback.play(.selectionChanged)
+            } else {
+                detailState = iOSTorrentDetailState()
+            }
+        }
+        .onChange(of: navigation.sidebarSelection) { _, _ in
+            navigation.clearTorrentSelection()
+            isSidebarOpen = false
+            hapticFeedback.play(.selectionChanged)
         }
         .onChange(of: isSidebarOpen) {
             hapticFeedback.play(.actionTriggered)
@@ -83,7 +99,7 @@ struct iOSContentView: View {
         })
         .sheet(isPresented: $store.isError, content: {
             ErrorDialog(store: store)
-                .frame(width: 400, height: 400)
+                .presentationDetents([.medium, .large])
         })
         .sheet(isPresented: $store.showSettings, content: {
             SettingsView(store: store)
@@ -97,23 +113,33 @@ struct iOSContentView: View {
     }
 }
 
-// MARK: - Drawer Container
+// MARK: - Tray and Inspector
 
 private extension iOSContentView {
-    func sidebarProgress(drawerWidth: CGFloat) -> CGFloat {
-        let base: CGFloat = isSidebarOpen ? drawerWidth : 0
-        return min(max((base + sidebarDragOffset) / drawerWidth, 0), 1)
+    var sidebarSelection: SidebarSelection {
+        navigation.sidebarSelection
     }
 
-    func sidebar(drawerWidth: CGFloat, progress: CGFloat, safeAreaInsets: EdgeInsets) -> some View {
+    var selectedTorrent: Torrent? {
+        store.torrents.first { $0.id == navigation.selectedTorrentID }
+    }
+
+    var sidebar: some View {
         iOSSidebarView(
             hosts: hosts,
-            sidebarSelection: $sidebarSelection,
+            sidebarSelection: Binding(
+                get: { navigation.sidebarSelection },
+                set: {
+                    navigation.sidebarSelection = $0
+                    isSidebarOpen = false
+                }
+            ),
             selectedHostID: store.host?.serverID,
             torrentCount: { torrentCount(for: $0) },
             onSelectHost: { host in
                 store.setHost(host: host)
-                closeSidebarAfterSelection()
+                navigation.clearTorrentSelection()
+                isSidebarOpen = false
             },
             onEditServer: { host in
                 hapticFeedback.play(.actionTriggered)
@@ -132,112 +158,45 @@ private extension iOSContentView {
                 store.showSettings = true
             }
         )
-        .padding(.top, safeAreaInsets.top)
-        .padding(.bottom, max(0, safeAreaInsets.bottom - 6))
-        .frame(width: drawerWidth)
-        .offset(x: -drawerWidth * 0.3 * (1 - progress))
-        .accessibilityHidden(progress == 0)
     }
 
-    func mainContent(drawerWidth: CGFloat, progress: CGFloat) -> some View {
-        NavigationStack(path: $navigationPath) {
-            torrentListScreen
-                .navigationDestination(for: iOSNavigationRoute.self) { route in
-                    switch route {
-                    case .torrent(let torrentID):
-                        if let torrent = store.torrents.first(where: { $0.id == torrentID }) {
-                            TorrentDetail(store: store, torrent: torrent)
+    var torrentInspector: some View {
+        NavigationStack(path: Binding(
+            get: { navigation.detailPath },
+            set: { navigation.setInspectorPath($0) }
+        )) {
+            torrentDestination(.overview)
+                .navigationDestination(for: iOSTorrentDetailRoute.self) { route in
+                    torrentDestination(route)
+                }
+        }
+        .inspectorColumnWidth(min: 300, ideal: 380, max: 500)
+        .presentationDetents([.large])
+    }
+
+    @ViewBuilder
+    func torrentDestination(_ route: iOSTorrentDetailRoute) -> some View {
+        if let torrent = selectedTorrent {
+            iOSTorrentDetail(store: store, torrent: torrent, state: detailState, route: route)
+                .id(torrent.id)
+                .toolbar {
+                    if navigation.presentation == .inspector {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close Details", systemImage: "xmark") {
+                                navigation.hideDetails()
+                                hapticFeedback.play(.actionTriggered)
+                            }
                         }
                     }
                 }
         }
-        .onChange(of: sidebarSelection) { _, _ in
-            closeSidebarAfterSelection()
-        }
-        .onChange(of: navigationPath) {
-            hapticFeedback.play(.selectionChanged)
-        }
-        .overlay {
-            // Scrim doubles as elevation: light mode fades the card toward white,
-            // dark mode lifts it to a slightly lighter surface; also catches taps/drags to close.
-            // Always present (opacity-only changes) — structural insertion would render it at the
-            // animation's destination instead of riding the card.
-            (colorScheme == .dark ? Color(white: 0.2) : Color(.systemBackground))
-                .opacity(0.55 * progress)
-                .contentShape(.rect)
-                .onTapGesture {
-                    closeSidebar()
-                }
-                .gesture(closeDragGesture(drawerWidth: drawerWidth))
-                .allowsHitTesting(progress > 0)
-        }
-        .overlay(alignment: .leading) {
-            if !isSidebarOpen && navigationPath.isEmpty {
-                Color.clear
-                    .frame(width: 20)
-                    .contentShape(.rect)
-                    .gesture(openDragGesture(drawerWidth: drawerWidth))
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 32 * progress, style: .continuous))
-        .shadow(color: .black.opacity(0.12 * progress), radius: 12)
-        .offset(x: drawerWidth * progress)
-        .geometryGroup()
     }
 
-    func openDragGesture(drawerWidth: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 10)
-            .onChanged { value in
-                sidebarDragOffset = max(0, value.translation.width)
-            }
-            .onEnded { value in
-                let shouldOpen = value.translation.width > drawerWidth * 0.25
-                    || value.predictedEndTranslation.width > drawerWidth * 0.5
-                withAnimation(drawerAnimation) {
-                    isSidebarOpen = shouldOpen
-                    sidebarDragOffset = 0
-                }
-            }
-    }
-
-    func closeDragGesture(drawerWidth: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 10)
-            .onChanged { value in
-                sidebarDragOffset = min(0, value.translation.width)
-            }
-            .onEnded { value in
-                let shouldClose = value.translation.width < -drawerWidth * 0.25
-                    || value.predictedEndTranslation.width < -drawerWidth * 0.5
-                withAnimation(drawerAnimation) {
-                    isSidebarOpen = !shouldClose
-                    sidebarDragOffset = 0
-                }
-            }
-    }
-
-    var drawerAnimation: Animation {
-        .snappy(duration: 0.32, extraBounce: 0)
-    }
-
-    func toggleSidebar() {
-        withAnimation(drawerAnimation) {
-            isSidebarOpen.toggle()
+    func selectTorrent(_ id: Int) {
+        if navigation.selectedTorrentID != id {
+            detailState = iOSTorrentDetailState()
         }
-    }
-
-    func closeSidebar() {
-        guard isSidebarOpen else { return }
-        withAnimation(drawerAnimation) {
-            isSidebarOpen = false
-        }
-    }
-
-    /// Lets the row's selection highlight land before the drawer slides away.
-    func closeSidebarAfterSelection() {
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(90))
-            closeSidebar()
-        }
+        navigation.selectTorrent(id)
     }
 }
 
@@ -268,7 +227,14 @@ private extension iOSContentView {
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $searchText, prompt: "Search torrents")
             .toolbar {
-                sidebarToolbarItem
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        isSidebarOpen.toggle()
+                    } label: {
+                        SidebarToggleGlyph()
+                    }
+                    .accessibilityLabel("Menu")
+                }
                 actionToolbarItems
                 bottomToolbarItems
             }
@@ -332,37 +298,32 @@ private extension iOSContentView {
         iOSTorrentListRow(
             torrent: torrent,
             store: store,
-            showContentTypeIcons: showContentTypeIcons
+            showContentTypeIcons: showContentTypeIcons,
+            isSelected: navigation.isInspectorPresented && navigation.selectedTorrentID == torrent.id,
+            onInspect: { selectTorrent(torrent.id) }
         )
     }
 
-    var sidebarToolbarItem: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button {
-                toggleSidebar()
-            } label: {
-                // Bar glyphs ghost harder than the scrim alone while the drawer is open
-                SidebarToggleGlyph()
+    @ToolbarContentBuilder
+    var actionToolbarItems: some ToolbarContent {
+        if #available(iOS 27, *) {
+            ToolbarOverflowMenu {
+                allTorrentActions
             }
-            .tint(Color.primary.opacity(isSidebarOpen && colorScheme == .light ? 0.5 : 1))
-            .accessibilityLabel("Menu")
+        } else {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu("Torrent Actions", systemImage: "ellipsis") {
+                    allTorrentActions
+                }
+                .iOSHapticControlActivation()
+            }
         }
     }
 
-    var actionToolbarItems: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Menu {
-                Button(action: pauseAllTorrents, label: {
-                    Label("Pause All", systemImage: "pause")
-                })
-                Button(action: resumeAllTorrents, label: {
-                    Label("Resume All", systemImage: "play")
-                })
-            } label: {
-                Image(systemName: "ellipsis")
-                    .foregroundStyle(Color.primary.opacity(isSidebarOpen && colorScheme == .light ? 0.5 : 1))
-            }
-            .iOSHapticControlActivation()
+    var allTorrentActions: some View {
+        Group {
+            Button("Pause All", systemImage: "pause", action: pauseAllTorrents)
+            Button("Resume All", systemImage: "play", action: resumeAllTorrents)
         }
     }
 
@@ -455,16 +416,6 @@ private extension iOSContentView {
         }
     }
 
-    func reconcileNavigationPath(with torrentIDs: [Int]) {
-        let availableTorrentIDs = Set(torrentIDs)
-        navigationPath.removeAll { route in
-            switch route {
-            case .torrent(let torrentID):
-                !availableTorrentIDs.contains(torrentID)
-            }
-        }
-    }
-
     var hasActiveFilters: Bool {
         labelFilter.isActive
     }
@@ -479,23 +430,6 @@ private extension iOSContentView {
                 (label, store.torrentCount(for: label))
             }
         )
-    }
-}
-
-/// Sidebar toggle glyph: a long line over a shorter line.
-/// Template image so the toolbar tints it like an SF Symbol.
-struct SidebarToggleGlyph: View {
-    private static let lineHeight: CGFloat = 2.5
-    private static let spacing: CGFloat = 4.5
-
-    var body: some View {
-        Image(size: CGSize(width: 17, height: Self.lineHeight * 2 + Self.spacing)) { context in
-            let top = Capsule().path(in: CGRect(x: 0, y: 0, width: 17, height: Self.lineHeight))
-            let bottom = Capsule().path(in: CGRect(x: 0, y: Self.lineHeight + Self.spacing, width: 11, height: Self.lineHeight))
-            context.fill(top, with: .color(.black))
-            context.fill(bottom, with: .color(.black))
-        }
-        .renderingMode(.template)
     }
 }
 

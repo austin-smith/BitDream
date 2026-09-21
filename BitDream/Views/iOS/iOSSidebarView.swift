@@ -66,8 +66,7 @@ struct iOSSidebarView: View {
                 }
                 .padding(.horizontal, 8)
             }
-            .contentMargins(.bottom, 60, for: .scrollContent)
-            .overlay(alignment: .bottom) {
+            .safeAreaInset(edge: .bottom) {
                 GlassEffectContainer {
                     HStack {
                         FooterCircleButton(systemImage: "server.rack", label: "Manage Servers", action: onManageServers)
@@ -78,6 +77,7 @@ struct iOSSidebarView: View {
                     }
                 }
                 .padding(.horizontal, 16)
+                .padding(.bottom, 8)
             }
         }
         .frame(maxHeight: .infinity, alignment: .top)

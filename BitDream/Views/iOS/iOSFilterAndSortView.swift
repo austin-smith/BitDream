@@ -64,6 +64,9 @@ struct iOSFilterAndSortView: View {
                 }
             }
         }
+        // NavigationStack and List have no intrinsic popover size. Supply an ideal
+        // size while letting the presentation adapt to the available space.
+        .frame(idealWidth: 360, idealHeight: 480)
         .presentationDragIndicator(.visible)
     }
 }
