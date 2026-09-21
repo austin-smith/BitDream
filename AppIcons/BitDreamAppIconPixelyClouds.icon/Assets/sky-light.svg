@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<defs>
+ <linearGradient id="sky" x1=".25" y1="0" x2=".75" y2="1"><stop stop-color="#ABD9EE"/><stop offset=".46" stop-color="#66AADB"/><stop offset="1" stop-color="#427FC6"/></linearGradient>
+ <radialGradient id="glow" cx=".43" cy=".37" r=".65"><stop stop-color="#FFFFFF" stop-opacity=".30"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1024" height="1024" fill="url(#sky)"/><rect width="1024" height="1024" fill="url(#glow)"/>
+</svg>

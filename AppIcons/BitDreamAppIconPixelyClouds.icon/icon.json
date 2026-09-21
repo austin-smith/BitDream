@@ -14,8 +14,8 @@
         {
           "glass" : false,
           "hidden" : false,
-          "image-name" : "pixely-clouds-2.png",
-          "name" : "pixely-clouds-2",
+          "image-name" : "cloudy-day.svg",
+          "name" : "cloudy-day",
           "position" : {
             "scale" : 0.8,
             "translation-in-points" : [
@@ -45,6 +45,43 @@
       "translucency" : {
         "enabled" : true,
         "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "name" : "sky",
+          "glass" : false,
+          "image-name-specializations" : [
+            {
+              "value" : "sky-light.svg"
+            },
+            {
+              "appearance" : "dark",
+              "value" : "sky-dark.svg"
+            }
+          ],
+          "fill-specializations" : [
+            {
+              "value" : "none"
+            }
+          ],
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0
+      },
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0
       }
     }
   ],
