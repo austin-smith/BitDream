@@ -1,13 +1,26 @@
 {
   "fill" : {
-    "automatic-gradient" : "display-p3:0.80815,0.90184,0.95295,1.00000"
+    "linear-gradient" : [
+      "srgb:0.79216,0.90196,0.95294,1.00000",
+      "srgb:0.51373,0.70588,0.82353,1.00000"
+    ],
+    "orientation" : {
+      "start" : {
+        "x" : 0.5,
+        "y" : 0
+      },
+      "stop" : {
+        "x" : 0.5,
+        "y" : 1
+      }
+    }
   },
   "groups" : [
     {
       "layers" : [
         {
           "glass" : false,
-          "image-name" : "clouds-blue.png",
+          "image-name" : "clouds-blue.svg",
           "name" : "clouds-blue",
           "position" : {
             "scale" : 3.5,

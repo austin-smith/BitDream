@@ -2,13 +2,39 @@
   "fill-specializations" : [
     {
       "value" : {
-        "automatic-gradient" : "display-p3:0.80815,0.90184,0.95295,1.00000"
+        "linear-gradient" : [
+          "srgb:0.79216,0.90196,0.95294,1.00000",
+          "srgb:0.51373,0.70588,0.82353,1.00000"
+        ],
+        "orientation" : {
+          "start" : {
+            "x" : 0.5,
+            "y" : 0
+          },
+          "stop" : {
+            "x" : 0.5,
+            "y" : 1
+          }
+        }
       }
     },
     {
       "appearance" : "dark",
       "value" : {
-        "automatic-gradient" : "display-p3:0.11591,0.26375,0.42559,1.00000"
+        "linear-gradient" : [
+          "srgb:0.20000,0.33333,0.49020,1.00000",
+          "srgb:0.09020,0.18431,0.31373,1.00000"
+        ],
+        "orientation" : {
+          "start" : {
+            "x" : 0.5,
+            "y" : 0
+          },
+          "stop" : {
+            "x" : 0.5,
+            "y" : 1
+          }
+        }
       }
     }
   ],
@@ -18,7 +44,7 @@
         {
           "glass" : false,
           "hidden" : false,
-          "image-name" : "clouds-pink.png",
+          "image-name" : "clouds-pink.svg",
           "name" : "clouds-pink",
           "position" : {
             "scale" : 3.5,
