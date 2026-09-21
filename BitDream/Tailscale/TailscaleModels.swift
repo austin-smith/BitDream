@@ -56,6 +56,7 @@ struct TailscaleSnapshot: Decodable, Sendable {
     let proxyPort: UInt16?
     let proxyPassword: String?
     let error: String?
+    var errorCode: String?
 
     var isReady: Bool { state == "Running" && accountID?.isEmpty == false && proxyPort != nil }
 
@@ -94,6 +95,8 @@ struct TailscaleNativeRequest: Encodable, Sendable {
     let action: String
     var directory: String?
     var hostname: String?
+    var waitingState: String?
+    var peerAddress: String?
 }
 
 enum TailscaleError: LocalizedError, Sendable, Equatable {

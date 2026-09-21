@@ -5,11 +5,12 @@ enum TransmissionConnectionState {
     case connecting
     case connected
     case failed(TransmissionError, retryAt: Date?)
+    case retrying(TransmissionError)
     case requiresAction(TransmissionError)
 
     var failure: TransmissionError? {
         switch self {
-        case .failed(let error, _), .requiresAction(let error): error
+        case .failed(let error, _), .retrying(let error), .requiresAction(let error): error
         case .connecting, .connected: nil
         }
     }
@@ -17,6 +18,13 @@ enum TransmissionConnectionState {
     var retryAt: Date? {
         if case .failed(_, let date) = self { return date }
         return nil
+    }
+
+    var isAttempting: Bool {
+        switch self {
+        case .connecting, .retrying: true
+        case .connected, .failed, .requiresAction: false
+        }
     }
 }
 

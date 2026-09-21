@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import XCTest
 @testable import BitDream
 
@@ -86,6 +87,11 @@ final class TransmissionStoreRetrySchedulingTests: XCTestCase {
 
         store.connectionState = .failed(.timeout, retryAt: Date().addingTimeInterval(10))
         store.handleConnectionError(TransmissionError.transport(underlyingDescription: "Offline"))
+        var resetToConnecting = false
+        let observer = store.$connectionState.sink { state in
+            if case .connecting = state { resetToConnecting = true }
+        }
+        defer { observer.cancel() }
 
         let repairedRetryScheduled = await waitUntil {
             await sleepController.callCount() == 2
@@ -105,6 +111,7 @@ final class TransmissionStoreRetrySchedulingTests: XCTestCase {
         XCTAssertLessThan(recordedSleeps[2], 1.2)
         XCTAssertEqual(store.connectionStatus, TransmissionStore.ConnectionStatus.reconnecting)
         XCTAssertNotNil(store.nextRetryAt)
+        XCTAssertFalse(resetToConnecting, "Retries after losing an established connection must retain the failure")
     }
 
     func testSuccessfulManualRefreshWhileReconnectingClearsPendingRetry() async throws {
@@ -163,15 +170,10 @@ final class TransmissionStoreRetrySchedulingTests: XCTestCase {
         defer { store.clearSelectedHost() }
         store.setHost(host: makeHost(serverID: "server-1", server: "example.com"))
 
-        let failed = await waitUntil { store.connectionState.failure != nil }
-        XCTAssertTrue(failed)
+        let conflictReported = await waitUntil { await sleepController.callCount() == 1 }
+        XCTAssertTrue(conflictReported)
         XCTAssertEqual(store.connectionState.failure?.diagnosticCode, "http.409")
-        XCTAssertFalse(store.needsConnectionSettings)
-        XCTAssertNotNil(store.nextRetryAt)
-        let scheduled = await waitUntil { await sleepController.callCount() == 1 }
-        XCTAssertTrue(scheduled)
         await sleepController.resume(id: "conflict-retry")
-
         let recovered = await waitUntil { store.connectionStatus == .connected }
         XCTAssertTrue(recovered)
         XCTAssertNil(store.nextRetryAt)
@@ -256,7 +258,88 @@ final class TransmissionStoreRetrySchedulingTests: XCTestCase {
     }
 }
 
+extension TransmissionStoreRetrySchedulingTests {
+    func testAutomaticRetriesRetainFailureUntilRecoveryForBothRoutes() async throws {
+        for route in ["system", "tailscale"] {
+            let sleepController = ScriptedSleep(steps: [
+                .blocked(id: "first-retry"), .blocked(id: "second-retry"), .suspend
+            ])
+            let (store, sender) = try makeAutomaticRecoveryScenario(sleepController: sleepController)
+            defer { store.clearSelectedHost() }
+            let host = makeHost(serverID: "server-1", server: "example.com")
+            host.connectionRoute = route
+            host.tailscaleAccountID = route == "tailscale" ? "test-account" : nil
+            store.setHost(host: host)
+            let failedPromptly = await waitUntil { await sleepController.callCount() == 1 }
+            XCTAssertTrue(failedPromptly, "A completed failure must not be hidden by a ten-second retry loop")
+            let failure = store.connectionState.failure?.diagnosticCode
+            XCTAssertEqual(failure, "url_session.-1004")
+            XCTAssertEqual(store.connectionTitle, "Unable to connect")
+            XCTAssertTrue(store.canAttemptReconnect)
+
+            var resetToConnecting = false
+            let observer = store.$connectionState.sink { state in
+                if case .connecting = state { resetToConnecting = true }
+            }
+            defer { observer.cancel() }
+            for (retry, request, count) in [("first-retry", "failed-retry", 6), ("second-retry", "successful-retry", 9)] {
+                await sleepController.resume(id: retry)
+                let started = await waitUntil { await sender.capturedRequests().count == count }
+                XCTAssertTrue(started)
+                XCTAssertEqual(store.connectionTitle, "Unable to connect")
+                XCTAssertEqual(store.connectionState.failure?.diagnosticCode, failure)
+                XCTAssertTrue(store.connectionState.isAttempting)
+                XCTAssertFalse(store.canAttemptReconnect)
+                XCTAssertNil(store.nextRetryAt)
+                store.retryNow()
+                let requests = await sender.capturedRequests().count
+                XCTAssertEqual(requests, count, "An in-flight retry must not start duplicate work")
+                await sender.resume(id: request)
+                let finished = await waitUntil { await sleepController.callCount() == count / 3 }
+                XCTAssertTrue(finished)
+            }
+            XCTAssertFalse(resetToConnecting, "Automatic retries must never erase the reported failure")
+            XCTAssertEqual(store.connectionStatus, .connected)
+            XCTAssertNil(store.connectionState.failure)
+            XCTAssertFalse(store.connectionState.isAttempting)
+            let delays = await sleepController.recordedSleeps()
+            XCTAssertLessThan(delays[0], delays[1], "Recovery retains exponential backoff")
+        }
+    }
+
+}
+
 private extension TransmissionStoreRetrySchedulingTests {
+    func makeAutomaticRecoveryScenario(
+        sleepController: ScriptedSleep
+    ) throws -> (TransmissionStore, HostMethodScriptedSender) {
+        let sender = HostMethodScriptedSender(stepsByHostAndMethod: [
+            "example.com": [
+                "session-stats": [
+                    .error(URLError(.cannotConnectToHost)),
+                    .blockedError(id: "failed-retry", error: URLError(.cannotConnectToHost)),
+                    .blocked(id: "successful-retry", statusCode: 200, body: successStatsBody)
+                ],
+                "torrent-get": Array(repeating: .http(statusCode: 200,
+                    body: "{\"result\":\"success\",\"arguments\":{\"torrents\":[]}}"), count: 3),
+                "session-get": Array(repeating: .error(TestError.offline), count: 3)
+            ]
+        ])
+        let connection = TransmissionConnection(
+            endpoint: try TransmissionEndpoint(scheme: "http", host: "example.com", port: 9091),
+            auth: TransmissionAuth(username: "", password: ""),
+            transport: TransmissionTransport(sender: sender)
+        )
+        let store = TransmissionStore(
+            resolveConnection: { _ in connection },
+            snapshotWriter: WidgetSnapshotWriter(
+                writeServerIndex: { _ in }, writeSessionSnapshot: { _, _, _, _, _ in }, reloadTimelines: {}
+            ),
+            sleep: { try await sleepController.sleep(seconds: $0) }, persistVersion: { _, _ in }
+        )
+        return (store, sender)
+    }
+
     func makeStore(
         sender: some TransmissionRPCRequestSending,
         sleepController: ScriptedSleep

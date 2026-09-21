@@ -26,6 +26,7 @@ final class TransmissionStore: NSObject, ObservableObject {
         let hostID: String
         let serverName: String
         let connection: TransmissionConnection
+        let usesTailscale: Bool
         let generation: UUID
     }
 
@@ -113,7 +114,7 @@ final class TransmissionStore: NSObject, ObservableObject {
         switch connectionState {
         case .connecting: .connecting
         case .connected: .connected
-        case .failed, .requiresAction: .reconnecting
+        case .failed, .retrying, .requiresAction: .reconnecting
         }
     }
     var lastErrorMessage: String {
@@ -125,7 +126,7 @@ final class TransmissionStore: NSObject, ObservableObject {
         switch connectionState {
         case .connecting: hasLoadedSnapshot ? "Reconnecting…" : "Connecting…"
         case .connected: "Connected"
-        case .failed: hasLoadedSnapshot ? "Connection lost" : "Unable to connect"
+        case .failed, .retrying: hasLoadedSnapshot ? "Connection lost" : "Unable to connect"
         case .requiresAction: "Connection needs attention"
         }
     }
@@ -172,6 +173,7 @@ final class TransmissionStore: NSObject, ObservableObject {
     private let torrentDetailRefreshInterval: TimeInterval
     private let persistVersion: @MainActor @Sendable (String, String) async -> Void
     private let userDefaults: UserDefaults
+    private let connectionAttemptTimeout: Duration
     private let automaticallyRetriesConnection: Bool
     private let updateBackgroundActivityInterval: @MainActor @Sendable (Double) -> Void
 
@@ -189,7 +191,7 @@ final class TransmissionStore: NSObject, ObservableObject {
     private let logger = Logger(subsystem: AppIdentity.bundleIdentifier, category: "network")
 
     var canAttemptReconnect: Bool {
-        host != nil && connectionStatus != .connecting
+        host != nil && !connectionState.isAttempting
     }
 
     init(
@@ -201,6 +203,7 @@ final class TransmissionStore: NSObject, ObservableObject {
         torrentDetailRefreshInterval: TimeInterval = AppDefaults.torrentDetailRefreshInterval,
         userDefaults: UserDefaults = .standard,
         automaticallyRetriesConnection: Bool = true,
+        connectionAttemptTimeout: Duration = .seconds(10),
         updateBackgroundActivityInterval: @escaping @MainActor @Sendable (Double) -> Void = { interval in
             #if os(macOS)
             BackgroundActivityScheduler.updateInterval(interval)
@@ -226,6 +229,7 @@ final class TransmissionStore: NSObject, ObservableObject {
         self.torrentDetailRefreshInterval = max(1, torrentDetailRefreshInterval)
         self.userDefaults = userDefaults
         self.automaticallyRetriesConnection = automaticallyRetriesConnection
+        self.connectionAttemptTimeout = connectionAttemptTimeout
         self.updateBackgroundActivityInterval = updateBackgroundActivityInterval
         self.persistVersion = persistVersion
         self.isInspectorVisible = userDefaults.inspectorVisibility
@@ -766,7 +770,7 @@ extension TransmissionStore {
         nextTorrentDetailRefreshTime = nil
 
         cancelRefreshLifecycle()
-        markConnecting()
+        if trigger != .automaticRetry { markConnecting() }
         self.host = host
         activeConnection = nil
         userDefaults.set(host.serverID, forKey: UserDefaultsKeys.selectedHost)
@@ -795,21 +799,26 @@ extension TransmissionStore {
 
     private func activateConnection(for host: Host, generation: UUID) async {
         do {
-            let connection = try await resolveConnection(TransmissionConnectionDescriptor(host: host))
-            guard !Task.isCancelled, isCurrentGeneration(generation, hostID: host.serverID) else {
-                return
+            let descriptor = TransmissionConnectionDescriptor(host: host)
+            let resolver = resolveConnection
+            let result = try await TransmissionConnectionAttempt.run(
+                timeout: connectionAttemptTimeout, usesTailscale: descriptor.connectionRoute == "tailscale"
+            ) {
+                try TransmissionConnectionAttempt.checkDeadline()
+                let connection = try await resolver(descriptor)
+                let snapshot = try await connection.fetchAppRefreshSnapshot()
+                try TransmissionConnectionAttempt.checkDeadline()
+                return (connection, snapshot)
             }
-
-            let serverName = host.name ?? host.server ?? "Server"
-            let connectionState = ActiveConnection(
-                hostID: host.serverID,
-                serverName: serverName,
-                connection: connection,
-                generation: generation
+            guard !Task.isCancelled, isCurrentGeneration(generation, hostID: host.serverID) else { return }
+            let connected = ActiveConnection(
+                hostID: host.serverID, serverName: host.name ?? host.server ?? "Server",
+                connection: result.0, usesTailscale: descriptor.connectionRoute == "tailscale", generation: generation
             )
             activationFailure = nil
-            activeConnection = connectionState
-            await performFullRefresh(for: connectionState)
+            activeConnection = connected
+            apply(snapshot: result.1, for: connected)
+            startPolling(for: connected)
         } catch {
             let transmissionError = TransmissionErrorResolver.transmissionError(from: error)
             if case .cancelled = transmissionError {
@@ -830,7 +839,11 @@ extension TransmissionStore {
     @discardableResult
     private func performFullRefresh(for connectionState: ActiveConnection) async -> RefreshOutcome {
         do {
-            let snapshot = try await connectionState.connection.fetchAppRefreshSnapshot()
+            let snapshot = try await TransmissionConnectionAttempt.run(
+                timeout: connectionAttemptTimeout, usesTailscale: connectionState.usesTailscale
+            ) {
+                try await connectionState.connection.fetchAppRefreshSnapshot()
+            }
             guard !Task.isCancelled, isCurrentGeneration(connectionState.generation, hostID: connectionState.hostID) else {
                 return .cancelled
             }
@@ -855,7 +868,11 @@ extension TransmissionStore {
 
     private func performPollingRefresh(for connectionState: ActiveConnection) async {
         do {
-            let snapshot = try await connectionState.connection.fetchPollingSnapshot()
+            let snapshot = try await TransmissionConnectionAttempt.run(
+                timeout: connectionAttemptTimeout, usesTailscale: connectionState.usesTailscale
+            ) {
+                try await connectionState.connection.fetchPollingSnapshot()
+            }
             guard !Task.isCancelled, isCurrentGeneration(connectionState.generation, hostID: connectionState.hostID) else {
                 return
             }
@@ -986,8 +1003,9 @@ extension TransmissionStore {
                 return
             }
 
+            guard let failure = self.connectionState.failure else { return }
             self.clearPendingRetrySchedule()
-            self.markConnecting()
+            self.connectionState = .retrying(failure)
 
             if self.activeConnection != nil {
                 await self.refreshNow()

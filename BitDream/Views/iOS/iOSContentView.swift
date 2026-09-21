@@ -245,42 +245,39 @@ private extension iOSContentView {
 
 private extension iOSContentView {
     var torrentListScreen: some View {
-        VStack(spacing: 0) {
-            statisticsButton
-
-            Group {
-                if store.host != nil, store.connectionStatus != .connected {
-                    iOSConnectionBannerView(store: store)
-                        .transition(.move(edge: .top).combined(with: .opacity))
+        torrentList
+            .listStyle(PlainListStyle())
+            .refreshable {
+                hapticFeedback.play(.actionTriggered)
+                let outcome = await store.refreshNow()
+                if let feedback = outcome.appHapticFeedback {
+                    hapticFeedback.play(feedback)
                 }
             }
-            .animation(.default, value: store.connectionStatus)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 0) {
+                    statisticsButton
 
-            // Show list regardless of connection status
-            torrentList
-                .listStyle(PlainListStyle())
-        }
-        .navigationTitle(sidebarSelection.rawValue)
-        .navigationBarTitleDisplayMode(.inline)
-        .refreshable {
-            hapticFeedback.play(.actionTriggered)
-            let outcome = await store.refreshNow()
-            if let feedback = outcome.appHapticFeedback {
-                hapticFeedback.play(feedback)
+                    if store.host != nil, store.connectionStatus != .connected {
+                        iOSConnectionBannerView(store: store)
+                    }
+                }
+                .background(Color(.systemBackground))
             }
-        }
-        .searchable(text: $searchText, prompt: "Search torrents")
-        .toolbar {
-            sidebarToolbarItem
-            actionToolbarItems
-            bottomToolbarItems
-        }
-        .onChange(of: sortProperty) { _, newValue in
-            userDefaults.sortProperty = newValue
-        }
-        .onChange(of: sortOrder) { _, newValue in
-            userDefaults.sortOrder = newValue
-        }
+            .navigationTitle(sidebarSelection.rawValue)
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $searchText, prompt: "Search torrents")
+            .toolbar {
+                sidebarToolbarItem
+                actionToolbarItems
+                bottomToolbarItems
+            }
+            .onChange(of: sortProperty) { _, newValue in
+                userDefaults.sortProperty = newValue
+            }
+            .onChange(of: sortOrder) { _, newValue in
+                userDefaults.sortOrder = newValue
+            }
     }
 
     var statisticsButton: some View {

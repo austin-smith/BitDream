@@ -60,6 +60,21 @@ final class EmbeddedTailscaleTests: XCTestCase {
         XCTAssertFalse(model.isSignedIn, "An expired login must not use cached identity as proof")
     }
 
+    func testStartupWaitsForRestoredLoginAndPeerWithoutRequestingSignIn() async throws {
+        for host in ["nas", "[fd7a:115c:a1e0::1234]"] {
+            let driver = StartupSnapshotDriver(ready: Self.snapshot(account: "account-a", generation: 1))
+            let service = EmbeddedTailscaleService(driver: driver, directory: { URL(filePath: "/unused") })
+            let endpoint = try TransmissionEndpoint(scheme: "http", host: host, port: 9091)
+            _ = try await TransmissionConnectionAttempt.run(usesTailscale: true) {
+                try await service.sender(accountID: "account-a", endpoint: endpoint)
+            }
+            let waits = await driver.waits
+            XCTAssertEqual(waits, ["NeedsLogin", "Running"])
+            let addresses = await driver.addresses
+            XCTAssertEqual(addresses, ["\(host):9091"], "The native peer wait must receive a valid host:port")
+        }
+    }
+
     func testLegacyCatalogDecodesToSystemNetworking() throws {
         let data = Data("""
         {"schemaVersion":1,"generatedAt":0,"records":[{"serverID":"s","name":"NAS",
@@ -203,7 +218,7 @@ final class EmbeddedTailscaleTests: XCTestCase {
     private static func snapshot(account: String, generation: UInt64) -> TailscaleSnapshot {
         TailscaleSnapshot(generation: generation, state: "Running", authURL: nil,
                           accountID: account, accountName: "Test",
-                          peers: [TailscalePeer(id: "nas", name: "NAS", address: "nas.tail.ts.net", online: true)],
+                          peers: [TailscalePeer(id: "nas", name: "NAS", address: "nas.tail.ts.net", online: true, ips: ["fd7a:115c:a1e0::1234"])],
                           proxyPort: 1234,
                           proxyPassword: "test", error: nil)
     }
@@ -231,5 +246,29 @@ private actor RestoringSnapshotDriver: TailscaleDriving {
             generation: 0, state: "Stopped", authURL: nil, accountID: nil,
             accountName: nil, peers: [], proxyPort: nil, proxyPassword: nil, error: nil
         )
+    }
+}
+
+private actor StartupSnapshotDriver: TailscaleDriving {
+    let ready: TailscaleSnapshot
+    private var stage = 0
+    private(set) var waits: [String] = []
+    private(set) var addresses: [String] = []
+    init(ready: TailscaleSnapshot) { self.ready = ready }
+    func perform(_ request: TailscaleNativeRequest) throws -> TailscaleSnapshot {
+        if request.action == "wait" {
+            waits.append(request.waitingState ?? "")
+            if let address = request.peerAddress { addresses.append(address) }
+            stage += 1
+        }
+        switch stage {
+        case 0:
+            return TailscaleSnapshot(generation: 1, state: "NeedsLogin", authURL: nil, accountID: nil,
+                                    accountName: nil, peers: [], proxyPort: nil, proxyPassword: nil, error: nil)
+        case 1:
+            return TailscaleSnapshot(generation: 1, state: "Running", authURL: nil, accountID: "account-a",
+                                    accountName: "Test", peers: [], proxyPort: 1234, proxyPassword: "test", error: nil)
+        default: return ready
+        }
     }
 }

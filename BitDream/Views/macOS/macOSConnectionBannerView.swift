@@ -7,27 +7,11 @@ struct macOSConnectionBannerView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: connectionStatusSymbol(for: store.connectionStatus))
-                .foregroundStyle(connectionStatusColor(for: store.connectionStatus))
-                .font(.system(size: 16, weight: .semibold))
+            ConnectionStatusIndicator(status: store.connectionStatus, isAttempting: store.connectionState.isAttempting)
             VStack(alignment: .leading, spacing: 2) {
                 Text(store.connectionTitle)
                     .font(.subheadline.weight(.semibold))
-                if store.nextRetryAt != nil {
-                    TimelineView(.periodic(from: .now, by: 1)) { context in
-                        Text(
-                            connectionRetryText(
-                                status: store.connectionStatus,
-                                retryAt: store.nextRetryAt,
-                                at: context.date
-                            )
-                        )
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                    }
-                }
+                ConnectionRetryStatusView(state: store.connectionState)
                 if !store.lastErrorMessage.isEmpty {
                     Text(store.lastErrorMessage)
                         .font(.caption)

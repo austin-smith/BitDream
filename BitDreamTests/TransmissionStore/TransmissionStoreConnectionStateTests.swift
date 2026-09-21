@@ -102,23 +102,80 @@ final class TransmissionStoreConnectionStateTests: XCTestCase {
         }
     }
 
-    func testTransientStartupFailureIsNotReportedAsLostConnectionOrBadSettings() async {
-        for error in [TailscaleError.peerUnavailable, .connectionFailed] {
-            let store = TransmissionStore(
-                resolveConnection: { _ in throw error }, snapshotWriter: .noop,
-                sleep: { _ in try await Task.sleep(for: .seconds(60)) },
-                persistVersion: { _, _ in }
+    func testStartupDeadlineCancelsBlockedWorkAndSchedulesRecovery() async {
+        let resolver = SuspendedStartupResolver()
+        let store = TransmissionStore(
+            resolveConnection: { try await resolver.resolve($0) }, snapshotWriter: .noop,
+            sleep: { _ in try await Task.sleep(for: .seconds(60)) },
+            connectionAttemptTimeout: .milliseconds(100), persistVersion: { _, _ in }
+        )
+        defer { store.clearSelectedHost() }
+        store.setHost(host: makeHost())
+        let failed = await waitUntil { store.nextRetryAt != nil }
+        XCTAssertTrue(failed)
+        XCTAssertEqual(store.connectionTitle, "Unable to connect")
+        XCTAssertEqual(store.connectionState.failure?.diagnosticCode, "timeout")
+        XCTAssertFalse(store.needsConnectionSettings)
+        let cancelled = await resolver.cancelled
+        XCTAssertTrue(cancelled, "The deadline must cancel work, not just change presentation")
+    }
+
+    func testEstablishedReadsTimeOutCancelRequestsAndRecoverOnBothRoutes() async throws {
+        for route in ["system", "tailscale"] {
+            let sender = StallingRefreshSender()
+            let connection = TransmissionConnection(
+                endpoint: try TransmissionEndpoint(scheme: "http", host: "example.com", port: 9091),
+                auth: TransmissionAuth(username: "", password: ""),
+                transport: TransmissionTransport(sender: sender)
             )
-            store.setHost(host: makeHost())
-            let failed = await waitUntil { store.nextRetryAt != nil }
-            XCTAssertTrue(failed)
-            XCTAssertEqual(store.connectionTitle, "Unable to connect")
-            XCTAssertFalse(store.needsConnectionSettings)
-            XCTAssertFalse(store.hasLoadedSnapshot)
-            XCTAssertEqual(store.connectionState.failure?.diagnosticCode, "tailscale.\(error)")
-            XCTAssertFalse(store.lastErrorMessage.contains("bad URL"))
+            let store = TransmissionStore(
+                resolveConnection: { _ in connection }, snapshotWriter: .noop,
+                sleep: { _ in try await sender.waitForPoll() }, automaticallyRetriesConnection: false,
+                connectionAttemptTimeout: .milliseconds(100), persistVersion: { _, _ in }
+            )
+            let host = makeHost()
+            host.connectionRoute = route
+            store.setHost(host: host)
+            let connected = await waitUntil { store.connectionStatus == .connected }
+            XCTAssertTrue(connected)
+            let lastSnapshot = store.lastRefreshAt
+
+            await sender.stallAndStartPolling()
+            let disconnected = await waitUntil { store.connectionState.failure != nil }
+            XCTAssertTrue(disconnected, "A stalled established connection must surface a failure")
+            XCTAssertEqual(store.connectionTitle, "Connection lost")
+            XCTAssertEqual(store.connectionState.failure?.diagnosticCode, "timeout")
+            XCTAssertEqual(store.lastRefreshAt, lastSnapshot)
+            let cancelledPolls = await sender.cancelledRequests
+            XCTAssertEqual(cancelledPolls, 2)
+
+            let refreshOutcome = await store.refreshNow()
+            XCTAssertEqual(refreshOutcome, .failed)
+            let cancelledAfterRefresh = await sender.cancelledRequests
+            XCTAssertEqual(cancelledAfterRefresh, 5, "Full refresh must also cancel its stalled RPC requests")
+            await sender.restore()
+            let recovered = await store.refreshNow()
+            XCTAssertEqual(recovered, .succeeded)
+            XCTAssertEqual(store.connectionStatus, .connected)
             store.clearSelectedHost()
         }
+    }
+
+    func testSwitchingServersCancelsStartupWithoutPublishingItsFailure() async throws {
+        let resolver = SuspendedStartupResolver()
+        let store = TransmissionStore(
+            resolveConnection: { try await resolver.resolve($0) }, snapshotWriter: .noop,
+            persistVersion: { _, _ in }
+        )
+        store.setHost(host: makeHost())
+        let started = await waitUntil { await resolver.started }
+        XCTAssertTrue(started)
+        store.clearSelectedHost()
+        let cancelled = await waitUntil { await resolver.cancelled }
+        XCTAssertTrue(cancelled)
+        XCTAssertNil(store.connectionState.failure)
+        XCTAssertNil(store.nextRetryAt)
+        XCTAssertFalse(store.hasLoadedSnapshot)
     }
 
     func testExplicitRefreshRestartsActivationAfterSignInIsRestored() async throws {
@@ -202,5 +259,48 @@ private actor RestoredLoginResolver {
         attempts += 1
         guard signedIn else { throw TailscaleError.signInRequired }
         return try await factory.connection(for: descriptor)
+    }
+}
+
+private actor SuspendedStartupResolver {
+    private(set) var started = false
+    private(set) var cancelled = false
+    func resolve(_ descriptor: TransmissionConnectionDescriptor) async throws -> TransmissionConnection {
+        started = true
+        do { try await Task.sleep(for: .seconds(60)) } catch {
+            cancelled = true
+            throw error
+        }
+        throw TransmissionError.timeout
+    }
+}
+
+private actor StallingRefreshSender: TransmissionRPCRequestSending {
+    private var stalled = false
+    private var pollStarted = false
+    private(set) var cancelledRequests = 0
+
+    func stallAndStartPolling() { stalled = true }
+    func restore() { stalled = false }
+
+    func waitForPoll() async throws {
+        if pollStarted { try await Task.sleep(for: .seconds(60)); return }
+        while !stalled { try await Task.sleep(for: .milliseconds(1)) }
+        pollStarted = true
+    }
+
+    func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        if stalled {
+            do { try await Task.sleep(for: .seconds(60)) } catch {
+                cancelledRequests += 1
+                throw error
+            }
+        }
+        let body = try JSONSerialization.jsonObject(with: request.httpBody!) as? [String: Any]
+        let method = body?["method"] as? String
+        let response = method == "session-stats" ? successStatsBody
+            : method == "torrent-get" ? "{\"result\":\"success\",\"arguments\":{\"torrents\":[]}}"
+            : try loadTransmissionFixture(named: "session-get.response.json")
+        return (Data(response.utf8), makeHTTPResponse(for: request.url!, statusCode: 200))
     }
 }
