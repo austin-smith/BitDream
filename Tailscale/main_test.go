@@ -146,3 +146,93 @@ func TestProxyRequiresCredentialsForwardsHostnameAndClosesActiveConnections(t *t
 		t.Fatal("closed listener reported healthy")
 	}
 }
+
+// This is the same scope used by Swift's connection attempt. Expiry/revocation
+// must cancel a native dial, even if SOCKS has not returned a connection yet.
+func TestConnectionOperationCancellationStopsDialAndListener(t *testing.T) {
+	id := beginOperation(time.Minute, true, 0)
+	defer endOperation(id)
+	op := operationForID(id)
+	entered, cancelled := make(chan struct{}), make(chan struct{})
+	listener, err := op.connectionProxy(1, func(ctx context.Context) (*proxyListener, error) {
+		return newProxyWithContext(ctx, func(ctx context.Context, _, _ string) (net.Conn, error) {
+			close(entered)
+			<-ctx.Done()
+			close(cancelled)
+			return nil, ctx.Err()
+		})
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	dialer, err := proxy.SOCKS5("tcp", listener.Addr().String(), &proxy.Auth{User: "bitdream", Password: listener.password}, proxy.Direct)
+	if err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan error, 1)
+	go func() {
+		conn, err := dialer.Dial("tcp", "nas.test.ts.net:9091")
+		if conn != nil {
+			conn.Close()
+		}
+		done <- err
+	}()
+	select {
+	case <-entered:
+	case <-time.After(time.Second):
+		t.Fatal("dial did not start")
+	}
+	cancelOperation(id)
+	select {
+	case <-cancelled:
+	case <-time.After(time.Second):
+		t.Fatal("native dial survived cancellation")
+	}
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("cancelled proxy request succeeded")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("SOCKS client remained blocked")
+	}
+}
+
+func TestNativeCommandCancellationDoesNotCancelSiblingOrOutliveParent(t *testing.T) {
+	parent := beginOperation(time.Minute, true, 0)
+	defer endOperation(parent)
+	first := beginOperation(time.Minute, false, parent)
+	defer endOperation(first)
+	second := beginOperation(time.Minute, false, parent)
+	defer endOperation(second)
+	cancelOperation(first)
+	if operationForID(second).ctx.Err() != nil {
+		t.Fatal("cancelled a sibling request")
+	}
+	cancelOperation(parent)
+	if operationForID(second).ctx.Err() == nil {
+		t.Fatal("request survived its attempt")
+	}
+	runtimeGate <- struct{}{}
+	defer unlockRuntime()
+	if err := lockRuntime(operationForID(second).ctx); err == nil {
+		t.Fatal("cancelled command acquired busy gate")
+	}
+}
+
+func TestSignOutRevokesStartupCommandsAndProxyScope(t *testing.T) {
+	parent := beginOperation(time.Minute, true, 0)
+	defer endOperation(parent)
+	command := beginOperation(time.Minute, false, parent)
+	defer endOperation(command)
+	cancelConnectionOperations(errSignedOut)
+	if got := nativeFailure(operationForID(command)).ErrorCode; got != "signed_out" {
+		t.Fatalf("revoked command reported %q instead of sign-in required", got)
+	}
+	if _, err := operationForID(parent).connectionProxy(1, func(ctx context.Context) (*proxyListener, error) {
+		t.Fatal("created proxy after sign-out")
+		return nil, nil
+	}); err == nil {
+		t.Fatal("revoked attempt created a proxy")
+	}
+}

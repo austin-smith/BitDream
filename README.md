@@ -12,12 +12,13 @@ BitDream is a native and feature-rich remote control client for Transmission web
 
 ## Features
 
-- Fully native apps for both macOS and iOS
+- Fully native apps for macOS and iOS
 - Remote management of Transmission server
 - Real-time torrent status monitoring
 - Add, remove, and manage torrents remotely
 - View detailed torrent information and statistics
 - Secure connection to Transmission's RPC interface
+- Built-in Tailscale integration for remote access
 
 ## About Transmission
 

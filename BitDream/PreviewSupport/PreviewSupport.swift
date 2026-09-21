@@ -264,23 +264,21 @@ enum PreviewFixtures {
             store.sessionStats = sessionStats
             store.sessionConfiguration = sessionConfiguration
             store.defaultDownloadDir = "/Volumes/Downloads"
-            store.connectionStatus = .connected
+            store.connectionState = .connected
             store.lastRefreshAt = referenceDate
         case .reconnecting:
             store.host = selectedHost
             store.torrents = torrents
             store.sessionStats = sessionStats
-            store.connectionStatus = .reconnecting
-            store.lastErrorMessage = "The server is temporarily unavailable."
-            store.nextRetryAt = referenceDate.addingTimeInterval(15)
+            store.lastRefreshAt = referenceDate
+            store.connectionState = .failed(.timeout, retryAt: referenceDate.addingTimeInterval(15))
         case .error:
             store.host = selectedHost
             store.torrents = torrents
-            store.connectionStatus = .reconnecting
+            store.connectionState = .requiresAction(.unauthorized)
             store.isError = true
             store.debugBrief = "Unable to connect"
             store.debugMessage = "The preview server rejected the connection."
-            store.lastErrorMessage = store.debugMessage
         }
 
         return store

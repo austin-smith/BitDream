@@ -329,30 +329,7 @@ private extension TransmissionTransport {
     }
 
     func classifyTransportError(_ error: Error) -> TransmissionError {
-        if let transportFailure = error as? TransmissionTransportFailure {
-            return transportFailure.transmissionError
-        }
-
-        if let transmissionError = error as? TransmissionError {
-            return transmissionError
-        }
-
-        if error is CancellationError {
-            return .cancelled
-        }
-
-        if let urlError = error as? URLError {
-            switch urlError.code {
-            case .timedOut:
-                return .timeout
-            case .cancelled:
-                return .cancelled
-            default:
-                return .transport(underlyingDescription: urlError.localizedDescription)
-            }
-        }
-
-        return .transport(underlyingDescription: error.localizedDescription)
+        TransmissionErrorResolver.transmissionError(from: error)
     }
 
     func bodyString(from data: Data) -> String? {

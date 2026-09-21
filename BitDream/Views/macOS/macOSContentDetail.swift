@@ -64,7 +64,7 @@ struct macOSContentDetail: View {
                         .font(.title2)
                         .foregroundColor(accentColor)
                 }
-            } else {
+            } else if store.hasLoadedSnapshot {
                 VStack(spacing: 12) {
                     Text("💭")
                         .font(.system(size: 40))

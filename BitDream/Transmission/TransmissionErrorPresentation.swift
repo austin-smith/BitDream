@@ -19,6 +19,14 @@ enum TransmissionErrorResolver {
             return .cancelled
         }
 
+        if let error = error as? TailscaleError { return .tailscale(error) }
+        if let error = error as? URLError {
+            switch error.code {
+            case .cancelled: return .cancelled
+            case .timedOut: return .timeout
+            default: return .network(error.code)
+            }
+        }
         return .transport(underlyingDescription: error.localizedDescription)
     }
 }
@@ -30,8 +38,12 @@ enum TransmissionErrorPresenter {
             return connectionError(message: "Connection error. Please check your server settings.")
         case .unauthorized:
             return authenticationFailed(message: "Authentication failed. Please check your server credentials.")
-        case .transport(let underlyingDescription):
-            return connectionError(message: underlyingDescription)
+        case .transport:
+            return connectionError(message: "Could not connect to the server.")
+        case .tailscale(let error):
+            return connectionError(message: error.localizedDescription)
+        case .network(let code):
+            return networkError(code)
         case .timeout:
             return connectionTimedOut(message: "The request timed out.")
         case .cancelled:
@@ -40,10 +52,23 @@ enum TransmissionErrorPresenter {
             return serverError(message: httpStatusMessage(code: code, body: body))
         case .rpcFailure(let result):
             return operationFailed(message: result)
-        case .invalidResponse:
+        case .invalidResponse, .decoding:
             return serverError(message: "The server returned an invalid response.")
-        case .decoding:
-            return serverError(message: "Failed to decode the server response.")
+        }
+    }
+
+    private static func networkError(_ code: URLError.Code) -> TransmissionErrorPresentation {
+        switch code {
+        case .notConnectedToInternet:
+            return connectionError(message: "No internet connection.")
+        case .secureConnectionFailed, .serverCertificateHasBadDate, .serverCertificateUntrusted,
+             .serverCertificateHasUnknownRoot, .serverCertificateNotYetValid,
+             .clientCertificateRejected, .clientCertificateRequired:
+            return connectionError(message: "Could not establish a secure connection to the server.")
+        case .badURL, .unsupportedURL:
+            return connectionError(message: "Check the server address and connection settings.")
+        default:
+            return connectionError(message: "Could not connect to the server.")
         }
     }
 

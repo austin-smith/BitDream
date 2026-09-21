@@ -76,6 +76,7 @@ enum SpeedChipSize {
 struct SpeedChip: View {
     let speed: Int64
     let direction: SpeedDirection
+    var isAvailable = true
     var style: SpeedChipStyle = .chip
     var size: SpeedChipSize = .compact
 
@@ -85,7 +86,7 @@ struct SpeedChip: View {
                 .imageScale(size.iconScale)
                 .foregroundColor(direction.color)
 
-            Text("\(formatByteCount(speed))/s")
+            Text(isAvailable ? "\(formatByteCount(speed))/s" : "—")
                 .monospacedDigit()
         }
         .font(size.font)
@@ -109,10 +110,10 @@ struct RatioChip: View {
     var size: SpeedChipSize = .compact
     var helpText: String?
 
-    init(ratio: Double, size: SpeedChipSize = .compact, helpText: String? = nil) {
-        self.ringProgress = min(ratio, 1.0)
-        self.displayText = String(format: "%.2f", ratio)
-        self.showsCompletionColor = ratio >= 1.0
+    init(ratio: Double, isAvailable: Bool = true, size: SpeedChipSize = .compact, helpText: String? = nil) {
+        self.ringProgress = isAvailable ? min(ratio, 1.0) : 0
+        self.displayText = isAvailable ? String(format: "%.2f", ratio) : "—"
+        self.showsCompletionColor = isAvailable && ratio >= 1.0
         self.size = size
         self.helpText = helpText
     }

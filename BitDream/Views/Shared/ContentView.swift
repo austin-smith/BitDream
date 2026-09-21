@@ -208,7 +208,8 @@ struct StatsHeaderView: View {
     private var accessibilityValue: String {
         let mode = ratioDisplayMode == .cumulative ? "Total ratio" : "Session ratio"
         let ratio = overallRatio.formatted(.number.precision(.fractionLength(2)))
-        return "\(mode) \(ratio), download speed \(formatSpeed(downloadSpeed)), "
+        let freshness = store.connectionStatus == .connected ? "" : "Last received statistics: "
+        return "\(freshness)\(mode) \(ratio), download speed \(formatSpeed(downloadSpeed)), "
             + "upload speed \(formatSpeed(uploadSpeed))"
     }
 
@@ -216,10 +217,17 @@ struct StatsHeaderView: View {
         let mode = ratioDisplayMode == .cumulative ? "Total Ratio" : "Session Ratio"
         let uploaded = formatByteCount(ratioSummary.uploaded)
         let downloaded = formatByteCount(ratioSummary.downloaded)
-        return "\(mode)\n----------\nUploaded: \(uploaded)\nDownloaded: \(downloaded)"
+        let freshness = store.connectionStatus == .connected ? "" : "Last received statistics\n"
+        return "\(freshness)\(mode)\n----------\nUploaded: \(uploaded)\nDownloaded: \(downloaded)"
     }
 
     var body: some View {
+        if store.hasLoadedSnapshot {
+            statisticsButton
+        }
+    }
+
+    private var statisticsButton: some View {
         Button(action: onShowStatistics) {
             HStack(spacing: 12) {
                 RatioChip(

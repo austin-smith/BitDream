@@ -56,6 +56,7 @@ struct TailscaleSnapshot: Decodable, Sendable {
     let proxyPort: UInt16?
     let proxyPassword: String?
     let error: String?
+    var errorCode: String?
 
     var isReady: Bool { state == "Running" && accountID?.isEmpty == false && proxyPort != nil }
 
@@ -94,15 +95,19 @@ struct TailscaleNativeRequest: Encodable, Sendable {
     let action: String
     var directory: String?
     var hostname: String?
+    var waitingState: String?
+    var peerAddress: String?
 }
 
-enum TailscaleError: LocalizedError, Sendable {
+enum TailscaleError: LocalizedError, Sendable, Equatable {
     case unavailable
     case signInRequired
     case approvalRequired
     case accountMismatch
     case connectionChanged
     case peerUnavailable
+    case ambiguousPeer
+    case connectionFailed
     case invalidRoute
     case untrustedRedirect
 
@@ -113,7 +118,9 @@ enum TailscaleError: LocalizedError, Sendable {
         case .approvalRequired: "Approve this BitDream device in your Tailscale admin console."
         case .accountMismatch: "This server was saved with a different Tailscale account or tailnet. Sign out and sign in with the account and tailnet you used to add it."
         case .connectionChanged: "The Tailscale connection changed. Reconnect to the server and try again."
-        case .peerUnavailable: "This address does not match a machine visible to your Tailscale account. Select a machine or enter its full Tailscale hostname or IP address."
+        case .peerUnavailable: "This machine is currently unavailable through Tailscale."
+        case .ambiguousPeer: "More than one Tailscale machine matches this address. Enter its full hostname or IP address."
+        case .connectionFailed: "Could not connect to the server through Tailscale."
         case .invalidRoute: "This server’s connection method is not supported. Edit its connection settings."
         case .untrustedRedirect: "The RPC endpoint redirected to another address. Enter the final server address in connection settings."
         }

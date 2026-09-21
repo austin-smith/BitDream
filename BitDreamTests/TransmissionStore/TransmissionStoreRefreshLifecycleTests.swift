@@ -224,11 +224,18 @@ final class TransmissionStoreRefreshLifecycleTests: XCTestCase {
     }
 
     func testInitialActivationFailuresPreserveBackoffAcrossAutomaticRetries() async {
-        let sender = MethodQueueSender(stepsByMethod: [:])
         let sleepController = ScriptedSleep(steps: [.immediate, .immediate, .suspend])
-        let store = makeStore(sender: sender, sleepController: sleepController)
+        let store = TransmissionStore(
+            resolveConnection: { _ in throw TailscaleError.unavailable },
+            snapshotWriter: WidgetSnapshotWriter(
+                writeServerIndex: { _ in }, writeSessionSnapshot: { _, _, _, _, _ in }, reloadTimelines: {}
+            ),
+            sleep: { try await sleepController.sleep(seconds: $0) },
+            persistVersion: { _, _ in }
+        )
+        defer { store.clearSelectedHost() }
 
-        store.setHost(host: makeHost(serverID: "server-1", server: ""))
+        store.setHost(host: makeHost(serverID: "server-1", server: "example.com"))
 
         let didScheduleThreeRetries = await waitUntil {
             await sleepController.callCount() == 3
