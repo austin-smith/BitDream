@@ -22,6 +22,7 @@ import (
 	"unsafe"
 
 	"tailscale.com/envknob"
+	"tailscale.com/ipn"
 	"tailscale.com/ipn/ipnstate"
 	"tailscale.com/net/socks5"
 	"tailscale.com/tailcfg"
@@ -30,9 +31,11 @@ import (
 )
 
 type request struct {
-	Action    string `json:"action"`
-	Directory string `json:"directory"`
-	Hostname  string `json:"hostname"`
+	Action       string `json:"action"`
+	Directory    string `json:"directory"`
+	Hostname     string `json:"hostname"`
+	WaitingState string `json:"waitingState"`
+	PeerAddress  string `json:"peerAddress"`
 }
 
 type peer struct {
@@ -53,16 +56,35 @@ type snapshot struct {
 	ProxyPort     uint16 `json:"proxyPort,omitempty"`
 	ProxyPassword string `json:"proxyPassword,omitempty"`
 	Error         string `json:"error,omitempty"`
+	ErrorCode     string `json:"errorCode,omitempty"`
 }
 
 // Commands are serialized across the ABI, including startup and shutdown. No Go
 // pointer crosses into Swift, and there is only one node per host-app process.
 var runtime struct {
-	sync.Mutex
 	server     *tsnet.Server
 	proxy      *proxyListener
 	generation uint64
 }
+
+// A cancellable gate serializes mutations without stranding expired commands
+// behind another native request. Readiness subscriptions wait outside this gate.
+var runtimeGate = make(chan struct{}, 1)
+
+func lockRuntime(ctx context.Context) error {
+	select {
+	case runtimeGate <- struct{}{}:
+		if err := ctx.Err(); err != nil {
+			<-runtimeGate
+			return err
+		}
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func unlockRuntime() { <-runtimeGate }
 
 func init() {
 	// This application does not upload Tailscale diagnostic logs. This is the
@@ -70,21 +92,90 @@ func init() {
 	envknob.SetNoLogsNoSupport()
 }
 
+//export BDTailscaleBeginOperation
+func BDTailscaleBeginOperation(milliseconds C.longlong, ownsProxy C.int, parent C.ulonglong) C.ulonglong {
+	return C.ulonglong(beginOperation(time.Duration(milliseconds)*time.Millisecond, ownsProxy != 0, uint64(parent)))
+}
+
+//export BDTailscaleCancelOperation
+func BDTailscaleCancelOperation(id C.ulonglong) { cancelOperation(uint64(id)) }
+
+//export BDTailscaleEndOperation
+func BDTailscaleEndOperation(id C.ulonglong) { endOperation(uint64(id)) }
+
 //export BDTailscaleCommand
-func BDTailscaleCommand(input *C.char) *C.char {
-	runtime.Lock()
-	defer runtime.Unlock()
+func BDTailscaleCommand(input *C.char, id C.ulonglong) *C.char {
 	var req request
 	if err := json.Unmarshal([]byte(C.GoString(input)), &req); err != nil {
 		return response(snapshot{Error: "Invalid native request"})
 	}
-	value, err := execute(req)
+	op := operationForID(uint64(id))
+	if op == nil {
+		return response(snapshot{Error: "Tailscale operation ended"})
+	}
+	if req.Action == "wait" {
+		// Subscribe and wait without the runtime gate: status, logout, and
+		// cancellation must remain available while the control plane starts.
+		if err := waitForChange(op.ctx, req); err != nil {
+			return response(nativeFailure(op))
+		}
+		req.Action = "status"
+	}
+	if err := lockRuntime(op.ctx); err != nil {
+		return response(nativeFailure(op))
+	}
+	defer unlockRuntime()
+	value, err := execute(op, req)
 	if err != nil {
 		// Never return engine error strings: they can contain an authorization URL.
-		value = snapshot{State: "Error", Error: "Tailscale could not complete " + req.Action}
+		value = nativeFailure(op)
 	}
 	value.Generation = runtime.generation
 	return response(value)
+}
+
+func waitForChange(ctx context.Context, req request) error {
+	if err := lockRuntime(ctx); err != nil {
+		return err
+	}
+	server := runtime.server
+	unlockRuntime()
+	if server == nil {
+		return nil
+	}
+	return waitForServerChange(ctx, server, req)
+}
+
+func waitForServerChange(ctx context.Context, server *tsnet.Server, req request) error {
+	client, err := server.LocalClient()
+	if err != nil {
+		return err
+	}
+	watcher, err := client.WatchIPNBus(ctx, ipn.NotifyInitialState|ipn.NotifyInitialStatus|ipn.NotifyPeerChanges)
+	if err != nil {
+		return err
+	}
+	defer watcher.Close()
+	for {
+		if _, err := watcher.Next(); err != nil {
+			return err
+		}
+		// Fetch after subscribing, including on the initial notification, so a
+		// change between Swift's previous snapshot and this wait cannot be lost.
+		status, err := client.Status(ctx)
+		if err != nil {
+			return err
+		}
+		if status.BackendState != req.WaitingState || (status.BackendState == "NeedsLogin" && status.AuthURL != "") {
+			return nil
+		}
+		if req.PeerAddress != "" {
+			_, err := peerDestination(status, req.PeerAddress)
+			if err == nil || errors.Is(err, errAmbiguousPeer) {
+				return nil
+			}
+		}
+	}
 }
 
 //export BDTailscaleFree
@@ -98,9 +189,12 @@ func response(value snapshot) *C.char {
 	return C.CString(string(data))
 }
 
-func execute(req request) (snapshot, error) {
+func execute(op *nativeOperation, req request) (snapshot, error) {
+	if err := op.ctx.Err(); err != nil {
+		return snapshot{}, err
+	}
 	if req.Action == "stop" {
-		return snapshot{State: "Stopped"}, stop()
+		return snapshot{State: "Stopped"}, stop(errConnectionChanged)
 	}
 	if req.Action == "start" && runtime.server == nil {
 		if req.Directory == "" || req.Hostname == "" {
@@ -123,7 +217,7 @@ func execute(req request) (snapshot, error) {
 	if err != nil {
 		return snapshot{}, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(op.ctx, 5*time.Second)
 	defer cancel()
 	switch req.Action {
 	case "login":
@@ -131,11 +225,12 @@ func execute(req request) (snapshot, error) {
 			return snapshot{}, err
 		}
 	case "logout":
+		cancelConnectionOperations(errSignedOut)
 		closeProxy()
 		if err := client.Logout(ctx); err != nil {
 			return snapshot{}, err
 		}
-		return snapshot{State: "Stopped"}, stop()
+		return snapshot{State: "Stopped"}, stop(errSignedOut)
 	case "start", "status":
 	default:
 		return snapshot{}, errors.New("unknown operation")
@@ -154,8 +249,17 @@ func execute(req request) (snapshot, error) {
 			}
 			runtime.generation++
 		}
-		result.ProxyPort = uint16(runtime.proxy.Addr().(*net.TCPAddr).Port)
-		result.ProxyPassword = runtime.proxy.password
+		proxy := runtime.proxy
+		if op.owner != nil {
+			proxy, err = op.connectionProxy(runtime.generation, func(ctx context.Context) (*proxyListener, error) {
+				return newProxyWithContext(ctx, tailnetDialer(runtime.server))
+			})
+			if err != nil {
+				return snapshot{}, err
+			}
+		}
+		result.ProxyPort = uint16(proxy.Addr().(*net.TCPAddr).Port)
+		result.ProxyPassword = proxy.password
 	} else {
 		closeProxy()
 	}
@@ -200,7 +304,8 @@ func closeProxy() {
 	}
 }
 
-func stop() error {
+func stop(reason error) error {
+	cancelConnectionOperations(reason)
 	closeProxy()
 	server := runtime.server
 	runtime.server = nil
@@ -219,6 +324,7 @@ type proxyListener struct {
 	password    string
 	mu          sync.Mutex
 	closed      bool
+	cancel      context.CancelFunc
 	connections map[*proxyConn]struct{}
 }
 
@@ -257,6 +363,9 @@ func (listener *proxyListener) Close() error {
 		return nil
 	}
 	listener.closed = true
+	if listener.cancel != nil {
+		listener.cancel()
+	}
 	err := listener.Listener.Close()
 	for conn := range listener.connections {
 		conn.Conn.Close()
@@ -281,6 +390,10 @@ func (listener *proxyListener) healthy() bool {
 }
 
 func newProxy(dial func(context.Context, string, string) (net.Conn, error)) (*proxyListener, error) {
+	return newProxyWithContext(context.Background(), dial)
+}
+
+func newProxyWithContext(parent context.Context, dial func(context.Context, string, string) (net.Conn, error)) (*proxyListener, error) {
 	var secret [32]byte
 	if _, err := rand.Read(secret[:]); err != nil {
 		return nil, err
@@ -289,15 +402,19 @@ func newProxy(dial func(context.Context, string, string) (net.Conn, error)) (*pr
 	if err != nil {
 		return nil, err
 	}
-	proxy := &proxyListener{Listener: listener, password: hex.EncodeToString(secret[:]), connections: make(map[*proxyConn]struct{})}
+	lifetime, cancel := context.WithCancel(parent)
+	proxy := &proxyListener{Listener: listener, password: hex.EncodeToString(secret[:]), connections: make(map[*proxyConn]struct{}), cancel: cancel}
+	context.AfterFunc(lifetime, func() { proxy.Close() })
 	server := &socks5.Server{Username: "bitdream", Password: proxy.password, Logf: logger.Discard,
 		Dialer: func(ctx context.Context, network, address string) (net.Conn, error) {
 			if network != "tcp" {
 				return nil, errors.New("only TCP RPC is supported")
 			}
-			ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+			requestContext, cancel := context.WithCancel(ctx)
+			stop := context.AfterFunc(lifetime, cancel)
+			defer stop()
 			defer cancel()
-			return dial(ctx, network, address)
+			return dial(requestContext, network, address)
 		}}
 	go func() { _ = server.Serve(proxy); _ = proxy.Close() }()
 	return proxy, nil
@@ -332,6 +449,8 @@ func tailnetDialer(server *tsnet.Server) func(context.Context, string, string) (
 	}
 }
 
+var errAmbiguousPeer = errors.New("ambiguous peer")
+
 func peerDestination(status *ipnstate.Status, address string) (netip.AddrPort, error) {
 	host, rawPort, err := net.SplitHostPort(address)
 	if err != nil {
@@ -348,12 +467,12 @@ func peerDestination(status *ipnstate.Status, address string) (netip.AddrPort, e
 		dnsName := strings.ToLower(strings.TrimSuffix(candidate.DNSName, "."))
 		nameMatches := dnsName != "" && (host == dnsName || host == strings.Split(dnsName, ".")[0])
 		if nameMatches && destination.IsValid() {
-			return netip.AddrPort{}, errors.New("ambiguous peer")
+			return netip.AddrPort{}, errAmbiguousPeer
 		}
 		for _, ip := range candidate.TailscaleIPs {
 			if (parsed.IsValid() && parsed.Unmap() == ip.Unmap()) || (nameMatches && !destination.IsValid()) {
 				if destination.IsValid() && destination != ip {
-					return netip.AddrPort{}, errors.New("ambiguous peer")
+					return netip.AddrPort{}, errAmbiguousPeer
 				}
 				destination = ip
 				break

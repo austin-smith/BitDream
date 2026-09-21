@@ -70,7 +70,7 @@ final class DockBadgeController: ObservableObject {
                 torrents.lazy.filter { $0.statusCalc == .complete }.count
             }
 
-        let isConnected = store.$connectionStatus
+        let isConnected = store.$connectionState
             .map { status in
                 if case .connected = status { return true }
                 return false

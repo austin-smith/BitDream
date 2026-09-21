@@ -27,7 +27,7 @@ struct macOSConnectionInfoView: View {
         HStack(spacing: 12) {
             Text("Connection")
             Spacer(minLength: 16)
-            if store.connectionStatus == TransmissionStore.ConnectionStatus.reconnecting {
+            if store.connectionState.failure != nil {
                 Button(
                     action: {
                         store.retryNow()
@@ -39,10 +39,11 @@ struct macOSConnectionInfoView: View {
                 )
                 .buttonStyle(.bordered)
                 .controlSize(.small)
+                .disabled(!store.canAttemptReconnect)
                 .help("Retry now")
                 .accessibilityLabel("Retry now")
             }
-            Text(connectionStatusTitle(for: store.connectionStatus))
+            Text(store.connectionTitle)
                 .font(.system(.body, design: .monospaced))
                 .foregroundColor(connectionStatusColor(for: store.connectionStatus))
         }

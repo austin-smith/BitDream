@@ -43,8 +43,17 @@ func TestEncryptedRPCThroughEmbeddedProxy(t *testing.T) {
 		t.Cleanup(func() { node.Close() })
 		return node
 	}
-	remote := newNode("transmission")
 	client := newNode("bitdream")
+	discovered := make(chan error, 1)
+	go func() {
+		discovered <- waitForServerChange(ctx, client, request{
+			WaitingState: "Running", PeerAddress: "transmission.test.ts.net:9091",
+		})
+	}()
+	remote := newNode("transmission")
+	if err := <-discovered; err != nil {
+		t.Fatalf("discover newly enrolled peer: %v", err)
+	}
 	listener, err := remote.Listen("tcp", ":9091")
 	if err != nil {
 		t.Fatal(err)
@@ -63,23 +72,18 @@ func TestEncryptedRPCThroughEmbeddedProxy(t *testing.T) {
 	})}
 	go server.Serve(listener)
 	t.Cleanup(func() { server.Close() })
-	local, err := client.LocalClient()
-	if err != nil {
+	// An already-present peer must also resolve from the initial notification.
+	if err := waitForServerChange(ctx, client, request{
+		WaitingState: "Running", PeerAddress: "transmission.test.ts.net:9091",
+	}); err != nil {
 		t.Fatal(err)
 	}
-	for {
-		status, err := local.Status(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(status.Peer) > 0 {
-			break
-		}
-		select {
-		case <-ctx.Done():
-			t.Fatal(ctx.Err())
-		case <-time.After(50 * time.Millisecond):
-		}
+	cancelled, cancelWait := context.WithCancel(ctx)
+	cancelWait()
+	if err := waitForServerChange(cancelled, client, request{
+		WaitingState: "Running", PeerAddress: "missing.test.ts.net:9091",
+	}); err == nil {
+		t.Fatal("cancelled readiness wait succeeded")
 	}
 	proxy, err := newProxy(tailnetDialer(client))
 	if err != nil {

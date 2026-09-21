@@ -61,9 +61,8 @@ struct macOSMenuBarTorrentWidget: View {
             if store.host == nil {
                 noServerState
             } else {
-                connectionState
-
-                if isConnected {
+                if store.hasLoadedSnapshot {
+                    connectionState
                     if activeTorrents.isEmpty {
                         emptyState
                     } else {
@@ -101,11 +100,11 @@ struct macOSMenuBarTorrentWidget: View {
             }
 
             HStack(spacing: 8) {
-                RatioChip(ratio: summary.ratio, size: .compact)
+                RatioChip(ratio: summary.ratio, isAvailable: isConnected, size: .compact)
                 Spacer(minLength: 0)
                 HStack(spacing: 8) {
-                    SpeedChip(speed: summary.downloadSpeed, direction: .download, style: .chip, size: .compact)
-                    SpeedChip(speed: summary.uploadSpeed, direction: .upload, style: .chip, size: .compact)
+                    SpeedChip(speed: summary.downloadSpeed, direction: .download, isAvailable: isConnected, style: .chip, size: .compact)
+                    SpeedChip(speed: summary.uploadSpeed, direction: .upload, isAvailable: isConnected, style: .chip, size: .compact)
                 }
             }
         }
@@ -118,7 +117,8 @@ struct macOSMenuBarTorrentWidget: View {
                     Image(systemName: connectionStatusSymbol(for: store.connectionStatus))
                         .foregroundStyle(connectionStatusColor(for: store.connectionStatus))
                     TimelineView(.periodic(from: .now, by: 1)) { context in
-                        Text(connectionRetryText(status: store.connectionStatus, retryAt: store.nextRetryAt, at: context.date))
+                        Text(store.nextRetryAt == nil ? store.connectionTitle :
+                            connectionRetryText(status: store.connectionStatus, retryAt: store.nextRetryAt, at: context.date))
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
                     }
@@ -197,10 +197,17 @@ struct macOSMenuBarTorrentWidget: View {
 
     private var unavailableState: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(connectionStatusTitle(for: store.connectionStatus))
+            Text(store.connectionTitle)
                 .font(.system(size: 12, weight: .semibold))
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                Text(connectionRetryText(status: store.connectionStatus, retryAt: store.nextRetryAt, at: context.date))
+            if store.nextRetryAt != nil {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    Text(connectionRetryText(status: store.connectionStatus, retryAt: store.nextRetryAt, at: context.date))
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if !store.lastErrorMessage.isEmpty {
+                Text(store.lastErrorMessage)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

@@ -68,6 +68,29 @@ final class TransmissionTransportErrorTests: XCTestCase {
         }
     }
 
+    func testTailscaleAndNetworkErrorsRetainTheirRecoveryPolicyThroughTransport() async throws {
+        let errors: [any Error] = [
+            TailscaleError.signInRequired, TailscaleError.peerUnavailable,
+            TailscaleError.connectionFailed, URLError(.serverCertificateUntrusted),
+            URLError(.notConnectedToInternet)
+        ]
+        for error in errors {
+            let expected = TransmissionErrorResolver.transmissionError(from: error)
+            let transport = TransmissionTransport(sender: QueueSender(steps: [.error(error)]))
+            do {
+                _ = try await transport.sendEnvelope(
+                    method: "session-stats", arguments: EmptyArguments(),
+                    endpoint: makeEndpoint(), auth: makeAuth(), responseType: SessionStats.self
+                )
+                XCTFail("Expected failure")
+            } catch {
+                let actual = TransmissionErrorResolver.transmissionError(from: error)
+                XCTAssertEqual(actual.diagnosticCode, expected.diagnosticCode)
+                XCTAssertEqual(actual.permitsAutomaticRetry, expected.permitsAutomaticRetry)
+            }
+        }
+    }
+
     func testHTTP500MapsToHTTPStatusError() async {
         let sender = QueueSender(steps: [
             .http(statusCode: 500, body: "server exploded")
