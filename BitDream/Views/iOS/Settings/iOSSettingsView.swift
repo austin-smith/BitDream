@@ -180,8 +180,8 @@ private struct AccentColorPicker: View {
                                 .foregroundStyle(.tint)
                         }
                     }
+                    .foregroundStyle(.primary)
                 }
-                .buttonStyle(.plain)
             }
         }
         .navigationTitle("Accent Color")
@@ -217,8 +217,8 @@ private struct AppIconPickerView: View {
                             Image(systemName: "checkmark")
                         }
                     }
+                    .foregroundStyle(.primary)
                 }
-                .buttonStyle(.plain)
                 .disabled(appIconManager.isChanging)
             }
 
