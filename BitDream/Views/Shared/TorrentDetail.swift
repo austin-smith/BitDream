@@ -5,10 +5,17 @@ import Combine
 struct TorrentDetail: View {
     @ObservedObject var store: TransmissionStore
     var torrent: Torrent
+    #if os(iOS)
+    @State private var detailState = iOSTorrentDetailState()
+    #endif
 
     var body: some View {
         #if os(iOS)
-        iOSTorrentDetail(store: store, torrent: torrent)
+        iOSTorrentDetail(store: store, torrent: torrent, state: detailState)
+            .navigationDestination(for: iOSTorrentDetailRoute.self) { route in
+                iOSTorrentDetail(store: store, torrent: torrent, state: detailState, route: route)
+            }
+            .modifier(IOSTorrentDetailPresentation(store: store, torrent: torrent, state: detailState))
         #elseif os(macOS)
         macOSTorrentDetail(store: store, torrent: torrent)
         #endif

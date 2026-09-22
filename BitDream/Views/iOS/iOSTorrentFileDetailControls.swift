@@ -11,60 +11,74 @@ struct BulkActionToolbar: View {
     let setBulkPriority: ([Int], FilePriority) -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            Divider()
-
+        ViewThatFits(in: .horizontal) {
             HStack(spacing: 16) {
-                Text("\(selectedCount) selected")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-
+                selectionSummary
+                    .fixedSize(horizontal: true, vertical: false)
                 Spacer()
-
-                Button(selectedCount == allFileRows.count ? "Deselect All" : "Select All") {
-                    if selectedCount == allFileRows.count {
-                        selectedFileIds.removeAll()
-                    } else {
-                        selectedFileIds = Set(allFileRows.map { $0.id })
-                    }
-                }
-                .font(.subheadline)
-
-                Menu {
-                    Section("Status") {
-                        Button("Download") {
-                            setBulkWanted(true)
-                        }
-
-                        Button("Don't Download") {
-                            setBulkWanted(false)
-                        }
-                    }
-
-                    Section("Priority") {
-                        Button("High Priority") {
-                            setBulkPriority(.high)
-                        }
-
-                        Button("Normal Priority") {
-                            setBulkPriority(.normal)
-                        }
-
-                        Button("Low Priority") {
-                            setBulkPriority(.low)
-                        }
-                    }
-                } label: {
-                    Text("Actions")
-                        .font(.subheadline)
-                }
-                .iOSHapticControlActivation()
-                .disabled(selectedCount == 0)
+                selectAllButton
+                    .fixedSize(horizontal: true, vertical: false)
+                actionsMenu
+                    .fixedSize(horizontal: true, vertical: false)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(.background)
+
+            VStack(alignment: .leading, spacing: 12) {
+                selectionSummary
+                selectAllButton
+                actionsMenu
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .font(.subheadline)
+        .padding(.horizontal)
+        .padding(.vertical, 12)
+    }
+
+    private var selectionSummary: some View {
+        Text("\(selectedCount) selected")
+            .foregroundStyle(.secondary)
+    }
+
+    private var selectAllButton: some View {
+        Button(selectedCount == allFileRows.count ? "Deselect All" : "Select All") {
+            if selectedCount == allFileRows.count {
+                selectedFileIds.removeAll()
+            } else {
+                selectedFileIds = Set(allFileRows.map { $0.id })
+            }
+        }
+    }
+
+    private var actionsMenu: some View {
+        Menu {
+            Section("Status") {
+                Button("Download", systemImage: "arrow.down.circle") {
+                    setBulkWanted(true)
+                }
+
+                Button("Don't Download", systemImage: "xmark.circle") {
+                    setBulkWanted(false)
+                }
+            }
+
+            Section("Priority") {
+                Button("High Priority", systemImage: "arrow.up") {
+                    setBulkPriority(.high)
+                }
+
+                Button("Normal Priority", systemImage: "minus") {
+                    setBulkPriority(.normal)
+                }
+
+                Button("Low Priority", systemImage: "arrow.down") {
+                    setBulkPriority(.low)
+                }
+            }
+        } label: {
+            Label("Actions", systemImage: "checklist")
+        }
+        .iOSHapticControlActivation()
+        .disabled(selectedCount == 0)
     }
 
     private func setBulkPriority(_ priority: FilePriority) {
@@ -82,118 +96,54 @@ struct BulkActionToolbar: View {
     }
 }
 
-struct FileActionButtonsView: View {
+struct FileActionsToolbar: ToolbarContent {
     @Environment(\.hapticFeedback) private var hapticFeedback
 
     let hasActiveFilters: Bool
     @Binding var sortProperty: FileSortProperty
     @Binding var sortOrder: SortOrder
-    @Binding var isEditing: Bool
-    @Binding var selectedFileIds: Set<String>
     @Binding var showFilterSheet: Bool
 
-    var body: some View {
-        HStack(spacing: 12) {
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
             Button {
                 hapticFeedback.play(.actionTriggered)
                 showFilterSheet = true
             } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                    Text("Filter")
-                }
-                .font(.subheadline)
-                .foregroundColor(hasActiveFilters ? .white : .accentColor)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(hasActiveFilters ? Color.accentColor : Color.accentColor.opacity(0.1))
-                    .cornerRadius(16)
+                Label("Filter", systemImage: "line.3.horizontal.decrease")
             }
+            .if(hasActiveFilters) { button in
+                button.buttonStyle(.borderedProminent)
+            }
+            .accessibilityValue(hasActiveFilters ? "Filters active" : "All files")
+        }
 
+        ToolbarItem(placement: .topBarTrailing) {
             Menu {
-                ForEach(FileSortProperty.allCases, id: \.self) { property in
-                    Button {
-                        guard sortProperty != property else { return }
-                        sortProperty = property
-                        hapticFeedback.play(.selectionChanged)
-                    } label: {
-                        HStack {
-                            Text(property.rawValue)
-                            Spacer()
-                            if sortProperty == property {
-                                Image(systemName: "checkmark")
-                            }
-                        }
+                Picker("Sort By", selection: $sortProperty) {
+                    ForEach(FileSortProperty.allCases, id: \.self) { property in
+                        Text(property.rawValue).tag(property)
                     }
                 }
 
-                Divider()
-
-                Button {
-                    guard sortOrder != .ascending else { return }
-                    sortOrder = .ascending
-                    hapticFeedback.play(.selectionChanged)
-                } label: {
-                    HStack {
-                        Text("Ascending")
-                        Spacer()
-                        if sortOrder == .ascending {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-
-                Button {
-                    guard sortOrder != .descending else { return }
-                    sortOrder = .descending
-                    hapticFeedback.play(.selectionChanged)
-                } label: {
-                    HStack {
-                        Text("Descending")
-                        Spacer()
-                        if sortOrder == .descending {
-                            Image(systemName: "checkmark")
-                        }
-                    }
+                Picker("Order", selection: $sortOrder) {
+                    Text("Ascending").tag(SortOrder.ascending)
+                    Text("Descending").tag(SortOrder.descending)
                 }
             } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.up.arrow.down")
-                    Text("Sort")
-                }
-                .font(.subheadline)
-                .foregroundColor(.accentColor)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.accentColor.opacity(0.1))
-                .cornerRadius(16)
+                Label("Sort", systemImage: "arrow.up.arrow.down")
             }
-
-            Spacer()
-
-            Button {
-                withAnimation {
-                    isEditing.toggle()
-                    if !isEditing {
-                        selectedFileIds.removeAll()
-                    }
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: isEditing ? "checkmark" : "pencil")
-                    Text(isEditing ? "Done" : "Edit")
-                }
-                .font(.subheadline)
-                .foregroundColor(isEditing ? .white : .accentColor)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(isEditing ? Color.accentColor : Color.accentColor.opacity(0.1))
-                .cornerRadius(16)
+            .onChange(of: sortProperty) {
+                hapticFeedback.play(.selectionChanged)
+            }
+            .onChange(of: sortOrder) {
+                hapticFeedback.play(.selectionChanged)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(.background)
+
+        ToolbarItem(placement: .topBarTrailing) {
+            EditButton()
+        }
     }
 }
 
@@ -213,7 +163,7 @@ struct FilterSheet: View {
     @Binding var showOther: Bool
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 Section("Status") {
                     Toggle(FileStatus.wanted, isOn: $showWantedFiles)
@@ -247,15 +197,14 @@ struct FilterSheet: View {
                         showArchives = true
                         showOther = true
                     }
-                    .foregroundColor(.accentColor)
                     .disabled(!hasActiveFilters)
                 }
             }
             .navigationTitle("Filters")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done", systemImage: "checkmark") {
                         hapticFeedback.play(.actionTriggered)
                         dismiss()
                     }
@@ -314,17 +263,38 @@ private struct FileFilterSelection: Equatable {
 }
 
 #if DEBUG
-#Preview("iOS Torrent Files") {
+#Preview("Files at Accessibility Size") {
+    @Previewable @State var state = iOSTorrentFileState()
     PreviewContainer { environment in
         NavigationStack {
             iOSTorrentFileDetail(
                 files: PreviewFixtures.files,
                 fileStats: PreviewFixtures.fileStats,
                 torrentId: 1,
-                store: environment.store
+                store: environment.store,
+                state: state
             )
         }
+        .dynamicTypeSize(.accessibility3)
     }
+}
+
+#Preview("File Selection at Accessibility Size", traits: .fixedLayout(width: 320, height: 500)) {
+    @Previewable @State var selectedFileIds: Set<String> = []
+
+    List {
+        Text("File selection")
+    }
+    .safeAreaBar(edge: .bottom) {
+        BulkActionToolbar(
+            selectedCount: selectedFileIds.count,
+            selectedFileIds: $selectedFileIds,
+            allFileRows: [],
+            setBulkWanted: { _, _ in },
+            setBulkPriority: { _, _ in }
+        )
+    }
+    .dynamicTypeSize(.accessibility3)
 }
 #endif
 

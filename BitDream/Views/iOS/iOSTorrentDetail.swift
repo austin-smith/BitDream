@@ -3,23 +3,27 @@ import SwiftUI
 
 #if os(iOS)
 struct iOSTorrentDetail: View {
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.hapticFeedback) private var hapticFeedback
 
     @ObservedObject var store: TransmissionStore
     var torrent: Torrent
 
-    @StateObject private var supplementalStore = TorrentDetailSupplementalStore()
-    @State private var showingDeleteConfirmation = false
-    @State private var labelDialog = false
-    @State private var labelInput: String = ""
-    @State private var renameDialog = false
-    @State private var renameInput: String = ""
-    @State private var moveDialog = false
-    @State private var movePath: String = ""
-    @State private var moveShouldMove = true
-    @State private var showingError = false
-    @State private var errorMessage = ""
+    @ObservedObject private var supplementalStore: TorrentDetailSupplementalStore
+    @Bindable private var state: iOSTorrentDetailState
+    let route: iOSTorrentDetailRoute
+
+    init(
+        store: TransmissionStore,
+        torrent: Torrent,
+        state: iOSTorrentDetailState,
+        route: iOSTorrentDetailRoute = .overview
+    ) {
+        self.store = store
+        self.torrent = torrent
+        self.state = state
+        self.supplementalStore = state.supplementalStore
+        self.route = route
+    }
 
     private var supplementalPayload: TorrentDetailSupplementalPayload {
         supplementalStore.payload(for: supplementalIdentity)
@@ -41,167 +45,121 @@ struct iOSTorrentDetail: View {
         supplementalStore.replaceLoad(
             for: supplementalIdentity,
             using: store,
-            showingError: $showingError,
-            errorMessage: $errorMessage
+            showingError: $state.showingError,
+            errorMessage: $state.errorMessage
         )
     }
 
     var body: some View {
+        Group {
+            switch route {
+            case .overview:
+                overview
+            case .files:
+                filesDestination
+            case .peers:
+                peersDestination
+            }
+        }
+        .task(id: supplementalIdentity) {
+            guard route == .overview else { return }
+            await supplementalStore.observeRefreshes(
+                for: supplementalIdentity,
+                using: store,
+                showingInitialLoadError: $state.showingError,
+                errorMessage: $state.errorMessage
+            )
+        }
+        .toolbar {
+            if route == .overview { detailToolbar }
+        }
+
+    }
+
+    private var overview: some View {
         let details = formatTorrentDetails(torrent: torrent)
         let piecesSectionState = TorrentPiecesSectionState.resolve(
             status: supplementalStore.status,
             payload: supplementalPayload,
             shouldDisplayPayload: shouldDisplaySupplementalPayload
         )
-
-        IOSTorrentDetailContent(
+        return IOSTorrentDetailContent(
             torrent: torrent,
             details: details,
             supplementalPayload: supplementalPayload,
             piecesSectionState: piecesSectionState,
-            filesDestination: filesDestination,
-            peersDestination: peersDestination,
             onDelete: {
                 hapticFeedback.play(.actionTriggered)
-                showingDeleteConfirmation = true
+                state.showingDeleteConfirmation = true
             },
             onRetryPiecesLoad: {
                 replaceSupplementalLoad()
             }
         )
-        .task(id: supplementalIdentity) {
-            await supplementalStore.observeRefreshes(
-                for: supplementalIdentity,
-                using: store,
-                showingInitialLoadError: $showingError,
-                errorMessage: $errorMessage
-            )
-        }
-        .toolbar {
-            detailToolbar
-        }
-        .alert("Delete Torrent", isPresented: $showingDeleteConfirmation) {
-            Button(role: .destructive) {
-                performDelete(deleteLocalData: true)
-            } label: {
-                Text("Delete file(s)")
-            }
-            Button("Remove from list only") {
-                performDelete(deleteLocalData: false)
-            }
-            Button("Cancel", role: .cancel) {
-                hapticFeedback.play(.actionTriggered)
-            }
-        } message: {
-            Text("Do you want to delete the file(s) from the disk?")
-        }
-        .transmissionErrorAlert(isPresented: $showingError, message: errorMessage)
-        .sheet(isPresented: $renameDialog, content: renameSheet)
-        .sheet(isPresented: $moveDialog, content: moveSheet)
-        .sheet(isPresented: $labelDialog, content: labelSheet)
+        .navigationTitle("Torrent Details")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func performDelete(deleteLocalData: Bool) {
-        hapticFeedback.play(.actionTriggered)
-        performTransmissionAction(
-            operation: {
-                try await store.removeTorrents(
-                    ids: [torrent.id],
-                    deleteLocalData: deleteLocalData
-                )
-            },
-            onSuccess: {
-                hapticFeedback.play(.operationSucceeded)
-                dismiss()
-            },
+    @ToolbarContentBuilder
+    private var detailToolbar: some ToolbarContent {
+        if #available(iOS 27, *) {
+            ToolbarOverflowMenu {
+                torrentActions
+            }
+        } else {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu("Torrent Actions", systemImage: "ellipsis") {
+                    torrentActions
+                }
+                .iOSHapticControlActivation()
+            }
+        }
+    }
+
+    private var torrentActions: some View {
+        IOSTorrentActionsMenu(
+            torrent: torrent,
+            store: store,
+            onShowMove: showMoveDialog,
+            onShowRename: showRenameDialog,
+            onShowLabels: showLabelDialog,
+            onShowDelete: showDeleteDialog,
             onError: presentError
         )
     }
 
-    private var detailToolbar: some ToolbarContent {
-        ToolbarItem {
-            Menu {
-                IOSTorrentActionsMenu(
-                    torrent: torrent,
-                    store: store,
-                    onShowMove: showMoveDialog,
-                    onShowRename: showRenameDialog,
-                    onShowLabels: showLabelDialog,
-                    onShowDelete: showDeleteDialog,
-                    onError: presentError
-                )
-            } label: {
-                Image(systemName: "ellipsis")
-            }
-            .iOSHapticControlActivation()
-        }
-    }
-
-    private func renameSheet() -> some View {
-        NavigationStack {
-            IOSTorrentRenameSheet(
-                torrent: torrent,
-                store: store,
-                renameInput: $renameInput,
-                isPresented: $renameDialog,
-                onError: presentError
-            )
-        }
-    }
-
-    private func moveSheet() -> some View {
-        NavigationStack {
-            IOSTorrentMoveSheet(
-                torrent: torrent,
-                store: store,
-                movePath: $movePath,
-                moveShouldMove: $moveShouldMove,
-                isPresented: $moveDialog,
-                onError: presentError
-            )
-        }
-    }
-
-    private func labelSheet() -> some View {
-        NavigationStack {
-            iOSLabelEditView(
-                labelInput: $labelInput,
-                existingLabels: torrent.labels,
-                store: store,
-                torrentId: torrent.id
-            )
-        }
-    }
-
     private func showRenameDialog() {
         hapticFeedback.play(.actionTriggered)
-        renameInput = torrent.name
-        renameDialog = true
+        state.renameInput = torrent.name
+        state.renameDialog = true
     }
 
     private func showMoveDialog() {
         hapticFeedback.play(.actionTriggered)
-        movePath = store.defaultDownloadDir
-        moveDialog = true
+        state.movePath = store.defaultDownloadDir
+        state.moveDialog = true
     }
 
     private func showLabelDialog() {
         hapticFeedback.play(.actionTriggered)
-        labelInput = torrent.labels.joined(separator: ", ")
-        labelDialog = true
+        state.labelInput = torrent.labels.joined(separator: ", ")
+        state.labelDialog = true
     }
 
     private func showDeleteDialog() {
         hapticFeedback.play(.actionTriggered)
-        showingDeleteConfirmation = true
+        state.showingDeleteConfirmation = true
     }
 
     private func presentError(_ error: String) {
         hapticFeedback.play(.operationFailed)
-        errorMessage = error
-        showingError = true
+        state.errorMessage = error
+        state.showingError = true
     }
 
+}
+
+extension iOSTorrentDetail {
     @MainActor
     private func applyCommittedFileStatsMutation(
         fileIndices: [Int],
@@ -222,6 +180,7 @@ struct iOSTorrentDetail: View {
                 fileStats: supplementalPayload.fileStats,
                 torrentId: torrent.id,
                 store: store,
+                state: state.files,
                 onCommittedFileStatsMutation: { fileIndices, mutation in
                     applyCommittedFileStatsMutation(
                         fileIndices: fileIndices,
@@ -237,7 +196,7 @@ struct iOSTorrentDetail: View {
                 loadingMessage: "Fetching the latest files for this torrent.",
                 unavailableTitle: "Files Unavailable",
                 unavailableMessage: "The latest file details could not be loaded.",
-                onLoadIfIdle: { await supplementalStore.loadIfIdle(for: supplementalIdentity, using: store, showingError: $showingError, errorMessage: $errorMessage) },
+                onLoadIfIdle: { @MainActor in await supplementalStore.loadIfIdle(for: supplementalIdentity, using: store, showingError: $state.showingError, errorMessage: $state.errorMessage) },
                 onRetry: { replaceSupplementalLoad() }
             )
             .navigationTitle("Files")
@@ -254,8 +213,8 @@ struct iOSTorrentDetail: View {
                 store: store,
                 peers: supplementalPayload.peers,
                 peersFrom: supplementalPayload.peersFrom,
-                onRefresh: { await supplementalStore.load(for: supplementalIdentity, using: store, showingError: $showingError, errorMessage: $errorMessage) },
-                onDone: { /* no-op in push */ }
+                onRefresh: { await supplementalStore.load(for: supplementalIdentity, using: store, showingError: $state.showingError, errorMessage: $state.errorMessage) },
+                searchText: $state.peerSearchText
             )
             .navigationBarTitleDisplayMode(.inline)
         } else {
@@ -265,7 +224,7 @@ struct iOSTorrentDetail: View {
                 loadingMessage: "Fetching the latest peers for this torrent.",
                 unavailableTitle: "Peers Unavailable",
                 unavailableMessage: "The latest peer details could not be loaded.",
-                onLoadIfIdle: { await supplementalStore.loadIfIdle(for: supplementalIdentity, using: store, showingError: $showingError, errorMessage: $errorMessage) },
+                onLoadIfIdle: { @MainActor in await supplementalStore.loadIfIdle(for: supplementalIdentity, using: store, showingError: $state.showingError, errorMessage: $state.errorMessage) },
                 onRetry: { replaceSupplementalLoad() }
             )
             .navigationTitle("Peers")
@@ -274,13 +233,108 @@ struct iOSTorrentDetail: View {
     }
 }
 
-private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination: View>: View {
+// Presentation lives above the adaptive navigation containers so folding cannot
+// dismiss an editor or discard its draft.
+struct IOSTorrentDetailPresentation: ViewModifier {
+    @Environment(\.hapticFeedback) private var hapticFeedback
+    let store: TransmissionStore
+    let torrent: Torrent?
+    @Bindable var state: iOSTorrentDetailState
+
+    func body(content: Content) -> some View {
+        content
+        .alert("Delete Torrent", isPresented: $state.showingDeleteConfirmation) {
+            Button(role: .destructive) {
+                performDelete(deleteLocalData: true)
+            } label: {
+                Text("Delete file(s)")
+            }
+            Button("Remove from list only") {
+                performDelete(deleteLocalData: false)
+            }
+            Button("Cancel", role: .cancel) {
+                hapticFeedback.play(.actionTriggered)
+            }
+        } message: {
+            Text("Do you want to delete the file(s) from the disk?")
+        }
+        .transmissionErrorAlert(isPresented: $state.showingError, message: state.errorMessage)
+        .sheet(isPresented: $state.renameDialog, content: renameSheet)
+        .sheet(isPresented: $state.moveDialog, content: moveSheet)
+        .sheet(isPresented: $state.labelDialog, content: labelSheet)
+    }
+
+    private func performDelete(deleteLocalData: Bool) {
+        guard let torrent else { return }
+        hapticFeedback.play(.actionTriggered)
+        performTransmissionAction(
+            operation: {
+                try await store.removeTorrents(
+                    ids: [torrent.id],
+                    deleteLocalData: deleteLocalData
+                )
+            },
+            onSuccess: {
+                hapticFeedback.play(.operationSucceeded)
+            },
+            onError: presentError
+        )
+    }
+
+    private func renameSheet() -> some View {
+        NavigationStack {
+            if let torrent {
+                IOSTorrentRenameSheet(
+                    torrent: torrent,
+                    store: store,
+                    renameInput: $state.renameInput,
+                    isPresented: $state.renameDialog,
+                    onError: presentError
+                )
+            }
+        }
+    }
+
+    private func moveSheet() -> some View {
+        NavigationStack {
+            if let torrent {
+                IOSTorrentMoveSheet(
+                    torrent: torrent,
+                    store: store,
+                    movePath: $state.movePath,
+                    moveShouldMove: $state.moveShouldMove,
+                    isPresented: $state.moveDialog,
+                    onError: presentError
+                )
+            }
+        }
+    }
+
+    private func labelSheet() -> some View {
+        NavigationStack {
+            if let torrent {
+                iOSLabelEditView(
+                    labelInput: $state.labelInput,
+                    existingLabels: torrent.labels,
+                    store: store,
+                    torrentId: torrent.id
+                )
+            }
+        }
+    }
+
+    private func presentError(_ message: String) {
+        hapticFeedback.play(.operationFailed)
+        state.errorMessage = message
+        state.showingError = true
+    }
+}
+
+private struct IOSTorrentDetailContent: View {
     let torrent: Torrent
     let details: TorrentDetailsDisplay
     let supplementalPayload: TorrentDetailSupplementalPayload
     let piecesSectionState: TorrentPiecesSectionState
-    let filesDestination: FilesDestination
-    let peersDestination: PeersDestination
     let onDelete: () -> Void
     let onRetryPiecesLoad: () -> Void
 
@@ -310,10 +364,7 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
                             .foregroundColor(.gray)
                     }
 
-                    NavigationLink {
-                        filesDestination
-                            .iOSHapticNavigationTransition()
-                    } label: {
+                    NavigationLink(value: iOSTorrentDetailRoute.files) {
                         LabeledContent(
                             "Files",
                             value: NumberFormatter.localizedString(
@@ -323,10 +374,7 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
                         )
                     }
 
-                    NavigationLink {
-                        peersDestination
-                            .iOSHapticNavigationTransition()
-                    } label: {
+                    NavigationLink(value: iOSTorrentDetailRoute.peers) {
                         LabeledContent("Peers", value: "\(supplementalPayload.peers.count)")
                     }
                 }
@@ -524,7 +572,9 @@ private struct IOSTorrentPiecesMessageView: View {
 #if os(iOS) && DEBUG
 #Preview("iOS Torrent Detail") {
     PreviewContainer { environment in
-        iOSTorrentDetail(store: environment.store, torrent: PreviewFixtures.torrents[0])
+        NavigationStack {
+            TorrentDetail(store: environment.store, torrent: PreviewFixtures.torrents[0])
+        }
     }
 }
 #endif

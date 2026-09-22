@@ -128,6 +128,9 @@ func fileExtension(from filename: String) -> String {
 /// Platform-agnostic wrapper for TorrentFileDetail
 /// This view simply delegates to the appropriate platform-specific implementation
 struct TorrentFileDetail: View {
+    #if os(iOS)
+    @State private var fileState = iOSTorrentFileState()
+    #endif
     let files: [TorrentFile]
     let fileStats: [TorrentFileStats]
     let torrentId: Int
@@ -155,6 +158,7 @@ struct TorrentFileDetail: View {
             fileStats: fileStats,
             torrentId: torrentId,
             store: store,
+            state: fileState,
             onCommittedFileStatsMutation: onCommittedFileStatsMutation
         )
         #elseif os(macOS)

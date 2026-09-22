@@ -8,6 +8,8 @@ struct iOSTorrentListRow: View {
     var torrent: Torrent
     var store: TransmissionStore
     var showContentTypeIcons: Bool
+    var isSelected = false
+    var onInspect: () -> Void = {}
 
     @State private var deleteDialog: Bool = false
     @State private var labelDialog: Bool = false
@@ -21,9 +23,12 @@ struct iOSTorrentListRow: View {
     @State private var errorMessage = ""
 
     var body: some View {
-        NavigationLink(value: iOSNavigationRoute.torrent(torrent.id)) {
+        Button(action: onInspect) {
             paddedRowContent
         }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .listRowBackground(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
         .swipeActions(edge: .trailing) {
             swipeActions
         }
@@ -78,7 +83,7 @@ struct iOSTorrentListRow: View {
                 }
 
                 createStatusView(for: torrent)
-                    .font(.custom("sub", size: 10))
+                    .font(.caption)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
                     .foregroundColor(.secondary)
 
@@ -86,7 +91,7 @@ struct iOSTorrentListRow: View {
                     .tint(progressColorForTorrent(torrent))
 
                 Text(formatTorrentSubtext(torrent))
-                    .font(.custom("sub", size: 10))
+                    .font(.caption)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
                     .foregroundColor(.secondary)
