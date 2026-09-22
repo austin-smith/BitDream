@@ -26,7 +26,7 @@ struct iOSTorrentPeerDetail: View {
     }
 
     var body: some View {
-        NavigationStack {
+        Group {
             if filteredPeers.isEmpty {
                 VStack(spacing: 12) {
                     Text(peers.isEmpty ? "No peers yet" : "No results")
@@ -123,6 +123,7 @@ private struct PeerRowCard: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(peer.address):\(peer.port)")
+                        .accessibilityIdentifier("peer-address-\(peer.address)")
                         .font(.system(.subheadline, design: .monospaced))
                         .foregroundColor(.primary)
                     Text(peer.clientName)
@@ -195,15 +196,17 @@ struct iOSTorrentPeerDetail: View {
 #if os(iOS) && DEBUG
 #Preview("iOS Torrent Peers") {
     PreviewContainer { environment in
-        iOSTorrentPeerDetail(
-            torrentName: PreviewFixtures.torrents[0].name,
-            torrentId: PreviewFixtures.torrents[0].id,
-            store: environment.store,
-            peers: PreviewFixtures.peers,
-            peersFrom: PreviewFixtures.peersFrom,
-            onRefresh: { .succeeded },
-            onDone: {}
-        )
+        NavigationStack {
+            iOSTorrentPeerDetail(
+                torrentName: PreviewFixtures.torrents[0].name,
+                torrentId: PreviewFixtures.torrents[0].id,
+                store: environment.store,
+                peers: PreviewFixtures.peers,
+                peersFrom: PreviewFixtures.peersFrom,
+                onRefresh: { .succeeded },
+                onDone: {}
+            )
+        }
     }
 }
 #endif

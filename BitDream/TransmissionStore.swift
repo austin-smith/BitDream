@@ -170,6 +170,7 @@ final class TransmissionStore: NSObject, ObservableObject {
     private let snapshotWriter: WidgetSnapshotWriter
     private let sleep: @Sendable (TimeInterval) async throws -> Void
     private let monotonicTime: @Sendable () -> TimeInterval
+    private let wallTime: @Sendable () -> Date
     private let torrentDetailRefreshInterval: TimeInterval
     private let persistVersion: @MainActor @Sendable (String, String) async -> Void
     private let userDefaults: UserDefaults
@@ -195,7 +196,7 @@ final class TransmissionStore: NSObject, ObservableObject {
     }
 
     init(
-        connectionFactory: TransmissionConnectionFactory = TransmissionConnectionFactory(),
+        connectionFactory: TransmissionConnectionFactory? = nil,
         resolveConnection: (@Sendable (TransmissionConnectionDescriptor) async throws -> TransmissionConnection)? = nil,
         snapshotWriter: WidgetSnapshotWriter = .live,
         sleep: @escaping @Sendable (TimeInterval) async throws -> Void = TransmissionStore.liveSleep,
@@ -211,7 +212,8 @@ final class TransmissionStore: NSObject, ObservableObject {
         },
         persistVersion: @escaping @MainActor @Sendable (String, String) async -> Void = { serverID, version in
             await HostRepository.shared.persistVersionIfNeeded(serverID: serverID, version: version)
-        }
+        },
+        wallTime: @escaping @Sendable () -> Date = { Date() }
     ) {
         let initialConnectionGeneration = UUID()
         self.currentConnectionGeneration = initialConnectionGeneration
@@ -220,12 +222,16 @@ final class TransmissionStore: NSObject, ObservableObject {
             connectionGeneration: initialConnectionGeneration,
             revision: 0
         )
-        self.resolveConnection = resolveConnection ?? { descriptor in
-            try await connectionFactory.connection(for: descriptor)
+        if let resolveConnection {
+            self.resolveConnection = resolveConnection
+        } else {
+            let factory = connectionFactory ?? TransmissionConnectionFactory()
+            self.resolveConnection = { descriptor in try await factory.connection(for: descriptor) }
         }
         self.snapshotWriter = snapshotWriter
         self.sleep = sleep
         self.monotonicTime = monotonicTime
+        self.wallTime = wallTime
         self.torrentDetailRefreshInterval = max(1, torrentDetailRefreshInterval)
         self.userDefaults = userDefaults
         self.automaticallyRetriesConnection = automaticallyRetriesConnection
@@ -587,7 +593,7 @@ extension TransmissionStore {
         if connectionStatus != .connected { logger.debug("Connection established; polling snapshot received") }
         resetReconnectState()
         connectionState = .connected
-        lastRefreshAt = Date()
+        lastRefreshAt = wallTime()
     }
 
     func retryNow() {
@@ -609,7 +615,7 @@ extension TransmissionStore {
     func handleConnectionError(_ error: TransmissionError) {
         if case .cancelled = error { return }
         logger.debug("Connection attempt failed: \(error.diagnosticCode, privacy: .public)")
-        let now = Date()
+        let now = wallTime()
         let wasReconnecting = connectionStatus == .reconnecting
         let pendingRetry = nextRetryAt
         guard error.permitsAutomaticRetry else {
@@ -988,7 +994,7 @@ extension TransmissionStore {
     private func scheduleRetryTask(after delay: TimeInterval, generation: UUID) {
         cancelRetryTask()
         guard let failure = connectionState.failure else { return }
-        connectionState = .failed(failure, retryAt: Date().addingTimeInterval(delay))
+        connectionState = .failed(failure, retryAt: wallTime().addingTimeInterval(delay))
 
         retryTask = Task { @MainActor [weak self] in
             guard let self else { return }

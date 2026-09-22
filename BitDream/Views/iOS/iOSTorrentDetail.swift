@@ -322,6 +322,8 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
                             )
                         )
                     }
+                    .accessibilityIdentifier("torrent-detail-files")
+                    .accessibilityValue("\(supplementalPayload.files.count) files")
 
                     NavigationLink {
                         peersDestination
@@ -329,6 +331,7 @@ private struct IOSTorrentDetailContent<FilesDestination: View, PeersDestination:
                     } label: {
                         LabeledContent("Peers", value: "\(supplementalPayload.peers.count)")
                     }
+                    .accessibilityIdentifier("torrent-detail-peers")
                 }
 
                 Section(header: Text("Stats")) {

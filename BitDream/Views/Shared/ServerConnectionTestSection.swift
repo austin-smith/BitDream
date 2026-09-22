@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ServerConnectionTestSection: View {
+    @Environment(\.serverServices) private var services
     @Bindable var form: ServerFormModel
     @State private var requestedValues: ServerFormModel.Values?
     @State private var result: String?
@@ -39,7 +40,7 @@ struct ServerConnectionTestSection: View {
                     credentialSource: .resolvedPassword(values.password),
                     connectionRoute: values.connectionRoute, tailscaleAccountID: values.tailscaleAccountID
                 )
-                let response = try await ServerConnectionTester.test(descriptor)
+                let response = try await services.testConnection(descriptor)
                 try Task.checkCancellation()
                 result = "Connected to Transmission \(response.version)."
             } catch {

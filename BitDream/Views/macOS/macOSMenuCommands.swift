@@ -300,6 +300,12 @@ struct ViewCommands: Commands {
     @AppStorage(UserDefaultsKeys.torrentListCompactMode) private var isCompactMode: Bool = false
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons: Bool = true
 
+    init(store: TransmissionStore, userDefaults: UserDefaults = .standard) {
+        self.store = store
+        _isCompactMode = AppStorage(wrappedValue: false, UserDefaultsKeys.torrentListCompactMode, store: userDefaults)
+        _showContentTypeIcons = AppStorage(wrappedValue: true, UserDefaultsKeys.showContentTypeIcons, store: userDefaults)
+    }
+
     var body: some Commands {
         CommandGroup(after: .toolbar) {
             Divider()

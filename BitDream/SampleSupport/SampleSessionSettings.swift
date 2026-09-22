@@ -1,0 +1,50 @@
+#if BITDREAM_SAMPLE_SUPPORT
+import Foundation
+
+extension SampleFixtures {
+    static let sessionConfiguration = TransmissionSessionResponseArguments(
+        downloadDir: SampleLibrary.downloadDirectory,
+        version: "4.0.6",
+        speedLimitDown: 50_000,
+        speedLimitDownEnabled: false,
+        speedLimitUp: 10_000,
+        speedLimitUpEnabled: true,
+        altSpeedDown: 5_000,
+        altSpeedUp: 1_000,
+        altSpeedEnabled: false,
+        altSpeedTimeBegin: 480,
+        altSpeedTimeEnd: 1_020,
+        altSpeedTimeEnabled: true,
+        altSpeedTimeDay: 127,
+        incompleteDir: SampleLibrary.downloadDirectory + "/Incomplete",
+        incompleteDirEnabled: true,
+        startAddedTorrents: true,
+        trashOriginalTorrentFiles: false,
+        renamePartialFiles: true,
+        downloadQueueEnabled: true,
+        downloadQueueSize: 5,
+        seedQueueEnabled: true,
+        seedQueueSize: 10,
+        seedRatioLimited: true,
+        seedRatioLimit: 2,
+        idleSeedingLimit: 30,
+        idleSeedingLimitEnabled: false,
+        queueStalledEnabled: true,
+        queueStalledMinutes: 30,
+        peerPort: 51_413,
+        peerPortRandomOnStart: false,
+        portForwardingEnabled: true,
+        dhtEnabled: true,
+        pexEnabled: true,
+        lpdEnabled: false,
+        encryption: "preferred",
+        utpEnabled: true,
+        peerLimitGlobal: 200,
+        peerLimitPerTorrent: 50,
+        blocklistEnabled: true,
+        blocklistSize: 124_806,
+        blocklistUrl: "https://example.com/blocklist",
+        defaultTrackers: ""
+    )
+}
+#endif

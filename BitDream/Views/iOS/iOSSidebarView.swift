@@ -59,7 +59,7 @@ struct iOSSidebarView: View {
                     }
                     SidebarRow(
                         title: "Add Server",
-                        systemImage: "plus.circle.fill",
+                        systemImage: "plus",
                         isAction: true,
                         action: onAddServer
                     )

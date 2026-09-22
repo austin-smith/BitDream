@@ -7,6 +7,7 @@ enum ConnectionRetryTextStyle {
 }
 
 struct ConnectionRetryStatusView: View {
+    @Environment(\.presentationDate) private var presentationDate
     let state: TransmissionConnectionState
 
     var body: some View {
@@ -16,7 +17,7 @@ struct ConnectionRetryStatusView: View {
                 Text("Retrying…")
             case .failed(_, let retryAt?):
                 TimelineView(.periodic(from: .now, by: 1)) { context in
-                    Text(connectionRetryText(status: .reconnecting, retryAt: retryAt, at: context.date))
+                    Text(connectionRetryText(status: .reconnecting, retryAt: retryAt, at: presentationDate ?? context.date))
                         .monospacedDigit()
                 }
             default:

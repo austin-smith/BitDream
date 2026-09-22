@@ -131,7 +131,7 @@ final class ServerFormModel {
     }
 
     /// Loads the form from the given host, or prepares defaults for a new server.
-    func configure(host: Host?, store: TransmissionStore) {
+    func configure(host: Host?, store: TransmissionStore, readPassword: @MainActor (Host) -> String = ServerServices.live.readPassword) {
         self.host = host
         tailscaleAddressEntry = .inferred
 
@@ -141,7 +141,7 @@ final class ServerFormModel {
                 address: host.server ?? "",
                 port: Int(host.port),
                 username: host.username ?? "",
-                password: storedPassword(for: host),
+                password: readPassword(host),
                 isDefault: host.isDefault,
                 isSSL: host.isSSL,
                 connectionRoute: host.connectionRoute ?? "system",
@@ -207,8 +207,4 @@ final class ServerFormModel {
         return .saved(savedHost)
     }
 
-    private func storedPassword(for host: Host) -> String {
-        guard let credentialKey = KeychainService.credentialKeyIfPresent(for: host) else { return "" }
-        return KeychainService.readPassword(credentialKey: credentialKey)
-    }
 }

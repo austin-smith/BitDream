@@ -11,6 +11,7 @@ private enum macOSServerFormFocusField: Hashable {
 }
 
 struct macOSServerEditor: View {
+    @Environment(\.serverServices) private var services
     @Environment(\.hostRepositoryProvider) private var hostRepositoryProvider
     @ObservedObject var store: TransmissionStore
     let hosts: [Host]
@@ -162,7 +163,7 @@ struct macOSServerEditor: View {
     }
 
     private func configureModel() {
-        model.configure(host: host, store: store)
+        model.configure(host: host, store: store, readPassword: services.readPassword)
         if isAddNew {
             focusedField = .address
         }
