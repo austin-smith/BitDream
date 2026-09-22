@@ -20,7 +20,8 @@ def main():
     options = parser.parse_args()
     root = pathlib.Path(__file__).resolve().parent.parent
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    output = (options.output or root / ".build" / "screenshots" / stamp).resolve()
+    platform = "ios" if "platform=iOS" in options.destination else "macos"
+    output = (options.output or root / ".build" / "screenshots" / f"{stamp}-{platform}").resolve()
     output.mkdir(parents=True, exist_ok=False)
     result = output / "capture.xcresult"
     exports = output / "attachments"

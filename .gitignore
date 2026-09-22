@@ -16,6 +16,7 @@ xcuserdata/
 build/
 .build/
 .derivedData/
+__pycache__/
 
 # macOS custom folder icon
 Icon[^a-zA-Z]
