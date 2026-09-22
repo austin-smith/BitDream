@@ -7,28 +7,9 @@
       "layers" : [
         {
           "glass" : false,
-          "hidden" : true,
-          "image-name" : "pixely-clouds.png",
-          "name" : "pixely-clouds"
-        },
-        {
-          "glass" : false,
           "hidden" : false,
           "image-name" : "cloudy-day.svg",
           "name" : "cloudy-day",
-          "position" : {
-            "scale" : 0.8,
-            "translation-in-points" : [
-              0,
-              0
-            ]
-          }
-        },
-        {
-          "glass" : false,
-          "hidden" : true,
-          "image-name" : "pixely-clouds-3.png",
-          "name" : "pixely-clouds-3",
           "position" : {
             "scale" : 0.8,
             "translation-in-points" : [
