@@ -14,7 +14,9 @@ extension UserDefaults {
         static let showContentTypeIcons = UserDefaultsKeys.showContentTypeIcons
     }
 
-    static func registerViewStateDefaults() {
+    static func registerViewStateDefaults() { UserDefaults.standard.registerViewStateDefaults() }
+
+    func registerViewStateDefaults() {
         let defaults: [String: Any] = [
             Keys.sidebarVisibility: true, // true = show sidebar (.all), false = hide sidebar (.detailOnly)
             Keys.inspectorVisibility: true,
@@ -24,7 +26,7 @@ extension UserDefaults {
             Keys.showContentTypeIcons: true // true = show icons, false = hide icons
         ]
 
-        UserDefaults.standard.register(defaults: defaults)
+        register(defaults: defaults)
     }
 
     var sidebarVisibility: NavigationSplitViewVisibility {
@@ -85,9 +87,9 @@ struct ContentView: View {
 
 // Helper function to set up the host
 @MainActor
-func applyStartupConnectionBehavior(hosts: [Host], store: TransmissionStore) {
+func applyStartupConnectionBehavior(hosts: [Host], store: TransmissionStore, userDefaults: UserDefaults = .standard) {
     // Read behavior from UserDefaults (fallback to default)
-    let behaviorRaw = UserDefaults.standard.string(forKey: UserDefaultsKeys.startupConnectionBehavior) ?? AppDefaults.startupConnectionBehavior.rawValue
+    let behaviorRaw = userDefaults.string(forKey: UserDefaultsKeys.startupConnectionBehavior) ?? AppDefaults.startupConnectionBehavior.rawValue
     let behavior = StartupConnectionBehavior(rawValue: behaviorRaw) ?? AppDefaults.startupConnectionBehavior
 
     func connectToDefaultOrFirst() -> Bool {
@@ -104,13 +106,13 @@ func applyStartupConnectionBehavior(hosts: [Host], store: TransmissionStore) {
 
     switch behavior {
     case .lastUsed:
-        if let savedHostID = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedHost),
+        if let savedHostID = userDefaults.string(forKey: UserDefaultsKeys.selectedHost),
            !savedHostID.isEmpty {
             if let savedHost = hosts.first(where: { $0.serverID == savedHostID }) {
                 store.setHost(host: savedHost)
                 return
             }
-            UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.selectedHost)
+            userDefaults.removeObject(forKey: UserDefaultsKeys.selectedHost)
         }
         if connectToDefaultOrFirst() { return }
         store.setup = true
@@ -122,7 +124,7 @@ func applyStartupConnectionBehavior(hosts: [Host], store: TransmissionStore) {
 }
 
 @MainActor
-func ensureStartupConnectionBehaviorApplied(store: TransmissionStore, modelContext: ModelContext) {
+func ensureStartupConnectionBehaviorApplied(store: TransmissionStore, modelContext: ModelContext, userDefaults: UserDefaults = .standard) {
     guard store.host == nil else { return }
 
     let descriptor = FetchDescriptor<Host>(
@@ -138,7 +140,7 @@ func ensureStartupConnectionBehaviorApplied(store: TransmissionStore, modelConte
         hosts = []
     }
 
-    applyStartupConnectionBehavior(hosts: hosts, store: store)
+    applyStartupConnectionBehavior(hosts: hosts, store: store, userDefaults: userDefaults)
 }
 
 // MARK: - Shared Views

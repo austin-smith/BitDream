@@ -27,20 +27,7 @@ struct SessionOverviewProvider: AppIntentTimelineProvider {
     }
 
     private func makeGalleryPreviewSnapshot() -> SessionOverviewSnapshot {
-        SessionOverviewSnapshot(
-            serverId: "preview",
-            serverName: "Home Server",
-            active: 3,
-            paused: 2,
-            total: 15,
-            totalCount: 15,
-            downloadingCount: 3,
-            completedCount: 10,
-            downloadSpeed: Int64(2_400_000),
-            uploadSpeed: Int64(850_000),
-            ratio: 1.25,
-            timestamp: .now
-        )
+        SampleLibrary.widgetSnapshot(timestamp: .now)
     }
 
     private func makeGalleryPreviewEntry() -> Entry {

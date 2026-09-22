@@ -91,7 +91,6 @@ struct macOSContentDetail: View {
                     store: store,
                     showContentTypeIcons: showContentTypeIcons
                 )
-                .focusable(true)
                 .focused(focusedTarget, equals: .contentList)
             } else {
                 List(selection: $selectedTorrentIds) {
@@ -108,7 +107,6 @@ struct macOSContentDetail: View {
                 }
                 .listStyle(.plain)
                 .tint(accentColor)
-                .focusable(true)
                 .focused(focusedTarget, equals: .contentList)
             }
         }

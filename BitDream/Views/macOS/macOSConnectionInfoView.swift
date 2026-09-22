@@ -2,6 +2,7 @@ import SwiftUI
 
 #if os(macOS)
 struct macOSConnectionInfoView: View {
+    @Environment(\.presentationDate) private var presentationDate
     @EnvironmentObject var store: TransmissionStore
 
     var body: some View {
@@ -54,7 +55,7 @@ struct macOSConnectionInfoView: View {
             Text("Next Retry")
             Spacer(minLength: 16)
             TimelineView(.periodic(from: .now, by: 1)) { context in
-                Text(connectionRetryText(status: store.connectionStatus, retryAt: store.nextRetryAt, at: context.date, style: .compact))
+                Text(connectionRetryText(status: store.connectionStatus, retryAt: store.nextRetryAt, at: presentationDate ?? context.date, style: .compact))
                     .font(.system(.body, design: .monospaced))
                     .foregroundColor(.secondary)
             }
@@ -70,9 +71,15 @@ struct macOSConnectionInfoView: View {
             Text("Last Refresh")
             Spacer(minLength: 16)
             if let date = store.lastRefreshAt {
-                Text(date, style: .relative)
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundColor(.secondary)
+                Group {
+                    if let presentationDate {
+                        Text("\(max(0, Int(presentationDate.timeIntervalSince(date)))) seconds ago")
+                    } else {
+                        Text(date, style: .relative)
+                    }
+                }
+                .font(.system(.body, design: .monospaced))
+                .foregroundStyle(.secondary)
             } else {
                 Text("-")
                     .font(.system(.body, design: .monospaced))

@@ -63,6 +63,7 @@ struct macOSTorrentPeerDetail: View {
                 Table(peers) {
                     TableColumn("IP") { peer in
                         Text("\(peer.address):\(peer.port)")
+                            .accessibilityIdentifier("peer-address-\(peer.address)")
                             .font(.system(.caption, design: .monospaced))
                     }
                     TableColumn("Client") { peer in

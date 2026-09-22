@@ -66,6 +66,7 @@ final class TailscaleSetupModel {
 }
 
 struct TailscaleConnectionSection: View {
+    @Environment(\.serverServices) private var services
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
     @Bindable var form: ServerFormModel
@@ -85,7 +86,7 @@ struct TailscaleConnectionSection: View {
         Section {
             Picker("Connect using", selection: $form.values.connectionRoute) {
                 Text("System Network").tag("system")
-                Text("Tailscale").tag("tailscale")
+                Text("Tailscale").tag("tailscale").disabled(!services.allowsTailscale)
             }
             if form.values.connectionRoute == "tailscale" {
                 tailscaleControls
@@ -95,7 +96,7 @@ struct TailscaleConnectionSection: View {
         }
         .task(id: PollingContext(route: form.values.connectionRoute, phase: scenePhase,
                                  isAuthorizing: model.authorizationURL != nil)) {
-            guard form.values.connectionRoute == "tailscale",
+            guard services.allowsTailscale, form.values.connectionRoute == "tailscale",
                   scenePhase == .active || model.authorizationURL != nil else { return }
             while !Task.isCancelled {
                 await model.refresh()
@@ -104,7 +105,7 @@ struct TailscaleConnectionSection: View {
             }
         }
         .task(id: action) {
-            guard let action else { return }
+            guard services.allowsTailscale, let action else { return }
             switch action {
             case .signIn: await model.signIn()
             case .signOut: await model.signOut()
@@ -112,7 +113,7 @@ struct TailscaleConnectionSection: View {
             self.action = nil
         }
         .task(id: model.authorizationURL) {
-            guard let url = model.authorizationURL else { return }
+            guard services.allowsTailscale, let url = model.authorizationURL else { return }
             do {
                 _ = try await webAuthenticationSession.authenticate(
                     using: url, callback: .customScheme("bitdream"),

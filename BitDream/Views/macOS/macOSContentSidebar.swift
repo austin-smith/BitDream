@@ -61,7 +61,7 @@ struct macOSContentSidebar: View {
                     Label {
                         Text("Add Server")
                     } icon: {
-                        Image(systemName: "plus.circle.fill")
+                        Image(systemName: "plus")
                             .foregroundStyle(accentColor)
                     }
                 }

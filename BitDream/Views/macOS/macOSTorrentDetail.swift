@@ -233,6 +233,8 @@ private struct MacOSTorrentDetailContent: View {
                                         .foregroundColor(.accentColor)
                                 }
                             }
+                            .accessibilityIdentifier("torrent-detail-files")
+                            .accessibilityValue("\(supplementalPayload.files.count) files")
                             .buttonStyle(.bordered)
                             .help("View files in this torrent")
                         }
@@ -246,6 +248,7 @@ private struct MacOSTorrentDetailContent: View {
                                         .foregroundColor(.accentColor)
                                 }
                             }
+                            .accessibilityIdentifier("torrent-detail-peers")
                             .buttonStyle(.bordered)
                             .help("View peers for this torrent")
                         }

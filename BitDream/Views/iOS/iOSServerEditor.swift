@@ -14,6 +14,7 @@ private enum iOSServerFormField: Hashable {
 struct iOSServerEditor: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.hapticFeedback) private var hapticFeedback
+    @Environment(\.serverServices) private var services
     @Environment(\.hostRepositoryProvider) private var hostRepositoryProvider
     @ObservedObject var store: TransmissionStore
     let hosts: [Host]
@@ -88,7 +89,7 @@ struct iOSServerEditor: View {
         }
         .interactiveDismissDisabled(model.hasUnsavedChanges || model.isSaving)
         .onAppear {
-            model.configure(host: host, store: store)
+            model.configure(host: host, store: store, readPassword: services.readPassword)
         }
     }
 

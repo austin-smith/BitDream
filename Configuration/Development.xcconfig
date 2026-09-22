@@ -10,3 +10,5 @@ BITDREAM_DOCUMENT_HANDLER_RANK = Alternate
 // Dedicated Icon Composer artwork with light and dark appearances.
 BITDREAM_APP_ICON = BitDreamAppIconDev
 BITDREAM_ALTERNATE_APP_ICONS = BitDreamAppIconDefault BitDreamAppIconBlue BitDreamAppIconPixelyClouds
+
+BITDREAM_SAMPLE_CONDITIONS = BITDREAM_SAMPLE_SUPPORT

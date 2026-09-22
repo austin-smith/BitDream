@@ -255,184 +255,37 @@ struct SessionOverviewView: View {
 struct SessionOverviewView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            // High activity with fast speeds
-            SessionOverviewView(entry: .init(
-                date: .now,
-                snapshot: .init(
-                    serverId: "1",
-                    serverName: "Home NAS",
-                    active: 8,
-                    paused: 2,
-                    total: 25,
-                    totalCount: 25,
-                    downloadingCount: 8,
-                    completedCount: 15,
-                    downloadSpeed: 12_800_000, // 12.8 MB/s
-                    uploadSpeed: 3_200_000,   // 3.2 MB/s
-                    ratio: 2.15,
-                    timestamp: .now
-                ),
-                isStale: false,
-                isPlaceholder: false
-            ))
-            .previewContext(WidgetPreviewContext(family: .systemMedium))
-            .previewDisplayName("High Activity")
-
-            // Idle state - all completed
-            SessionOverviewView(entry: .init(
-                date: .now,
-                snapshot: .init(
-                    serverId: "2",
-                    serverName: "Seedbox Pro",
-                    active: 0,
-                    paused: 0,
-                    total: 42,
-                    totalCount: 42,
-                    downloadingCount: 0,
-                    completedCount: 42,
-                    downloadSpeed: 0,
-                    uploadSpeed: 1_250_000, // Still seeding
-                    ratio: 4.73,
-                    timestamp: .now
-                ),
-                isStale: false,
-                isPlaceholder: false
-            ))
-            .previewContext(WidgetPreviewContext(family: .systemMedium))
-            .previewDisplayName("Idle/Seeding")
-
-            // Long server name test
-            SessionOverviewView(entry: .init(
-                date: .now,
-                snapshot: .init(
-                    serverId: "3",
-                    serverName: "My Very Long Server Name That Should Truncate",
-                    active: 3,
-                    paused: 1,
-                    total: 8,
-                    totalCount: 8,
-                    downloadingCount: 3,
-                    completedCount: 4,
-                    downloadSpeed: 5_600_000,
-                    uploadSpeed: 850_000,
-                    ratio: 0.67,
-                    timestamp: .now
-                ),
-                isStale: false,
-                isPlaceholder: false
-            ))
-            .previewContext(WidgetPreviewContext(family: .systemMedium))
-            .previewDisplayName("Long Name")
-
-            // Low ratio scenario
-            SessionOverviewView(entry: .init(
-                date: .now,
-                snapshot: .init(
-                    serverId: "4",
-                    serverName: "Remote Server",
-                    active: 2,
-                    paused: 6,
-                    total: 18,
-                    totalCount: 18,
-                    downloadingCount: 2,
-                    completedCount: 10,
-                    downloadSpeed: 450_000,
-                    uploadSpeed: 125_000,
-                    ratio: 0.23, // Low ratio
-                    timestamp: .now
-                ),
-                isStale: false,
-                isPlaceholder: false
-            ))
-            .previewContext(WidgetPreviewContext(family: .systemMedium))
-            .previewDisplayName("Low Ratio")
-
-            // Placeholder state
-            SessionOverviewView(entry: .init(
-                date: .now,
-                snapshot: nil,
-                isStale: false,
-                isPlaceholder: true
-            ))
-            .previewContext(WidgetPreviewContext(family: .systemMedium))
-            .previewDisplayName("Loading Placeholder")
-
-            // No server selected
-            SessionOverviewView(entry: .init(
-                date: .now,
-                snapshot: nil,
-                isStale: false,
-                isPlaceholder: false
-            ))
-            .previewContext(WidgetPreviewContext(family: .systemMedium))
-            .previewDisplayName("No Server Selected")
-
-            // Small: Active
-            SessionOverviewView(entry: .init(
-                date: .now,
-                snapshot: .init(
-                    serverId: "1",
-                    serverName: "Home NAS",
-                    active: 8,
-                    paused: 2,
-                    total: 25,
-                    totalCount: 25,
-                    downloadingCount: 5,
-                    completedCount: 15,
-                    downloadSpeed: 12_800_000,
-                    uploadSpeed: 3_200_000,
-                    ratio: 2.15,
-                    timestamp: .now
-                ),
-                isStale: false,
-                isPlaceholder: false
-            ))
-            .previewContext(WidgetPreviewContext(family: .systemSmall))
-            .previewDisplayName("Small • Active")
-
-            // Small: Idle
-            SessionOverviewView(entry: .init(
-                date: .now,
-                snapshot: .init(
-                    serverId: "2",
-                    serverName: "Seedbox",
-                    active: 0,
-                    paused: 0,
-                    total: 42,
-                    totalCount: 42,
-                    downloadingCount: 0,
-                    completedCount: 42,
-                    downloadSpeed: 0,
-                    uploadSpeed: 1_250_000,
-                    ratio: 4.73,
-                    timestamp: .now
-                ),
-                isStale: false,
-                isPlaceholder: false
-            ))
-            .previewContext(WidgetPreviewContext(family: .systemSmall))
-            .previewDisplayName("Small • Idle")
-
-            // Small: Placeholder
-            SessionOverviewView(entry: .init(
-                date: .now,
-                snapshot: nil,
-                isStale: false,
-                isPlaceholder: true
-            ))
-            .previewContext(WidgetPreviewContext(family: .systemSmall))
-            .previewDisplayName("Small • Placeholder")
-
-            // Small: No Server Selected
-            SessionOverviewView(entry: .init(
-                date: .now,
-                snapshot: nil,
-                isStale: false,
-                isPlaceholder: false
-            ))
-            .previewContext(WidgetPreviewContext(family: .systemSmall))
-            .previewDisplayName("Small • No Server")
+            samples
+                .previewContext(WidgetPreviewContext(family: .systemMedium))
+            samples
+                .previewContext(WidgetPreviewContext(family: .systemSmall))
         }
+    }
+
+    @ViewBuilder
+    private static var samples: some View {
+        SessionOverviewView(entry: .init(
+            date: SampleLibrary.referenceDate, snapshot: SampleLibrary.widgetSnapshot(), isStale: false
+        ))
+        .previewDisplayName(SampleLibrary.serverName)
+        SessionOverviewView(entry: .init(
+            date: SampleLibrary.referenceDate, snapshot: SampleLibrary.widgetSnapshot(paused: true), isStale: false
+        ))
+        .previewDisplayName("All paused")
+        SessionOverviewView(entry: .init(
+            date: SampleLibrary.referenceDate,
+            snapshot: SampleLibrary.widgetSnapshot(serverName: "My Very Long Server Name That Should Truncate"),
+            isStale: true
+        ))
+        .previewDisplayName("Long name • stale")
+        SessionOverviewView(entry: .init(
+            date: SampleLibrary.referenceDate, snapshot: nil, isStale: false, isPlaceholder: true
+        ))
+        .previewDisplayName("Placeholder")
+        SessionOverviewView(entry: .init(
+            date: SampleLibrary.referenceDate, snapshot: nil, isStale: false
+        ))
+        .previewDisplayName("No server")
     }
 }
 #endif

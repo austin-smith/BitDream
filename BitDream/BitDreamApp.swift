@@ -7,20 +7,20 @@ import SwiftData
 
 @main
 struct BitDreamApp: App {
-    let persistenceController = PersistenceController.shared
+    private let appEnvironment: AppEnvironment
 
     // Create a shared store instance that will be used by both the main app and settings
-    @StateObject private var store = TransmissionStore()
-    @StateObject private var themeManager = ThemeManager.shared
+    @StateObject private var store: TransmissionStore
+    @StateObject private var themeManager: ThemeManager
     #if os(iOS)
-    @StateObject private var appIconManager = AppIconManager.shared
+    @StateObject private var appIconManager: AppIconManager
     #endif
     #if os(macOS)
     @NSApplicationDelegateAdaptor(AppFileOpenDelegate.self) private var appFileOpenDelegate
     @StateObject private var menuBarStatusItemController = MenuBarStatusItemBridge()
     @StateObject private var dockBadgeController = DockBadgeController()
     #if canImport(Sparkle)
-    @StateObject private var appUpdater = AppUpdater()
+    @StateObject private var appUpdater: AppUpdater
     #endif
     @StateObject private var serverEditingCoordinator = MacOSServerEditingCoordinator()
     #endif
@@ -35,17 +35,31 @@ struct BitDreamApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        let environment = AppEnvironment()
+        appEnvironment = environment
+        _store = StateObject(wrappedValue: environment.store)
+        _themeManager = StateObject(wrappedValue: environment.themeManager)
+        _menuBarTransferWidgetEnabled = AppStorage(wrappedValue: AppDefaults.menuBarTransferWidgetEnabled,
+            UserDefaultsKeys.menuBarTransferWidgetEnabled, store: environment.userDefaults)
+        _menuBarShowActiveCount = AppStorage(wrappedValue: AppDefaults.menuBarShowActiveCount,
+            UserDefaultsKeys.menuBarShowActiveCount, store: environment.userDefaults)
+        #if os(iOS)
+        _appIconManager = StateObject(wrappedValue: environment.allowsExternalServices ? .shared : .inert())
+        #endif
+        #if os(macOS) && canImport(Sparkle)
+        _appUpdater = StateObject(wrappedValue: AppUpdater(updatesEnabled: environment.allowsExternalServices))
+        #endif
         // Register default values for view state
-        UserDefaults.registerViewStateDefaults()
+        environment.userDefaults.registerViewStateDefaults()
 
         // Register additional defaults
-        UserDefaults.standard.register(defaults: [
+        environment.userDefaults.register(defaults: [
             "sortBySelection": "nameAsc", // Default sort by name ascending
             "themeModeKey": ThemeMode.system.rawValue // Default theme mode
         ])
 
         // The test host must not request permissions or schedule real server work.
-        guard !persistenceController.isInMemory else { return }
+        guard appEnvironment.allowsExternalServices else { return }
 
         // Request permission to use badges on macOS
         #if os(macOS)
@@ -78,7 +92,7 @@ private extension BitDreamApp {
         let descriptor = FetchDescriptor<Host>(
             predicate: #Predicate<Host> { $0.serverID == serverID }
         )
-        let context = persistenceController.container.mainContext
+        let context = appEnvironment.container.mainContext
         if let host = try? context.fetch(descriptor).first {
             store.setHost(host: host)
         }
@@ -86,6 +100,7 @@ private extension BitDreamApp {
 
     #if os(macOS)
     func syncMenuBarStatusItem(isEnabled: Bool? = nil) {
+        guard appEnvironment.allowsExternalServices else { return }
         menuBarStatusItemController.configure(
             isEnabled: isEnabled ?? menuBarTransferWidgetEnabled,
             store: store
@@ -103,19 +118,20 @@ private extension BitDreamApp {
     }
 
     var mainWindowScene: some Scene {
-        Window(AppIdentity.displayName, id: "main") {
+        Window(AppIdentity.displayName, id: appEnvironment.mainWindowID) {
             ContentView()
+                .frame(width: appEnvironment.screenshotWindowSize?.width, height: appEnvironment.screenshotWindowSize?.height)
                 .environmentObject(store) // Pass the shared store to the ContentView
                 .environmentObject(serverEditingCoordinator)
                 .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
                 .immediateTheme(manager: themeManager)
+                .modifier(AppEnvironmentModifier(environment: appEnvironment))
                 .onOpenURL(perform: openWidgetURL)
                 .task {
-                    guard !persistenceController.isInMemory else { return }
-                    await HostRepository.shared.bootstrap()
+                    await appEnvironment.start()
+                    guard appEnvironment.allowsExternalServices else { return }
                     appFileOpenDelegate.configure(with: store)
-                    ensureStartupConnectionBehaviorApplied(store: store, modelContext: persistenceController.container.mainContext)
                     syncMenuBarStatusItem()
                     dockBadgeController.configure(store: store)
                     #if canImport(Sparkle)
@@ -123,7 +139,7 @@ private extension BitDreamApp {
                     #endif
                 }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active, store.host?.connectionRoute == "tailscale" {
+                    if appEnvironment.allowsExternalServices, phase == .active, store.host?.connectionRoute == "tailscale" {
                         store.reconnect()
                     }
                 }
@@ -138,7 +154,7 @@ private extension BitDreamApp {
                         .publisher(for: NSApplication.willTerminateNotification)
                         .receive(on: RunLoop.main)
                 ) { _ in
-                    BackgroundActivityScheduler.unregister()
+                    if appEnvironment.allowsExternalServices { BackgroundActivityScheduler.unregister() }
                 }
                 .overlay(alignment: .center) {
                     if showAppearanceHUD {
@@ -235,6 +251,8 @@ private extension BitDreamApp {
                 }
         }
         .windowResizability(.contentSize)
+        .defaultPosition(.center)
+        .defaultLaunchBehavior(appEnvironment.isDemo ? .presented : .automatic)
         .commands {
             #if canImport(Sparkle)
             AppCommands(appUpdater: appUpdater)
@@ -244,7 +262,7 @@ private extension BitDreamApp {
             CommandGroup(replacing: .newItem) { }
             FileCommands(store: store)
             SearchCommands(store: store)
-            ViewCommands(store: store)
+            ViewCommands(store: store, userDefaults: appEnvironment.userDefaults)
             TorrentCommands(store: store)
             InspectorCommands(store: store)
             SidebarCommands()
@@ -255,7 +273,7 @@ private extension BitDreamApp {
                 hideHUDWork: $hideHUDWork
             )
         }
-        .modelContainer(persistenceController.container)
+        .modelContainer(appEnvironment.container)
     }
 
     var manageServersScene: some Scene {
@@ -266,10 +284,11 @@ private extension BitDreamApp {
                 .tint(themeManager.accentColor)
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
+                .modifier(AppEnvironmentModifier(environment: appEnvironment))
         }
         .defaultSize(width: 760, height: 480)
         .windowResizability(.contentMinSize)
-        .modelContainer(persistenceController.container)
+        .modelContainer(appEnvironment.container)
     }
 
     var connectionInfoScene: some Scene {
@@ -279,10 +298,11 @@ private extension BitDreamApp {
                 .accentColor(themeManager.accentColor)
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
+                .modifier(AppEnvironmentModifier(environment: appEnvironment))
                 .frame(minWidth: 420, idealWidth: 460, maxWidth: 600, minHeight: 320, idealHeight: 360, maxHeight: 800)
         }
         .windowResizability(.contentSize)
-        .modelContainer(persistenceController.container)
+        .modelContainer(appEnvironment.container)
     }
 
     var statisticsScene: some Scene {
@@ -292,10 +312,11 @@ private extension BitDreamApp {
                 .accentColor(themeManager.accentColor)
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
+                .modifier(AppEnvironmentModifier(environment: appEnvironment))
                 .frame(minWidth: 420, idealWidth: 460, maxWidth: 600, minHeight: 320, idealHeight: 720, maxHeight: 800)
         }
         .windowResizability(.contentSize)
-        .modelContainer(persistenceController.container)
+        .modelContainer(appEnvironment.container)
     }
 
     var aboutScene: some Scene {
@@ -307,11 +328,12 @@ private extension BitDreamApp {
                 .navigationTitle("About \(AppIdentity.displayName)")  // Proper window title handling
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
+                .modifier(AppEnvironmentModifier(environment: appEnvironment))
                 .frame(width: 320)
         }
         .windowResizability(.contentSize)
         .defaultPosition(.center)
-        .modelContainer(persistenceController.container)
+        .modelContainer(appEnvironment.container)
     }
 
     var settingsScene: some Scene {
@@ -327,6 +349,7 @@ private extension BitDreamApp {
                 .frame(minWidth: 500, idealWidth: 550, maxWidth: 650, minHeight: 650)
                 .environmentObject(themeManager) // Pass the ThemeManager to the Settings view
                 .immediateTheme(manager: themeManager)
+                .modifier(AppEnvironmentModifier(environment: appEnvironment))
         }
     }
     #else
@@ -341,13 +364,12 @@ private extension BitDreamApp {
                     .onOpenURL(perform: openWidgetURL)
                     .immediateTheme(manager: themeManager)
                     .task {
-                        guard !persistenceController.isInMemory else { return }
-                        await HostRepository.shared.bootstrap()
-                        ensureStartupConnectionBehaviorApplied(store: store, modelContext: persistenceController.container.mainContext)
+                        await appEnvironment.start()
+                        guard appEnvironment.allowsExternalServices else { return }
                         BackgroundRefreshManager.schedule()
                     }
                     .onChange(of: scenePhase) { _, newPhase in
-                        guard !persistenceController.isInMemory else { return }
+                        guard appEnvironment.allowsExternalServices else { return }
                         if newPhase == .active, store.host?.connectionRoute == "tailscale" {
                             store.reconnect()
                         }
@@ -356,8 +378,9 @@ private extension BitDreamApp {
                         }
                     }
             }
+            .modifier(AppEnvironmentModifier(environment: appEnvironment))
         }
-        .modelContainer(persistenceController.container)
+        .modelContainer(appEnvironment.container)
     }
     #endif
 }

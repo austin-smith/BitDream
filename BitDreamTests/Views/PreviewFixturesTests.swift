@@ -9,12 +9,22 @@ final class PreviewFixturesTests: XCTestCase {
         let hosts = PreviewFixtures.makeHosts()
         let store = PreviewFixtures.makeStore(scenario: .connected, selectedHost: hosts[0])
 
-        XCTAssertEqual(store.host?.serverID, "preview-home")
+        XCTAssertEqual(store.host?.serverID, SampleLibrary.serverID)
         XCTAssertEqual(store.connectionStatus, .connected)
         XCTAssertEqual(store.torrents, PreviewFixtures.torrents)
         XCTAssertEqual(store.sessionStats?.torrentCount, PreviewFixtures.torrents.count)
         XCTAssertEqual(Set(store.torrents.map(\.id)).count, store.torrents.count)
         XCTAssertEqual(store.availableLabels, store.availableLabels.sorted())
+    }
+
+    func testConnectedPreviewCanLoadDetailsThroughTheSampleServer() async throws {
+        let environment = PreviewEnvironment()
+        let store = environment.store
+        store.reconnect()
+        defer { store.clearSelectedHost() }
+        let detail = try await store.loadTorrentDetail(id: 1)
+        XCTAssertEqual(detail.files.map(\.name), PreviewFixtures.files.map(\.name))
+        XCTAssertEqual(detail.peers.count, PreviewFixtures.peers.count)
     }
 
     func testFileFixturesStayAligned() {
