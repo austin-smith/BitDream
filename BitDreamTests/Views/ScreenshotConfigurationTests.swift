@@ -26,6 +26,10 @@ final class ScreenshotConfigurationTests: XCTestCase {
         defer { environment.store.clearSelectedHost() }
         for _ in 0..<200 where environment.store.torrents.isEmpty { try await Task.sleep(for: .milliseconds(10)) }
         XCTAssertEqual(environment.store.lastRefreshAt, SampleLibrary.referenceDate)
+        let captureOrder = sortTorrents(environment.store.torrents,
+                                       by: environment.userDefaults.sortProperty,
+                                       order: environment.userDefaults.sortOrder)
+        XCTAssertEqual(captureOrder.first?.id, 4)
         environment.store.handleConnectionError(.timeout)
         XCTAssertNil(environment.store.nextRetryAt)
         XCTAssertEqual(demoDefaults.string(forKey: "themeModeKey"), "Dark")
@@ -39,9 +43,14 @@ final class ScreenshotConfigurationTests: XCTestCase {
         defer { first.removePersistentDomain(forName: name) }
         first.set("Dark", forKey: "themeModeKey")
         first.set(true, forKey: UserDefaultsKeys.torrentListCompactMode)
+        first.sortProperty = .name
+        first.sortOrder = .ascending
         let second = configuration.makeUserDefaults(suiteName: name)
+        _ = DemoSession(userDefaults: second)
         XCTAssertEqual(second.string(forKey: "themeModeKey"), "Light")
         XCTAssertFalse(second.bool(forKey: UserDefaultsKeys.torrentListCompactMode))
+        XCTAssertEqual(second.sortProperty, .dateAdded)
+        XCTAssertEqual(second.sortOrder, .descending)
     }
 
     func testCaptureRequiresBothDemoAndAnExplicitCaptureFlag() throws {

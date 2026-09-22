@@ -25,6 +25,9 @@ final class DemoSessionTests: XCTestCase {
         for _ in 0..<200 where session.store.torrents.isEmpty { try await Task.sleep(for: .milliseconds(10)) }
         XCTAssertEqual(session.store.connectionStatus, .connected)
         XCTAssertEqual(session.store.torrents.count, 7)
+        let sorted = sortTorrents(session.store.torrents, by: defaults.sortProperty, order: defaults.sortOrder)
+        XCTAssertEqual(sorted.first?.id, 4)
+        XCTAssertEqual(Set(sorted.map(\.addedDate)).count, sorted.count)
         XCTAssertGreaterThanOrEqual(try XCTUnwrap(session.store.lastRefreshAt), startedAt)
         let detail = try await session.store.loadTorrentDetail(id: 1)
         XCTAssertEqual(detail.files.count, 3)
@@ -45,11 +48,15 @@ final class DemoSessionTests: XCTestCase {
         let defaults = try isolatedDefaults()
         let first = DemoSession(userDefaults: defaults)
         first.userDefaults.set("Dark", forKey: "themeModeKey")
+        first.userDefaults.sortProperty = .name
+        first.userDefaults.sortOrder = .ascending
         _ = try await first.repository.create(draft: HostDraft(
             name: "Temporary", server: "temporary.invalid", port: 9091, username: "", isSSL: false, isDefault: false, password: ""
         ))
         let second = DemoSession(userDefaults: defaults)
         XCTAssertEqual(ThemeManager(userDefaults: second.userDefaults).themeMode, .dark)
+        XCTAssertEqual(second.userDefaults.sortProperty, .name)
+        XCTAssertEqual(second.userDefaults.sortOrder, .ascending)
         XCTAssertEqual(try second.container.mainContext.fetch(FetchDescriptor<BitDream.Host>()).count, 2)
     }
 

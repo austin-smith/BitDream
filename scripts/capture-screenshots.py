@@ -52,9 +52,9 @@ def main():
     for test in manifest:
         for attachment in test["attachments"]:
             name = attachment["suggestedHumanReadableName"]
-            if name.startswith(("library-", "detail-", "files-", "peers-")):
+            if name.startswith(("library-", "detail-", "files-")):
                 captures.append(attachment)
-    expected = {f"{view}-{appearance}" for view in ("library", "detail", "files", "peers")
+    expected = {f"{view}-{appearance}" for view in ("library", "detail", "files")
                 for appearance in ("light", "dark")}
     names = [capture["suggestedHumanReadableName"].split("_", 1)[0] for capture in captures]
     if len(names) != len(expected) or set(names) != expected:

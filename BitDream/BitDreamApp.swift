@@ -49,9 +49,6 @@ struct BitDreamApp: App {
         #if os(macOS) && canImport(Sparkle)
         _appUpdater = StateObject(wrappedValue: AppUpdater(updatesEnabled: environment.allowsExternalServices))
         #endif
-        // Register default values for view state
-        environment.userDefaults.registerViewStateDefaults()
-
         // Register additional defaults
         environment.userDefaults.register(defaults: [
             "sortBySelection": "nameAsc", // Default sort by name ascending

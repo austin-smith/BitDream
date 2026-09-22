@@ -26,7 +26,6 @@ struct ScreenshotConfiguration {
             preconditionFailure("Unable to create screenshot preferences.")
         }
         defaults.removePersistentDomain(forName: suiteName)
-        defaults.registerViewStateDefaults()
         defaults.set(appearance.rawValue, forKey: "themeModeKey")
         defaults.set(compact, forKey: UserDefaultsKeys.torrentListCompactMode)
         defaults.set(false, forKey: "inspectorVisibility")

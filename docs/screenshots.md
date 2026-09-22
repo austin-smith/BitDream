@@ -1,6 +1,6 @@
 # Screenshot capture
 
-Capture the library, torrent details, files, and peers in light and dark
+Capture the library, torrent details, and files in light and dark
 appearances using the sample data from [demo mode](demo-mode.md).
 
 ## Capture PNGs
@@ -18,7 +18,7 @@ python3 scripts/capture-screenshots.py \
   --destination 'platform=iOS Simulator,id=YOUR-SIMULATOR-UDID'
 ```
 
-The eight PNGs go under `.build/screenshots/<timestamp>/`, alongside capture
+The six PNGs go under `.build/screenshots/<timestamp>/`, alongside capture
 metadata and test results. Files are named `<screen>-<appearance>.png`, such as
 `library-light.png`. Use `--output /path/to/new-directory` to choose a different
 directory; it must not already exist.
@@ -26,7 +26,7 @@ directory; it must not already exist.
 Captures use English, US formatting, UTC, and Large text size:
 
 - **iOS:** portrait orientation and a 9:41 status bar, cleared afterward.
-- **macOS:** a centered window with 1200 × 900 points of content and a 220-point
+- **macOS:** a window with 1200 × 900 points of content and a 220-point
   sidebar. The display must fit the full window, including its title bar.
 
 Keep the OS, device, display scale, and wallpaper consistent when comparing images.
@@ -44,8 +44,8 @@ Arguments → Environment Variables** in **BitDreamDemo**. Remove it afterward.
 | `BITDREAM_SCREENSHOT_COMPACT` | `1` for the macOS table | expanded |
 
 Manual capture uses fixed appearance, layout, text size, and time, with separate
-preferences and automatic retries disabled. Set language, time zone, status bar,
-and window position yourself; the script handles those for automated captures.
+preferences and automatic retries disabled. Set language, time zone, and status
+bar yourself; the script handles those for automated captures.
 
 ## Add captures
 

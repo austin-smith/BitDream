@@ -4,6 +4,8 @@ Select **BitDreamDemo** in Xcode and Run on macOS or an iOS simulator. The app
 opens with seven sample torrents on **Demo Server**. No server or
 internet connection is required.
 
+The library defaults to Date Added, newest first, with Mozart at the top.
+
 Demo data and preferences are separate from your real setup. Relaunching resets
 servers and torrents but preserves demo preferences. Select **BitDream** to
 return to real servers.

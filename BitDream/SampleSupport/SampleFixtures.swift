@@ -34,7 +34,7 @@ enum SampleFixtures {
         let remaining = item.size - item.completed
         return Torrent(
             activityDate: Int(SampleLibrary.referenceDate.timeIntervalSince1970),
-            addedDate: Int(SampleLibrary.referenceDate.addingTimeInterval(-86_400).timeIntervalSince1970),
+            addedDate: Int(SampleLibrary.referenceDate.addingTimeInterval(-86_400 * Double(item.addedDaysAgo)).timeIntervalSince1970),
             desiredAvailable: remaining, error: 0, errorString: "",
             eta: item.downloadSpeed > 0 ? Int(remaining / item.downloadSpeed) : -1,
             haveUnchecked: 0, haveValid: item.completed, id: item.id,

@@ -21,6 +21,7 @@ final class DemoSession {
             preconditionFailure("Unable to create demo preferences.")
         }
         defaults.registerViewStateDefaults()
+        defaults.register(defaults: ["sortProperty": SortProperty.dateAdded.rawValue, "sortOrder": false])
         self.userDefaults = defaults
         hosts = SampleFixtures.makeHosts()
         container = SampleFixtures.makeModelContainer(hosts: hosts)

@@ -24,18 +24,18 @@ final class ScreenshotTests: XCTestCase {
         #if os(macOS)
         prepareWindow(app)
         #endif
-        let bunny = app.staticTexts["Big Buck Bunny"].firstMatch
-        XCTAssertTrue(bunny.waitForExistence(timeout: 20), "The sample library did not load.")
+        let mozart = app.staticTexts["Mozart Keyboard Sheet Music - Public Domain"].firstMatch
+        XCTAssertTrue(mozart.waitForExistence(timeout: 20), "The sample library did not load.")
         attach(app, name: "library-\(appearance)")
         #if os(macOS)
-        bunny.click()
+        mozart.click()
         app.typeKey("i", modifierFlags: [.option, .command])
         #else
-        bunny.tap()
+        mozart.tap()
         #endif
         let files = app.buttons["torrent-detail-files"].firstMatch
         XCTAssertTrue(files.waitForExistence(timeout: 10), "Torrent details did not open.")
-        let loaded = expectation(for: NSPredicate(format: "value == %@", "3 files"), evaluatedWith: files)
+        let loaded = expectation(for: NSPredicate(format: "value == %@", "94 files"), evaluatedWith: files)
         wait(for: [loaded], timeout: 10)
         attach(app, name: "detail-\(appearance)")
         #if os(macOS)
@@ -43,20 +43,12 @@ final class ScreenshotTests: XCTestCase {
         #else
         files.tap()
         #endif
-        XCTAssertTrue(app.staticTexts["Big Buck Bunny.mp4"].firstMatch.waitForExistence(timeout: 10), "Files did not load.")
+        let firstFile = app.staticTexts["Fantasies/Fantasy in d, K 397.pdf"].firstMatch
+        XCTAssertTrue(firstFile.waitForExistence(timeout: 10), "Mozart files did not load.")
         #if os(macOS)
-        app.staticTexts["Big Buck Bunny.mp4"].firstMatch.click()
+        firstFile.click()
         #endif
         attach(app, name: "files-\(appearance)")
-        #if os(macOS)
-        app.buttons["Done"].firstMatch.click()
-        app.buttons["torrent-detail-peers"].firstMatch.click()
-        #else
-        app.buttons.matching(NSPredicate(format: "identifier == %@ OR label == %@", "BackButton", "Back")).firstMatch.tap()
-        app.buttons["torrent-detail-peers"].firstMatch.tap()
-        #endif
-        XCTAssertTrue(app.staticTexts["peer-address-203.0.113.10"].firstMatch.waitForExistence(timeout: 10), "Peers did not load.")
-        attach(app, name: "peers-\(appearance)")
     }
 
     #if os(macOS)
@@ -65,8 +57,6 @@ final class ScreenshotTests: XCTestCase {
             app.menuBars.menuBarItems["Window"].click()
             app.menuBars.menuBarItems["Window"].menus.menuItems["BitDream (Dev)"].click()
         }
-        app.menuBars.menuBarItems["Window"].click()
-        app.menuBars.menuBarItems["Window"].menus.menuItems["Center"].click()
         let window = app.windows.firstMatch
         let divider = window.splitters.firstMatch
         divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click(

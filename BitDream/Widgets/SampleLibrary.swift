@@ -25,6 +25,7 @@ enum SampleLibrary {
         let status: Int
         let labels: [String]
         let mimeType: String
+        let addedDaysAgo: Int
         var uploaded: Int64 = 0
         var isStalled: Bool = false
         var downloadSpeed: Int64 = 0
@@ -38,16 +39,16 @@ enum SampleLibrary {
                  File(name: "Big Buck Bunny/Big Buck Bunny.en.srt", length: 140),
                  File(name: "Big Buck Bunny/Big Buck Bunny.mp4", length: 276_134_947),
                  File(name: "Big Buck Bunny/poster.jpg", length: 310_380)
-             ], pieceSize: 262_144, completed: 276_445_467, status: 6, labels: ["movie"], mimeType: "video/mp4",
-             uploaded: 234_900_000, uploadSpeed: 1_840_000, peerCount: 8),
+             ], pieceSize: 262_144, completed: 276_445_467, status: 6, labels: ["movie"], mimeType: "video/mp4", addedDaysAgo: 19,
+             uploaded: 234_900_000, uploadSpeed: 1_763_492, peerCount: 8),
         Item(id: 2, name: "Charlie_Chaplin_Mabels_Strange_Predicament.avi", files: [
                  File(name: "Charlie_Chaplin_Mabels_Strange_Predicament.avi", length: 170_835_968)
-             ], pieceSize: 131_072, completed: 116_900_000, status: 4, labels: ["movie"], mimeType: "video/x-msvideo",
-             uploaded: 64_600_000, downloadSpeed: 64_000, peerCount: 3),
+             ], pieceSize: 131_072, completed: 116_900_000, status: 4, labels: ["movie"], mimeType: "video/x-msvideo", addedDaysAgo: 33,
+             uploaded: 64_600_000, downloadSpeed: 67_283, peerCount: 3),
         Item(id: 3, name: "Fedora-KDE-Live-x86_64-40", files: [
                  File(name: "Fedora-KDE-Live-x86_64-40/Fedora-KDE-Live-x86_64-40-1.14.iso", length: 2_645_645_312),
                  File(name: "Fedora-KDE-Live-x86_64-40/Fedora-Spins-40-1.14-x86_64-CHECKSUM", length: 2_582)
-             ], pieceSize: 262_144, completed: 734_200_000, status: 4, labels: ["linux", "software"], mimeType: "application/x-iso9660-image",
+             ], pieceSize: 262_144, completed: 734_200_000, status: 4, labels: ["linux", "software"], mimeType: "application/x-iso9660-image", addedDaysAgo: 18,
              uploaded: 301_000_000, isStalled: true),
         Item(id: 4, name: "Mozart Keyboard Sheet Music - Public Domain", files: [
                  File(name: "Mozart Keyboard Sheet Music - Public Domain/Fantasies/Fantasy in d, K 397.pdf", length: 214_479),
@@ -144,8 +145,8 @@ enum SampleLibrary {
                  File(name: "Mozart Keyboard Sheet Music - Public Domain/Variations/8 Variations, K 613.pdf", length: 792_912),
                  File(name: "Mozart Keyboard Sheet Music - Public Domain/Variations/9 Variations, K 264.pdf", length: 698_283),
                  File(name: "Mozart Keyboard Sheet Music - Public Domain/Variations/9 Variations, K 573.pdf", length: 614_579)
-             ], pieceSize: 262_144, completed: 172_834_850, status: 6, labels: ["music"], mimeType: "application/pdf",
-             uploaded: 214_300_000, uploadSpeed: 420_000, peerCount: 6),
+             ], pieceSize: 262_144, completed: 172_834_850, status: 6, labels: ["music"], mimeType: "application/pdf", addedDaysAgo: 1,
+             uploaded: 214_300_000, uploadSpeed: 427_619, peerCount: 6),
         Item(id: 5, name: "The WIRED CD - Rip. Sample. Mash. Share", files: [
                  File(name: "The WIRED CD - Rip. Sample. Mash. Share/01 - Beastie Boys - Now Get Busy.mp3", length: 1_964_275),
                  File(name: "The WIRED CD - Rip. Sample. Mash. Share/02 - David Byrne - My Fair Lady.mp3", length: 3_610_523),
@@ -165,14 +166,14 @@ enum SampleLibrary {
                  File(name: "The WIRED CD - Rip. Sample. Mash. Share/16 - Matmos - Action At A Distance.mp3", length: 1_762_120),
                  File(name: "The WIRED CD - Rip. Sample. Mash. Share/README.md", length: 4_071),
                  File(name: "The WIRED CD - Rip. Sample. Mash. Share/poster.jpg", length: 78_163)
-             ], pieceSize: 65_536, completed: 56_070_710, status: 0, labels: ["music"], mimeType: "audio/mpeg", uploaded: 65_100_000),
+             ], pieceSize: 65_536, completed: 56_070_710, status: 0, labels: ["music"], mimeType: "audio/mpeg", addedDaysAgo: 25, uploaded: 65_100_000),
         Item(id: 6, name: "enwiki-20250301-pages-articles-multistream.xml.bz2", files: [
                  File(name: "enwiki-20250301-pages-articles-multistream.xml.bz2", length: 24_749_684_048)
-             ], pieceSize: 16_777_216, completed: 1_570_000_000, status: 4, labels: [], mimeType: "application/x-bzip2",
-             uploaded: 879_200_000, downloadSpeed: 14_900_000, uploadSpeed: 730_000, peerCount: 17),
+             ], pieceSize: 16_777_216, completed: 1_570_000_000, status: 4, labels: [], mimeType: "application/x-bzip2", addedDaysAgo: 3,
+             uploaded: 879_200_000, downloadSpeed: 13_672_481, uploadSpeed: 638_217, peerCount: 17),
         Item(id: 7, name: "ubuntu-22.04-desktop-amd64.iso", files: [
                  File(name: "ubuntu-22.04-desktop-amd64.iso", length: 3_654_957_056)
-             ], pieceSize: 262_144, completed: 175_700_000, status: 0, labels: ["linux", "software"], mimeType: "application/x-iso9660-image",
+             ], pieceSize: 262_144, completed: 175_700_000, status: 0, labels: ["linux", "software"], mimeType: "application/x-iso9660-image", addedDaysAgo: 2,
              uploaded: 48_800_000)
     ]
 
@@ -189,7 +190,7 @@ enum SampleLibrary {
                  File(name: "Sintel/Sintel.pt.srt", length: 1_551),
                  File(name: "Sintel/Sintel.ru.srt", length: 2_016),
                  File(name: "Sintel/poster.jpg", length: 46_115)
-             ], pieceSize: 131_072, completed: 0, status: 4, labels: ["movie"], mimeType: "video/mp4")
+             ], pieceSize: 131_072, completed: 0, status: 4, labels: ["movie"], mimeType: "video/mp4", addedDaysAgo: 0)
 
     static func widgetSnapshot(
         serverName: String = serverName,
