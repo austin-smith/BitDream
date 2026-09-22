@@ -9,8 +9,10 @@ import SwiftData
 struct BitDreamApp: App {
     let persistenceController = PersistenceController.shared
 
-    // Create a shared store instance that will be used by both the main app and settings
+    #if os(macOS)
+    // The Mac's single workspace shares its store with auxiliary windows.
     @StateObject private var store = TransmissionStore()
+    #endif
     @StateObject private var themeManager = ThemeManager.shared
     #if os(iOS)
     @StateObject private var appIconManager = AppIconManager.shared
@@ -73,6 +75,7 @@ struct BitDreamApp: App {
 }
 
 private extension BitDreamApp {
+    #if os(macOS)
     func openWidgetURL(_ url: URL) {
         guard let serverID = DeepLinkBuilder.serverID(from: url) else { return }
         let descriptor = FetchDescriptor<Host>(
@@ -84,7 +87,6 @@ private extension BitDreamApp {
         }
     }
 
-    #if os(macOS)
     func syncMenuBarStatusItem(isEnabled: Bool? = nil) {
         menuBarStatusItemController.configure(
             isEnabled: isEnabled ?? menuBarTransferWidgetEnabled,
@@ -332,30 +334,11 @@ private extension BitDreamApp {
     #else
     var iOSScene: some Scene {
         WindowGroup {
-            iOSHapticFeedbackHost {
-                ContentView()
-                    .environmentObject(store) // Pass the shared store to the ContentView
-                    .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
-                    .environmentObject(themeManager) // Pass the ThemeManager to all views
-                    .environmentObject(appIconManager)
-                    .onOpenURL(perform: openWidgetURL)
-                    .immediateTheme(manager: themeManager)
-                    .task {
-                        guard !persistenceController.isInMemory else { return }
-                        await HostRepository.shared.bootstrap()
-                        ensureStartupConnectionBehaviorApplied(store: store, modelContext: persistenceController.container.mainContext)
-                        BackgroundRefreshManager.schedule()
-                    }
-                    .onChange(of: scenePhase) { _, newPhase in
-                        guard !persistenceController.isInMemory else { return }
-                        if newPhase == .active, store.host?.connectionRoute == "tailscale" {
-                            store.reconnect()
-                        }
-                        if newPhase == .background {
-                            BackgroundRefreshManager.schedule()
-                        }
-                    }
-            }
+            iOSWindowRoot()
+                .tint(themeManager.accentColor)
+                .environmentObject(themeManager)
+                .environmentObject(appIconManager)
+                .immediateTheme(manager: themeManager)
         }
         .modelContainer(persistenceController.container)
     }

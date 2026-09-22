@@ -1,5 +1,22 @@
 import Foundation
 import SwiftUI
+import Combine
+
+/// Only saved catalog mutations cross window boundaries, never presentation state.
+@MainActor
+enum ServerChanges {
+    enum Mutation {
+        case updated(Host)
+        case deleted(String, remainingHosts: [Host])
+    }
+
+    struct Change {
+        let source: TransmissionStore
+        let mutation: Mutation
+    }
+
+    static let publisher = PassthroughSubject<Change, Never>()
+}
 
 /// Shared persistence actions for server management, used by the iOS and macOS server views.
 
@@ -35,11 +52,13 @@ func updateExistingServer(
     do {
         let updatedHost = try await hostRepository.update(serverID: host.serverID, draft: draft)
         store.applyPersistedHostUpdate(updatedHost)
+        ServerChanges.publisher.send(.init(source: store, mutation: .updated(updatedHost)))
         return updatedHost
     } catch {
         if let persistenceError = error as? HostPersistenceError,
            case .catalogSyncFailure = persistenceError {
             store.applyPersistedHostUpdate(host)
+            ServerChanges.publisher.send(.init(source: store, mutation: .updated(host)))
             return host
         }
         throw error
@@ -70,9 +89,17 @@ func deleteServer(
 
 @MainActor
 private func completeServerDeletion(host: Host, store: TransmissionStore, hosts: [Host]) {
-    guard host.serverID == store.host?.serverID else { return }
+    let serverID = host.serverID
+    let remainingHosts = hosts.filter { $0.serverID != serverID }
+    completeServerDeletion(serverID: serverID, store: store, remainingHosts: remainingHosts)
+    ServerChanges.publisher.send(.init(source: store, mutation: .deleted(serverID, remainingHosts: remainingHosts)))
+}
 
-    if let nextHost = hosts.first(where: { $0.serverID != host.serverID }) {
+@MainActor
+func completeServerDeletion(serverID: String, store: TransmissionStore, remainingHosts: [Host]) {
+    guard serverID == store.host?.serverID else { return }
+
+    if let nextHost = remainingHosts.first {
         store.setHost(host: nextHost)
     } else {
         store.clearPersistedSelectedHost()
