@@ -107,6 +107,7 @@ private extension iOSContentView {
             hosts: hosts,
             sidebarSelection: $filters.sidebarSelection,
             selectedHostID: store.host?.serverID,
+            connectionState: store.connectionState,
             torrentCount: { torrentCount(for: $0) },
             onSelectHost: { host in
                 store.setHost(host: host)

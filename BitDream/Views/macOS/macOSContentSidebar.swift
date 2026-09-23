@@ -6,6 +6,7 @@ struct macOSContentSidebar: View {
     let hosts: [Host]
     @Binding var sidebarSelection: SidebarSelection
     let selectedHostID: String?
+    let connectionState: TransmissionConnectionState
     let accentColor: Color
     let torrentCount: (SidebarSelection) -> Int
     let onSelectHost: (Host) -> Void
@@ -30,15 +31,27 @@ struct macOSContentSidebar: View {
                         onSelectHost(host)
                     } label: {
                         HStack {
-                            Label(host.name ?? "Unnamed Server", systemImage: "server.rack")
+                            Label {
+                                Text(host.name ?? "Unnamed Server")
+                            } icon: {
+                                Image(systemName: "server.rack")
+                                    .overlay(alignment: .topTrailing) {
+                                        if host.serverID == selectedHostID {
+                                            ServerConnectionIndicator(state: connectionState)
+                                        }
+                                    }
+                            }
                             Spacer()
                             if host.serverID == selectedHostID {
                                 Image(systemName: "checkmark")
-                                    .foregroundColor(.blue)
+                                    .foregroundStyle(accentColor)
+                                    .accessibilityHidden(true)
                             }
                         }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityValue(host.serverID == selectedHostID ? connectionState.serverStatusLabel : "")
+                    .accessibilityAddTraits(host.serverID == selectedHostID ? .isSelected : [])
                     .contextMenu {
                         Button {
                             onEditServer(host)
@@ -95,6 +108,7 @@ struct macOSContentSidebar: View {
         hosts: hosts,
         sidebarSelection: $selection,
         selectedHostID: hosts[0].serverID,
+        connectionState: .connected,
         accentColor: .blue,
         torrentCount: { _ in 5 },
         onSelectHost: { _ in },
