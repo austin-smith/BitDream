@@ -19,7 +19,8 @@ struct macOSContentDetail: View {
     @Binding var isDropTargeted: Bool
     @Binding var draggedTorrentInfo: [TorrentInfo]
     let onShowStatistics: () -> Void
-    @FocusState private var isListFocused: Bool
+    enum ListFocus: Hashable { case expanded, compact }
+    @FocusState private var listFocus: ListFocus?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -43,6 +44,12 @@ struct macOSContentDetail: View {
             ))
             .overlay(dropTargetOverlay)
             .overlay(torrentPreviewOverlay)
+            // Hand focus to the replacement control only when the torrent pane owns it.
+            .onChange(of: isCompactMode) { _, compact in
+                if listFocus != nil {
+                    listFocus = compact ? .compact : .expanded
+                }
+            }
             .onChange(of: isDropTargeted) { _, newValue in
                 if !newValue {
                     draggedTorrentInfo = []
@@ -89,7 +96,8 @@ struct macOSContentDetail: View {
                     sortProperty: $sortProperty,
                     sortOrder: $sortOrder,
                     store: store,
-                    showContentTypeIcons: showContentTypeIcons
+                    showContentTypeIcons: showContentTypeIcons,
+                    listFocus: $listFocus
                 )
             } else {
                 List(selection: $selectedTorrentIds) {
@@ -106,10 +114,10 @@ struct macOSContentDetail: View {
                 }
                 .listStyle(.plain)
                 .tint(accentColor)
-                .focused($isListFocused)
+                .focused($listFocus, equals: .expanded)
                 // Move keyboard focus with the click while preserving native selection gestures.
                 .simultaneousGesture(TapGesture().onEnded {
-                    isListFocused = true
+                    listFocus = .expanded
                 })
             }
         }

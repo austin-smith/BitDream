@@ -62,7 +62,7 @@ struct macOSTorrentListCompact: View {
     @State private var tableSortOrder = [KeyPathComparator(\TorrentTableRow.name)]
     let store: TransmissionStore
     let showContentTypeIcons: Bool
-    @FocusState private var isTableFocused: Bool
+    var listFocus: FocusState<macOSContentDetail.ListFocus?>.Binding
 
     @State private var deleteDialog: Bool = false
     @State private var labelDialog: Bool = false
@@ -263,10 +263,10 @@ private extension macOSTorrentListCompact {
             .customizationID("labels")
         })
         .tableStyle(.inset(alternatesRowBackgrounds: true))
-        .focused($isTableFocused)
+        .focused(listFocus, equals: .compact)
         // Move keyboard focus with the click while preserving native selection gestures.
         .simultaneousGesture(TapGesture().onEnded {
-            isTableFocused = true
+            listFocus.wrappedValue = .compact
         })
         .animation(.default, value: tableSortOrder)
         .contextMenu(forSelectionType: TorrentTableRow.ID.self) { selection in
@@ -474,6 +474,7 @@ private extension macOSTorrentListCompact {
 #if os(macOS) && DEBUG
 #Preview("macOS Compact Torrent List", traits: .fixedLayout(width: 1_000, height: 420)) {
     @Previewable @State var selection = Set<Int>()
+    @Previewable @FocusState var listFocus: macOSContentDetail.ListFocus?
     @Previewable @State var sortProperty = SortProperty.name
     @Previewable @State var sortOrder = SortOrder.ascending
 
@@ -484,7 +485,8 @@ private extension macOSTorrentListCompact {
             sortProperty: $sortProperty,
             sortOrder: $sortOrder,
             store: environment.store,
-            showContentTypeIcons: true
+            showContentTypeIcons: true,
+            listFocus: $listFocus
         )
     }
 }
