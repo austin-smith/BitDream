@@ -18,8 +18,7 @@ struct iOSContentView: View {
 
     @State private var sortProperty: SortProperty
     @State private var sortOrder: SortOrder
-    @State private var sidebarSelection: SidebarSelection = .allDreams
-    @State private var labelFilter = TorrentLabelFilter()
+    @State private var filters: TorrentFilterPreferences
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons = AppDefaults.showContentTypeIcons
     @State private var searchText: String = ""
     @State private var isStatisticsPresented = false
@@ -33,6 +32,7 @@ struct iOSContentView: View {
         self.hosts = hosts
         self.store = store
         self.userDefaults = userDefaults
+        _filters = State(initialValue: TorrentFilterPreferences(userDefaults: userDefaults, serverID: store.host?.serverID))
         _sortProperty = State(initialValue: userDefaults.sortProperty)
         _sortOrder = State(initialValue: userDefaults.sortOrder)
         _showContentTypeIcons = AppStorage(
@@ -56,11 +56,8 @@ struct iOSContentView: View {
             }
             .ignoresSafeArea()
         }
-        .onChange(of: store.availableLabels) { _, availableLabels in
-            reconcileSelectedLabels(with: availableLabels)
-        }
-        .onChange(of: store.host?.serverID) { _, _ in
-            labelFilter.clear()
+        .modifier(TorrentFilterSynchronization(preferences: filters, store: store))
+        .onChange(of: store.host?.serverID) {
             navigationPath.removeAll()
         }
         .onChange(of: store.torrents.map(\.id)) { _, torrentIDs in
@@ -108,7 +105,7 @@ private extension iOSContentView {
     func sidebar(drawerWidth: CGFloat, progress: CGFloat, safeAreaInsets: EdgeInsets) -> some View {
         iOSSidebarView(
             hosts: hosts,
-            sidebarSelection: $sidebarSelection,
+            sidebarSelection: $filters.sidebarSelection,
             selectedHostID: store.host?.serverID,
             connectionState: store.connectionState,
             torrentCount: { torrentCount(for: $0) },
@@ -152,7 +149,7 @@ private extension iOSContentView {
                     }
                 }
         }
-        .onChange(of: sidebarSelection) { _, _ in
+        .onChange(of: filters.sidebarSelection) { _, _ in
             closeSidebarAfterSelection()
         }
         .onChange(of: navigationPath) {
@@ -265,7 +262,7 @@ private extension iOSContentView {
                 }
                 .background(Color(.systemBackground))
             }
-            .navigationTitle(sidebarSelection.rawValue)
+            .navigationTitle(filters.sidebarSelection.rawValue)
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $searchText, prompt: "Search torrents")
             .toolbar {
@@ -295,8 +292,8 @@ private extension iOSContentView {
         filterAndSortTorrents(
             store.torrents,
             options: TorrentDisplayOptions(
-                statusFilter: sidebarSelection.filter,
-                labelFilter: labelFilter,
+                statusFilter: filters.sidebarSelection.filter,
+                labelFilter: filters.labelFilter,
                 searchText: searchText,
                 sortProperty: sortProperty,
                 sortOrder: sortOrder
@@ -386,7 +383,7 @@ private extension iOSContentView {
                 }
                 .popover(isPresented: $showPrefs) {
                     iOSFilterAndSortView(
-                        labelFilter: $labelFilter,
+                        labelFilter: $filters.labelFilter,
                         sortProperty: $sortProperty,
                         sortOrder: $sortOrder,
                         availableLabels: store.availableLabels,
@@ -447,15 +444,6 @@ private extension iOSContentView {
         )
     }
 
-    func reconcileSelectedLabels(with availableLabels: [String]) {
-        var reconciledFilter = labelFilter
-        reconciledFilter.reconcile(with: availableLabels)
-
-        if reconciledFilter != labelFilter {
-            labelFilter = reconciledFilter
-        }
-    }
-
     func reconcileNavigationPath(with torrentIDs: [Int]) {
         let availableTorrentIDs = Set(torrentIDs)
         navigationPath.removeAll { route in
@@ -467,7 +455,7 @@ private extension iOSContentView {
     }
 
     var hasActiveFilters: Bool {
-        labelFilter.isActive
+        filters.labelFilter.isActive
     }
 
     func torrentCount(for category: SidebarSelection) -> Int {
