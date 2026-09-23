@@ -197,6 +197,7 @@ struct macOSContentView: View {
             hosts: hosts,
             sidebarSelection: $sidebarSelection,
             selectedHostID: store.host?.serverID,
+            connectionState: store.connectionState,
             accentColor: themeManager.accentColor,
             torrentCount: { torrentCount(for: $0) },
             onSelectHost: { host in

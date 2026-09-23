@@ -6,6 +6,7 @@ struct iOSSidebarView: View {
     let hosts: [Host]
     @Binding var sidebarSelection: SidebarSelection
     let selectedHostID: String?
+    let connectionState: TransmissionConnectionState
     let torrentCount: (SidebarSelection) -> Int
     let onSelectHost: (Host) -> Void
     let onEditServer: (Host) -> Void
@@ -44,7 +45,8 @@ struct iOSSidebarView: View {
                         SidebarRow(
                             title: host.displayName,
                             systemImage: "server.rack",
-                            showsCheckmark: host.serverID == selectedHostID
+                            showsCheckmark: host.serverID == selectedHostID,
+                            connectionState: host.serverID == selectedHostID ? connectionState : nil
                         ) {
                             onSelectHost(host)
                         }
@@ -113,11 +115,15 @@ private struct FooterCircleButton: View {
 }
 
 private struct SidebarRow: View {
+    // Center the badge on the visible corner of the 17-point server.rack symbol.
+    @ScaledMetric(relativeTo: .body) private var connectionBadgeOffsetX: CGFloat = 5.0 / 3.0
+    @ScaledMetric(relativeTo: .body) private var connectionBadgeOffsetY: CGFloat = -8.0 / 3.0
     let title: String
     let systemImage: String
     var badge: Int?
     var isSelected = false
     var showsCheckmark = false
+    var connectionState: TransmissionConnectionState?
     var isAction = false
     let action: () -> Void
 
@@ -125,6 +131,12 @@ private struct SidebarRow: View {
         Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: systemImage)
+                    .overlay(alignment: .topTrailing) {
+                        if let connectionState {
+                            ServerConnectionIndicator(state: connectionState, size: 8)
+                                .offset(x: connectionBadgeOffsetX, y: connectionBadgeOffsetY)
+                        }
+                    }
                     .frame(width: 24)
                     .foregroundStyle((isSelected || isAction) ? Color.accentColor : Color.primary)
 
@@ -138,6 +150,7 @@ private struct SidebarRow: View {
                     Image(systemName: "checkmark")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.accentColor)
+                        .accessibilityHidden(true)
                 } else if let badge {
                     Text("\(badge)")
                         .font(.subheadline)
@@ -153,7 +166,8 @@ private struct SidebarRow: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityValue(connectionState?.serverStatusLabel ?? "")
+        .accessibilityAddTraits(isSelected || showsCheckmark ? .isSelected : [])
     }
 }
 
@@ -165,6 +179,7 @@ private struct SidebarRow: View {
             hosts: environment.hosts,
             sidebarSelection: $selection,
             selectedHostID: environment.hosts.first?.serverID,
+            connectionState: .connected,
             torrentCount: { _ in 5 },
             onSelectHost: { _ in },
             onEditServer: { _ in },

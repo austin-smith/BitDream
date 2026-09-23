@@ -3,7 +3,7 @@ import SwiftUI
 /// Row content describing a server: name, endpoint, default marker, and connection indicator.
 struct ServerRowLabel: View {
     let host: Host
-    let isConnected: Bool
+    let connectionState: TransmissionConnectionState?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -25,29 +25,27 @@ struct ServerRowLabel: View {
                     .foregroundStyle(.secondary)
             }
 
-            if isConnected {
-                Image(systemName: "circle.fill")
-                    .font(.system(size: 8))
-                    .foregroundStyle(.green)
-                    .help("Connected")
+            if let connectionState {
+                ServerConnectionIndicator(state: connectionState)
             }
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(connectionState?.serverStatusLabel ?? "")
     }
 
     private var accessibilityLabel: String {
         let defaultLabel = host.isDefault ? ", default server" : ""
-        let connectedLabel = isConnected ? ", connected" : ""
-        return "\(host.displayName), \(host.server ?? "Unknown host"), port \(host.port)\(defaultLabel)\(connectedLabel)"
+        let currentLabel = connectionState != nil ? ", current server" : ""
+        return "\(host.displayName), \(host.server ?? "Unknown host"), port \(host.port)\(defaultLabel)\(currentLabel)"
     }
 }
 
 #if DEBUG
 #Preview("Server Row", traits: .sizeThatFitsLayout) {
     PreviewContainer { environment in
-        ServerRowLabel(host: environment.hosts[0], isConnected: true)
+        ServerRowLabel(host: environment.hosts[0], connectionState: .connected)
             .padding()
             .frame(width: 420)
     }

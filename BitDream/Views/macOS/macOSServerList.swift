@@ -322,7 +322,7 @@ private extension macOSServerList {
                 ForEach(sortedHosts) { host in
                     ServerRowLabel(
                         host: host,
-                        isConnected: host.serverID == store.host?.serverID
+                        connectionState: host.serverID == store.host?.serverID ? store.connectionState : nil
                     )
                     .tag(MacOSServerEditorNavigationState.Destination.server(host.serverID))
                     .contextMenu {
