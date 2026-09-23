@@ -31,7 +31,6 @@ enum MenuBarSortMode: String, CaseIterable {
 }
 
 enum AppDefaults {
-    static let accentColor: AccentColorOption = .blue
     static let themeMode: ThemeMode = .system
     static let hapticFeedbackEnabled: Bool = true
     static let showContentTypeIcons: Bool = true

@@ -610,7 +610,7 @@ func statusColor(for torrent: Torrent) -> Color {
     } else if torrent.statusCalc == TorrentStatusCalc.stalled {
         return .orange.opacity(0.9)
     } else {
-        return .blue.opacity(0.9)
+        return .accentColor.opacity(0.9)
     }
 }
 

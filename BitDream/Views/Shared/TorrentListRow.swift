@@ -71,7 +71,7 @@ func torrentStatusTint(for torrent: Torrent) -> Color {
 
     switch torrent.statusCalc {
     case .downloading, .retrievingMetadata:
-        return .blue
+        return .accentColor
     case .seeding, .complete:
         return .green
     case .paused, .unknown:
@@ -93,7 +93,7 @@ func progressColorForTorrent(_ torrent: Torrent) -> Color {
     case .retrievingMetadata:
         return .red.opacity(0.75)
     default:
-        return .blue.opacity(0.75)
+        return .accentColor.opacity(0.75)
     }
 }
 

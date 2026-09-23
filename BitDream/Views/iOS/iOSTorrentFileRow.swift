@@ -13,7 +13,7 @@ struct iOSTorrentFileRow: View {
     }
 
     private var progressTint: Color {
-        row.percentDone >= 1.0 ? .green : .blue
+        row.percentDone >= 1.0 ? .green : .accentColor
     }
 
     private var priority: FilePriority {

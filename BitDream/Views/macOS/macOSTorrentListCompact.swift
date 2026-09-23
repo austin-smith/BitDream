@@ -62,6 +62,7 @@ struct macOSTorrentListCompact: View {
     @State private var tableSortOrder = [KeyPathComparator(\TorrentTableRow.name)]
     let store: TransmissionStore
     let showContentTypeIcons: Bool
+    var listFocus: FocusState<macOSContentDetail.ListFocus?>.Binding
 
     @State private var deleteDialog: Bool = false
     @State private var labelDialog: Bool = false
@@ -214,7 +215,7 @@ private extension macOSTorrentListCompact {
                             Text(formatByteCount(row.downloadSpeed) + "/s")
                                 .font(.system(size: 9, design: .monospaced))
                         }
-                        .foregroundColor(.blue)
+                        .foregroundColor(.accentColor)
                     }
 
                     if row.uploadSpeed > 0 {
@@ -262,6 +263,11 @@ private extension macOSTorrentListCompact {
             .customizationID("labels")
         })
         .tableStyle(.inset(alternatesRowBackgrounds: true))
+        .focused(listFocus, equals: .compact)
+        // Move keyboard focus with the click while preserving native selection gestures.
+        .simultaneousGesture(TapGesture().onEnded {
+            listFocus.wrappedValue = .compact
+        })
         .animation(.default, value: tableSortOrder)
         .contextMenu(forSelectionType: TorrentTableRow.ID.self) { selection in
             torrentContextMenu(for: selection)
@@ -468,6 +474,7 @@ private extension macOSTorrentListCompact {
 #if os(macOS) && DEBUG
 #Preview("macOS Compact Torrent List", traits: .fixedLayout(width: 1_000, height: 420)) {
     @Previewable @State var selection = Set<Int>()
+    @Previewable @FocusState var listFocus: macOSContentDetail.ListFocus?
     @Previewable @State var sortProperty = SortProperty.name
     @Previewable @State var sortOrder = SortOrder.ascending
 
@@ -478,7 +485,8 @@ private extension macOSTorrentListCompact {
             sortProperty: $sortProperty,
             sortOrder: $sortOrder,
             store: environment.store,
-            showContentTypeIcons: true
+            showContentTypeIcons: true,
+            listFocus: $listFocus
         )
     }
 }

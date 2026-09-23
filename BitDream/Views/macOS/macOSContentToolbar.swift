@@ -269,7 +269,7 @@ private struct macOSContentFilterMenu: View {
                     showingFilterPopover: $showingFilterPopover,
                     hasActiveFilters: false,
                     activeFilterCount: 0,
-                    accentColor: .blue,
+                    accentColor: .accentColor,
                     availableLabels: ["Linux", "Movies"],
                     includedLabels: $includedLabels,
                     excludedLabels: $excludedLabels,

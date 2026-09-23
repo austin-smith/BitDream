@@ -27,19 +27,6 @@ struct iOSSettingsView: View {
                         }
                     }
 
-                    NavigationLink(destination: AccentColorPicker(selection: $themeManager.currentAccentColorOption)
-                        .iOSHapticNavigationTransition()) {
-                        HStack {
-                            Text("Accent Color")
-                            Spacer()
-                            Circle()
-                                .fill(themeManager.currentAccentColorOption.color)
-                                .frame(width: 16, height: 16)
-                            Text(themeManager.currentAccentColorOption.name)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-
                     NavigationLink(destination: AppIconPickerView(appIconManager: appIconManager)
                         .iOSHapticNavigationTransition()) {
                         HStack {
@@ -142,50 +129,6 @@ struct iOSSettingsView: View {
                 }
             }
         }
-    }
-}
-
-private struct AccentColorPicker: View {
-    @Environment(\.hapticFeedback) private var hapticFeedback
-    @EnvironmentObject private var themeManager: ThemeManager
-    @Binding var selection: AccentColorOption
-
-    var body: some View {
-        List {
-            ForEach(AccentColorOption.allCases) { option in
-                Button {
-                    guard selection != option else { return }
-
-                    withAnimation(.easeInOut(duration: 0.1)) {
-                        selection = option
-                        themeManager.setAccentColor(option)
-                    }
-                    hapticFeedback.play(.selectionChanged)
-                } label: {
-                    HStack {
-                        Circle()
-                            .fill(option.color)
-                            .frame(width: 20, height: 20)
-
-                        Text(option.name)
-
-                        Text(option.rawValue)
-                            .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(.secondary)
-
-                        Spacer()
-
-                        if selection == option {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(.tint)
-                        }
-                    }
-                    .foregroundStyle(.primary)
-                }
-            }
-        }
-        .navigationTitle("Accent Color")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

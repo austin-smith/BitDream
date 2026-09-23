@@ -18,8 +18,9 @@ struct macOSContentDetail: View {
     let accentColor: Color
     @Binding var isDropTargeted: Bool
     @Binding var draggedTorrentInfo: [TorrentInfo]
-    let focusedTarget: FocusState<macOSContentView.FocusTarget?>.Binding
     let onShowStatistics: () -> Void
+    enum ListFocus: Hashable { case expanded, compact }
+    @FocusState private var listFocus: ListFocus?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -43,6 +44,12 @@ struct macOSContentDetail: View {
             ))
             .overlay(dropTargetOverlay)
             .overlay(torrentPreviewOverlay)
+            // Hand focus to the replacement control only when the torrent pane owns it.
+            .onChange(of: isCompactMode) { _, compact in
+                if listFocus != nil {
+                    listFocus = compact ? .compact : .expanded
+                }
+            }
             .onChange(of: isDropTargeted) { _, newValue in
                 if !newValue {
                     draggedTorrentInfo = []
@@ -89,9 +96,9 @@ struct macOSContentDetail: View {
                     sortProperty: $sortProperty,
                     sortOrder: $sortOrder,
                     store: store,
-                    showContentTypeIcons: showContentTypeIcons
+                    showContentTypeIcons: showContentTypeIcons,
+                    listFocus: $listFocus
                 )
-                .focused(focusedTarget, equals: .contentList)
             } else {
                 List(selection: $selectedTorrentIds) {
                     ForEach(torrents, id: \.id) { torrent in
@@ -107,7 +114,11 @@ struct macOSContentDetail: View {
                 }
                 .listStyle(.plain)
                 .tint(accentColor)
-                .focused(focusedTarget, equals: .contentList)
+                .focused($listFocus, equals: .expanded)
+                // Move keyboard focus with the click while preserving native selection gestures.
+                .simultaneousGesture(TapGesture().onEnded {
+                    listFocus = .expanded
+                })
             }
         }
     }
@@ -338,7 +349,6 @@ private struct macOSContentDetailPreviewHost: View {
     @State private var sortOrder = SortOrder.ascending
     @State private var isDropTargeted = false
     @State private var draggedTorrentInfo: [TorrentInfo] = []
-    @FocusState private var focusedTarget: macOSContentView.FocusTarget?
 
     var body: some View {
         macOSContentDetail(
@@ -350,10 +360,9 @@ private struct macOSContentDetailPreviewHost: View {
             sortOrder: $sortOrder,
             selectedTorrents: [],
             showContentTypeIcons: true,
-            accentColor: .blue,
+            accentColor: .accentColor,
             isDropTargeted: $isDropTargeted,
             draggedTorrentInfo: $draggedTorrentInfo,
-            focusedTarget: $focusedTarget,
             onShowStatistics: { }
         )
     }

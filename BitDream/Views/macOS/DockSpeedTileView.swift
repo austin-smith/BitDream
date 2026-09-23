@@ -106,7 +106,7 @@ private struct DockSpeedBadge: View {
     private var backgroundColor: Color {
         switch direction {
         case .download:
-            return Color(red: 0 / 255, green: 116 / 255, blue: 232 / 255)
+            return Color.accentColor
         case .upload:
             return Color(red: 32 / 255, green: 140 / 255, blue: 64 / 255)
         }

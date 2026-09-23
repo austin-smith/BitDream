@@ -57,44 +57,6 @@ struct macOSGeneralSettingsTab: View {
                                 .pickerStyle(.menu)
                             }
 
-                            HStack {
-                                Text("Accent Color")
-                                Spacer()
-                                Picker("", selection: $themeManager.currentAccentColorOption) {
-                                    ForEach(AccentColorOption.allCases) { option in
-                                        HStack {
-                                            Circle()
-                                                .fill(option.color)
-                                                .frame(width: 12, height: 12)
-                                            Text(option.name)
-                                        }
-                                        .tag(option)
-                                    }
-                                }
-                                .pickerStyle(.menu)
-                            }
-
-                            HStack(spacing: 12) {
-                                ForEach(AccentColorOption.allCases) { option in
-                                    VStack {
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(option.color)
-                                            .frame(width: 40, height: 40)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 8)
-                                                    .stroke(themeManager.currentAccentColorOption == option ? Color.primary : Color.clear, lineWidth: 2)
-                                            )
-                                        Text(option.rawValue)
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .onTapGesture {
-                                        themeManager.setAccentColor(option)
-                                    }
-                                }
-                            }
-                            .padding(.top, 8)
-
                             Toggle("Show file type icons", isOn: $showContentTypeIcons)
                         }
 
