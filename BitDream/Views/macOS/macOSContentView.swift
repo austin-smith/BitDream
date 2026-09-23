@@ -16,14 +16,10 @@ struct macOSContentView: View {
 
     @State var sortProperty: SortProperty
     @State var sortOrder: SortOrder
-    @State private var filterBySelection: [TorrentStatusCalc] = TorrentStatusCalc.allCases
-    @State private var sidebarSelection: SidebarSelection = .allDreams
+    @State private var filters: TorrentFilterPreferences
     @State private var isInspectorVisible: Bool
     @State private var columnVisibility: NavigationSplitViewVisibility
     @State private var searchText: String = ""
-    @State private var includedLabels: Set<String> = []
-    @State private var excludedLabels: Set<String> = []
-    @State private var showOnlyNoLabels: Bool = false
     @AppStorage(UserDefaultsKeys.torrentListCompactMode) private var isCompactMode = false
     @AppStorage(UserDefaultsKeys.showContentTypeIcons) private var showContentTypeIcons = AppDefaults.showContentTypeIcons
 
@@ -46,6 +42,7 @@ struct macOSContentView: View {
         self.hosts = hosts
         self.store = store
         self.userDefaults = userDefaults
+        _filters = State(initialValue: TorrentFilterPreferences(userDefaults: userDefaults, serverID: store.host?.serverID))
         _sortProperty = State(initialValue: userDefaults.sortProperty)
         _sortOrder = State(initialValue: userDefaults.sortOrder)
         _isInspectorVisible = State(initialValue: userDefaults.inspectorVisibility)
@@ -93,10 +90,8 @@ struct macOSContentView: View {
     // View with basic event handlers
     private var viewWithHandlers: some View {
         viewWithSheets
-        .onChange(of: sidebarSelection) { _, newValue in
-            // Update the filter
-            filterBySelection = newValue.filter
-
+        .modifier(TorrentFilterSynchronization(preferences: filters, store: store))
+        .onChange(of: filters.sidebarSelection) { _, newValue in
             // Only clear selection if the selected torrent isn't in the new filtered list
             if let selectedId = selectedTorrentIds.first {
                 let filteredTorrents = store.torrents.filtered(by: newValue.filter)
@@ -165,9 +160,9 @@ struct macOSContentView: View {
                 activeFilterCount: activeFilterCount,
                 accentColor: themeManager.accentColor,
                 availableLabels: store.availableLabels,
-                includedLabels: $includedLabels,
-                excludedLabels: $excludedLabels,
-                showOnlyNoLabels: $showOnlyNoLabels,
+                includedLabels: $filters.labelFilter.includedLabels,
+                excludedLabels: $filters.labelFilter.excludedLabels,
+                showOnlyNoLabels: $filters.labelFilter.showsUnlabeledOnly,
                 noLabelCount: store.torrents.filter { $0.labels.isEmpty }.count,
                 countForLabel: { store.torrentCount(for: $0) },
                 isCompactMode: $isCompactMode,
@@ -195,7 +190,7 @@ struct macOSContentView: View {
     private var sidebarView: some View {
         macOSContentSidebar(
             hosts: hosts,
-            sidebarSelection: $sidebarSelection,
+            sidebarSelection: $filters.sidebarSelection,
             selectedHostID: store.host?.serverID,
             accentColor: themeManager.accentColor,
             torrentCount: { torrentCount(for: $0) },
@@ -237,7 +232,7 @@ struct macOSContentView: View {
                 openWindow(id: "statistics")
             }
         )
-        .navigationTitle(sidebarSelection.rawValue)
+        .navigationTitle(filters.sidebarSelection.rawValue)
         .navigationSubtitle(navigationSubtitle)
         .refreshable {
             await store.refreshNow()
@@ -272,7 +267,7 @@ private extension macOSContentView {
     }
 
     var displayedTorrents: [Torrent] {
-        let filteredTorrents = store.torrents.filtered(by: filterBySelection)
+        let filteredTorrents = store.torrents.filtered(by: filters.sidebarSelection.filter)
             .filter { torrent in
                 torrentMatchesSearch(torrent, query: searchText)
             }
@@ -285,15 +280,15 @@ private extension macOSContentView {
     }
 
     var hasActiveFilters: Bool {
-        !includedLabels.isEmpty || !excludedLabels.isEmpty || showOnlyNoLabels
+        filters.labelFilter.isActive
     }
 
     var activeFilterCount: Int {
-        includedLabels.count + excludedLabels.count + (showOnlyNoLabels ? 1 : 0)
+        filters.labelFilter.activeCount
     }
 
     var navigationSubtitle: String {
-        let count = torrentCount(for: sidebarSelection)
+        let count = torrentCount(for: filters.sidebarSelection)
         var subtitle = "\(count) dream\(count == 1 ? "" : "s")"
 
         if hasActiveFilters {
@@ -304,13 +299,13 @@ private extension macOSContentView {
     }
 
     func torrentMatchesSearch(_ torrent: Torrent, query: String) -> Bool {
-        if showOnlyNoLabels && !torrent.labels.isEmpty {
+        if filters.labelFilter.showsUnlabeledOnly && !torrent.labels.isEmpty {
             return false
         }
 
-        if !includedLabels.isEmpty {
+        if !filters.labelFilter.includedLabels.isEmpty {
             let hasIncludedLabel = torrent.labels.contains { torrentLabel in
-                includedLabels.contains { includedLabel in
+                filters.labelFilter.includedLabels.contains { includedLabel in
                     torrentLabel.lowercased() == includedLabel.lowercased()
                 }
             }
@@ -319,9 +314,9 @@ private extension macOSContentView {
             }
         }
 
-        if !excludedLabels.isEmpty {
+        if !filters.labelFilter.excludedLabels.isEmpty {
             let hasExcludedLabel = torrent.labels.contains { torrentLabel in
-                excludedLabels.contains { excludedLabel in
+                filters.labelFilter.excludedLabels.contains { excludedLabel in
                     torrentLabel.lowercased() == excludedLabel.lowercased()
                 }
             }
@@ -362,7 +357,7 @@ private extension macOSContentView {
     func handleSearchTextChange(oldValue: String, newValue: String) {
         if let selectedId = selectedTorrentIds.first {
             let selectedMatches = store.torrents.first(where: { $0.id == selectedId }).map { torrentMatchesSearch($0, query: searchText) } ?? false
-            let isInFiltered = store.torrents.filtered(by: filterBySelection).contains { $0.id == selectedId }
+            let isInFiltered = store.torrents.filtered(by: filters.sidebarSelection.filter).contains { $0.id == selectedId }
             if !selectedMatches || !isInFiltered {
                 selectedTorrentIds.removeAll()
             }
