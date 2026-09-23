@@ -62,6 +62,7 @@ struct macOSTorrentListCompact: View {
     @State private var tableSortOrder = [KeyPathComparator(\TorrentTableRow.name)]
     let store: TransmissionStore
     let showContentTypeIcons: Bool
+    @FocusState private var isTableFocused: Bool
 
     @State private var deleteDialog: Bool = false
     @State private var labelDialog: Bool = false
@@ -214,7 +215,7 @@ private extension macOSTorrentListCompact {
                             Text(formatByteCount(row.downloadSpeed) + "/s")
                                 .font(.system(size: 9, design: .monospaced))
                         }
-                        .foregroundColor(.blue)
+                        .foregroundColor(.accentColor)
                     }
 
                     if row.uploadSpeed > 0 {
@@ -262,6 +263,11 @@ private extension macOSTorrentListCompact {
             .customizationID("labels")
         })
         .tableStyle(.inset(alternatesRowBackgrounds: true))
+        .focused($isTableFocused)
+        // Move keyboard focus with the click while preserving native selection gestures.
+        .simultaneousGesture(TapGesture().onEnded {
+            isTableFocused = true
+        })
         .animation(.default, value: tableSortOrder)
         .contextMenu(forSelectionType: TorrentTableRow.ID.self) { selection in
             torrentContextMenu(for: selection)

@@ -8,7 +8,6 @@ import Foundation
 struct macOSContentView: View {
     @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
-    @EnvironmentObject private var themeManager: ThemeManager
     @EnvironmentObject private var serverEditingCoordinator: MacOSServerEditingCoordinator
     let hosts: [Host]
     @ObservedObject var store: TransmissionStore
@@ -31,11 +30,8 @@ struct macOSContentView: View {
     // Exposed to menu commands via @FocusedValue
     @State private var selectedTorrentIds: Set<Int> = []
 
-    enum FocusTarget: Hashable { case contentList }
-    @FocusState private var focusedTarget: FocusTarget?
-
-    // Search activation state - using isPresented for searchable
     @State private var isSearchPresented: Bool = false
+    @FocusState private var isSearchFocused: Bool
 
     // Drag and drop state
     @State private var isDropTargeted = false
@@ -69,7 +65,6 @@ struct macOSContentView: View {
         } detail: {
             detailView
         }
-        .defaultFocus($focusedTarget, .contentList)
     }
 
     // View with just sheet modifiers
@@ -115,7 +110,6 @@ struct macOSContentView: View {
         viewWithHandlers
         .onChange(of: columnVisibility) { _, newValue in
             userDefaults.sidebarVisibility = newValue
-            focusedTarget = .contentList
         }
         .onChange(of: isInspectorVisible) { _, newValue in
             userDefaults.inspectorVisibility = newValue
@@ -123,7 +117,6 @@ struct macOSContentView: View {
             Task { @MainActor in
                 store.isInspectorVisible = newValue
             }
-            focusedTarget = .contentList
         }
         .onChange(of: sortProperty) { _, newValue in
             userDefaults.sortProperty = newValue
@@ -134,6 +127,7 @@ struct macOSContentView: View {
         .onChange(of: store.shouldActivateSearch) { _, newValue in
             if newValue {
                 isSearchPresented = true
+                isSearchFocused = true
                 // Defer state change to avoid publishing during view update
                 Task { @MainActor in
                     store.shouldActivateSearch = false
@@ -155,6 +149,7 @@ struct macOSContentView: View {
             handleSearchTextChange(oldValue: oldValue, newValue: newValue)
         }
         .searchable(text: $searchText, isPresented: $isSearchPresented, placement: .toolbar, prompt: "Search torrents")
+        .searchFocused($isSearchFocused)
         .searchSuggestions { EmptyView() }
         .toolbar {
             macOSContentToolbar(
@@ -163,7 +158,7 @@ struct macOSContentView: View {
                 showingFilterPopover: $showingFilterPopover,
                 hasActiveFilters: hasActiveFilters,
                 activeFilterCount: activeFilterCount,
-                accentColor: themeManager.accentColor,
+                accentColor: Color.accentColor,
                 availableLabels: store.availableLabels,
                 includedLabels: $includedLabels,
                 excludedLabels: $excludedLabels,
@@ -197,7 +192,7 @@ struct macOSContentView: View {
             hosts: hosts,
             sidebarSelection: $sidebarSelection,
             selectedHostID: store.host?.serverID,
-            accentColor: themeManager.accentColor,
+            accentColor: Color.accentColor,
             torrentCount: { torrentCount(for: $0) },
             onSelectHost: { host in
                 store.setHost(host: host)
@@ -229,10 +224,9 @@ struct macOSContentView: View {
             sortOrder: $sortOrder,
             selectedTorrents: selectedTorrents,
             showContentTypeIcons: showContentTypeIcons,
-            accentColor: themeManager.accentColor,
+            accentColor: Color.accentColor,
             isDropTargeted: $isDropTargeted,
             draggedTorrentInfo: $draggedTorrentInfo,
-            focusedTarget: $focusedTarget,
             onShowStatistics: {
                 openWindow(id: "statistics")
             }
@@ -377,7 +371,6 @@ enum LabelFilterAction {
 }
 
 struct LabelFilterChip: View {
-    @EnvironmentObject private var themeManager: ThemeManager
     let label: String
     let count: Int
     let isIncluded: Bool
@@ -386,7 +379,7 @@ struct LabelFilterChip: View {
 
     private var backgroundColor: Color {
         if isIncluded {
-            return themeManager.accentColor.opacity(0.2)
+            return Color.accentColor.opacity(0.2)
         } else if isExcluded {
             return Color.red.opacity(0.2)
         } else {
@@ -396,7 +389,7 @@ struct LabelFilterChip: View {
 
     private var borderColor: Color {
         if isIncluded {
-            return themeManager.accentColor
+            return Color.accentColor
         } else if isExcluded {
             return Color.red
         } else {
@@ -406,7 +399,7 @@ struct LabelFilterChip: View {
 
     private var textColor: Color {
         if isIncluded {
-            return themeManager.accentColor
+            return Color.accentColor
         } else if isExcluded {
             return Color.red
         } else {

@@ -5,7 +5,6 @@ import Foundation
 typealias PlatformSettingsView = macOSSettingsView
 
 struct macOSSettingsView: View {
-    @EnvironmentObject private var themeManager: ThemeManager
     @ObservedObject var store: TransmissionStore
     @StateObject private var editModel = SettingsViewModel()
 
@@ -55,7 +54,7 @@ struct macOSSettingsView: View {
                 Label("Network", systemImage: "network")
             }
         }
-        .accentColor(themeManager.accentColor)
+        .tint(.accentColor)
     }
 }
 

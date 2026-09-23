@@ -61,7 +61,7 @@ struct macOSMenuBarTorrentRow: View {
                         Image(systemName: "arrow.down")
                         Text(formatSpeed(torrent.rateDownload))
                     }
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(Color.accentColor)
 
                     HStack(spacing: 3) {
                         Image(systemName: "arrow.up")

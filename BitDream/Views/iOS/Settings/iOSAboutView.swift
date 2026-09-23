@@ -2,7 +2,6 @@
 import SwiftUI
 
 struct iOSAboutView: View {
-    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.openURL) var openURL
     @Environment(\.hapticFeedback) private var hapticFeedback
     @State private var isShowingLicenses = false
@@ -93,7 +92,7 @@ struct iOSAboutView: View {
                         }
                         .buttonStyle(.plain)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(themeManager.accentColor)
+                        .foregroundStyle(Color.accentColor)
                     }
                 }
             }

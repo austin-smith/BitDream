@@ -2,7 +2,6 @@
 import SwiftUI
 
 struct macOSAboutView: View {
-    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.openURL) var openURL
     @State private var isShowingLicenses = false
 
@@ -90,7 +89,7 @@ struct macOSAboutView: View {
                     }
                     .buttonStyle(.plain)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(themeManager.accentColor)
+                    .foregroundStyle(Color.accentColor)
                 }
             }
         }

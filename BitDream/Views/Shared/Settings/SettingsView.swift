@@ -29,7 +29,6 @@ struct SettingsView: View {
         userDefaults: UserDefaults = .standard,
         afterReset: () -> Void = {}
     ) {
-        themeManager.setAccentColor(AppDefaults.accentColor)
         themeManager.setThemeMode(AppDefaults.themeMode)
 
         // Persist AppStorage-backed flags

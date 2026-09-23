@@ -60,7 +60,6 @@ struct iOSSidebarView: View {
                     SidebarRow(
                         title: "Add Server",
                         systemImage: "plus",
-                        isAction: true,
                         action: onAddServer
                     )
                 }
@@ -118,7 +117,6 @@ private struct SidebarRow: View {
     var badge: Int?
     var isSelected = false
     var showsCheckmark = false
-    var isAction = false
     let action: () -> Void
 
     var body: some View {
@@ -126,10 +124,11 @@ private struct SidebarRow: View {
             HStack(spacing: 12) {
                 Image(systemName: systemImage)
                     .frame(width: 24)
-                    .foregroundStyle((isSelected || isAction) ? Color.accentColor : Color.primary)
+                    .foregroundStyle(isSelected ? Color.white : Color.accentColor)
 
                 Text(title)
-                    .foregroundStyle(.primary)
+                    .fontWeight(isSelected ? .semibold : .regular)
+                    .foregroundStyle(isSelected ? Color.white : Color.primary)
                     .lineLimit(1)
 
                 Spacer()
@@ -141,14 +140,14 @@ private struct SidebarRow: View {
                 } else if let badge {
                     Text("\(badge)")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isSelected ? Color.white : Color.secondary)
                 }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
+                    .fill(isSelected ? Color.accentColor : Color.clear)
             )
             .contentShape(.rect)
         }

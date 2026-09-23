@@ -120,7 +120,7 @@ private extension BitDreamApp {
                 .frame(width: appEnvironment.screenshotWindowSize?.width, height: appEnvironment.screenshotWindowSize?.height)
                 .environmentObject(store) // Pass the shared store to the ContentView
                 .environmentObject(serverEditingCoordinator)
-                .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
+                .tint(.accentColor)
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
                 .immediateTheme(manager: themeManager)
                 .modifier(AppEnvironmentModifier(environment: appEnvironment))
@@ -278,7 +278,7 @@ private extension BitDreamApp {
             macOSManageServersWindow()
                 .environmentObject(store)
                 .environmentObject(serverEditingCoordinator)
-                .tint(themeManager.accentColor)
+                .tint(Color.accentColor)
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
                 .modifier(AppEnvironmentModifier(environment: appEnvironment))
@@ -292,7 +292,7 @@ private extension BitDreamApp {
         WindowGroup("Connection Info", id: "connection-info") {
             macOSConnectionInfoView()
                 .environmentObject(store)
-                .accentColor(themeManager.accentColor)
+                .tint(.accentColor)
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
                 .modifier(AppEnvironmentModifier(environment: appEnvironment))
@@ -306,7 +306,7 @@ private extension BitDreamApp {
         WindowGroup("Statistics", id: "statistics") {
             macOSStatisticsView()
                 .environmentObject(store)
-                .accentColor(themeManager.accentColor)
+                .tint(.accentColor)
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
                 .modifier(AppEnvironmentModifier(environment: appEnvironment))
@@ -355,7 +355,6 @@ private extension BitDreamApp {
             iOSHapticFeedbackHost {
                 ContentView()
                     .environmentObject(store) // Pass the shared store to the ContentView
-                    .accentColor(themeManager.accentColor) // Apply the accent color to the entire app
                     .environmentObject(themeManager) // Pass the ThemeManager to all views
                     .environmentObject(appIconManager)
                     .onOpenURL(perform: openWidgetURL)

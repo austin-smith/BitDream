@@ -111,7 +111,7 @@ struct iOSTorrentListRow: View {
         Button(action: togglePlayback) {
             Image(systemName: torrent.status == TorrentStatus.stopped.rawValue ? "play.fill" : "pause.fill")
         }
-        .tint(torrent.status == TorrentStatus.stopped.rawValue ? .blue : .orange)
+        .tint(torrent.status == TorrentStatus.stopped.rawValue ? .accentColor : .orange)
 
         Menu {
             actionsMenu

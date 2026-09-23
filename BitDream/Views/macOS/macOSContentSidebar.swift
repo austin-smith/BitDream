@@ -13,6 +13,7 @@ struct macOSContentSidebar: View {
     let onAddServer: () -> Void
     let onManageServers: () -> Void
     let onOpenSettings: () -> Void
+    @FocusState private var isSidebarFocused: Bool
 
     var body: some View {
         List(selection: $sidebarSelection) {
@@ -34,7 +35,7 @@ struct macOSContentSidebar: View {
                             Spacer()
                             if host.serverID == selectedHostID {
                                 Image(systemName: "checkmark")
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(.accentColor)
                             }
                         }
                     }
@@ -82,6 +83,10 @@ struct macOSContentSidebar: View {
         }
         .listStyle(SidebarListStyle())
         .tint(accentColor)
+        .focused($isSidebarFocused)
+        .simultaneousGesture(TapGesture().onEnded {
+            isSidebarFocused = true
+        })
     }
 }
 
@@ -95,7 +100,7 @@ struct macOSContentSidebar: View {
         hosts: hosts,
         sidebarSelection: $selection,
         selectedHostID: hosts[0].serverID,
-        accentColor: .blue,
+        accentColor: .accentColor,
         torrentCount: { _ in 5 },
         onSelectHost: { _ in },
         onEditServer: { _ in },

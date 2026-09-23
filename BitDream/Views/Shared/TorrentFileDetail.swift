@@ -42,7 +42,7 @@ struct FileCompletion {
     static let incomplete = "Incomplete"
 
     static func color(for isComplete: Bool) -> Color {
-        isComplete ? .green : .blue
+        isComplete ? .green : .accentColor
     }
 }
 

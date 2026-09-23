@@ -78,7 +78,7 @@ func connectionStatusSymbol(for status: TransmissionStore.ConnectionStatus) -> S
 func connectionStatusColor(for status: TransmissionStore.ConnectionStatus) -> Color {
     switch status {
     case .connecting:
-        return .blue
+        return .accentColor
     case .connected:
         return .green
     case .reconnecting:

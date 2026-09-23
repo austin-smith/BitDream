@@ -18,8 +18,8 @@ struct macOSContentDetail: View {
     let accentColor: Color
     @Binding var isDropTargeted: Bool
     @Binding var draggedTorrentInfo: [TorrentInfo]
-    let focusedTarget: FocusState<macOSContentView.FocusTarget?>.Binding
     let onShowStatistics: () -> Void
+    @FocusState private var isListFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -91,7 +91,6 @@ struct macOSContentDetail: View {
                     store: store,
                     showContentTypeIcons: showContentTypeIcons
                 )
-                .focused(focusedTarget, equals: .contentList)
             } else {
                 List(selection: $selectedTorrentIds) {
                     ForEach(torrents, id: \.id) { torrent in
@@ -107,7 +106,11 @@ struct macOSContentDetail: View {
                 }
                 .listStyle(.plain)
                 .tint(accentColor)
-                .focused(focusedTarget, equals: .contentList)
+                .focused($isListFocused)
+                // Move keyboard focus with the click while preserving native selection gestures.
+                .simultaneousGesture(TapGesture().onEnded {
+                    isListFocused = true
+                })
             }
         }
     }
@@ -338,7 +341,6 @@ private struct macOSContentDetailPreviewHost: View {
     @State private var sortOrder = SortOrder.ascending
     @State private var isDropTargeted = false
     @State private var draggedTorrentInfo: [TorrentInfo] = []
-    @FocusState private var focusedTarget: macOSContentView.FocusTarget?
 
     var body: some View {
         macOSContentDetail(
@@ -350,10 +352,9 @@ private struct macOSContentDetailPreviewHost: View {
             sortOrder: $sortOrder,
             selectedTorrents: [],
             showContentTypeIcons: true,
-            accentColor: .blue,
+            accentColor: .accentColor,
             isDropTargeted: $isDropTargeted,
             draggedTorrentInfo: $draggedTorrentInfo,
-            focusedTarget: $focusedTarget,
             onShowStatistics: { }
         )
     }
