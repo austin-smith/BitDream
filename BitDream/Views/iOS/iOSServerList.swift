@@ -134,13 +134,13 @@ struct iOSServerList: View {
     }
 
     private func row(for host: Host) -> some View {
-        let isConnected = host.serverID == store.host?.serverID
+        let isCurrentServer = host.serverID == store.host?.serverID
 
         return Button {
             hapticFeedback.play(.actionTriggered)
             presentedEditor = .edit(host)
         } label: {
-            ServerRowLabel(host: host, isConnected: isConnected)
+            ServerRowLabel(host: host, connectionState: isCurrentServer ? store.connectionState : nil)
         }
         .tint(.primary)
         .contextMenu {
@@ -148,7 +148,7 @@ struct iOSServerList: View {
                 store.setHost(host: host)
                 hapticFeedback.play(.selectionChanged)
             }
-            .disabled(isConnected)
+            .disabled(isCurrentServer)
 
             Button("Edit", systemImage: "square.and.pencil") {
                 hapticFeedback.play(.actionTriggered)
