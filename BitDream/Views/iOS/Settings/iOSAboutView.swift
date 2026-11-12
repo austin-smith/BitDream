@@ -92,7 +92,7 @@ struct iOSAboutView: View {
                         }
                         .buttonStyle(.plain)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(Color.accent)
                     }
                 }
             }

@@ -136,7 +136,7 @@ private struct SidebarRow: View {
                         }
                     }
                     .frame(width: 24)
-                    .foregroundStyle(isSelected ? Color.white : Color.accentColor)
+                    .foregroundStyle(isSelected ? Color.white : Color.accent)
 
                 Text(title)
                     .fontWeight(isSelected ? .semibold : .regular)
@@ -148,7 +148,7 @@ private struct SidebarRow: View {
                 if showsCheckmark {
                     Image(systemName: "checkmark")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(Color.accent)
                         .accessibilityHidden(true)
                 } else if let badge {
                     Text("\(badge)")
@@ -160,7 +160,7 @@ private struct SidebarRow: View {
             .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isSelected ? Color.accentColor : Color.clear)
+                    .fill(isSelected ? Color.accent : Color.clear)
             )
             .contentShape(.rect)
         }

@@ -378,7 +378,7 @@ private extension iOSContentView {
                     .if(hasActiveFilters) { button in
                         button.buttonStyle(.borderedProminent)
                     }
-                    .tint(hasActiveFilters ? Color.accentColor : Color.primary)
+                    .tint(hasActiveFilters ? Color.accent : Color.primary)
                     .accessibilityValue(hasActiveFilters ? "Active" : "Inactive")
                 }
                 .popover(isPresented: $showPrefs) {

@@ -89,7 +89,7 @@ struct macOSAboutView: View {
                     }
                     .buttonStyle(.plain)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(Color.accent)
                 }
             }
         }

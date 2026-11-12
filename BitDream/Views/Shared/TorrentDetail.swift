@@ -610,7 +610,7 @@ func statusColor(for torrent: Torrent) -> Color {
     } else if torrent.statusCalc == TorrentStatusCalc.stalled {
         return .orange.opacity(0.9)
     } else {
-        return .accentColor.opacity(0.9)
+        return .accent.opacity(0.9)
     }
 }
 
@@ -757,11 +757,11 @@ struct DetailViewLabelTag: View {
             .padding(.vertical, isLarge ? 4 : 3)
             .background(
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.accentColor.opacity(0.12))
+                    .fill(Color.accent.opacity(0.12))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 4)
-                    .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+                    .stroke(Color.accent.opacity(0.3), lineWidth: 1)
             )
             .foregroundColor(.primary)
     }

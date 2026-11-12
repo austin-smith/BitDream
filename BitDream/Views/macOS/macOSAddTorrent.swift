@@ -406,11 +406,11 @@ private struct TorrentSourceCard: View {
                 HStack {
                     Image(systemName: systemImage)
                         .font(.system(size: 14))
-                        .foregroundColor(isSelected ? .white : .accentColor)
+                        .foregroundColor(isSelected ? .white : .accent)
                         .frame(width: 28, height: 28)
                         .background(
                             Circle()
-                                .fill(isSelected ? Color.accentColor : Color.accentColor.opacity(0.1))
+                                .fill(isSelected ? Color.accent : Color.accent.opacity(0.1))
                         )
 
                     Text(title)
@@ -429,13 +429,13 @@ private struct TorrentSourceCard: View {
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? Color.accentColor.opacity(0.2) : Color(NSColor.controlBackgroundColor))
+                    .fill(isSelected ? Color.accent.opacity(0.2) : Color(NSColor.controlBackgroundColor))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSelected ? Color.accentColor : Color.gray.opacity(0.3), lineWidth: 1)
+                    .stroke(isSelected ? Color.accent : Color.gray.opacity(0.3), lineWidth: 1)
             )
-            .foregroundColor(isSelected ? .accentColor : .primary)
+            .foregroundColor(isSelected ? .accent : .primary)
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)

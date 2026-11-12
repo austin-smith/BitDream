@@ -15,7 +15,6 @@ struct macOSContentDetail: View {
     @Binding var sortOrder: SortOrder
     let selectedTorrents: Set<Torrent>
     let showContentTypeIcons: Bool
-    let accentColor: Color
     @Binding var isDropTargeted: Bool
     @Binding var draggedTorrentInfo: [TorrentInfo]
     let onShowStatistics: () -> Void
@@ -66,10 +65,10 @@ struct macOSContentDetail: View {
                 VStack(spacing: 12) {
                     Image(systemName: "plus.circle")
                         .font(.system(size: 48))
-                        .foregroundColor(accentColor)
+                        .foregroundColor(.accent)
                     Text("Drop .torrent files here to add")
                         .font(.title2)
-                        .foregroundColor(accentColor)
+                        .foregroundColor(.accent)
                 }
             } else if store.hasLoadedSnapshot {
                 VStack(spacing: 12) {
@@ -113,7 +112,6 @@ struct macOSContentDetail: View {
                     }
                 }
                 .listStyle(.plain)
-                .tint(accentColor)
                 .focused($listFocus, equals: .expanded)
                 // Move keyboard focus with the click while preserving native selection gestures.
                 .simultaneousGesture(TapGesture().onEnded {
@@ -125,10 +123,10 @@ struct macOSContentDetail: View {
 
     private var dropTargetOverlay: some View {
         RoundedRectangle(cornerRadius: 8)
-            .fill(accentColor.opacity(isDropTargeted ? 0.1 : 0))
+            .fill(Color.accent.opacity(isDropTargeted ? 0.1 : 0))
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(accentColor, lineWidth: isDropTargeted ? 2.5 : 0)
+                    .strokeBorder(.accent, lineWidth: isDropTargeted ? 2.5 : 0)
                     .opacity(isDropTargeted ? 0.8 : 0)
             )
             .animation(.easeInOut(duration: 0.2), value: isDropTargeted)
@@ -360,7 +358,6 @@ private struct macOSContentDetailPreviewHost: View {
             sortOrder: $sortOrder,
             selectedTorrents: [],
             showContentTypeIcons: true,
-            accentColor: .accentColor,
             isDropTargeted: $isDropTargeted,
             draggedTorrentInfo: $draggedTorrentInfo,
             onShowStatistics: { }

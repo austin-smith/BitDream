@@ -215,7 +215,7 @@ private extension macOSTorrentListCompact {
                             Text(formatByteCount(row.downloadSpeed) + "/s")
                                 .font(.system(size: 9, design: .monospaced))
                         }
-                        .foregroundColor(.accentColor)
+                        .foregroundColor(.accent)
                     }
 
                     if row.uploadSpeed > 0 {

@@ -71,7 +71,7 @@ func torrentStatusTint(for torrent: Torrent) -> Color {
 
     switch torrent.statusCalc {
     case .downloading, .retrievingMetadata:
-        return .accentColor
+        return .accent
     case .seeding, .complete:
         return .green
     case .paused, .unknown:
@@ -93,7 +93,7 @@ func progressColorForTorrent(_ torrent: Torrent) -> Color {
     case .retrievingMetadata:
         return .red.opacity(0.75)
     default:
-        return .accentColor.opacity(0.75)
+        return .accent.opacity(0.75)
     }
 }
 
@@ -220,11 +220,11 @@ struct LabelTag: View {
         .padding(.vertical, 2)
         .background(
             RoundedRectangle(cornerRadius: 4)
-                .fill(Color.accentColor.opacity(0.15))
+                .fill(Color.accent.opacity(0.15))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 4)
-                .stroke(Color.accentColor.opacity(0.4), lineWidth: 1)
+                .stroke(Color.accent.opacity(0.4), lineWidth: 1)
         )
     }
 }

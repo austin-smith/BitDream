@@ -92,7 +92,7 @@ struct iOSSettingsView: View {
                         )
                         hapticFeedback.play(.operationSucceeded)
                     }
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(.accent)
                 }
 
                 Section(header: Text("About")) {
