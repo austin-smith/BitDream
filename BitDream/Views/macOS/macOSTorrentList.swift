@@ -81,7 +81,6 @@ struct TorrentRowModifier: ViewModifier {
                     dialogState: dialogState
                 )
             }
-            .tint(.primary)
             .id(torrent.id)
             .sheet(isPresented: $labelDialog, content: labelSheet)
             .torrentDeleteAlert(
