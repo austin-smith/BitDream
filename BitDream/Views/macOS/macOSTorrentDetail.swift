@@ -228,9 +228,9 @@ private struct MacOSTorrentDetailContent: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "document")
                                         .font(.system(size: 12))
-                                        .foregroundColor(.accentColor)
+                                        .foregroundColor(.accent)
                                     Text("\(supplementalPayload.files.count)")
-                                        .foregroundColor(.accentColor)
+                                        .foregroundColor(.accent)
                                 }
                             }
                             .accessibilityIdentifier("torrent-detail-files")
@@ -243,9 +243,9 @@ private struct MacOSTorrentDetailContent: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "person.2")
                                         .font(.system(size: 12))
-                                        .foregroundColor(.accentColor)
+                                        .foregroundColor(.accent)
                                     Text("\(supplementalPayload.peers.count)")
-                                        .foregroundColor(.accentColor)
+                                        .foregroundColor(.accent)
                                 }
                             }
                             .accessibilityIdentifier("torrent-detail-peers")

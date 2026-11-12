@@ -22,7 +22,7 @@ enum SpeedDirection {
 
     var color: Color {
         switch self {
-        case .download: return .accentColor
+        case .download: return .accent
         case .upload: return .green
         }
     }
@@ -174,7 +174,7 @@ struct FileProgressView: View {
         HStack(spacing: 6) {
             ProgressView(value: percentDone)
                 .progressViewStyle(.linear)
-                .tint(percentDone >= 1.0 ? .green : .accentColor)
+                .tint(percentDone >= 1.0 ? .green : .accent)
                 .frame(minWidth: showDetailedText ? 100 : 50)
 
             if showDetailedText {

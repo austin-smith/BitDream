@@ -103,10 +103,10 @@ struct FileActionButtonsView: View {
                     Text("Filter")
                 }
                 .font(.subheadline)
-                .foregroundColor(hasActiveFilters ? .white : .accentColor)
+                .foregroundColor(hasActiveFilters ? .white : .accent)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(hasActiveFilters ? Color.accentColor : Color.accentColor.opacity(0.1))
+                .background(hasActiveFilters ? Color.accent : Color.accent.opacity(0.1))
                     .cornerRadius(16)
             }
 
@@ -162,10 +162,10 @@ struct FileActionButtonsView: View {
                     Text("Sort")
                 }
                 .font(.subheadline)
-                .foregroundColor(.accentColor)
+                .foregroundColor(.accent)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Color.accentColor.opacity(0.1))
+                .background(Color.accent.opacity(0.1))
                 .cornerRadius(16)
             }
 
@@ -184,10 +184,10 @@ struct FileActionButtonsView: View {
                     Text(isEditing ? "Done" : "Edit")
                 }
                 .font(.subheadline)
-                .foregroundColor(isEditing ? .white : .accentColor)
+                .foregroundColor(isEditing ? .white : .accent)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(isEditing ? Color.accentColor : Color.accentColor.opacity(0.1))
+                .background(isEditing ? Color.accent : Color.accent.opacity(0.1))
                 .cornerRadius(16)
             }
         }
@@ -247,7 +247,7 @@ struct FilterSheet: View {
                         showArchives = true
                         showOther = true
                     }
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(.accent)
                     .disabled(!hasActiveFilters)
                 }
             }

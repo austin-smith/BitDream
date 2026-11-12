@@ -153,7 +153,6 @@ struct macOSContentView: View {
                 showingFilterPopover: $showingFilterPopover,
                 hasActiveFilters: hasActiveFilters,
                 activeFilterCount: activeFilterCount,
-                accentColor: Color.accentColor,
                 availableLabels: store.availableLabels,
                 includedLabels: $filters.labelFilter.includedLabels,
                 excludedLabels: $filters.labelFilter.excludedLabels,
@@ -188,7 +187,6 @@ struct macOSContentView: View {
             sidebarSelection: $filters.sidebarSelection,
             selectedHostID: store.host?.serverID,
             connectionState: store.connectionState,
-            accentColor: Color.accentColor,
             torrentCount: { torrentCount(for: $0) },
             onSelectHost: { host in
                 store.setHost(host: host)
@@ -220,7 +218,6 @@ struct macOSContentView: View {
             sortOrder: $sortOrder,
             selectedTorrents: selectedTorrents,
             showContentTypeIcons: showContentTypeIcons,
-            accentColor: Color.accentColor,
             isDropTargeted: $isDropTargeted,
             draggedTorrentInfo: $draggedTorrentInfo,
             onShowStatistics: {
@@ -375,7 +372,7 @@ struct LabelFilterChip: View {
 
     private var backgroundColor: Color {
         if isIncluded {
-            return Color.accentColor.opacity(0.2)
+            return Color.accent.opacity(0.2)
         } else if isExcluded {
             return Color.red.opacity(0.2)
         } else {
@@ -385,7 +382,7 @@ struct LabelFilterChip: View {
 
     private var borderColor: Color {
         if isIncluded {
-            return Color.accentColor
+            return Color.accent
         } else if isExcluded {
             return Color.red
         } else {
@@ -395,7 +392,7 @@ struct LabelFilterChip: View {
 
     private var textColor: Color {
         if isIncluded {
-            return Color.accentColor
+            return Color.accent
         } else if isExcluded {
             return Color.red
         } else {

@@ -7,7 +7,6 @@ struct macOSContentSidebar: View {
     @Binding var sidebarSelection: SidebarSelection
     let selectedHostID: String?
     let connectionState: TransmissionConnectionState
-    let accentColor: Color
     let torrentCount: (SidebarSelection) -> Int
     let onSelectHost: (Host) -> Void
     let onEditServer: (Host) -> Void
@@ -45,7 +44,7 @@ struct macOSContentSidebar: View {
                             Spacer()
                             if host.serverID == selectedHostID {
                                 Image(systemName: "checkmark")
-                                    .foregroundStyle(accentColor)
+                                    .foregroundStyle(.accent)
                                     .accessibilityHidden(true)
                             }
                         }
@@ -76,7 +75,7 @@ struct macOSContentSidebar: View {
                         Text("Add Server")
                     } icon: {
                         Image(systemName: "plus")
-                            .foregroundStyle(accentColor)
+                            .foregroundStyle(.accent)
                     }
                 }
                 .buttonStyle(.plain)
@@ -95,7 +94,6 @@ struct macOSContentSidebar: View {
             }
         }
         .listStyle(SidebarListStyle())
-        .tint(accentColor)
         .focused($isSidebarFocused)
         .simultaneousGesture(TapGesture().onEnded {
             isSidebarFocused = true
@@ -114,7 +112,6 @@ struct macOSContentSidebar: View {
         sidebarSelection: $selection,
         selectedHostID: hosts[0].serverID,
         connectionState: .connected,
-        accentColor: .accentColor,
         torrentCount: { _ in 5 },
         onSelectHost: { _ in },
         onEditServer: { _ in },

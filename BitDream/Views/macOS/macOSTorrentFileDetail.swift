@@ -360,7 +360,7 @@ struct HeaderView: View {
                             .font(.caption)
                     }
                 }
-                .foregroundColor(hasActiveFilters ? .accentColor : .secondary)
+                .foregroundColor(hasActiveFilters ? .accent : .secondary)
             }
             .buttonStyle(.borderless)
             .menuStyle(.borderlessButton)

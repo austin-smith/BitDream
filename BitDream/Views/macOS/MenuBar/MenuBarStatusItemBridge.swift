@@ -113,6 +113,7 @@ final class MenuBarStatusItemBridge: NSObject, ObservableObject, NSMenuDelegate 
                 self?.openMainWindow()
             }
         )
+        .tint(.accent)
         .environmentObject(store)
 
         let anyView = AnyView(rootView)

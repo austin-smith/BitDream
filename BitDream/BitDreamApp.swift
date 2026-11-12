@@ -120,7 +120,7 @@ private extension BitDreamApp {
                 .frame(width: appEnvironment.screenshotWindowSize?.width, height: appEnvironment.screenshotWindowSize?.height)
                 .environmentObject(store) // Pass the shared store to the ContentView
                 .environmentObject(serverEditingCoordinator)
-                .tint(.accentColor)
+                .tint(.accent)
                 .environmentObject(themeManager) // Pass the ThemeManager to all views
                 .immediateTheme(manager: themeManager)
                 .modifier(AppEnvironmentModifier(environment: appEnvironment))
@@ -278,7 +278,7 @@ private extension BitDreamApp {
             macOSManageServersWindow()
                 .environmentObject(store)
                 .environmentObject(serverEditingCoordinator)
-                .tint(Color.accentColor)
+                .tint(.accent)
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
                 .modifier(AppEnvironmentModifier(environment: appEnvironment))
@@ -292,7 +292,7 @@ private extension BitDreamApp {
         WindowGroup("Connection Info", id: "connection-info") {
             macOSConnectionInfoView()
                 .environmentObject(store)
-                .tint(.accentColor)
+                .tint(.accent)
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
                 .modifier(AppEnvironmentModifier(environment: appEnvironment))
@@ -306,7 +306,7 @@ private extension BitDreamApp {
         WindowGroup("Statistics", id: "statistics") {
             macOSStatisticsView()
                 .environmentObject(store)
-                .tint(.accentColor)
+                .tint(.accent)
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
                 .modifier(AppEnvironmentModifier(environment: appEnvironment))
@@ -323,6 +323,7 @@ private extension BitDreamApp {
         WindowGroup(id: "about") {
             macOSAboutView()
                 .navigationTitle("About \(AppIdentity.displayName)")  // Proper window title handling
+                .tint(.accent)
                 .environmentObject(themeManager)
                 .immediateTheme(manager: themeManager)
                 .modifier(AppEnvironmentModifier(environment: appEnvironment))
@@ -344,6 +345,7 @@ private extension BitDreamApp {
                 #endif
             }
                 .frame(minWidth: 500, idealWidth: 550, maxWidth: 650, minHeight: 650)
+                .tint(.accent)
                 .environmentObject(themeManager) // Pass the ThemeManager to the Settings view
                 .immediateTheme(manager: themeManager)
                 .modifier(AppEnvironmentModifier(environment: appEnvironment))

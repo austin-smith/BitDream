@@ -8,7 +8,6 @@ struct macOSContentToolbar: ToolbarContent {
     @Binding var showingFilterPopover: Bool
     let hasActiveFilters: Bool
     let activeFilterCount: Int
-    let accentColor: Color
     let availableLabels: [String]
     @Binding var includedLabels: Set<String>
     @Binding var excludedLabels: Set<String>
@@ -39,13 +38,12 @@ struct macOSContentToolbar: ToolbarContent {
                 .if(hasActiveFilters) { button in
                     button.buttonStyle(.borderedProminent)
                 }
-                .tint(hasActiveFilters ? accentColor : Color.primary)
+                .tint(hasActiveFilters ? Color.accent : Color.primary)
                 .accessibilityValue(hasActiveFilters ? "Active" : "Inactive")
                 .help(hasActiveFilters ? "Active filters (\(activeFilterCount))" : "Filter torrents")
             }
             .popover(isPresented: $showingFilterPopover, arrowEdge: .bottom) {
                 macOSContentFilterMenu(
-                    accentColor: accentColor,
                     availableLabels: availableLabels,
                     includedLabels: $includedLabels,
                     excludedLabels: $excludedLabels,
@@ -127,7 +125,6 @@ private struct macOSContentSortMenu: View {
 }
 
 private struct macOSContentFilterMenu: View {
-    let accentColor: Color
     let availableLabels: [String]
     @Binding var includedLabels: Set<String>
     @Binding var excludedLabels: Set<String>
@@ -168,7 +165,7 @@ private struct macOSContentFilterMenu: View {
                 Button(action: toggleNoLabelsFilter, label: {
                     HStack {
                         Image(systemName: showOnlyNoLabels ? "checkmark.circle.fill" : "circle")
-                            .foregroundColor(showOnlyNoLabels ? accentColor : .secondary)
+                            .foregroundColor(showOnlyNoLabels ? .accent : .secondary)
 
                         Text("No labels")
                             .foregroundColor(.primary)
@@ -208,7 +205,7 @@ private struct macOSContentFilterMenu: View {
 
     private func filterColor(for label: String) -> Color {
         if includedLabels.contains(label) {
-            return accentColor
+            return .accent
         }
         if excludedLabels.contains(label) {
             return .red
@@ -269,7 +266,6 @@ private struct macOSContentFilterMenu: View {
                     showingFilterPopover: $showingFilterPopover,
                     hasActiveFilters: false,
                     activeFilterCount: 0,
-                    accentColor: .accentColor,
                     availableLabels: ["Linux", "Movies"],
                     includedLabels: $includedLabels,
                     excludedLabels: $excludedLabels,

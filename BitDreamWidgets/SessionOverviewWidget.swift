@@ -107,7 +107,7 @@ private struct SessionOverviewBackground: View {
         ZStack(alignment: .topLeading) {
             ContainerRelativeShape().fill(.background)
             // Banner layer
-            Color.accentColor
+            Color.accent
                 .frame(height: headerHeight)
                 .frame(maxWidth: .infinity, alignment: .top)
 
@@ -165,7 +165,7 @@ private struct SessionOverviewBackground: View {
                         // Download speed
                         HStack(spacing: 2) {
                             Image(systemName: "arrow.down")
-                                .foregroundColor(.accentColor)
+                                .foregroundColor(.accent)
                             Text("\(Self.speedFormatter.string(fromByteCount: snap.downloadSpeed))/s")
                         }
                         .font(speedFont)

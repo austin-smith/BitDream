@@ -54,7 +54,6 @@ struct macOSSettingsView: View {
                 Label("Network", systemImage: "network")
             }
         }
-        .tint(.accentColor)
     }
 }
 

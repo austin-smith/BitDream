@@ -83,7 +83,7 @@ func colorForFraction(_ fraction: Double) -> Color {
     // Continuous accent opacity from 0.2 to 1.0 based on completion fraction
     let minOpacity = 0.2
     let opacity = minOpacity + clamped * (1.0 - minOpacity)
-    return Color.accentColor.opacity(opacity)
+    return Color.accent.opacity(opacity)
 }
 
 // Compute how many columns fit within the available width (keeps width bounded to container)

@@ -111,7 +111,7 @@ struct iOSTorrentListRow: View {
         Button(action: togglePlayback) {
             Image(systemName: torrent.status == TorrentStatus.stopped.rawValue ? "play.fill" : "pause.fill")
         }
-        .tint(torrent.status == TorrentStatus.stopped.rawValue ? .accentColor : .orange)
+        .tint(torrent.status == TorrentStatus.stopped.rawValue ? .accent : .orange)
 
         Menu {
             actionsMenu
@@ -606,7 +606,7 @@ struct iOSLabelEditView: View {
                                 }
                             }, label: {
                                 Image(systemName: "plus.circle.fill")
-                                    .foregroundColor(.accentColor)
+                                    .foregroundColor(.accent)
                             })
                         }
                     }

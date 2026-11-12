@@ -38,8 +38,7 @@ final class ThemeManagerTests: XCTestCase {
         for scheme in [ColorScheme.light, .dark] {
             var environment = EnvironmentValues()
             environment.colorScheme = scheme
-            let accent = Color("AccentColor", bundle: Bundle(for: ThemeManager.self))
-                .resolve(in: environment)
+            let accent = Color.accent.resolve(in: environment)
             let original = Color(.sRGB, red: 0.404, green: 0.639, blue: 0.851, opacity: 1)
                 .resolve(in: environment)
             XCTAssertEqual(accent.red, original.red, accuracy: 0.0001)
