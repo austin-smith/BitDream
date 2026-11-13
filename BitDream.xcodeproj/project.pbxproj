@@ -275,6 +275,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4B1DADEF295E6C450037E9FB /* Build configuration list for PBXNativeTarget "BitDream" */;
 			buildPhases = (
+				BE1000010000000000000001 /* Verify Build Number */,
 				4B1DADD7295E6C440037E9FB /* Sources */,
 				4B1DADD8295E6C440037E9FB /* Frameworks */,
 				4B1DADD9295E6C440037E9FB /* Resources */,
@@ -362,6 +363,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6A2000094200000000B1C2D3 /* Build configuration list for PBXNativeTarget "BitDreamAppStore" */;
 			buildPhases = (
+				BE1000010000000000000002 /* Verify Build Number */,
 				6A2000034200000000B1C2D3 /* Sources */,
 				6A2000044200000000B1C2D3 /* Frameworks */,
 				6A2000054200000000B1C2D3 /* Resources */,
@@ -489,6 +491,45 @@
 			);
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		BE1000010000000000000001 /* Verify Build Number */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Verify Build Number";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = "# Shipping archives take the commit count as their build number from\n# scripts/archive-app-store.sh or the release workflow. See docs/releases.md.\ncase \"$CURRENT_PROJECT_VERSION\" in\n  ''|*[!0-9]*|1)\n    echo \"error: The build number is '$CURRENT_PROJECT_VERSION', but archives need the commit count. Archive with scripts/archive-app-store.sh. See docs/releases.md.\"\n    exit 1\n    ;;\nesac\n";
+		};
+		BE1000010000000000000002 /* Verify Build Number */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Verify Build Number";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+			shellPath = /bin/sh;
+			shellScript = "# Shipping archives take the commit count as their build number from\n# scripts/archive-app-store.sh or the release workflow. See docs/releases.md.\ncase \"$CURRENT_PROJECT_VERSION\" in\n  ''|*[!0-9]*|1)\n    echo \"error: The build number is '$CURRENT_PROJECT_VERSION', but archives need the commit count. Archive with scripts/archive-app-store.sh. See docs/releases.md.\"\n    exit 1\n    ;;\nesac\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		4B1DADD7295E6C440037E9FB /* Sources */ = {

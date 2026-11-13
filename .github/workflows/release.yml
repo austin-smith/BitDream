@@ -22,6 +22,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # The build number is the commit count, which needs the full history.
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v7
@@ -81,6 +84,60 @@ jobs:
             echo "Expected tag: $EXPECTED_TAG"
             exit 1
           fi
+
+      - name: Validate build number
+        run: |
+          # Every shipping build uses the commit count as CFBundleVersion.
+          # Sparkle offers an update only when its build number is newer than
+          # the installed build's. Re-running an already published release is
+          # allowed.
+          BUILD_NUMBER="$(git rev-list --count HEAD)"
+          PUBLISHED_APPCAST_PATH="$RUNNER_TEMP/published-appcast.xml"
+
+          curl -fsSL --retry 3 "$SPARKLE_APPCAST_URL" -o "$PUBLISHED_APPCAST_PATH"
+
+          /usr/bin/python3 -I - "$BUILD_NUMBER" "${RELEASE_TAG#v}" "$PUBLISHED_APPCAST_PATH" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+
+          SPARKLE = "{http://www.andymatuschak.org/xml-namespaces/sparkle}"
+
+          def components(version):
+              parts = version.split(".")
+              if not all(part.isdigit() for part in parts):
+                  sys.exit(f"Unsupported build number: {version}")
+              return tuple(int(part) for part in parts)
+
+          def sparkle_value(item, name):
+              element = item.find(f"{SPARKLE}{name}")
+              if element is not None and element.text:
+                  return element.text.strip()
+              enclosure = item.find("enclosure")
+              if enclosure is not None:
+                  return enclosure.get(f"{SPARKLE}{name}")
+              return None
+
+          build_number, release_version, appcast_path = sys.argv[1:]
+          published = [
+              (sparkle_value(item, "version"), sparkle_value(item, "shortVersionString"))
+              for item in ET.parse(appcast_path).getroot().iter("item")
+          ]
+          published = [(version, short_version) for version, short_version in published if version]
+
+          if not published:
+              sys.exit("The published appcast does not contain a sparkle:version.")
+
+          latest, latest_short_version = max(published, key=lambda entry: components(entry[0]))
+
+          if components(build_number) > components(latest):
+              print(f"Build number {build_number} is newer than the published build {latest}.")
+          elif build_number == latest and latest_short_version == release_version:
+              print(f"Build {build_number} of {release_version} is already published; re-running its release.")
+          else:
+              sys.exit(f"Build number {build_number} is not newer than the published build {latest} ({latest_short_version}).")
+          PY
+
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
 
       - name: Import Apple signing certificate
         env:
@@ -164,9 +221,6 @@ jobs:
 
       - name: Build macOS app archive
         run: |
-          # Sparkle compares CFBundleVersion, so released builds stamp the
-          # validated release version there. The project keeps a local build
-          # number for development builds.
           xcodebuild archive \
             -project BitDream.xcodeproj \
             -scheme BitDream \
@@ -177,7 +231,7 @@ jobs:
             CODE_SIGN_IDENTITY="Developer ID Application" \
             DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
-            CURRENT_PROJECT_VERSION="${RELEASE_TAG#v}" \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             ARCHS=arm64
 
       - name: Export archived app
@@ -379,11 +433,24 @@ jobs:
           codesign --verify --verbose=2 "$DMG_PATH"
           xcrun stapler validate "$DMG_PATH"
 
-          BUNDLE_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP_PATH/Contents/Info.plist")"
-          if [[ "v$BUNDLE_VERSION" != "$RELEASE_TAG" ]]; then
-            echo "CFBundleVersion ($BUNDLE_VERSION) does not match the release tag ($RELEASE_TAG)."
-            exit 1
-          fi
+          for INFO_PLIST in "$APP_PATH/Contents/Info.plist" "$APP_PATH/Contents/PlugIns/"*.appex/Contents/Info.plist; do
+            if [[ ! -f "$INFO_PLIST" ]]; then
+              echo "Missing Info.plist at $INFO_PLIST"
+              exit 1
+            fi
+
+            SHORT_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$INFO_PLIST")"
+            if [[ "v$SHORT_VERSION" != "$RELEASE_TAG" ]]; then
+              echo "CFBundleShortVersionString ($SHORT_VERSION) in $INFO_PLIST does not match the release tag ($RELEASE_TAG)."
+              exit 1
+            fi
+
+            BUNDLE_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$INFO_PLIST")"
+            if [[ "$BUNDLE_VERSION" != "$BUILD_NUMBER" ]]; then
+              echo "CFBundleVersion ($BUNDLE_VERSION) in $INFO_PLIST does not match the commit count ($BUILD_NUMBER)."
+              exit 1
+            fi
+          done
 
       - name: Create GitHub Release
         env:
