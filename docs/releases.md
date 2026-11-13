@@ -14,7 +14,7 @@ Sparkle and App Store Connect both require build numbers to increase, and the co
 
 A direct-download, Mac App Store, and iOS build of the same commit therefore share one build number. The About screen shows it after the version, as `Version 2.1.2 (560)`.
 
-Local builds keep the project's placeholder build number of `1`. Archiving requires the commit count: the `Verify Build Number` phase fails any archive whose build number differs from it, including an archive made with **Product > Archive** in Xcode.
+Local builds keep the project's placeholder build number of `1`. The `Verify Build Number` phase fails any archive that still has the placeholder, including an archive made with **Product > Archive** in Xcode.
 
 ## Tagging
 

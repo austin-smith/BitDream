@@ -509,7 +509,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "\"$SRCROOT/scripts/verify-build-number.sh\"\n";
+			shellScript = "# Shipping archives take the commit count as their build number from\n# scripts/archive-app-store.sh or the release workflow. See docs/releases.md.\ncase \"$CURRENT_PROJECT_VERSION\" in\n  ''|*[!0-9]*|1)\n    echo \"error: The build number is '$CURRENT_PROJECT_VERSION', but archives need the commit count. Archive with scripts/archive-app-store.sh. See docs/releases.md.\"\n    exit 1\n    ;;\nesac\n";
 		};
 		BE1000010000000000000002 /* Verify Build Number */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -527,7 +527,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "\"$SRCROOT/scripts/verify-build-number.sh\"\n";
+			shellScript = "# Shipping archives take the commit count as their build number from\n# scripts/archive-app-store.sh or the release workflow. See docs/releases.md.\ncase \"$CURRENT_PROJECT_VERSION\" in\n  ''|*[!0-9]*|1)\n    echo \"error: The build number is '$CURRENT_PROJECT_VERSION', but archives need the commit count. Archive with scripts/archive-app-store.sh. See docs/releases.md.\"\n    exit 1\n    ;;\nesac\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -732,7 +732,6 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BitDream/Info.plist;
@@ -786,7 +785,6 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BitDream/Info.plist;
@@ -1029,7 +1027,6 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "BitDream/Info-AppStore.plist";
@@ -1069,7 +1066,6 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "BitDream/Info-AppStore.plist";
@@ -1252,7 +1248,6 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = BitDream/Info.plist;
@@ -1398,7 +1393,6 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "BitDream/Info-AppStore.plist";

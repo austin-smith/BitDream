@@ -43,8 +43,7 @@ Run the same compile check locally from the repository root:
 Archive with the script from the repository root. It requires a clean working
 tree with full git history whose `HEAD` is on `origin/main`, builds the
 embedded Tailscale framework, archives the `BitDreamAppStore` scheme with the
-commit count as its build number, verifies the app and widget build numbers,
-and opens the archive in Organizer:
+commit count as its build number, and opens the archive in Organizer:
 
 ```bash
 ./scripts/archive-app-store.sh macos
@@ -52,11 +51,12 @@ and opens the archive in Organizer:
 
 Archive the commit of the release tag, so the App Store build carries the same
 version and build number as the direct-download release. The script warns when
-`HEAD` is not the release tag, and refuses commits that are not on `main`:
+`HEAD` has no release tag, and refuses commits that are not on `main`:
 App Store Connect rejects a build number that is not higher than earlier
 uploads of the same version, and only commits on `main` are guaranteed to have
-lower commit counts than later commits on `main`. See `docs/releases.md` for how build numbers are assigned. Use
-`./scripts/archive-app-store.sh ios` to archive the iOS app the same way.
+lower commit counts than later commits on `main`. See `docs/releases.md` for
+how build numbers are assigned. Use `./scripts/archive-app-store.sh ios` to
+archive the iOS app the same way.
 
 **Product > Archive** in Xcode cannot set the build number, so the
 `Verify Build Number` phase fails those archives.
