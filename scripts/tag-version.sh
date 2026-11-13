@@ -119,8 +119,10 @@ if [[ -n "$remote_tag" ]]; then
 fi
 
 short_commit="$(git rev-parse --short HEAD)"
+build_number="$(git rev-list --count HEAD)"
 echo
 echo "Release version: $version"
+echo "Build number:    $build_number"
 echo "Tag:             $tag"
 echo "Commit:          $short_commit"
 

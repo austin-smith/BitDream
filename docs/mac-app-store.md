@@ -40,11 +40,37 @@ Run the same compile check locally from the repository root:
 
 ## Archiving
 
-Select the `BitDreamAppStore` scheme in Xcode, choose **Any Mac** as the run
-destination, and use **Product > Archive**. Confirm that Xcode selects the Mac
-App Store provisioning profiles for both the app and widget extension before
-uploading the archive through Organizer.
+Archive with the script from the repository root. It requires a clean working
+tree with full git history whose `HEAD` is on `origin/main`, builds the
+embedded Tailscale framework, archives the `BitDreamAppStore` scheme with the
+commit count as its build number, verifies the app and widget build numbers,
+and opens the archive in Organizer:
 
-Keep `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` synchronized between the
-App Store app and widget targets. The direct-download release remains managed by
+```bash
+./scripts/archive-app-store.sh macos
+```
+
+Archive the commit of the release tag, so the App Store build carries the same
+version and build number as the direct-download release. The script warns when
+`HEAD` is not the release tag, and refuses commits that are not on `main`:
+App Store Connect rejects a build number that is not higher than earlier
+uploads of the same version, and only commits on `main` are guaranteed to have
+lower commit counts than later commits on `main`. See `docs/releases.md` for how build numbers are assigned. Use
+`./scripts/archive-app-store.sh ios` to archive the iOS app the same way.
+
+**Product > Archive** in Xcode cannot set the build number, so the
+`Verify Build Number` phase fails those archives.
+
+In Organizer, confirm that the archive lists the expected version and build
+number, then choose **Distribute App > Custom > App Store Connect > Upload**.
+The default distribution options don't show the build number setting. Confirm
+that Xcode selects the App Store provisioning profiles for both the app and
+widget extension, and turn off **Manage Version and Build Number**. Xcode
+otherwise may replace the build number in the uploaded copy, and App Store
+Connect would no longer match the archive or the commit. If App Store Connect
+rejects the build number as already used, that commit has already been
+uploaded; archive a newer commit instead of letting Xcode change the number.
+
+Keep `MARKETING_VERSION` synchronized between the App Store app and widget
+targets. The direct-download release remains managed by
 `.github/workflows/release.yml` and its Sparkle appcast workflow.
